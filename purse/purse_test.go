@@ -141,3 +141,107 @@ func TestPluginArgsOmitEmpty(t *testing.T) {
 		t.Error("args should be omitted when nil/empty")
 	}
 }
+
+func TestMappingBuilder(t *testing.T) {
+	b := NewPluginBuilder("grit").
+		Command("grit").
+		Mapping("Bash").
+		CommandPrefixes("git ").
+		Tool("status", "checking repository status").
+		Tool("diff", "viewing changes").
+		Reason("Use grit MCP tools for git operations").
+		Done()
+
+	mf := b.BuildMappings()
+	if mf == nil {
+		t.Fatal("expected non-nil MappingFile")
+	}
+
+	if mf.Server != "grit" {
+		t.Errorf("server = %q, want %q", mf.Server, "grit")
+	}
+
+	if len(mf.Mappings) != 1 {
+		t.Fatalf("mappings len = %d, want 1", len(mf.Mappings))
+	}
+
+	m := mf.Mappings[0]
+	if m.Replaces != "Bash" {
+		t.Errorf("replaces = %q, want %q", m.Replaces, "Bash")
+	}
+	if len(m.CommandPrefixes) != 1 || m.CommandPrefixes[0] != "git " {
+		t.Errorf("command_prefixes = %v, want [git ]", m.CommandPrefixes)
+	}
+	if len(m.Tools) != 2 {
+		t.Fatalf("tools len = %d, want 2", len(m.Tools))
+	}
+	if m.Tools[0].Name != "status" {
+		t.Errorf("tools[0].name = %q, want %q", m.Tools[0].Name, "status")
+	}
+	if m.Reason != "Use grit MCP tools for git operations" {
+		t.Errorf("reason = %q", m.Reason)
+	}
+}
+
+func TestBuildMappingsNilWhenEmpty(t *testing.T) {
+	b := NewPluginBuilder("test").Command("test")
+	mf := b.BuildMappings()
+	if mf != nil {
+		t.Errorf("expected nil MappingFile when no mappings declared, got %+v", mf)
+	}
+}
+
+func TestMappingBuilderWithExtensions(t *testing.T) {
+	b := NewPluginBuilder("lux").
+		Command("lux", "mcp", "stdio").
+		Mapping("Read").
+		Extensions(".go", ".py").
+		Tool("lsp_hover", "getting type info").
+		Reason("Use lux").
+		Done()
+
+	mf := b.BuildMappings()
+	if mf == nil {
+		t.Fatal("expected non-nil MappingFile")
+	}
+
+	m := mf.Mappings[0]
+	if len(m.Extensions) != 2 || m.Extensions[0] != ".go" {
+		t.Errorf("extensions = %v, want [.go .py]", m.Extensions)
+	}
+	if len(m.CommandPrefixes) != 0 {
+		t.Errorf("command_prefixes should be empty, got %v", m.CommandPrefixes)
+	}
+}
+
+func TestMappingJSONRoundTrip(t *testing.T) {
+	b := NewPluginBuilder("grit").
+		Command("grit").
+		Mapping("Bash").
+		CommandPrefixes("git ").
+		Tool("status", "checking status").
+		Reason("Use grit").
+		Done()
+
+	mf := b.BuildMappings()
+
+	data, err := json.MarshalIndent(mf, "", "  ")
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	var got MappingFile
+	if err := json.Unmarshal(data, &got); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	if got.Server != "grit" {
+		t.Errorf("server = %q, want %q", got.Server, "grit")
+	}
+	if len(got.Mappings) != 1 {
+		t.Fatalf("mappings len = %d, want 1", len(got.Mappings))
+	}
+	if got.Mappings[0].CommandPrefixes[0] != "git " {
+		t.Errorf("command_prefixes[0] = %q, want %q", got.Mappings[0].CommandPrefixes[0], "git ")
+	}
+}

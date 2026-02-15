@@ -6,10 +6,11 @@ type ToolSuggestion struct {
 }
 
 type Mapping struct {
-	Replaces   string           `json:"replaces"`
-	Extensions []string         `json:"extensions,omitempty"`
-	Tools      []ToolSuggestion `json:"tools"`
-	Reason     string           `json:"reason"`
+	Replaces        string           `json:"replaces"`
+	Extensions      []string         `json:"extensions,omitempty"`
+	CommandPrefixes []string         `json:"command_prefixes,omitempty"`
+	Tools           []ToolSuggestion `json:"tools"`
+	Reason          string           `json:"reason"`
 }
 
 type MappingFile struct {

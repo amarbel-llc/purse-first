@@ -38,8 +38,8 @@ func Install(binaryPath string, project bool) error {
 	toolMatcher := "Read|Edit|Write|Grep|Glob|Bash"
 
 	hookDefs := []struct {
-		event   string
-		entry   hookMatcher
+		event string
+		entry hookMatcher
 	}{
 		{
 			event: "PreToolUse",

@@ -99,3 +99,97 @@ func TestWritePluginWithArgs(t *testing.T) {
 		t.Errorf("args = %v, want [mcp stdio]", srv.Args)
 	}
 }
+
+func TestWriteMappings(t *testing.T) {
+	dir := t.TempDir()
+
+	mf := &MappingFile{
+		Server: "grit",
+		Mappings: []MappingEntry{
+			{
+				Replaces:        "Bash",
+				CommandPrefixes: []string{"git "},
+				Tools: []ToolSuggestion{
+					{Name: "status", UseWhen: "checking status"},
+				},
+				Reason: "Use grit",
+			},
+		},
+	}
+
+	if err := WriteMappings(dir, "grit", mf); err != nil {
+		t.Fatalf("WriteMappings: %v", err)
+	}
+
+	path := filepath.Join(dir, "grit", "mappings.json")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+
+	if data[len(data)-1] != '\n' {
+		t.Error("expected trailing newline")
+	}
+
+	var got MappingFile
+	if err := json.Unmarshal(data, &got); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+
+	if got.Server != "grit" {
+		t.Errorf("server = %q, want %q", got.Server, "grit")
+	}
+	if len(got.Mappings) != 1 {
+		t.Fatalf("mappings len = %d, want 1", len(got.Mappings))
+	}
+	if got.Mappings[0].CommandPrefixes[0] != "git " {
+		t.Errorf("command_prefixes[0] = %q, want %q", got.Mappings[0].CommandPrefixes[0], "git ")
+	}
+}
+
+func TestWriteMappingsNilNoOp(t *testing.T) {
+	dir := t.TempDir()
+
+	if err := WriteMappings(dir, "test", nil); err != nil {
+		t.Fatalf("WriteMappings: %v", err)
+	}
+
+	path := filepath.Join(dir, "test", "mappings.json")
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Error("expected mappings.json to not exist for nil MappingFile")
+	}
+}
+
+func TestWritePluginAndMappingsTogether(t *testing.T) {
+	dir := t.TempDir()
+
+	b := NewPluginBuilder("grit").
+		Command("grit").
+		StdioTransport().
+		Mapping("Bash").
+		CommandPrefixes("git ").
+		Tool("status", "checking status").
+		Reason("Use grit").
+		Done()
+
+	p := b.Build()
+	if err := WritePlugin(dir, p); err != nil {
+		t.Fatalf("WritePlugin: %v", err)
+	}
+
+	mf := b.BuildMappings()
+	if err := WriteMappings(dir, p.Name, mf); err != nil {
+		t.Fatalf("WriteMappings: %v", err)
+	}
+
+	// Both files should exist in the same directory
+	pluginPath := filepath.Join(dir, "grit", "plugin.json")
+	mappingPath := filepath.Join(dir, "grit", "mappings.json")
+
+	if _, err := os.Stat(pluginPath); os.IsNotExist(err) {
+		t.Error("expected plugin.json to exist")
+	}
+	if _, err := os.Stat(mappingPath); os.IsNotExist(err) {
+		t.Error("expected mappings.json to exist")
+	}
+}

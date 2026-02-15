@@ -43,20 +43,66 @@ func loadDir(dir string) ([]MappingFile, error) {
 	return files, nil
 }
 
+func resolvePluginsDir() string {
+	if envDir := os.Getenv("PURSE_FIRST_PLUGINS_DIR"); envDir != "" {
+		return envDir
+	}
+
+	exe, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+
+	resolved, err := filepath.EvalSymlinks(exe)
+	if err != nil {
+		resolved = exe
+	}
+
+	return filepath.Join(filepath.Dir(filepath.Dir(resolved)), "share", "purse-first")
+}
+
+func loadPluginMappings(pluginsDir string) []MappingFile {
+	if pluginsDir == "" {
+		return nil
+	}
+
+	matches, _ := filepath.Glob(filepath.Join(pluginsDir, "*", "mappings.json"))
+
+	var files []MappingFile
+	for _, path := range matches {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+
+		var mf MappingFile
+		if err := json.Unmarshal(data, &mf); err != nil {
+			continue
+		}
+
+		files = append(files, mf)
+	}
+
+	return files
+}
+
 func LoadMappings(projectDir string) ([]MappingFile, error) {
+	pluginsDir := resolvePluginsDir()
 	globalDir := filepath.Join(xdgStateHome(), "purse-first")
 	localDir := filepath.Join(projectDir, ".purse-first")
 
+	pluginFiles := loadPluginMappings(pluginsDir)
 	globalFiles, _ := loadDir(globalDir)
 	localFiles, _ := loadDir(localDir)
 
-	// Index global files by server name
+	// Merge with priority: plugin < global < local
 	byServer := make(map[string]MappingFile)
+	for _, f := range pluginFiles {
+		byServer[f.Server] = f
+	}
 	for _, f := range globalFiles {
 		byServer[f.Server] = f
 	}
-
-	// Local overrides global per server
 	for _, f := range localFiles {
 		byServer[f.Server] = f
 	}
@@ -74,23 +120,43 @@ type Match struct {
 	Mapping Mapping
 }
 
-func FindMatch(files []MappingFile, toolName string, filePath string) *Match {
-	ext := strings.ToLower(filepath.Ext(filePath))
+func matchesCriteria(m Mapping, filePath, command string) bool {
+	hasExtensions := len(m.Extensions) > 0
+	hasPrefixes := len(m.CommandPrefixes) > 0
 
+	if !hasExtensions && !hasPrefixes {
+		return true
+	}
+
+	if hasExtensions && filePath != "" {
+		ext := strings.ToLower(filepath.Ext(filePath))
+		for _, e := range m.Extensions {
+			if strings.ToLower(e) == ext {
+				return true
+			}
+		}
+	}
+
+	if hasPrefixes && command != "" {
+		for _, prefix := range m.CommandPrefixes {
+			if strings.HasPrefix(command, prefix) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func FindMatch(files []MappingFile, toolName, filePath, command string) *Match {
 	for _, f := range files {
 		for _, m := range f.Mappings {
 			if m.Replaces != toolName {
 				continue
 			}
 
-			if len(m.Extensions) == 0 {
+			if matchesCriteria(m, filePath, command) {
 				return &Match{Server: f.Server, Mapping: m}
-			}
-
-			for _, e := range m.Extensions {
-				if strings.ToLower(e) == ext {
-					return &Match{Server: f.Server, Mapping: m}
-				}
 			}
 		}
 	}

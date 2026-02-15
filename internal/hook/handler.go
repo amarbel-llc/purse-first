@@ -30,6 +30,14 @@ func extractFilePath(toolInput map[string]any) string {
 	return ""
 }
 
+func extractCommand(toolInput map[string]any) string {
+	if cmd, ok := toolInput["command"].(string); ok {
+		return cmd
+	}
+
+	return ""
+}
+
 func formatDenyReason(server string, m mapping.Mapping) string {
 	var b strings.Builder
 
@@ -64,12 +72,13 @@ func HandlePreToolUse(stdin io.Reader, stdout io.Writer, projectDir string) erro
 	}
 
 	filePath := extractFilePath(input.ToolInput)
-	if filePath == "" {
-		// No file path to match against → passthrough
+	command := extractCommand(input.ToolInput)
+	if filePath == "" && command == "" {
+		// No file path or command to match against → passthrough
 		return nil
 	}
 
-	match := mapping.FindMatch(files, input.ToolName, filePath)
+	match := mapping.FindMatch(files, input.ToolName, filePath, command)
 	if match == nil {
 		// No matching rule → passthrough
 		return nil
@@ -77,8 +86,8 @@ func HandlePreToolUse(stdin io.Reader, stdout io.Writer, projectDir string) erro
 
 	output := decision.HookOutput{
 		HookSpecificOutput: decision.HookSpecificOutput{
-			HookEventName:           "PreToolUse",
-			PermissionDecision:      "deny",
+			HookEventName:            "PreToolUse",
+			PermissionDecision:       "deny",
 			PermissionDecisionReason: formatDenyReason(match.Server, match.Mapping),
 		},
 	}

@@ -10,8 +10,8 @@ type HookInput struct {
 }
 
 type HookSpecificOutput struct {
-	HookEventName          string `json:"hookEventName"`
-	PermissionDecision     string `json:"permissionDecision"`
+	HookEventName            string `json:"hookEventName"`
+	PermissionDecision       string `json:"permissionDecision"`
 	PermissionDecisionReason string `json:"permissionDecisionReason"`
 }
 

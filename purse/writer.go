@@ -23,3 +23,25 @@ func WritePlugin(dir string, p Plugin) error {
 
 	return os.WriteFile(filepath.Join(pluginDir, "plugin.json"), data, 0o644)
 }
+
+// WriteMappings writes a mappings file to {dir}/{name}/mappings.json.
+// This is a no-op if mf is nil.
+func WriteMappings(dir, name string, mf *MappingFile) error {
+	if mf == nil {
+		return nil
+	}
+
+	mappingDir := filepath.Join(dir, name)
+	if err := os.MkdirAll(mappingDir, 0o755); err != nil {
+		return err
+	}
+
+	data, err := json.MarshalIndent(mf, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	data = append(data, '\n')
+
+	return os.WriteFile(filepath.Join(mappingDir, "mappings.json"), data, 0o644)
+}

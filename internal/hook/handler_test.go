@@ -38,6 +38,26 @@ func setupMappings(t *testing.T, dir string) {
 		},
 	}
 
+	gritMF := mapping.MappingFile{
+		Server: "grit",
+		Mappings: []mapping.Mapping{
+			{
+				Replaces:        "Bash",
+				CommandPrefixes: []string{"git "},
+				Tools: []mapping.ToolSuggestion{
+					{Name: "status", UseWhen: "checking repository status"},
+					{Name: "diff", UseWhen: "viewing changes"},
+				},
+				Reason: "Use grit MCP tools for git operations",
+			},
+		},
+	}
+
+	gritData, err := json.Marshal(gritMF)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	mappingDir := filepath.Join(dir, ".purse-first")
 	if err := os.MkdirAll(mappingDir, 0o755); err != nil {
 		t.Fatal(err)
@@ -49,6 +69,10 @@ func setupMappings(t *testing.T, dir string) {
 	}
 
 	if err := os.WriteFile(filepath.Join(mappingDir, "lux.json"), data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(filepath.Join(mappingDir, "grit.json"), gritData, 0o644); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -208,5 +232,65 @@ func TestHandlerGrepWithPath(t *testing.T) {
 
 	if output.HookSpecificOutput.PermissionDecision != "deny" {
 		t.Errorf("expected deny for Grep on .go path, got %s", output.HookSpecificOutput.PermissionDecision)
+	}
+}
+
+func TestHandlerDeniesGitCommand(t *testing.T) {
+	projectDir := t.TempDir()
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	setupMappings(t, projectDir)
+
+	input := decision.HookInput{
+		SessionID:     "test",
+		ToolName:      "Bash",
+		ToolInput:     map[string]any{"command": "git status"},
+		HookEventName: "PreToolUse",
+	}
+
+	inputJSON, _ := json.Marshal(input)
+
+	var stdout bytes.Buffer
+	err := HandlePreToolUse(bytes.NewReader(inputJSON), &stdout, projectDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var output decision.HookOutput
+	if err := json.Unmarshal(stdout.Bytes(), &output); err != nil {
+		t.Fatalf("failed to parse output: %v\nraw: %s", err, stdout.String())
+	}
+
+	if output.HookSpecificOutput.PermissionDecision != "deny" {
+		t.Errorf("expected deny for git command, got %s", output.HookSpecificOutput.PermissionDecision)
+	}
+
+	reason := output.HookSpecificOutput.PermissionDecisionReason
+	if !strings.Contains(reason, "mcp__grit__status") {
+		t.Errorf("expected grit status suggestion in reason, got: %s", reason)
+	}
+}
+
+func TestHandlerPassthroughNonGitCommand(t *testing.T) {
+	projectDir := t.TempDir()
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	setupMappings(t, projectDir)
+
+	input := decision.HookInput{
+		SessionID:     "test",
+		ToolName:      "Bash",
+		ToolInput:     map[string]any{"command": "npm install"},
+		HookEventName: "PreToolUse",
+	}
+
+	inputJSON, _ := json.Marshal(input)
+
+	var stdout bytes.Buffer
+	err := HandlePreToolUse(bytes.NewReader(inputJSON), &stdout, projectDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if stdout.Len() != 0 {
+		t.Errorf("expected passthrough for npm command, got: %s", stdout.String())
 	}
 }
