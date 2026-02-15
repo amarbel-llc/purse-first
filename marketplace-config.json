@@ -10,6 +10,7 @@
       "description": "Git operations via MCP — stage, commit, push, log, blame, and more",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/grit",
+      "repo": "amarbel-llc/grit",
       "category": "development",
       "tags": ["git", "version-control", "mcp"]
     },
@@ -17,6 +18,7 @@
       "description": "GitHub CLI wrapper via MCP — issues, pull requests, and repos",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/get-hubbed",
+      "repo": "amarbel-llc/get-hubbed",
       "category": "development",
       "tags": ["github", "issues", "pull-requests", "mcp"]
     },
@@ -24,6 +26,7 @@
       "description": "LSP multiplexer via MCP — hover, definitions, references, and symbols",
       "version": "0.1.0",
       "homepage": "https://github.com/friedenberg/lux",
+      "repo": "friedenberg/lux",
       "category": "development",
       "tags": ["lsp", "code-intelligence", "mcp"]
     },
@@ -31,6 +34,7 @@
       "description": "Nix CLI operations via MCP — build, evaluate, search, and manage flakes",
       "version": "0.1.0",
       "homepage": "https://github.com/friedenberg/nix-mcp-server",
+      "repo": "friedenberg/nix-mcp-server",
       "category": "development",
       "tags": ["nix", "package-manager", "mcp"]
     }

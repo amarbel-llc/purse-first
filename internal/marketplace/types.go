@@ -1,44 +1,67 @@
 package marketplace
 
-const SchemaURL = "https://anthropic.com/claude-code/marketplace.schema.json"
-
 // Marketplace is the top-level Claude Code marketplace.json structure.
 type Marketplace struct {
-	Schema      string   `json:"$schema"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Owner       Owner    `json:"owner"`
-	Plugins     []Plugin `json:"plugins"`
+	Schema      string    `json:"$schema,omitempty"`
+	Name        string    `json:"name"`
+	Description string    `json:"description,omitempty"`
+	Version     string    `json:"version,omitempty"`
+	Owner       Owner     `json:"owner"`
+	Metadata    *Metadata `json:"metadata,omitempty"`
+	Plugins     []Plugin  `json:"plugins"`
+}
+
+type Metadata struct {
+	PluginRoot  string `json:"pluginRoot,omitempty"`
+	Version     string `json:"version,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 type Owner struct {
 	Name  string `json:"name"`
-	Email string `json:"email"`
+	Email string `json:"email,omitempty"`
+	URL   string `json:"url,omitempty"`
 }
 
 type Plugin struct {
-	Name        string         `json:"name"`
-	Description string         `json:"description"`
-	Version     string         `json:"version"`
-	Source      string         `json:"source"`
-	Author      *Author        `json:"author,omitempty"`
-	Category    string         `json:"category,omitempty"`
-	Homepage    string         `json:"homepage,omitempty"`
-	Tags        []string       `json:"tags,omitempty"`
-	Strict      *bool          `json:"strict,omitempty"`
-	McpServers  map[string]any `json:"mcpServers,omitempty"`
+	Name         string         `json:"name"`
+	Description  string         `json:"description,omitempty"`
+	Version      string         `json:"version,omitempty"`
+	Source       any            `json:"source"`
+	Author       *Author        `json:"author,omitempty"`
+	Category     string         `json:"category,omitempty"`
+	Homepage     string         `json:"homepage,omitempty"`
+	Repository   string         `json:"repository,omitempty"`
+	License      string         `json:"license,omitempty"`
+	Keywords     []string       `json:"keywords,omitempty"`
+	Tags         []string       `json:"tags,omitempty"`
+	Strict       *bool          `json:"strict,omitempty"`
+	McpServers   map[string]any `json:"mcpServers,omitempty"`
+	LspServers   map[string]any `json:"lspServers,omitempty"`
+	Skills       map[string]any `json:"skills,omitempty"`
+	Hooks        map[string]any `json:"hooks,omitempty"`
+	Commands     map[string]any `json:"commands,omitempty"`
+	Agents       map[string]any `json:"agents,omitempty"`
+	OutputStyles map[string]any `json:"outputStyles,omitempty"`
 }
 
 type Author struct {
 	Name  string `json:"name"`
 	Email string `json:"email,omitempty"`
+	URL   string `json:"url,omitempty"`
+}
+
+// GitHubSource represents a GitHub-based plugin source.
+type GitHubSource struct {
+	Source string `json:"source"`
+	Repo   string `json:"repo"`
 }
 
 // Config is the input configuration for marketplace generation. It provides
 // marketplace-level metadata and per-plugin metadata overrides.
 type Config struct {
 	Name        string                `json:"name"`
-	Description string                `json:"description"`
+	Description string                `json:"description,omitempty"`
 	Owner       Owner                 `json:"owner"`
 	Plugins     map[string]PluginMeta `json:"plugins"`
 }
@@ -50,6 +73,7 @@ type PluginMeta struct {
 	Homepage    string   `json:"homepage,omitempty"`
 	Category    string   `json:"category,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
+	Repo        string   `json:"repo,omitempty"`
 }
 
 // DiscoveredPlugin holds the MCP server fields read from a purse plugin.json.

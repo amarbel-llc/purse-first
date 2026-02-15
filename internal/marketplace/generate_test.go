@@ -16,7 +16,8 @@ func TestGenerate(t *testing.T) {
 			"alpha": {
 				Description: "Alpha MCP server for testing",
 				Version:     "1.0.0",
-				Homepage:    "https://example.com/alpha",
+				Homepage:    "https://github.com/example/alpha",
+				Repo:        "example/alpha",
 				Category:    "development",
 				Tags:        []string{"test", "alpha"},
 			},
@@ -30,8 +31,8 @@ func TestGenerate(t *testing.T) {
 
 	m := Generate(config, discovered)
 
-	if m.Schema != SchemaURL {
-		t.Errorf("schema = %q, want %q", m.Schema, SchemaURL)
+	if m.Schema != "" {
+		t.Errorf("schema = %q, want empty (omitted)", m.Schema)
 	}
 	if m.Name != "test-marketplace" {
 		t.Errorf("name = %q, want %q", m.Name, "test-marketplace")
@@ -56,12 +57,22 @@ func TestGenerate(t *testing.T) {
 	if alpha.Version != "1.0.0" {
 		t.Errorf("alpha.version = %q", alpha.Version)
 	}
-	if alpha.Homepage != "https://example.com/alpha" {
+	if alpha.Homepage != "https://github.com/example/alpha" {
 		t.Errorf("alpha.homepage = %q", alpha.Homepage)
 	}
-	if alpha.Source != "/nix/store/abc123-alpha-1.0.0" {
-		t.Errorf("alpha.source = %q, want %q", alpha.Source, "/nix/store/abc123-alpha-1.0.0")
+
+	// Alpha has a repo, so source should be a GitHubSource
+	alphaSource, ok := alpha.Source.(GitHubSource)
+	if !ok {
+		t.Fatalf("alpha.source type = %T, want GitHubSource", alpha.Source)
 	}
+	if alphaSource.Source != "github" {
+		t.Errorf("alpha.source.source = %q, want %q", alphaSource.Source, "github")
+	}
+	if alphaSource.Repo != "example/alpha" {
+		t.Errorf("alpha.source.repo = %q, want %q", alphaSource.Repo, "example/alpha")
+	}
+
 	if alpha.Strict == nil || *alpha.Strict != false {
 		t.Error("alpha.strict should be false")
 	}
@@ -78,16 +89,41 @@ func TestGenerate(t *testing.T) {
 		t.Errorf("mcpServers.alpha.args = %v", srv["args"])
 	}
 
-	// Beta should have defaults
+	// Beta should have no description/version (no defaults set)
 	beta := m.Plugins[1]
-	if beta.Description != "MCP server: beta" {
-		t.Errorf("beta.description = %q, want default", beta.Description)
+	if beta.Description != "" {
+		t.Errorf("beta.description = %q, want empty", beta.Description)
 	}
-	if beta.Version != "0.1.0" {
-		t.Errorf("beta.version = %q, want default", beta.Version)
+	if beta.Version != "" {
+		t.Errorf("beta.version = %q, want empty", beta.Version)
 	}
-	if beta.Source != "./beta" {
-		t.Errorf("beta.source = %q, want %q", beta.Source, "./beta")
+
+	// Beta has no repo/homepage, so source should be a fallback string
+	betaSource, ok := beta.Source.(string)
+	if !ok {
+		t.Fatalf("beta.source type = %T, want string", beta.Source)
+	}
+	if betaSource != "./beta" {
+		t.Errorf("beta.source = %q, want %q", betaSource, "./beta")
+	}
+}
+
+func TestRepoFromHomepage(t *testing.T) {
+	tests := []struct {
+		homepage string
+		want     string
+	}{
+		{"https://github.com/amarbel-llc/grit", "amarbel-llc/grit"},
+		{"https://github.com/friedenberg/lux/", "friedenberg/lux"},
+		{"https://example.com/foo", ""},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		got := repoFromHomepage(tt.homepage)
+		if got != tt.want {
+			t.Errorf("repoFromHomepage(%q) = %q, want %q", tt.homepage, got, tt.want)
+		}
 	}
 }
 
@@ -156,7 +192,6 @@ func TestWriteAndRead(t *testing.T) {
 
 	strict := false
 	m := Marketplace{
-		Schema:      SchemaURL,
 		Name:        "roundtrip",
 		Description: "Roundtrip test marketplace for write and read",
 		Owner:       Owner{Name: "test", Email: "test@example.com"},
@@ -188,6 +223,9 @@ func TestWriteAndRead(t *testing.T) {
 
 	if got.Name != "roundtrip" {
 		t.Errorf("name = %q", got.Name)
+	}
+	if got.Schema != "" {
+		t.Errorf("schema = %q, want empty", got.Schema)
 	}
 	if len(got.Plugins) != 1 {
 		t.Errorf("len(plugins) = %d", len(got.Plugins))

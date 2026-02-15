@@ -54,6 +54,11 @@
           ];
         };
 
+        pkgs-master = import nixpkgs-master {
+          inherit system;
+          config.allowUnfree = true;
+        };
+
         version = "0.1.0";
 
         # Upstream packages
@@ -141,8 +146,9 @@
         };
 
         devShells.default = pkgs.mkShell {
-          packages = with pkgs; [
-            just
+          packages = [
+            pkgs.just
+            pkgs-master.claude-code
           ];
 
           inputsFrom = [

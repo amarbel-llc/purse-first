@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 )
 
 func ReadConfig(path string) (Config, error) {
@@ -69,9 +70,15 @@ func resolveStorePath(manifestPath string) string {
 	return ""
 }
 
+func repoFromHomepage(homepage string) string {
+	if repo, ok := strings.CutPrefix(homepage, "https://github.com/"); ok {
+		return strings.TrimSuffix(repo, "/")
+	}
+	return ""
+}
+
 func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 	m := Marketplace{
-		Schema:      SchemaURL,
 		Name:        config.Name,
 		Description: config.Description,
 		Owner:       config.Owner,
@@ -93,9 +100,19 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 			mcpServer["args"] = dp.Args
 		}
 
-		source := "./" + dp.Name
-		if dp.StorePath != "" {
-			source = dp.StorePath
+		var source any
+		repo := meta.Repo
+		if repo == "" {
+			repo = repoFromHomepage(meta.Homepage)
+		}
+		if repo != "" {
+			source = GitHubSource{Source: "github", Repo: repo}
+		} else {
+			s := "./" + dp.Name
+			if dp.StorePath != "" {
+				s = dp.StorePath
+			}
+			source = s
 		}
 
 		strict := false
@@ -121,15 +138,9 @@ func applyMeta(p *Plugin, meta PluginMeta) {
 	if meta.Description != "" {
 		p.Description = meta.Description
 	}
-	if p.Description == "" {
-		p.Description = fmt.Sprintf("MCP server: %s", p.Name)
-	}
 
 	if meta.Version != "" {
 		p.Version = meta.Version
-	}
-	if p.Version == "" {
-		p.Version = "0.1.0"
 	}
 
 	if meta.Homepage != "" {

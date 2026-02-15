@@ -4,7 +4,7 @@
   "title": "Claude Code Plugin",
   "description": "Schema for Claude Code plugin metadata",
   "type": "object",
-  "required": ["name", "description", "version"],
+  "required": ["name"],
   "properties": {
     "name": {
       "type": "string",
@@ -13,14 +13,11 @@
     },
     "description": {
       "type": "string",
-      "minLength": 10,
-      "maxLength": 500,
       "description": "Human-readable plugin description"
     },
     "version": {
       "type": "string",
-      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
-      "description": "Semantic version (e.g., 1.0.0, 0.1.0-beta)"
+      "description": "Plugin version"
     },
     "author": {
       "type": "object",
@@ -33,6 +30,11 @@
           "type": "string",
           "format": "email",
           "description": "Author email"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Author URL"
         }
       },
       "required": ["name"]
@@ -58,14 +60,40 @@
       },
       "description": "Search keywords"
     },
-    "lspServers": {
-      "type": "string",
-      "description": "Relative path to .lsp.json configuration"
+    "mcpServers": {
+      "type": "object",
+      "description": "MCP server configurations",
+      "additionalProperties": true
     },
-    "claudeCodeVersion": {
-      "type": "string",
-      "pattern": "^>=?\\s*(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$",
-      "description": "Minimum required Claude Code version (e.g., >=2.0.74)"
+    "lspServers": {
+      "type": "object",
+      "description": "LSP server configurations",
+      "additionalProperties": true
+    },
+    "skills": {
+      "type": "object",
+      "description": "Skill definitions",
+      "additionalProperties": true
+    },
+    "hooks": {
+      "type": "object",
+      "description": "Hook definitions",
+      "additionalProperties": true
+    },
+    "commands": {
+      "type": "object",
+      "description": "Command definitions",
+      "additionalProperties": true
+    },
+    "agents": {
+      "type": "object",
+      "description": "Agent definitions",
+      "additionalProperties": true
+    },
+    "outputStyles": {
+      "type": "object",
+      "description": "Output style definitions",
+      "additionalProperties": true
     }
   }
 }

@@ -4,7 +4,7 @@
   "title": "Claude Code Plugin Marketplace",
   "description": "Schema for Claude Code plugin marketplace configuration",
   "type": "object",
-  "required": ["$schema", "name", "description", "owner", "plugins"],
+  "required": ["name", "owner", "plugins"],
   "properties": {
     "$schema": {
       "type": "string",
@@ -17,12 +17,32 @@
     },
     "description": {
       "type": "string",
-      "minLength": 10,
-      "maxLength": 500,
       "description": "Human-readable marketplace description"
+    },
+    "version": {
+      "type": "string",
+      "description": "Marketplace version"
     },
     "owner": {
       "$ref": "#/definitions/Owner"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "pluginRoot": {
+          "type": "string",
+          "description": "Root directory for plugin sources"
+        },
+        "version": {
+          "type": "string",
+          "description": "Marketplace version (alternative to top-level version)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Marketplace description (alternative to top-level description)"
+        }
+      },
+      "description": "Optional marketplace metadata"
     },
     "plugins": {
       "type": "array",
@@ -36,7 +56,7 @@
   "definitions": {
     "Owner": {
       "type": "object",
-      "required": ["name", "email"],
+      "required": ["name"],
       "properties": {
         "name": {
           "type": "string",
@@ -46,6 +66,11 @@
           "type": "string",
           "format": "email",
           "description": "Contact email address"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Owner URL"
         }
       }
     },
@@ -61,12 +86,17 @@
           "type": "string",
           "format": "email",
           "description": "Author email (optional)"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Author URL (optional)"
         }
       }
     },
     "Plugin": {
       "type": "object",
-      "required": ["name", "description", "version", "source"],
+      "required": ["name", "source"],
       "properties": {
         "name": {
           "type": "string",
@@ -75,31 +105,72 @@
         },
         "description": {
           "type": "string",
-          "minLength": 10,
-          "maxLength": 500,
           "description": "Human-readable plugin description"
         },
         "version": {
           "type": "string",
-          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
-          "description": "Semantic version (e.g., 1.0.0, 0.1.0-beta)"
+          "description": "Plugin version"
         },
         "source": {
-          "type": "string",
-          "description": "Relative path to plugin directory"
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Relative path to plugin directory"
+            },
+            {
+              "type": "object",
+              "required": ["source"],
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "enum": ["github", "url", "npm", "pip"],
+                  "description": "Source type"
+                },
+                "repo": {
+                  "type": "string",
+                  "description": "GitHub repository (owner/repo format)"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri",
+                  "description": "URL for url source type"
+                },
+                "package": {
+                  "type": "string",
+                  "description": "Package name for npm/pip source types"
+                }
+              }
+            }
+          ],
+          "description": "Plugin source: relative path string or source object"
         },
         "author": {
           "$ref": "#/definitions/Author"
         },
         "category": {
           "type": "string",
-          "enum": ["development", "productivity", "utilities"],
-          "description": "Plugin category for discovery"
+          "description": "Plugin category for discovery (free-form string)"
         },
         "homepage": {
           "type": "string",
           "format": "uri",
           "description": "Project homepage URL"
+        },
+        "repository": {
+          "type": "string",
+          "format": "uri",
+          "description": "Source code repository URL"
+        },
+        "license": {
+          "type": "string",
+          "description": "SPDX license identifier"
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Search keywords"
         },
         "tags": {
           "type": "array",
@@ -109,42 +180,44 @@
           },
           "description": "Searchable keywords"
         },
+        "strict": {
+          "type": "boolean",
+          "description": "Whether to enforce strict plugin validation (defaults to true)"
+        },
+        "mcpServers": {
+          "type": "object",
+          "description": "MCP server configurations",
+          "additionalProperties": true
+        },
         "lspServers": {
           "type": "object",
-          "description": "Inline LSP server configuration",
-          "additionalProperties": {
-            "$ref": "#/definitions/LSPServer"
-          }
-        }
-      }
-    },
-    "LSPServer": {
-      "type": "object",
-      "required": ["command", "extensionToLanguage"],
-      "properties": {
-        "command": {
-          "type": "string",
-          "description": "Command to start the LSP server"
+          "description": "LSP server configurations",
+          "additionalProperties": true
         },
-        "args": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Command line arguments"
-        },
-        "extensionToLanguage": {
+        "skills": {
           "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "description": "File extension to language ID mapping"
+          "description": "Skill definitions",
+          "additionalProperties": true
         },
-        "startupTimeout": {
-          "type": "integer",
-          "minimum": 1000,
-          "maximum": 300000,
-          "description": "Server startup timeout in milliseconds"
+        "hooks": {
+          "type": "object",
+          "description": "Hook definitions",
+          "additionalProperties": true
+        },
+        "commands": {
+          "type": "object",
+          "description": "Command definitions",
+          "additionalProperties": true
+        },
+        "agents": {
+          "type": "object",
+          "description": "Agent definitions",
+          "additionalProperties": true
+        },
+        "outputStyles": {
+          "type": "object",
+          "description": "Output style definitions",
+          "additionalProperties": true
         }
       }
     }
