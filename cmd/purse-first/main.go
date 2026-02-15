@@ -27,6 +27,26 @@ func main() {
 		SilenceErrors: true,
 	}
 
+	postHookCmd := &cobra.Command{
+		Use:   "post-hook",
+		Short: "PostToolUse hook handler (notifies lux of opened files)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return hook.HandlePostToolUse(os.Stdin, os.Stdout)
+		},
+		SilenceUsage:  true,
+		SilenceErrors: true,
+	}
+
+	sessionEndCmd := &cobra.Command{
+		Use:   "session-end",
+		Short: "SessionEnd hook handler (closes all lux documents)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return hook.HandleSessionEnd(os.Stdin, os.Stdout)
+		},
+		SilenceUsage:  true,
+		SilenceErrors: true,
+	}
+
 	var projectFlag bool
 
 	installCmd := &cobra.Command{
@@ -54,7 +74,7 @@ func main() {
 
 	installCmd.Flags().BoolVar(&projectFlag, "project", false, "install to project settings instead of global")
 
-	root.AddCommand(hookCmd, installCmd)
+	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)

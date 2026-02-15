@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type hookEntry struct {
@@ -14,8 +15,15 @@ type hookEntry struct {
 }
 
 type hookMatcher struct {
-	Matcher string      `json:"matcher"`
+	Matcher string      `json:"matcher,omitempty"`
 	Hooks   []hookEntry `json:"hooks"`
+}
+
+type hookSpec struct {
+	eventName string
+	matcher   string
+	command   string
+	timeout   int
 }
 
 func Install(binaryPath string, project bool) error {
@@ -29,14 +37,23 @@ func Install(binaryPath string, project bool) error {
 		return err
 	}
 
-	entry := hookMatcher{
-		Matcher: "Read|Edit|Write|Grep|Glob|Bash",
-		Hooks: []hookEntry{
-			{
-				Type:    "command",
-				Command: binaryPath + " hook",
-				Timeout: 5,
-			},
+	specs := []hookSpec{
+		{
+			eventName: "PreToolUse",
+			matcher:   "Read|Edit|Write|Grep|Glob|Bash",
+			command:   binaryPath + " hook",
+			timeout:   5,
+		},
+		{
+			eventName: "PostToolUse",
+			matcher:   "Read|Edit|Write",
+			command:   binaryPath + " post-hook",
+			timeout:   5,
+		},
+		{
+			eventName: "Stop",
+			command:   binaryPath + " session-end",
+			timeout:   5,
 		},
 	}
 
@@ -45,30 +62,49 @@ func Install(binaryPath string, project bool) error {
 		hooks = make(map[string]any)
 	}
 
-	preToolUse, _ := hooks["PreToolUse"].([]any)
+	for _, spec := range specs {
+		entry := hookMatcher{
+			Matcher: spec.matcher,
+			Hooks: []hookEntry{
+				{
+					Type:    "command",
+					Command: spec.command,
+					Timeout: spec.timeout,
+				},
+			},
+		}
 
-	// Check if purse-first hook already exists
+		upsertHook(hooks, spec.eventName, entry, binaryPath)
+	}
+
+	settings["hooks"] = hooks
+
+	return writeSettings(settingsPath, settings)
+}
+
+func upsertHook(hooks map[string]any, eventName string, entry hookMatcher, binaryPath string) {
 	entryJSON, _ := json.Marshal(entry)
 	var entryMap map[string]any
 	json.Unmarshal(entryJSON, &entryMap)
 
+	existing, _ := hooks[eventName].([]any)
+
 	found := false
-	for i, existing := range preToolUse {
-		existingMap, ok := existing.(map[string]any)
+	for i, e := range existing {
+		eMap, ok := e.(map[string]any)
 		if !ok {
 			continue
 		}
 
-		existingHooks, _ := existingMap["hooks"].([]any)
-		for _, h := range existingHooks {
+		eHooks, _ := eMap["hooks"].([]any)
+		for _, h := range eHooks {
 			hMap, ok := h.(map[string]any)
 			if !ok {
 				continue
 			}
 			cmd, _ := hMap["command"].(string)
-			if len(cmd) > 0 && cmd == binaryPath+" hook" {
-				// Update existing entry
-				preToolUse[i] = entryMap
+			if cmd != "" && strings.HasPrefix(cmd, binaryPath) {
+				existing[i] = entryMap
 				found = true
 				break
 			}
@@ -79,13 +115,10 @@ func Install(binaryPath string, project bool) error {
 	}
 
 	if !found {
-		preToolUse = append(preToolUse, entryMap)
+		existing = append(existing, entryMap)
 	}
 
-	hooks["PreToolUse"] = preToolUse
-	settings["hooks"] = hooks
-
-	return writeSettings(settingsPath, settings)
+	hooks[eventName] = existing
 }
 
 func settingsFilePath(project bool) (string, error) {
