@@ -15,7 +15,7 @@ type hookEntry struct {
 }
 
 type hookMatcher struct {
-	Matcher string      `json:"matcher"`
+	Matcher string      `json:"matcher,omitempty"`
 	Hooks   []hookEntry `json:"hooks"`
 }
 
@@ -30,47 +30,62 @@ func Install(binaryPath string, project bool) error {
 		return err
 	}
 
-	entry := hookMatcher{
-		Matcher: "Read|Edit|Write|Grep|Glob|Bash",
-		Hooks: []hookEntry{
-			{
-				Type:    "command",
-				Command: binaryPath + " hook",
-				Timeout: 5,
-			},
-		},
-	}
-
 	hooks, _ := settings["hooks"].(map[string]any)
 	if hooks == nil {
 		hooks = make(map[string]any)
 	}
 
-	preToolUse, _ := hooks["PreToolUse"].([]any)
+	toolMatcher := "Read|Edit|Write|Grep|Glob|Bash"
 
-	entryJSON, _ := json.Marshal(entry)
-	var entryMap map[string]any
-	json.Unmarshal(entryJSON, &entryMap)
-
-	// Remove any existing purse-first hook entries (handles stale nix store paths)
-	var filtered []any
-	for _, existing := range preToolUse {
-		existingMap, ok := existing.(map[string]any)
-		if !ok {
-			filtered = append(filtered, existing)
-			continue
-		}
-
-		if isPurseFirstEntry(existingMap) {
-			continue
-		}
-
-		filtered = append(filtered, existing)
+	hookDefs := []struct {
+		event   string
+		entry   hookMatcher
+	}{
+		{
+			event: "PreToolUse",
+			entry: hookMatcher{
+				Matcher: toolMatcher,
+				Hooks: []hookEntry{{
+					Type:    "command",
+					Command: binaryPath + " hook",
+					Timeout: 5,
+				}},
+			},
+		},
+		{
+			event: "PostToolUse",
+			entry: hookMatcher{
+				Matcher: toolMatcher,
+				Hooks: []hookEntry{{
+					Type:    "command",
+					Command: binaryPath + " post-hook",
+					Timeout: 5,
+				}},
+			},
+		},
+		{
+			event: "Stop",
+			entry: hookMatcher{
+				Hooks: []hookEntry{{
+					Type:    "command",
+					Command: binaryPath + " session-end",
+					Timeout: 5,
+				}},
+			},
+		},
 	}
 
-	preToolUse = append(filtered, entryMap)
+	for _, def := range hookDefs {
+		existing, _ := hooks[def.event].([]any)
 
-	hooks["PreToolUse"] = preToolUse
+		entryJSON, _ := json.Marshal(def.entry)
+		var entryMap map[string]any
+		json.Unmarshal(entryJSON, &entryMap)
+
+		filtered := removePurseFirstEntries(existing)
+		hooks[def.event] = append(filtered, entryMap)
+	}
+
 	settings["hooks"] = hooks
 
 	return writeSettings(settingsPath, settings)
@@ -107,6 +122,24 @@ func readSettings(path string) (map[string]any, error) {
 	}
 
 	return settings, nil
+}
+
+func removePurseFirstEntries(entries []any) []any {
+	var filtered []any
+	for _, existing := range entries {
+		existingMap, ok := existing.(map[string]any)
+		if !ok {
+			filtered = append(filtered, existing)
+			continue
+		}
+
+		if isPurseFirstEntry(existingMap) {
+			continue
+		}
+
+		filtered = append(filtered, existing)
+	}
+	return filtered
 }
 
 func isPurseFirstEntry(entry map[string]any) bool {
