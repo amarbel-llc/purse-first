@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/friedenberg/purse-first/internal/hook"
+	"github.com/friedenberg/purse-first/internal/marketplace"
 	"github.com/friedenberg/purse-first/internal/mcp"
 )
 
@@ -86,7 +87,44 @@ func main() {
 
 	installCmd.Flags().BoolVar(&projectFlag, "project", false, "install to project settings instead of global")
 
-	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd)
+	var (
+		pluginsDir string
+		configPath string
+		outputPath string
+	)
+
+	genMarketplaceCmd := &cobra.Command{
+		Use:   "generate-marketplace",
+		Short: "Generate .claude-plugin/marketplace.json from discovered plugins",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := marketplace.ReadConfig(configPath)
+			if err != nil {
+				return fmt.Errorf("reading config: %w", err)
+			}
+
+			discovered, err := marketplace.DiscoverPlugins(pluginsDir)
+			if err != nil {
+				return fmt.Errorf("discovering plugins: %w", err)
+			}
+
+			m := marketplace.Generate(config, discovered)
+
+			if err := marketplace.Write(m, outputPath); err != nil {
+				return fmt.Errorf("writing marketplace.json: %w", err)
+			}
+
+			fmt.Fprintf(os.Stderr, "wrote %s (%d plugins)\n", outputPath, len(m.Plugins))
+			return nil
+		},
+	}
+
+	genMarketplaceCmd.Flags().StringVar(&pluginsDir, "plugins-dir", "", "directory containing plugin.json files")
+	genMarketplaceCmd.Flags().StringVar(&configPath, "config", "", "marketplace config file with metadata")
+	genMarketplaceCmd.Flags().StringVar(&outputPath, "output", ".claude-plugin/marketplace.json", "output path")
+	genMarketplaceCmd.MarkFlagRequired("plugins-dir")
+	genMarketplaceCmd.MarkFlagRequired("config")
+
+	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, genMarketplaceCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)

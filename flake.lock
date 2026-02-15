@@ -418,11 +418,11 @@
         "utils": "utils_12"
       },
       "locked": {
-        "lastModified": 1771098335,
-        "narHash": "sha256-aywOvRlSxuSFhdUydNzFVqJY3PH/vWX0p2KMkrEPFKw=",
+        "lastModified": 1771170269,
+        "narHash": "sha256-/qZQ5g6in/0L645abxEo+NsHyngSzERhPXuauGZwghQ=",
         "owner": "friedenberg",
         "repo": "nix-mcp-server",
-        "rev": "dff48379fa66c49a3eb768fb0d117b89f776c951",
+        "rev": "d886221544c960cc8d846cc718cad71cd64b5989",
         "type": "github"
       },
       "original": {

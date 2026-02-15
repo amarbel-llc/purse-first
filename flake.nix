@@ -121,6 +121,11 @@
           postBuild = ''
             makeWrapper ${purse-first-pkg}/bin/purse-first $out/bin/purse-first \
               --set PURSE_FIRST_PLUGINS_DIR "$out/share/purse-first"
+
+            $out/bin/purse-first generate-marketplace \
+              --plugins-dir "$out/share/purse-first" \
+              --config ${./marketplace-config.json} \
+              --output "$out/.claude-plugin/marketplace.json"
           '';
         };
       in

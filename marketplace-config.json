@@ -1,0 +1,38 @@
+{
+  "name": "purse-first",
+  "description": "MCP servers and tool routing for Claude Code, built with Nix",
+  "owner": {
+    "name": "friedenberg",
+    "email": "sasha@friedenberg.me"
+  },
+  "plugins": {
+    "grit": {
+      "description": "Git operations via MCP — stage, commit, push, log, blame, and more",
+      "version": "0.1.0",
+      "homepage": "https://github.com/amarbel-llc/grit",
+      "category": "development",
+      "tags": ["git", "version-control", "mcp"]
+    },
+    "get-hubbed": {
+      "description": "GitHub CLI wrapper via MCP — issues, pull requests, and repos",
+      "version": "0.1.0",
+      "homepage": "https://github.com/amarbel-llc/get-hubbed",
+      "category": "development",
+      "tags": ["github", "issues", "pull-requests", "mcp"]
+    },
+    "lux": {
+      "description": "LSP multiplexer via MCP — hover, definitions, references, and symbols",
+      "version": "0.1.0",
+      "homepage": "https://github.com/friedenberg/lux",
+      "category": "development",
+      "tags": ["lsp", "code-intelligence", "mcp"]
+    },
+    "nix": {
+      "description": "Nix CLI operations via MCP — build, evaluate, search, and manage flakes",
+      "version": "0.1.0",
+      "homepage": "https://github.com/friedenberg/nix-mcp-server",
+      "category": "development",
+      "tags": ["nix", "package-manager", "mcp"]
+    }
+  }
+}
