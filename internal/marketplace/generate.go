@@ -40,10 +40,33 @@ func DiscoverPlugins(pluginsDir string) ([]DiscoveredPlugin, error) {
 			continue
 		}
 
+		p.StorePath = resolveStorePath(path)
+
 		plugins = append(plugins, p)
 	}
 
 	return plugins, nil
+}
+
+func resolveStorePath(manifestPath string) string {
+	resolved, err := filepath.EvalSymlinks(manifestPath)
+	if err != nil {
+		return ""
+	}
+
+	// Nix store paths are /nix/store/<hash>-<name>/...
+	// Walk up from the resolved path to find the store entry.
+	dir := filepath.Dir(resolved)
+	nixStore := filepath.Clean("/nix/store")
+	for dir != "/" && dir != "." {
+		parent := filepath.Dir(dir)
+		if parent == nixStore {
+			return dir
+		}
+		dir = parent
+	}
+
+	return ""
 }
 
 func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
@@ -70,10 +93,15 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 			mcpServer["args"] = dp.Args
 		}
 
+		source := "./" + dp.Name
+		if dp.StorePath != "" {
+			source = dp.StorePath
+		}
+
 		strict := false
 		plugin := Plugin{
 			Name:       dp.Name,
-			Source:     "./bin/" + dp.Name,
+			Source:     source,
 			Strict:     &strict,
 			McpServers: map[string]any{dp.Name: mcpServer},
 		}

@@ -54,8 +54,9 @@ type PluginMeta struct {
 
 // DiscoveredPlugin holds the MCP server fields read from a purse plugin.json.
 type DiscoveredPlugin struct {
-	Name    string   `json:"name"`
-	Type    string   `json:"type"`
-	Command string   `json:"command"`
-	Args    []string `json:"args"`
+	Name      string   `json:"name"`
+	Type      string   `json:"type"`
+	Command   string   `json:"command"`
+	Args      []string `json:"args"`
+	StorePath string   `json:"-"`
 }

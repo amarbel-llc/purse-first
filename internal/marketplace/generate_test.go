@@ -24,7 +24,7 @@ func TestGenerate(t *testing.T) {
 	}
 
 	discovered := []DiscoveredPlugin{
-		{Name: "alpha", Type: "stdio", Command: "alpha-server", Args: []string{"serve"}},
+		{Name: "alpha", Type: "stdio", Command: "alpha-server", Args: []string{"serve"}, StorePath: "/nix/store/abc123-alpha-1.0.0"},
 		{Name: "beta", Type: "stdio", Command: "beta-server"},
 	}
 
@@ -59,8 +59,8 @@ func TestGenerate(t *testing.T) {
 	if alpha.Homepage != "https://example.com/alpha" {
 		t.Errorf("alpha.homepage = %q", alpha.Homepage)
 	}
-	if alpha.Source != "./bin/alpha" {
-		t.Errorf("alpha.source = %q, want %q", alpha.Source, "./bin/alpha")
+	if alpha.Source != "/nix/store/abc123-alpha-1.0.0" {
+		t.Errorf("alpha.source = %q, want %q", alpha.Source, "/nix/store/abc123-alpha-1.0.0")
 	}
 	if alpha.Strict == nil || *alpha.Strict != false {
 		t.Error("alpha.strict should be false")
@@ -85,6 +85,9 @@ func TestGenerate(t *testing.T) {
 	}
 	if beta.Version != "0.1.0" {
 		t.Errorf("beta.version = %q, want default", beta.Version)
+	}
+	if beta.Source != "./beta" {
+		t.Errorf("beta.source = %q, want %q", beta.Source, "./beta")
 	}
 }
 
