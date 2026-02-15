@@ -15,15 +15,8 @@ type hookEntry struct {
 }
 
 type hookMatcher struct {
-	Matcher string      `json:"matcher,omitempty"`
+	Matcher string      `json:"matcher"`
 	Hooks   []hookEntry `json:"hooks"`
-}
-
-type hookSpec struct {
-	eventName string
-	matcher   string
-	command   string
-	timeout   int
 }
 
 func Install(binaryPath string, project bool) error {
@@ -37,23 +30,14 @@ func Install(binaryPath string, project bool) error {
 		return err
 	}
 
-	specs := []hookSpec{
-		{
-			eventName: "PreToolUse",
-			matcher:   "Read|Edit|Write|Grep|Glob|Bash",
-			command:   binaryPath + " hook",
-			timeout:   5,
-		},
-		{
-			eventName: "PostToolUse",
-			matcher:   "Read|Edit|Write",
-			command:   binaryPath + " post-hook",
-			timeout:   5,
-		},
-		{
-			eventName: "Stop",
-			command:   binaryPath + " session-end",
-			timeout:   5,
+	entry := hookMatcher{
+		Matcher: "Read|Edit|Write|Grep|Glob|Bash",
+		Hooks: []hookEntry{
+			{
+				Type:    "command",
+				Command: binaryPath + " hook",
+				Timeout: 5,
+			},
 		},
 	}
 
@@ -62,63 +46,34 @@ func Install(binaryPath string, project bool) error {
 		hooks = make(map[string]any)
 	}
 
-	for _, spec := range specs {
-		entry := hookMatcher{
-			Matcher: spec.matcher,
-			Hooks: []hookEntry{
-				{
-					Type:    "command",
-					Command: spec.command,
-					Timeout: spec.timeout,
-				},
-			},
-		}
+	preToolUse, _ := hooks["PreToolUse"].([]any)
 
-		upsertHook(hooks, spec.eventName, entry, binaryPath)
-	}
-
-	settings["hooks"] = hooks
-
-	return writeSettings(settingsPath, settings)
-}
-
-func upsertHook(hooks map[string]any, eventName string, entry hookMatcher, binaryPath string) {
 	entryJSON, _ := json.Marshal(entry)
 	var entryMap map[string]any
 	json.Unmarshal(entryJSON, &entryMap)
 
-	existing, _ := hooks[eventName].([]any)
-
-	found := false
-	for i, e := range existing {
-		eMap, ok := e.(map[string]any)
+	// Remove any existing purse-first hook entries (handles stale nix store paths)
+	var filtered []any
+	for _, existing := range preToolUse {
+		existingMap, ok := existing.(map[string]any)
 		if !ok {
+			filtered = append(filtered, existing)
 			continue
 		}
 
-		eHooks, _ := eMap["hooks"].([]any)
-		for _, h := range eHooks {
-			hMap, ok := h.(map[string]any)
-			if !ok {
-				continue
-			}
-			cmd, _ := hMap["command"].(string)
-			if cmd != "" && strings.HasPrefix(cmd, binaryPath) {
-				existing[i] = entryMap
-				found = true
-				break
-			}
+		if isPurseFirstEntry(existingMap) {
+			continue
 		}
-		if found {
-			break
-		}
+
+		filtered = append(filtered, existing)
 	}
 
-	if !found {
-		existing = append(existing, entryMap)
-	}
+	preToolUse = append(filtered, entryMap)
 
-	hooks[eventName] = existing
+	hooks["PreToolUse"] = preToolUse
+	settings["hooks"] = hooks
+
+	return writeSettings(settingsPath, settings)
 }
 
 func settingsFilePath(project bool) (string, error) {
@@ -152,6 +107,21 @@ func readSettings(path string) (map[string]any, error) {
 	}
 
 	return settings, nil
+}
+
+func isPurseFirstEntry(entry map[string]any) bool {
+	hooks, _ := entry["hooks"].([]any)
+	for _, h := range hooks {
+		hMap, ok := h.(map[string]any)
+		if !ok {
+			continue
+		}
+		cmd, _ := hMap["command"].(string)
+		if strings.Contains(cmd, "purse-first") {
+			return true
+		}
+	}
+	return false
 }
 
 func writeSettings(path string, settings map[string]any) error {
