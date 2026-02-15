@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type hookEntry struct {
@@ -47,40 +48,27 @@ func Install(binaryPath string, project bool) error {
 
 	preToolUse, _ := hooks["PreToolUse"].([]any)
 
-	// Check if purse-first hook already exists
 	entryJSON, _ := json.Marshal(entry)
 	var entryMap map[string]any
 	json.Unmarshal(entryJSON, &entryMap)
 
-	found := false
-	for i, existing := range preToolUse {
+	// Remove any existing purse-first hook entries (handles stale nix store paths)
+	var filtered []any
+	for _, existing := range preToolUse {
 		existingMap, ok := existing.(map[string]any)
 		if !ok {
+			filtered = append(filtered, existing)
 			continue
 		}
 
-		existingHooks, _ := existingMap["hooks"].([]any)
-		for _, h := range existingHooks {
-			hMap, ok := h.(map[string]any)
-			if !ok {
-				continue
-			}
-			cmd, _ := hMap["command"].(string)
-			if len(cmd) > 0 && cmd == binaryPath+" hook" {
-				// Update existing entry
-				preToolUse[i] = entryMap
-				found = true
-				break
-			}
+		if isPurseFirstEntry(existingMap) {
+			continue
 		}
-		if found {
-			break
-		}
+
+		filtered = append(filtered, existing)
 	}
 
-	if !found {
-		preToolUse = append(preToolUse, entryMap)
-	}
+	preToolUse = append(filtered, entryMap)
 
 	hooks["PreToolUse"] = preToolUse
 	settings["hooks"] = hooks
@@ -119,6 +107,21 @@ func readSettings(path string) (map[string]any, error) {
 	}
 
 	return settings, nil
+}
+
+func isPurseFirstEntry(entry map[string]any) bool {
+	hooks, _ := entry["hooks"].([]any)
+	for _, h := range hooks {
+		hMap, ok := h.(map[string]any)
+		if !ok {
+			continue
+		}
+		cmd, _ := hMap["command"].(string)
+		if strings.Contains(cmd, "purse-first") {
+			return true
+		}
+	}
+	return false
 }
 
 func writeSettings(path string, settings map[string]any) error {

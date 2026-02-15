@@ -73,7 +73,6 @@
                 --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.gh ]}
             '';
 
-        # purse-first with static build flags
         purse-first-pkg = pkgs.buildGoApplication {
           pname = "purse-first";
           inherit version;
@@ -113,6 +112,22 @@
             nix-mcp-server-pkg
             purse-first-pkg
           ];
+          postBuild = ''
+            mkdir -p $out/share/purse-first
+            ${pkgs.jq}/bin/jq -n \
+              --arg grit "${grit-pkg}/bin/grit" \
+              --arg get_hubbed "${get-hubbed-pkg}/bin/get-hubbed" \
+              --arg lux "${lux-pkg}/bin/lux" \
+              --arg nix_mcp "${nix-mcp-server-pkg}/bin/nix-mcp-server" \
+              '{
+                servers: [
+                  {name: "grit", type: "stdio", command: $grit, args: []},
+                  {name: "get-hubbed", type: "stdio", command: $get_hubbed, args: []},
+                  {name: "lux", type: "stdio", command: $lux, args: ["mcp", "stdio"]},
+                  {name: "nix", type: "stdio", command: $nix_mcp, args: []}
+                ]
+              }' > $out/share/purse-first/marketplace.json
+          '';
         };
       in
       {
@@ -150,78 +165,8 @@
           type = "app";
           program = toString (
             pkgs.writeShellScript "install-marketplace" ''
-              set -euo pipefail
-
-              CLAUDE_CONFIG_DIR="''${HOME}/.claude"
-              MCP_CONFIG_FILE="''${CLAUDE_CONFIG_DIR}/mcp.json"
-
-              log() {
-                ${pkgs.gum}/bin/gum style --foreground 212 "$1"
-              }
-
-              log_success() {
-                ${pkgs.gum}/bin/gum style --foreground 82 "$1"
-              }
-
-              log_error() {
-                ${pkgs.gum}/bin/gum style --foreground 196 "$1"
-              }
-
-              if [[ ! -d "$CLAUDE_CONFIG_DIR" ]]; then
-                log "Creating $CLAUDE_CONFIG_DIR..."
-                mkdir -p "$CLAUDE_CONFIG_DIR"
-              fi
-
-              # Build MCP server entries using absolute nix store paths
-              NEW_SERVERS=$(${pkgs.jq}/bin/jq -n \
-                --arg grit_cmd "${grit-pkg}/bin/grit" \
-                --arg get_hubbed_cmd "${get-hubbed-pkg}/bin/get-hubbed" \
-                --arg lux_cmd "${lux-pkg}/bin/lux" \
-                --arg nix_mcp_cmd "${nix-mcp-server-pkg}/bin/nix-mcp-server" \
-                '{
-                  grit: {type: "stdio", command: $grit_cmd, args: []},
-                  "get-hubbed": {type: "stdio", command: $get_hubbed_cmd, args: []},
-                  lux: {type: "stdio", command: $lux_cmd, args: ["mcp", "stdio"]},
-                  nix: {type: "stdio", command: $nix_mcp_cmd, args: []}
-                }')
-
-              if [[ -f "$MCP_CONFIG_FILE" ]]; then
-                log "Found existing MCP config at $MCP_CONFIG_FILE"
-
-                # Check for any existing marketplace servers
-                EXISTING=$(${pkgs.jq}/bin/jq -r '[.mcpServers // {} | keys[] | select(. == "grit" or . == "get-hubbed" or . == "lux" or . == "nix")] | length' "$MCP_CONFIG_FILE")
-
-                if [[ "$EXISTING" -gt 0 ]]; then
-                  if ${pkgs.gum}/bin/gum confirm "Found $EXISTING existing marketplace server(s). Overwrite?"; then
-                    UPDATED=$(${pkgs.jq}/bin/jq --argjson servers "$NEW_SERVERS" '.mcpServers = (.mcpServers // {} | . * $servers)' "$MCP_CONFIG_FILE")
-                    echo "$UPDATED" > "$MCP_CONFIG_FILE"
-                    log_success "Updated marketplace MCP server configurations"
-                  else
-                    log "Skipping MCP config update"
-                  fi
-                else
-                  UPDATED=$(${pkgs.jq}/bin/jq --argjson servers "$NEW_SERVERS" '.mcpServers = (.mcpServers // {} | . * $servers)' "$MCP_CONFIG_FILE")
-                  echo "$UPDATED" > "$MCP_CONFIG_FILE"
-                  log_success "Added marketplace MCP servers to existing configuration"
-                fi
-              else
-                log "Creating new MCP config at $MCP_CONFIG_FILE"
-                ${pkgs.jq}/bin/jq -n --argjson servers "$NEW_SERVERS" '{mcpServers: $servers}' > "$MCP_CONFIG_FILE"
-                log_success "Created MCP configuration"
-              fi
-
-              log ""
-
-              # Install purse-first hook
-              log "Installing purse-first hook..."
-              ${purse-first-pkg}/bin/purse-first install
-              log_success "Installed purse-first hook"
-
-              log ""
-              log "Installation complete! All MCP servers and purse-first hook are configured."
-              log "Configuration written to: $MCP_CONFIG_FILE"
-              log ""
-              log "To verify, run: cat $MCP_CONFIG_FILE"
+              export PURSE_FIRST_MARKETPLACE="${marketplace}/share/purse-first/marketplace.json"
+              exec ${marketplace}/bin/purse-first install "$@"
             ''
           );
         };

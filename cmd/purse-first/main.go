@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/friedenberg/purse-first/internal/hook"
+	"github.com/friedenberg/purse-first/internal/mcp"
 )
 
 func main() {
@@ -31,11 +32,22 @@ func main() {
 
 	installCmd := &cobra.Command{
 		Use:   "install",
-		Short: "Install purse-first hook into Claude Code settings",
+		Short: "Install MCP servers and purse-first hook into Claude Code settings",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			binaryPath, err := selfPath()
 			if err != nil {
 				return fmt.Errorf("finding binary path: %w", err)
+			}
+
+			manifestPath, err := mcp.DiscoverManifest()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "no marketplace manifest found, skipping MCP server install: %v\n", err)
+			} else {
+				count, err := mcp.InstallFromMarketplace(manifestPath)
+				if err != nil {
+					return fmt.Errorf("installing MCP servers: %w", err)
+				}
+				fmt.Fprintf(os.Stderr, "installed %d MCP server(s) to ~/.claude.json\n", count)
 			}
 
 			if err := hook.Install(binaryPath, projectFlag); err != nil {
