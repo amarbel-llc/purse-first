@@ -64,6 +64,11 @@ test-integration:
     nix develop --command zz-tests_bats/bin/run-sandcastle-bats.bash \
       bats --tap zz-tests_bats/*.bats
 
+# Validate plugin repos have correct .claude-plugin/plugin.json
+test-validate-repos:
+    nix develop --command zz-tests_bats/bin/run-sandcastle-bats.bash \
+      bats --tap zz-tests_bats/validate_plugin_repos.bats
+
 # Run all tests (unit + integration)
 test-all: test test-integration
 
