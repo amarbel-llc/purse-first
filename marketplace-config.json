@@ -1,6 +1,7 @@
 {
   "name": "purse-first",
   "description": "MCP servers and tool routing for Claude Code, built with Nix",
+  "repo": "amarbel-llc/purse-first",
   "owner": {
     "name": "friedenberg",
     "email": "sasha@friedenberg.me"

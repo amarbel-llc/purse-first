@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
-	"strings"
 
 	"github.com/amarbel-llc/purse-first/purse"
 )
@@ -80,13 +78,6 @@ func resolveStorePath(manifestPath string) string {
 	return ""
 }
 
-func repoFromHomepage(homepage string) string {
-	if repo, ok := strings.CutPrefix(homepage, "https://github.com/"); ok {
-		return strings.TrimSuffix(repo, "/")
-	}
-	return ""
-}
-
 func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 	m := Marketplace{
 		Name:  config.Name,
@@ -99,74 +90,46 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 		}
 	}
 
-	for _, dp := range discovered {
-		meta := config.Plugins[dp.Name]
+	mcpServers := make(map[string]any, len(discovered))
 
+	for _, dp := range discovered {
 		serverType := dp.Type
 		if serverType == "" {
 			serverType = "stdio"
 		}
 
-		mcpServer := map[string]any{
+		server := map[string]any{
 			"type":    serverType,
 			"command": dp.Command,
 		}
 		if len(dp.Args) > 0 {
-			mcpServer["args"] = dp.Args
+			server["args"] = dp.Args
 		}
 
+		mcpServers[dp.Name] = server
+	}
+
+	if len(mcpServers) > 0 {
 		var source any
-		repo := meta.Repo
-		if repo == "" {
-			repo = repoFromHomepage(meta.Homepage)
-		}
-		if repo != "" {
-			source = GitHubSource{Source: "github", Repo: repo}
+		if config.Repo != "" {
+			source = GitHubSource{Source: "github", Repo: config.Repo}
 		} else {
-			s := "./" + dp.Name
-			if dp.StorePath != "" {
-				s = dp.StorePath
-			}
-			source = s
+			source = "."
 		}
 
 		strict := false
 		plugin := Plugin{
-			Name:       dp.Name,
-			Source:     source,
-			Strict:     &strict,
-			McpServers: map[string]any{dp.Name: mcpServer},
+			Name:        config.Name,
+			Description: config.Description,
+			Source:      source,
+			Strict:      &strict,
+			McpServers:  mcpServers,
 		}
 
-		applyMeta(&plugin, meta)
 		m.Plugins = append(m.Plugins, plugin)
 	}
 
-	sort.Slice(m.Plugins, func(i, j int) bool {
-		return m.Plugins[i].Name < m.Plugins[j].Name
-	})
-
 	return m
-}
-
-func applyMeta(p *Plugin, meta PluginMeta) {
-	if meta.Description != "" {
-		p.Description = meta.Description
-	}
-
-	if meta.Version != "" {
-		p.Version = meta.Version
-	}
-
-	if meta.Homepage != "" {
-		p.Homepage = meta.Homepage
-	}
-	if meta.Category != "" {
-		p.Category = meta.Category
-	}
-	if len(meta.Tags) > 0 {
-		p.Tags = meta.Tags
-	}
 }
 
 func Write(m Marketplace, outputPath string) error {

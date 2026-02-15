@@ -11,6 +11,7 @@ func TestGenerate(t *testing.T) {
 	config := Config{
 		Name:        "test-marketplace",
 		Description: "A test marketplace for unit tests",
+		Repo:        "example/test-marketplace",
 		Owner:       Owner{Name: "test", Email: "test@example.com"},
 		Plugins: map[string]PluginMeta{
 			"alpha": {
@@ -31,102 +32,100 @@ func TestGenerate(t *testing.T) {
 
 	m := Generate(config, discovered)
 
-	if m.Schema != "" {
-		t.Errorf("schema = %q, want empty (omitted)", m.Schema)
-	}
 	if m.Name != "test-marketplace" {
 		t.Errorf("name = %q, want %q", m.Name, "test-marketplace")
 	}
 	if m.Metadata == nil || m.Metadata.Description != "A test marketplace for unit tests" {
 		t.Errorf("metadata.description = %v, want %q", m.Metadata, "A test marketplace for unit tests")
 	}
-	if len(m.Plugins) != 2 {
-		t.Fatalf("len(plugins) = %d, want 2", len(m.Plugins))
+	if len(m.Plugins) != 1 {
+		t.Fatalf("len(plugins) = %d, want 1", len(m.Plugins))
 	}
 
-	// Plugins should be sorted by name
-	if m.Plugins[0].Name != "alpha" {
-		t.Errorf("plugins[0].name = %q, want %q", m.Plugins[0].Name, "alpha")
+	plugin := m.Plugins[0]
+	if plugin.Name != "test-marketplace" {
+		t.Errorf("plugin.name = %q, want %q", plugin.Name, "test-marketplace")
 	}
-	if m.Plugins[1].Name != "beta" {
-		t.Errorf("plugins[1].name = %q, want %q", m.Plugins[1].Name, "beta")
-	}
-
-	// Alpha should have config metadata
-	alpha := m.Plugins[0]
-	if alpha.Description != "Alpha MCP server for testing" {
-		t.Errorf("alpha.description = %q", alpha.Description)
-	}
-	if alpha.Version != "1.0.0" {
-		t.Errorf("alpha.version = %q", alpha.Version)
-	}
-	if alpha.Homepage != "https://github.com/example/alpha" {
-		t.Errorf("alpha.homepage = %q", alpha.Homepage)
+	if plugin.Description != "A test marketplace for unit tests" {
+		t.Errorf("plugin.description = %q", plugin.Description)
 	}
 
-	// Alpha has a repo, so source should be a GitHubSource
-	alphaSource, ok := alpha.Source.(GitHubSource)
+	source, ok := plugin.Source.(GitHubSource)
 	if !ok {
-		t.Fatalf("alpha.source type = %T, want GitHubSource", alpha.Source)
+		t.Fatalf("plugin.source type = %T, want GitHubSource", plugin.Source)
 	}
-	if alphaSource.Source != "github" {
-		t.Errorf("alpha.source.source = %q, want %q", alphaSource.Source, "github")
-	}
-	if alphaSource.Repo != "example/alpha" {
-		t.Errorf("alpha.source.repo = %q, want %q", alphaSource.Repo, "example/alpha")
+	if source.Repo != "example/test-marketplace" {
+		t.Errorf("plugin.source.repo = %q, want %q", source.Repo, "example/test-marketplace")
 	}
 
-	if alpha.Strict == nil || *alpha.Strict != false {
-		t.Error("alpha.strict should be false")
+	if plugin.Strict == nil || *plugin.Strict != false {
+		t.Error("plugin.strict should be false")
 	}
 
-	mcpServers := alpha.McpServers
-	srv, ok := mcpServers["alpha"].(map[string]any)
+	if len(plugin.McpServers) != 2 {
+		t.Fatalf("len(mcpServers) = %d, want 2", len(plugin.McpServers))
+	}
+
+	alphaSrv, ok := plugin.McpServers["alpha"].(map[string]any)
 	if !ok {
-		t.Fatal("alpha.mcpServers.alpha missing")
+		t.Fatal("mcpServers.alpha missing")
 	}
-	if srv["command"] != "alpha-server" {
-		t.Errorf("mcpServers.alpha.command = %v", srv["command"])
+	if alphaSrv["command"] != "alpha-server" {
+		t.Errorf("mcpServers.alpha.command = %v", alphaSrv["command"])
 	}
-	if args, ok := srv["args"].([]string); !ok || len(args) != 1 || args[0] != "serve" {
-		t.Errorf("mcpServers.alpha.args = %v", srv["args"])
-	}
-
-	// Beta should have no description/version (no defaults set)
-	beta := m.Plugins[1]
-	if beta.Description != "" {
-		t.Errorf("beta.description = %q, want empty", beta.Description)
-	}
-	if beta.Version != "" {
-		t.Errorf("beta.version = %q, want empty", beta.Version)
+	if args, ok := alphaSrv["args"].([]string); !ok || len(args) != 1 || args[0] != "serve" {
+		t.Errorf("mcpServers.alpha.args = %v", alphaSrv["args"])
 	}
 
-	// Beta has no repo/homepage, so source should be a fallback string
-	betaSource, ok := beta.Source.(string)
+	betaSrv, ok := plugin.McpServers["beta"].(map[string]any)
 	if !ok {
-		t.Fatalf("beta.source type = %T, want string", beta.Source)
+		t.Fatal("mcpServers.beta missing")
 	}
-	if betaSource != "./beta" {
-		t.Errorf("beta.source = %q, want %q", betaSource, "./beta")
+	if betaSrv["command"] != "beta-server" {
+		t.Errorf("mcpServers.beta.command = %v", betaSrv["command"])
+	}
+	if _, hasArgs := betaSrv["args"]; hasArgs {
+		t.Errorf("mcpServers.beta should not have args")
 	}
 }
 
-func TestRepoFromHomepage(t *testing.T) {
-	tests := []struct {
-		homepage string
-		want     string
-	}{
-		{"https://github.com/amarbel-llc/grit", "amarbel-llc/grit"},
-		{"https://github.com/friedenberg/lux/", "friedenberg/lux"},
-		{"https://example.com/foo", ""},
-		{"", ""},
+func TestGenerateNoRepo(t *testing.T) {
+	config := Config{
+		Name:    "test-marketplace",
+		Owner:   Owner{Name: "test"},
+		Plugins: map[string]PluginMeta{},
 	}
 
-	for _, tt := range tests {
-		got := repoFromHomepage(tt.homepage)
-		if got != tt.want {
-			t.Errorf("repoFromHomepage(%q) = %q, want %q", tt.homepage, got, tt.want)
-		}
+	discovered := []DiscoveredPlugin{
+		{Name: "alpha", Type: "stdio", Command: "alpha-server"},
+	}
+
+	m := Generate(config, discovered)
+
+	if len(m.Plugins) != 1 {
+		t.Fatalf("len(plugins) = %d, want 1", len(m.Plugins))
+	}
+
+	source, ok := m.Plugins[0].Source.(string)
+	if !ok {
+		t.Fatalf("source type = %T, want string", m.Plugins[0].Source)
+	}
+	if source != "." {
+		t.Errorf("source = %q, want %q", source, ".")
+	}
+}
+
+func TestGenerateEmpty(t *testing.T) {
+	config := Config{
+		Name:    "test-marketplace",
+		Owner:   Owner{Name: "test"},
+		Plugins: map[string]PluginMeta{},
+	}
+
+	m := Generate(config, nil)
+
+	if len(m.Plugins) != 0 {
+		t.Errorf("len(plugins) = %d, want 0", len(m.Plugins))
 	}
 }
 
@@ -172,6 +171,7 @@ func TestReadConfig(t *testing.T) {
 	cfg := Config{
 		Name:        "my-marketplace",
 		Description: "Test marketplace config for validation",
+		Repo:        "example/my-marketplace",
 		Owner:       Owner{Name: "owner", Email: "owner@example.com"},
 		Plugins: map[string]PluginMeta{
 			"tool": {Description: "A tool for testing purposes", Version: "2.0.0"},
@@ -187,6 +187,9 @@ func TestReadConfig(t *testing.T) {
 
 	if got.Name != "my-marketplace" {
 		t.Errorf("name = %q", got.Name)
+	}
+	if got.Repo != "example/my-marketplace" {
+		t.Errorf("repo = %q", got.Repo)
 	}
 	if got.Plugins["tool"].Version != "2.0.0" {
 		t.Errorf("plugins.tool.version = %q", got.Plugins["tool"].Version)

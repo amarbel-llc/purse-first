@@ -62,6 +62,7 @@ type GitHubSource struct {
 type Config struct {
 	Name        string                `json:"name"`
 	Description string                `json:"description,omitempty"`
+	Repo        string                `json:"repo,omitempty"`
 	Owner       Owner                 `json:"owner"`
 	Plugins     map[string]PluginMeta `json:"plugins"`
 }
