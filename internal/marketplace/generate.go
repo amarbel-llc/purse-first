@@ -73,7 +73,7 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 		strict := false
 		plugin := Plugin{
 			Name:       dp.Name,
-			Source:     "./" + config.Name + "/" + dp.Name,
+			Source:     "./bin/" + dp.Name,
 			Strict:     &strict,
 			McpServers: map[string]any{dp.Name: mcpServer},
 		}
