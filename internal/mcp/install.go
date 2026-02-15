@@ -6,37 +6,14 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/amarbel-llc/go-lib-mcp/purse"
 	"github.com/friedenberg/purse-first/internal/mapping"
 )
 
-type ServerEntry struct {
-	Name    string   `json:"name"`
-	Type    string   `json:"type"`
-	Command string   `json:"command"`
-	Args    []string `json:"args"`
-
-	Notifications []Notification    `json:"notifications,omitempty"`
-	Mappings      []mapping.Mapping `json:"mappings,omitempty"`
-}
-
-type Notification struct {
-	On       string           `json:"on"`
-	When     *NotifyCondition `json:"when,omitempty"`
-	HTTPPost HTTPPostAction   `json:"http_post"`
-}
-
-type NotifyCondition struct {
-	HasFilePath      bool `json:"has_file_path,omitempty"`
-	FilePathAbsolute bool `json:"file_path_absolute,omitempty"`
-}
-
-type HTTPPostAction struct {
-	PortEnv      string         `json:"port_env,omitempty"`
-	DefaultPort  int            `json:"default_port,omitempty"`
-	Path         string         `json:"path"`
-	Body         map[string]any `json:"body,omitempty"`
-	BodyTemplate map[string]any `json:"body_template,omitempty"`
-}
+type ServerEntry = purse.Plugin
+type Notification = purse.Notification
+type NotifyCondition = purse.NotifyCondition
+type HTTPPostAction = purse.HTTPPostAction
 
 func Install(servers []ServerEntry) error {
 	configPath, err := mcpConfigPath()
