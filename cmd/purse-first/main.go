@@ -7,9 +7,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/friedenberg/purse-first/internal/hook"
-	"github.com/friedenberg/purse-first/internal/marketplace"
-	"github.com/friedenberg/purse-first/internal/mcp"
+	"github.com/amarbel-llc/purse-first/internal/hook"
+	"github.com/amarbel-llc/purse-first/internal/marketplace"
+	"github.com/amarbel-llc/purse-first/internal/mcp"
 )
 
 func main() {

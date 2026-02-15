@@ -6,8 +6,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/friedenberg/purse-first/internal/decision"
-	"github.com/friedenberg/purse-first/internal/mapping"
+	"github.com/amarbel-llc/purse-first/internal/decision"
+	"github.com/amarbel-llc/purse-first/internal/mapping"
 )
 
 func extractFilePath(toolInput map[string]any) string {

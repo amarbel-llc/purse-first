@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/friedenberg/purse-first/internal/decision"
-	"github.com/friedenberg/purse-first/internal/mapping"
+	"github.com/amarbel-llc/purse-first/internal/decision"
+	"github.com/amarbel-llc/purse-first/internal/mapping"
 )
 
 func setupMappings(t *testing.T, dir string) {

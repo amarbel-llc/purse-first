@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/amarbel-llc/purse-first/purse"
 )
 
 func ReadConfig(path string) (Config, error) {
@@ -36,14 +38,22 @@ func DiscoverPlugins(pluginsDir string) ([]DiscoveredPlugin, error) {
 			continue
 		}
 
-		var p DiscoveredPlugin
+		var p purse.Plugin
 		if err := json.Unmarshal(data, &p); err != nil {
 			continue
 		}
 
-		p.StorePath = resolveStorePath(path)
+		storePath := resolveStorePath(path)
 
-		plugins = append(plugins, p)
+		for name, srv := range p.McpServers {
+			plugins = append(plugins, DiscoveredPlugin{
+				Name:      name,
+				Type:      srv.Type,
+				Command:   srv.Command,
+				Args:      srv.Args,
+				StorePath: storePath,
+			})
+		}
 	}
 
 	return plugins, nil

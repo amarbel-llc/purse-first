@@ -137,10 +137,14 @@ func TestDiscoverPlugins(t *testing.T) {
 	os.MkdirAll(alphaDir, 0o755)
 
 	plugin := map[string]any{
-		"name":    "alpha",
-		"type":    "stdio",
-		"command": "alpha-cmd",
-		"args":    []string{"--flag"},
+		"name": "alpha",
+		"mcpServers": map[string]any{
+			"alpha": map[string]any{
+				"type":    "stdio",
+				"command": "alpha-cmd",
+				"args":    []string{"--flag"},
+			},
+		},
 	}
 	data, _ := json.MarshalIndent(plugin, "", "  ")
 	os.WriteFile(filepath.Join(alphaDir, "plugin.json"), data, 0o644)

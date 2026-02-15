@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-)
 
-type Marketplace struct {
-	Servers []ServerEntry `json:"servers"`
-}
+	"github.com/amarbel-llc/purse-first/purse"
+)
 
 func DiscoverPlugins() ([]ServerEntry, error) {
 	pluginsDir, root, err := resolvePluginsDir()
@@ -24,12 +22,6 @@ func DiscoverPlugins() ([]ServerEntry, error) {
 
 	if len(entries) > 0 {
 		return entries, nil
-	}
-
-	// Fallback: try legacy marketplace.json
-	manifest := filepath.Join(pluginsDir, "marketplace.json")
-	if _, err := os.Stat(manifest); err == nil {
-		return readLegacyManifest(manifest)
 	}
 
 	return nil, fmt.Errorf("no plugin manifests found in %s", pluginsDir)
@@ -78,32 +70,25 @@ func discoverFromPluginDir(pluginsDir, root string) ([]ServerEntry, error) {
 			continue
 		}
 
-		var entry ServerEntry
-		if err := json.Unmarshal(data, &entry); err != nil {
+		var p purse.Plugin
+		if err := json.Unmarshal(data, &p); err != nil {
 			continue
 		}
 
-		// Resolve command name to absolute binary path
-		if entry.Command != "" && !filepath.IsAbs(entry.Command) {
-			entry.Command = filepath.Join(root, "bin", entry.Command)
-		}
+		for name, srv := range p.McpServers {
+			cmd := srv.Command
+			if cmd != "" && !filepath.IsAbs(cmd) {
+				cmd = filepath.Join(root, "bin", cmd)
+			}
 
-		entries = append(entries, entry)
+			entries = append(entries, ServerEntry{
+				Name:    name,
+				Type:    srv.Type,
+				Command: cmd,
+				Args:    srv.Args,
+			})
+		}
 	}
 
 	return entries, nil
-}
-
-func readLegacyManifest(path string) ([]ServerEntry, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("reading manifest: %w", err)
-	}
-
-	var m Marketplace
-	if err := json.Unmarshal(data, &m); err != nil {
-		return nil, fmt.Errorf("parsing manifest: %w", err)
-	}
-
-	return m.Servers, nil
 }

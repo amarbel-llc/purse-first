@@ -1,7 +1,18 @@
 package mapping
 
-import "github.com/amarbel-llc/go-lib-mcp/purse"
+type ToolSuggestion struct {
+	Name    string `json:"name"`
+	UseWhen string `json:"use_when"`
+}
 
-type ToolSuggestion = purse.ToolSuggestion
-type Mapping = purse.Mapping
-type MappingFile = purse.MappingFile
+type Mapping struct {
+	Replaces   string           `json:"replaces"`
+	Extensions []string         `json:"extensions,omitempty"`
+	Tools      []ToolSuggestion `json:"tools"`
+	Reason     string           `json:"reason"`
+}
+
+type MappingFile struct {
+	Server   string    `json:"server"`
+	Mappings []Mapping `json:"mappings"`
+}

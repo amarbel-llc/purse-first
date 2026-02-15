@@ -3,7 +3,7 @@ package hook
 import (
 	"io"
 
-	"github.com/friedenberg/purse-first/internal/mcp"
+	"github.com/amarbel-llc/purse-first/internal/mcp"
 )
 
 func HandleSessionEnd(stdin io.Reader, stdout io.Writer) error {

@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/amarbel-llc/go-lib-mcp/purse"
-	"github.com/friedenberg/purse-first/internal/mapping"
 )
 
-type ServerEntry = purse.Plugin
-type Notification = purse.Notification
-type NotifyCondition = purse.NotifyCondition
-type HTTPPostAction = purse.HTTPPostAction
+type ServerEntry struct {
+	Name    string
+	Type    string
+	Command string
+	Args    []string
+}
 
 func Install(servers []ServerEntry) error {
 	configPath, err := mcpConfigPath()
@@ -59,39 +58,7 @@ func InstallFromPlugins(servers []ServerEntry) (int, error) {
 		return 0, err
 	}
 
-	installDefaultMappings(servers)
-
 	return len(servers), nil
-}
-
-func installDefaultMappings(servers []ServerEntry) {
-	stateDir := mapping.StateDir()
-	os.MkdirAll(stateDir, 0o755)
-
-	for _, s := range servers {
-		if len(s.Mappings) == 0 {
-			continue
-		}
-
-		dest := filepath.Join(stateDir, s.Name+".json")
-
-		// Don't overwrite user-managed mappings
-		if _, err := os.Stat(dest); err == nil {
-			continue
-		}
-
-		mf := mapping.MappingFile{
-			Server:   s.Name,
-			Mappings: s.Mappings,
-		}
-
-		data, err := json.MarshalIndent(mf, "", "  ")
-		if err != nil {
-			continue
-		}
-
-		os.WriteFile(dest, append(data, '\n'), 0o644)
-	}
 }
 
 func mcpConfigPath() (string, error) {
