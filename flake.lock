@@ -493,11 +493,11 @@
         "utils": "utils_8"
       },
       "locked": {
-        "lastModified": 1771192985,
-        "narHash": "sha256-5s1B4Cyo4tpcAxrh7sQUuhut1wtCZ3jcVPAMTjRzJNQ=",
+        "lastModified": 1771197766,
+        "narHash": "sha256-oM5kDhrd2e0bfn6B1tQROVdgJRUJvpyEcrcaZmlmbno=",
         "owner": "amarbel-llc",
         "repo": "grit",
-        "rev": "2429ce48e1f02bdf39788ad116dfd058942bcdc2",
+        "rev": "1e671901b1ae4b409c45513223ecea320b0e418d",
         "type": "github"
       },
       "original": {
@@ -519,11 +519,11 @@
         "utils": "utils_11"
       },
       "locked": {
-        "lastModified": 1771193255,
-        "narHash": "sha256-RR1z3fd7TPjJwBA7yjqmS3wHIJtc5Q3MwQxG6YAswqQ=",
+        "lastModified": 1771199013,
+        "narHash": "sha256-YPz9WNL4un9/J8qo+SLren1klKuH1cSQVbB8A0g8WMk=",
         "owner": "friedenberg",
         "repo": "lux",
-        "rev": "7b25408846a3a43adc8857cf91141787fda327ac",
+        "rev": "e72d531c591a89f7d584a7dd9cd35e9be61bd64f",
         "type": "github"
       },
       "original": {
@@ -547,11 +547,11 @@
         "utils": "utils_13"
       },
       "locked": {
-        "lastModified": 1771193508,
-        "narHash": "sha256-Ux/AlILI4PjZ/3JpJE4Kobz0Elu20xph6p3NN0Td0l4=",
+        "lastModified": 1771199053,
+        "narHash": "sha256-14Sy767h4tnZk+J9az5Nl8/JRFRU1SWKYXNSJSUfEyo=",
         "owner": "friedenberg",
         "repo": "nix-mcp-server",
-        "rev": "103e17a5a35a9a466c7b579e9e971e5d175e32ea",
+        "rev": "22dc855ad52f2f21ba82ed0f34d89144948de14d",
         "type": "github"
       },
       "original": {
