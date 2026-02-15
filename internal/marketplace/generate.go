@@ -78,7 +78,23 @@ func resolveStorePath(manifestPath string) string {
 	return ""
 }
 
-func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
+func DiscoverSkills(skillsDir string) ([]DiscoveredSkill, error) {
+	matches, err := filepath.Glob(filepath.Join(skillsDir, "*", "SKILL.md"))
+	if err != nil {
+		return nil, fmt.Errorf("globbing skills: %w", err)
+	}
+
+	var skills []DiscoveredSkill
+	for _, path := range matches {
+		name := filepath.Base(filepath.Dir(path))
+		relPath := filepath.Join("skills", name, "SKILL.md")
+		skills = append(skills, DiscoveredSkill{Name: name, Path: relPath})
+	}
+
+	return skills, nil
+}
+
+func Generate(config Config, discovered []DiscoveredPlugin, skills []DiscoveredSkill) Marketplace {
 	m := Marketplace{
 		Name:  config.Name,
 		Owner: config.Owner,
@@ -124,6 +140,41 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 			Source:      source,
 			Strict:      &strict,
 			McpServers:  mcpServers,
+		}
+
+		if len(skills) > 0 {
+			skillsMap := make(map[string]any, len(skills))
+			for _, s := range skills {
+				skillsMap[s.Name] = map[string]any{
+					"path": s.Path,
+				}
+			}
+			plugin.Skills = skillsMap
+		}
+
+		m.Plugins = append(m.Plugins, plugin)
+	} else if len(skills) > 0 {
+		skillsMap := make(map[string]any, len(skills))
+		for _, s := range skills {
+			skillsMap[s.Name] = map[string]any{
+				"path": s.Path,
+			}
+		}
+
+		var source any
+		if config.Repo != "" {
+			source = GitHubSource{Source: "github", Repo: config.Repo}
+		} else {
+			source = "."
+		}
+
+		strict := false
+		plugin := Plugin{
+			Name:        config.Name,
+			Description: config.Description,
+			Source:      source,
+			Strict:      &strict,
+			Skills:      skillsMap,
 		}
 
 		m.Plugins = append(m.Plugins, plugin)

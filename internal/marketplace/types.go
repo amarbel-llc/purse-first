@@ -85,3 +85,9 @@ type DiscoveredPlugin struct {
 	Args      []string `json:"args"`
 	StorePath string   `json:"-"`
 }
+
+// DiscoveredSkill holds a skill found in the skills directory.
+type DiscoveredSkill struct {
+	Name string
+	Path string
+}

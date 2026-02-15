@@ -30,7 +30,7 @@ func TestGenerate(t *testing.T) {
 		{Name: "beta", Type: "stdio", Command: "beta-server"},
 	}
 
-	m := Generate(config, discovered)
+	m := Generate(config, discovered, nil)
 
 	if m.Name != "test-marketplace" {
 		t.Errorf("name = %q, want %q", m.Name, "test-marketplace")
@@ -100,7 +100,7 @@ func TestGenerateNoRepo(t *testing.T) {
 		{Name: "alpha", Type: "stdio", Command: "alpha-server"},
 	}
 
-	m := Generate(config, discovered)
+	m := Generate(config, discovered, nil)
 
 	if len(m.Plugins) != 1 {
 		t.Fatalf("len(plugins) = %d, want 1", len(m.Plugins))
@@ -122,7 +122,7 @@ func TestGenerateEmpty(t *testing.T) {
 		Plugins: map[string]PluginMeta{},
 	}
 
-	m := Generate(config, nil)
+	m := Generate(config, nil, nil)
 
 	if len(m.Plugins) != 0 {
 		t.Errorf("len(plugins) = %d, want 0", len(m.Plugins))
@@ -193,6 +193,102 @@ func TestReadConfig(t *testing.T) {
 	}
 	if got.Plugins["tool"].Version != "2.0.0" {
 		t.Errorf("plugins.tool.version = %q", got.Plugins["tool"].Version)
+	}
+}
+
+func TestGenerateWithSkillsOnly(t *testing.T) {
+	config := Config{
+		Name:        "test-marketplace",
+		Description: "A marketplace with skills only",
+		Repo:        "example/test-marketplace",
+		Owner:       Owner{Name: "test"},
+		Plugins:     map[string]PluginMeta{},
+	}
+
+	skills := []DiscoveredSkill{
+		{Name: "plugin-mcp", Path: "skills/plugin-mcp/SKILL.md"},
+	}
+
+	m := Generate(config, nil, skills)
+
+	if len(m.Plugins) != 1 {
+		t.Fatalf("len(plugins) = %d, want 1", len(m.Plugins))
+	}
+
+	plugin := m.Plugins[0]
+	if plugin.Name != "test-marketplace" {
+		t.Errorf("plugin.name = %q, want %q", plugin.Name, "test-marketplace")
+	}
+
+	if len(plugin.Skills) != 1 {
+		t.Fatalf("len(skills) = %d, want 1", len(plugin.Skills))
+	}
+
+	skill, ok := plugin.Skills["plugin-mcp"].(map[string]any)
+	if !ok {
+		t.Fatal("skills.plugin-mcp missing")
+	}
+	if skill["path"] != "skills/plugin-mcp/SKILL.md" {
+		t.Errorf("skills.plugin-mcp.path = %v", skill["path"])
+	}
+
+	if plugin.McpServers != nil {
+		t.Errorf("plugin should not have mcpServers")
+	}
+}
+
+func TestGenerateWithMcpAndSkills(t *testing.T) {
+	config := Config{
+		Name:        "test-marketplace",
+		Description: "A marketplace with both MCP and skills",
+		Repo:        "example/test-marketplace",
+		Owner:       Owner{Name: "test"},
+		Plugins:     map[string]PluginMeta{},
+	}
+
+	discovered := []DiscoveredPlugin{
+		{Name: "alpha", Type: "stdio", Command: "alpha-server"},
+	}
+
+	skills := []DiscoveredSkill{
+		{Name: "plugin-mcp", Path: "skills/plugin-mcp/SKILL.md"},
+	}
+
+	m := Generate(config, discovered, skills)
+
+	if len(m.Plugins) != 1 {
+		t.Fatalf("len(plugins) = %d, want 1 (skills merged into MCP plugin)", len(m.Plugins))
+	}
+
+	plugin := m.Plugins[0]
+	if len(plugin.McpServers) != 1 {
+		t.Errorf("len(mcpServers) = %d, want 1", len(plugin.McpServers))
+	}
+	if len(plugin.Skills) != 1 {
+		t.Errorf("len(skills) = %d, want 1", len(plugin.Skills))
+	}
+}
+
+func TestDiscoverSkills(t *testing.T) {
+	dir := t.TempDir()
+
+	skillDir := filepath.Join(dir, "my-skill")
+	os.MkdirAll(skillDir, 0o755)
+	os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte("# My Skill"), 0o644)
+
+	skills, err := DiscoverSkills(dir)
+	if err != nil {
+		t.Fatalf("DiscoverSkills: %v", err)
+	}
+	if len(skills) != 1 {
+		t.Fatalf("len(skills) = %d, want 1", len(skills))
+	}
+
+	if skills[0].Name != "my-skill" {
+		t.Errorf("name = %q, want %q", skills[0].Name, "my-skill")
+	}
+	if skills[0].Path != "skills/my-skill/SKILL.md" {
+		t.Errorf("path = %q, want %q", skills[0].Path, "skills/my-skill/SKILL.md")
 	}
 }
 

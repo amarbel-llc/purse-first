@@ -89,6 +89,7 @@ func main() {
 
 	var (
 		pluginsDir string
+		skillsDir  string
 		configPath string
 		outputPath string
 	)
@@ -107,7 +108,15 @@ func main() {
 				return fmt.Errorf("discovering plugins: %w", err)
 			}
 
-			m := marketplace.Generate(config, discovered)
+			var skills []marketplace.DiscoveredSkill
+			if skillsDir != "" {
+				skills, err = marketplace.DiscoverSkills(skillsDir)
+				if err != nil {
+					return fmt.Errorf("discovering skills: %w", err)
+				}
+			}
+
+			m := marketplace.Generate(config, discovered, skills)
 
 			if err := marketplace.Write(m, outputPath); err != nil {
 				return fmt.Errorf("writing marketplace.json: %w", err)
@@ -119,6 +128,7 @@ func main() {
 	}
 
 	genMarketplaceCmd.Flags().StringVar(&pluginsDir, "plugins-dir", "", "directory containing plugin.json files")
+	genMarketplaceCmd.Flags().StringVar(&skillsDir, "skills-dir", "", "directory containing skill definitions")
 	genMarketplaceCmd.Flags().StringVar(&configPath, "config", "", "marketplace config file with metadata")
 	genMarketplaceCmd.Flags().StringVar(&outputPath, "output", ".claude-plugin/marketplace.json", "output path")
 	genMarketplaceCmd.MarkFlagRequired("plugins-dir")
