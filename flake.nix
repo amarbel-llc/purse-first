@@ -135,6 +135,8 @@
               --plugins-dir "$out/share/purse-first" \
               --config ${./marketplace-config.json} \
               --output "$out/.claude-plugin/marketplace.json"
+
+            cp -r ${./skills} $out/skills
           '';
         };
       in
