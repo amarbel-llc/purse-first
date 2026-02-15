@@ -30,7 +30,7 @@ func main() {
 
 	postHookCmd := &cobra.Command{
 		Use:   "post-hook",
-		Short: "PostToolUse hook handler (notifies lux of opened files)",
+		Short: "PostToolUse hook handler (fires plugin notifications)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return hook.HandlePostToolUse(os.Stdin, os.Stdout)
 		},
@@ -40,7 +40,7 @@ func main() {
 
 	sessionEndCmd := &cobra.Command{
 		Use:   "session-end",
-		Short: "SessionEnd hook handler (closes all lux documents)",
+		Short: "SessionEnd hook handler (fires plugin stop notifications)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return hook.HandleSessionEnd(os.Stdin, os.Stdout)
 		},
@@ -59,11 +59,11 @@ func main() {
 				return fmt.Errorf("finding binary path: %w", err)
 			}
 
-			manifestPath, err := mcp.DiscoverManifest()
+			plugins, err := mcp.DiscoverPlugins()
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "no marketplace manifest found, skipping MCP server install: %v\n", err)
+				fmt.Fprintf(os.Stderr, "no plugins found, skipping MCP server install: %v\n", err)
 			} else {
-				count, err := mcp.InstallFromMarketplace(manifestPath)
+				count, err := mcp.InstallFromPlugins(plugins)
 				if err != nil {
 					return fmt.Errorf("installing MCP servers: %w", err)
 				}

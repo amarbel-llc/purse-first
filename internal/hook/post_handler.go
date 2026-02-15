@@ -2,14 +2,18 @@ package hook
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
-	"strings"
 
 	"github.com/friedenberg/purse-first/internal/decision"
+	"github.com/friedenberg/purse-first/internal/mcp"
 )
 
 func HandlePostToolUse(stdin io.Reader, stdout io.Writer) error {
+	plugins, err := mcp.DiscoverPlugins()
+	if err != nil || len(plugins) == 0 {
+		return nil
+	}
+
 	data, err := io.ReadAll(stdin)
 	if err != nil {
 		return nil
@@ -21,19 +25,13 @@ func HandlePostToolUse(stdin io.Reader, stdout io.Writer) error {
 	}
 
 	filePath := extractFilePath(input.ToolInput)
-	if filePath == "" {
-		return nil
+
+	vars := map[string]string{
+		"file_path": filePath,
+		"tool_name": input.ToolName,
 	}
 
-	// Only open files that look like real file paths
-	if !strings.HasPrefix(filePath, "/") {
-		return nil
-	}
-
-	uri := fmt.Sprintf("file://%s", filePath)
-
-	// Fire and forget -- fail open
-	postToLux("/documents/open", map[string]string{"uri": uri})
+	fireNotificationsForEvent("post_tool_use", plugins, vars)
 
 	return nil
 }

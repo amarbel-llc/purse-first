@@ -15,6 +15,10 @@ func xdgStateHome() string {
 	return filepath.Join(home, ".local", "state")
 }
 
+func StateDir() string {
+	return filepath.Join(xdgStateHome(), "purse-first")
+}
+
 func loadDir(dir string) ([]MappingFile, error) {
 	entries, err := filepath.Glob(filepath.Join(dir, "*.json"))
 	if err != nil {

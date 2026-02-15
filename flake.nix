@@ -62,6 +62,7 @@
         nix-mcp-server-pkg = nix-mcp-server.packages.${system}.default;
 
         # get-hubbed wrapped with gh on PATH
+        get-hubbed-upstream = get-hubbed.packages.${system}.default;
         get-hubbed-pkg =
           pkgs.runCommand "get-hubbed"
             {
@@ -69,8 +70,13 @@
             }
             ''
               mkdir -p $out/bin
-              makeWrapper ${get-hubbed.packages.${system}.default}/bin/get-hubbed $out/bin/get-hubbed \
+              makeWrapper ${get-hubbed-upstream}/bin/get-hubbed $out/bin/get-hubbed \
                 --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.gh ]}
+
+              # Propagate share directory (plugin manifest, etc.)
+              if [ -d "${get-hubbed-upstream}/share" ]; then
+                cp -r ${get-hubbed-upstream}/share $out/share
+              fi
             '';
 
         purse-first-pkg = pkgs.buildGoApplication {
@@ -113,23 +119,8 @@
           ];
           nativeBuildInputs = [ pkgs.makeWrapper ];
           postBuild = ''
-            mkdir -p $out/share/purse-first
-            ${pkgs.jq}/bin/jq -n \
-              --arg grit "${grit-pkg}/bin/grit" \
-              --arg get_hubbed "${get-hubbed-pkg}/bin/get-hubbed" \
-              --arg lux "${lux-pkg}/bin/lux" \
-              --arg nix_mcp "${nix-mcp-server-pkg}/bin/nix-mcp-server" \
-              '{
-                servers: [
-                  {name: "grit", type: "stdio", command: $grit, args: []},
-                  {name: "get-hubbed", type: "stdio", command: $get_hubbed, args: []},
-                  {name: "lux", type: "stdio", command: $lux, args: ["mcp", "stdio"]},
-                  {name: "nix", type: "stdio", command: $nix_mcp, args: []}
-                ]
-              }' > $out/share/purse-first/marketplace.json
-
             makeWrapper ${purse-first-pkg}/bin/purse-first $out/bin/purse-first \
-              --set PURSE_FIRST_MARKETPLACE "$out/share/purse-first/marketplace.json"
+              --set PURSE_FIRST_PLUGINS_DIR "$out/share/purse-first"
           '';
         };
       in

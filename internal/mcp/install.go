@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/friedenberg/purse-first/internal/mapping"
 )
 
 type ServerEntry struct {
@@ -12,6 +14,28 @@ type ServerEntry struct {
 	Type    string   `json:"type"`
 	Command string   `json:"command"`
 	Args    []string `json:"args"`
+
+	Notifications []Notification    `json:"notifications,omitempty"`
+	Mappings      []mapping.Mapping `json:"mappings,omitempty"`
+}
+
+type Notification struct {
+	On       string           `json:"on"`
+	When     *NotifyCondition `json:"when,omitempty"`
+	HTTPPost HTTPPostAction   `json:"http_post"`
+}
+
+type NotifyCondition struct {
+	HasFilePath      bool `json:"has_file_path,omitempty"`
+	FilePathAbsolute bool `json:"file_path_absolute,omitempty"`
+}
+
+type HTTPPostAction struct {
+	PortEnv      string         `json:"port_env,omitempty"`
+	DefaultPort  int            `json:"default_port,omitempty"`
+	Path         string         `json:"path"`
+	Body         map[string]any `json:"body,omitempty"`
+	BodyTemplate map[string]any `json:"body_template,omitempty"`
 }
 
 func Install(servers []ServerEntry) error {
@@ -49,17 +73,48 @@ func Install(servers []ServerEntry) error {
 	return writeMCPConfig(configPath, existing)
 }
 
-func InstallFromMarketplace(manifestPath string) (int, error) {
-	m, err := ReadManifest(manifestPath)
-	if err != nil {
-		return 0, err
-	}
-
-	if len(m.Servers) == 0 {
+func InstallFromPlugins(servers []ServerEntry) (int, error) {
+	if len(servers) == 0 {
 		return 0, nil
 	}
 
-	return len(m.Servers), Install(m.Servers)
+	if err := Install(servers); err != nil {
+		return 0, err
+	}
+
+	installDefaultMappings(servers)
+
+	return len(servers), nil
+}
+
+func installDefaultMappings(servers []ServerEntry) {
+	stateDir := mapping.StateDir()
+	os.MkdirAll(stateDir, 0o755)
+
+	for _, s := range servers {
+		if len(s.Mappings) == 0 {
+			continue
+		}
+
+		dest := filepath.Join(stateDir, s.Name+".json")
+
+		// Don't overwrite user-managed mappings
+		if _, err := os.Stat(dest); err == nil {
+			continue
+		}
+
+		mf := mapping.MappingFile{
+			Server:   s.Name,
+			Mappings: s.Mappings,
+		}
+
+		data, err := json.MarshalIndent(mf, "", "  ")
+		if err != nil {
+			continue
+		}
+
+		os.WriteFile(dest, append(data, '\n'), 0o644)
+	}
 }
 
 func mcpConfigPath() (string, error) {
