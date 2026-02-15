@@ -59,8 +59,8 @@ func TestGenerate(t *testing.T) {
 	if alpha.Homepage != "https://example.com/alpha" {
 		t.Errorf("alpha.homepage = %q", alpha.Homepage)
 	}
-	if alpha.Source != "./alpha" {
-		t.Errorf("alpha.source = %q", alpha.Source)
+	if alpha.Source != "./test-marketplace/alpha" {
+		t.Errorf("alpha.source = %q, want %q", alpha.Source, "./test-marketplace/alpha")
 	}
 	if alpha.Strict == nil || *alpha.Strict != false {
 		t.Error("alpha.strict should be false")
