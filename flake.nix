@@ -110,8 +110,8 @@
             get-hubbed-pkg
             lux-pkg
             nix-mcp-server-pkg
-            purse-first-pkg
           ];
+          nativeBuildInputs = [ pkgs.makeWrapper ];
           postBuild = ''
             mkdir -p $out/share/purse-first
             ${pkgs.jq}/bin/jq -n \
@@ -127,6 +127,9 @@
                   {name: "nix", type: "stdio", command: $nix_mcp, args: []}
                 ]
               }' > $out/share/purse-first/marketplace.json
+
+            makeWrapper ${purse-first-pkg}/bin/purse-first $out/bin/purse-first \
+              --set PURSE_FIRST_MARKETPLACE "$out/share/purse-first/marketplace.json"
           '';
         };
       in
@@ -158,14 +161,13 @@
 
         apps.default = {
           type = "app";
-          program = "${purse-first-pkg}/bin/purse-first";
+          program = "${marketplace}/bin/purse-first";
         };
 
         apps.install = {
           type = "app";
           program = toString (
             pkgs.writeShellScript "install-marketplace" ''
-              export PURSE_FIRST_MARKETPLACE="${marketplace}/share/purse-first/marketplace.json"
               exec ${marketplace}/bin/purse-first install "$@"
             ''
           );
