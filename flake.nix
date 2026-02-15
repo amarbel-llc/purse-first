@@ -8,6 +8,8 @@
 
     go.url = "github:friedenberg/eng?dir=devenvs/go";
     shell.url = "github:friedenberg/eng?dir=devenvs/shell";
+    bats.url = "github:friedenberg/eng?dir=devenvs/bats";
+    sandcastle.url = "github:amarbel-llc/sandcastle";
 
     grit = {
       url = "github:amarbel-llc/grit";
@@ -39,6 +41,8 @@
       utils,
       go,
       shell,
+      bats,
+      sandcastle,
       grit,
       get-hubbed,
       lux,
@@ -149,12 +153,19 @@
           packages = [
             pkgs.just
             pkgs-master.claude-code
+            pkgs.bats
+            pkgs.bats.libraries.bats-support
+            pkgs.bats.libraries.bats-assert
+            sandcastle.packages.${system}.default
           ];
 
           inputsFrom = [
             go.devShells.${system}.default
             shell.devShells.${system}.default
+            bats.devShells.${system}.default
           ];
+
+          BATS_LIB_PATH = "${pkgs.bats.libraries.bats-support}/share/bats:${pkgs.bats.libraries.bats-assert}/share/bats";
 
           shellHook = ''
             echo "purse-first - dev environment"

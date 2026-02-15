@@ -79,9 +79,14 @@ func repoFromHomepage(homepage string) string {
 
 func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 	m := Marketplace{
-		Name:        config.Name,
-		Description: config.Description,
-		Owner:       config.Owner,
+		Name:  config.Name,
+		Owner: config.Owner,
+	}
+
+	if config.Description != "" {
+		m.Metadata = &Metadata{
+			Description: config.Description,
+		}
 	}
 
 	for _, dp := range discovered {

@@ -58,6 +58,15 @@ deps:
     nix develop --command go mod tidy
     nix develop --command gomod2nix
 
+# Run integration tests with sandcastle
+test-integration:
+    nix build
+    nix develop --command zz-tests_bats/bin/run-sandcastle-bats.bash \
+      bats --tap zz-tests_bats/*.bats
+
+# Run all tests (unit + integration)
+test-all: test test-integration
+
 # Clean build artifacts
 clean:
     rm -f purse-first

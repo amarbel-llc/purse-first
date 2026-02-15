@@ -37,6 +37,9 @@ func TestGenerate(t *testing.T) {
 	if m.Name != "test-marketplace" {
 		t.Errorf("name = %q, want %q", m.Name, "test-marketplace")
 	}
+	if m.Metadata == nil || m.Metadata.Description != "A test marketplace for unit tests" {
+		t.Errorf("metadata.description = %v, want %q", m.Metadata, "A test marketplace for unit tests")
+	}
 	if len(m.Plugins) != 2 {
 		t.Fatalf("len(plugins) = %d, want 2", len(m.Plugins))
 	}
@@ -192,9 +195,9 @@ func TestWriteAndRead(t *testing.T) {
 
 	strict := false
 	m := Marketplace{
-		Name:        "roundtrip",
-		Description: "Roundtrip test marketplace for write and read",
-		Owner:       Owner{Name: "test", Email: "test@example.com"},
+		Name:     "roundtrip",
+		Metadata: &Metadata{Description: "Roundtrip test marketplace for write and read"},
+		Owner:    Owner{Name: "test", Email: "test@example.com"},
 		Plugins: []Plugin{
 			{
 				Name:        "tool",
