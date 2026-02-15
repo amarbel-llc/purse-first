@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            system: x86_64-linux
+          - os: macos-13
+            system: x86_64-darwin
+          - os: macos-latest
+            system: aarch64-darwin
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Build grit
+        run: nix build .#grit
+
+      - name: Build get-hubbed
+        run: nix build .#get-hubbed
+
+      - name: Build lux
+        run: nix build .#lux
+
+      - name: Build nix-mcp-server
+        run: nix build .#nix-mcp-server
+
+      - name: Build purse-first
+        run: nix build .#purse-first
+
+      - name: Collect binaries
+        run: |
+          mkdir -p dist
+          for pkg in grit get-hubbed lux nix-mcp-server purse-first; do
+            nix build ".#${pkg}"
+            for bin in result/bin/*; do
+              name=$(basename "$bin")
+              cp -L "$bin" "dist/${name}-${{ matrix.system }}"
+            done
+          done
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.system }}
+          path: dist/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+
+  flakehub:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - uses: DeterminateSystems/flakehub-push@main
+        with:
+          visibility: public
