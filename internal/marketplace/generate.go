@@ -134,14 +134,14 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 
 		meta := config.Plugins[dp.Name]
 
-		// The self-plugin (marketplace's own repo) should not specify
-		// component specs in the marketplace entry — the installed
-		// plugin.json is the sole authority for its components.
-		isSelf := config.Repo != "" && meta.Repo == config.Repo
-
-		if len(mcpServers) == 0 && len(skills) == 0 && !isSelf {
+		if len(mcpServers) == 0 && len(skills) == 0 {
 			continue
 		}
+
+		// The self-plugin (marketplace's own repo) uses strict: true
+		// so the marketplace entry is authoritative and doesn't conflict
+		// with the plugin.json in the installed git clone.
+		isSelf := config.Repo != "" && meta.Repo == config.Repo
 
 		var source any
 		switch {
@@ -158,7 +158,7 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 			description = config.Description
 		}
 
-		strict := false
+		strict := isSelf
 		plugin := Plugin{
 			Name:        dp.Name,
 			Description: description,
@@ -173,7 +173,7 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 		if len(mcpServers) > 0 {
 			plugin.McpServers = mcpServers
 		}
-		if len(skills) > 0 && !isSelf {
+		if len(skills) > 0 {
 			plugin.Skills = skills
 		}
 

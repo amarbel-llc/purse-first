@@ -392,10 +392,10 @@ func TestGenerateWithMcpAndSkills(t *testing.T) {
 	}
 }
 
-func TestGenerateSelfPluginOmitsSkills(t *testing.T) {
+func TestGenerateSelfPluginUsesStrictTrue(t *testing.T) {
 	config := Config{
 		Name:        "my-marketplace",
-		Description: "Self-plugin should not emit skills",
+		Description: "Self-plugin should use strict: true",
 		Repo:        "example/my-marketplace",
 		Owner:       Owner{Name: "test"},
 		Plugins: map[string]PluginMeta{
@@ -427,8 +427,11 @@ func TestGenerateSelfPluginOmitsSkills(t *testing.T) {
 	if plugin.Name != "bob" {
 		t.Errorf("plugin.name = %q, want %q", plugin.Name, "bob")
 	}
-	if plugin.Skills != nil {
-		t.Errorf("self-plugin should not have skills in marketplace entry, got %v", plugin.Skills)
+	if plugin.Strict == nil || *plugin.Strict != true {
+		t.Error("self-plugin should have strict: true")
+	}
+	if len(plugin.Skills) != 2 {
+		t.Errorf("self-plugin should have skills, got %v", plugin.Skills)
 	}
 }
 
