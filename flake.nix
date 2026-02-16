@@ -103,10 +103,22 @@
         robin-pkg = batman.packages.${system}.robin;
         tap-dancer-pkg = tap-dancer.packages.${system}.default;
 
+        # Filter out go.work and libs/ from the nix build source so that
+        # buildGoApplication doesn't enter Go workspace mode.
+        purse-first-src = pkgs.lib.cleanSourceWith {
+          src = ./.;
+          filter =
+            path: type:
+            let
+              baseName = builtins.baseNameOf path;
+            in
+            baseName != "go.work" && baseName != "go.work.sum" && !pkgs.lib.hasPrefix (toString ./libs) path;
+        };
+
         purse-first-pkg = pkgs.buildGoApplication {
           pname = "purse-first";
           inherit version;
-          src = ./.;
+          src = purse-first-src;
           modules = ./gomod2nix.toml;
           subPackages = [ "cmd/purse-first" ];
           CGO_ENABLED = "0";
