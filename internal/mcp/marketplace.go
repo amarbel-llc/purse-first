@@ -30,7 +30,7 @@ func DiscoverPlugins() ([]ServerEntry, error) {
 func resolvePluginsDir() (string, string, error) {
 	if envDir := os.Getenv("PURSE_FIRST_PLUGINS_DIR"); envDir != "" {
 		if info, err := os.Stat(envDir); err == nil && info.IsDir() {
-			root := filepath.Dir(envDir)
+			root := filepath.Dir(filepath.Dir(envDir))
 			return envDir, root, nil
 		}
 		return "", "", fmt.Errorf("PURSE_FIRST_PLUGINS_DIR not found: %s", envDir)

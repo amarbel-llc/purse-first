@@ -30,6 +30,7 @@ var knownPluginFields = map[string]bool{
 type pluginDoc struct {
 	Name       string         `json:"name"`
 	McpServers map[string]any `json:"mcpServers"`
+	Skills     []string       `json:"skills"`
 	Author     *struct {
 		Name string `json:"name"`
 	} `json:"author"`
@@ -70,9 +71,9 @@ func validatePlugin(data []byte, strict bool) *Result {
 		r.addError("author.name", "author name is required when author is present")
 	}
 
-	if len(doc.McpServers) == 0 {
-		r.addWarning("mcpServers", "no MCP servers declared")
-	} else {
+	if len(doc.McpServers) == 0 && len(doc.Skills) == 0 {
+		r.addWarning("mcpServers", "no MCP servers or skills declared")
+	} else if len(doc.McpServers) > 0 {
 		for name, srv := range doc.McpServers {
 			srvMap, ok := srv.(map[string]any)
 			if !ok {

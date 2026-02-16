@@ -102,12 +102,15 @@
 
           postInstall = ''
             mkdir -p $out/share/purse-first/bob/skills
-            cp -r ${./skills}/plugin-mcp $out/share/purse-first/bob/skills/plugin-mcp
-            cat > $out/share/purse-first/bob/plugin.json << 'PLUGIN'
-            {
-              "name": "bob"
-            }
-            PLUGIN
+            cp -r ${./skills}/* $out/share/purse-first/bob/skills/
+
+            staging=$(mktemp -d)
+            ln -s $out/share/purse-first/bob/skills $staging/skills
+            mkdir -p $staging/.claude-plugin
+            cp ${./.claude-plugin/plugin.json} $staging/.claude-plugin/plugin.json
+            chmod u+w $staging/.claude-plugin/plugin.json
+            $out/bin/purse-first generate-local-plugin --root $staging
+            cp $staging/.claude-plugin/plugin.json $out/share/purse-first/bob/plugin.json
           '';
 
           meta = with pkgs.lib; {
