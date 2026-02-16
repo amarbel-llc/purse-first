@@ -142,6 +142,107 @@ my-mcp = pkgs.runCommand "my-mcp"
   '';
 ```
 
+## Adding Tool Mappings (Bash Command Interception)
+
+Mappings tell the purse-first PreToolUse hook to deny Bash commands that match configured prefixes and suggest specific MCP tools instead. This is how plugins redirect `git status` to `grit status`, `nix build` to `nix__build`, etc.
+
+### How Matching Works
+
+`FindMatch` iterates mappings in order and returns the **first** match. This means:
+- **Specific mappings must come before general ones** -- `"git log"` before `"git "`
+- A general catch-all at the end handles unrecognized subcommands
+
+### Targeted Per-Subcommand Mappings
+
+The recommended pattern is one mapping per subcommand, each suggesting only the relevant tool(s). This gives focused denial messages instead of listing every tool in the plugin.
+
+For **flag-based** CLIs:
+
+```go
+reason := "Use the grit MCP tool instead of shelling out. When the command uses git -C <path>, pass that path as the repo_path parameter"
+
+b := purse.NewPluginBuilder("my-mcp").
+    Command("my-mcp").
+    StdioTransport().
+    // Specific mappings first (matched before the catch-all)
+    Mapping("Bash").
+    CommandPrefixes("git status").
+    Tool("status", "checking repository status").
+    Reason(reason).
+    Done().
+    Mapping("Bash").
+    CommandPrefixes("git log").
+    Tool("log", "viewing commit history").
+    Reason(reason).
+    Done().
+    Mapping("Bash").
+    CommandPrefixes("git branch").
+    Tool("branch_list", "listing branches").
+    Tool("branch_create", "creating a new branch").
+    Reason(reason).
+    Done().
+    // General catch-all last (for unrecognized subcommands)
+    Mapping("Bash").
+    CommandPrefixes("git ", "git -C ").
+    Tool("status", "checking repository status").
+    Tool("log", "viewing commit history").
+    Tool("branch_list", "listing branches").
+    Tool("branch_create", "creating a new branch").
+    Reason("Use grit MCP tools for git operations instead of shelling out").
+    Done()
+```
+
+Key points:
+- Each `Mapping("Bash")` creates a separate `MappingEntry` in `mappings.json`
+- Use `CommandPrefixes` for Bash commands, `Extensions` for file-based tools (Read, Grep, etc.)
+- Multiple prefixes per mapping are supported (e.g., `git checkout` and `git switch` both map to `checkout`)
+- Multiple tools per mapping are supported (e.g., `git branch` suggests both `branch_list` and `branch_create`)
+- The `Reason` string is shown in the denial message along with the tool suggestions
+
+### Writing Mappings in postInstall
+
+When using mappings, the `generate-plugin` command must also write `mappings.json`. Update the code to call `BuildMappings` and `WriteMappings`:
+
+```go
+if flag.NArg() == 2 && flag.Arg(0) == "generate-plugin" {
+    b := purse.NewPluginBuilder("my-mcp").
+        Command("my-mcp").
+        StdioTransport().
+        Mapping("Bash").
+        // ... mappings ...
+        Done()
+
+    p := b.Build()
+    dir := flag.Arg(1)
+
+    if err := purse.WritePlugin(dir, p); err != nil {
+        log.Fatalf("generating plugin: %v", err)
+    }
+
+    if mf := b.BuildMappings(); mf != nil {
+        if err := purse.WriteMappings(dir, p.Name, mf); err != nil {
+            log.Fatalf("generating mappings: %v", err)
+        }
+    }
+
+    return
+}
+```
+
+This produces both `$out/share/purse-first/<name>/plugin.json` and `$out/share/purse-first/<name>/mappings.json`. The `postInstall` in `flake.nix` stays the same -- the binary handles both files.
+
+### MappingBuilder API Reference
+
+| Method | Description |
+|--------|-------------|
+| `Mapping(replaces)` | Start a new mapping that replaces the named tool (`"Bash"`, `"Read"`, `"Grep"`, etc.) |
+| `CommandPrefixes(p...)` | Match Bash commands starting with any of these prefixes |
+| `Extensions(e...)` | Match file operations on files with these extensions |
+| `Tool(name, useWhen)` | Suggest this MCP tool as a replacement |
+| `Reason(reason)` | Set the denial message shown to the user |
+| `Done()` | Finish this mapping and return to the PluginBuilder |
+| `BuildMappings()` | Returns `*MappingFile` (nil if no mappings declared) |
+
 ## Both Patterns: Repo-Level .claude-plugin/plugin.json
 
 Regardless of the integration pattern, also create `.claude-plugin/plugin.json` in the repo for standalone plugin validation and direct Claude Code discovery:
@@ -264,12 +365,13 @@ When adding purse-first support to an MCP server:
 
 1. Create `.claude-plugin/plugin.json` in the repo
 2. Add plugin manifest generation (Go: `generate-plugin` command, other: static file)
-3. Update `flake.nix` to output `$out/share/purse-first/<name>/plugin.json`
-4. Build and verify: `nix build && ls ./result/share/purse-first/`
-5. Add as flake input in purse-first
-6. Add metadata to `marketplace-config.json`
-7. Add package to `marketplace` symlinkJoin paths
-8. Run `just build-all` and `just test-validate-repos` in purse-first
+3. Add tool mappings if the plugin replaces CLI commands (use targeted per-subcommand mappings with a catch-all)
+4. Update `flake.nix` to output `$out/share/purse-first/<name>/plugin.json` (and `mappings.json` if applicable)
+5. Build and verify: `nix build && ls ./result/share/purse-first/`
+6. Add as flake input in purse-first
+7. Add metadata to `marketplace-config.json`
+8. Add package to `marketplace` symlinkJoin paths
+9. Run `just build-all` and `just test-validate-repos` in purse-first
 
 ## Reference Files
 

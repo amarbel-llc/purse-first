@@ -11,11 +11,11 @@ Side-by-side comparison of all four MCP servers currently integrated with purse-
 | lux | Go (cobra) | generate | `lux` | `mcp stdio` | none |
 | nix-mcp-server | Rust | static | `nix-mcp-server` | none | fh, cachix, nil on PATH |
 
-## grit (Go, flag-based)
+## grit (Go, flag-based, with targeted mappings)
 
 **Repo:** `github:amarbel-llc/grit`
 
-### plugin.json (generated at build time)
+### plugin.json and mappings.json (both generated at build time)
 
 ```json
 {
@@ -26,7 +26,7 @@ Side-by-side comparison of all four MCP servers currently integrated with purse-
 }
 ```
 
-### main.go integration
+### main.go integration (with per-subcommand mappings)
 
 ```go
 import "github.com/amarbel-llc/purse-first/purse"
@@ -35,20 +35,70 @@ func main() {
 	flag.Parse()
 
 	if flag.NArg() == 2 && flag.Arg(0) == "generate-plugin" {
-		p := purse.NewPluginBuilder("grit").
+		reason := "Use the grit MCP tool instead of shelling out. When the command uses git -C <path>, pass that path as the repo_path parameter"
+
+		b := purse.NewPluginBuilder("grit").
 			Command("grit").
 			StdioTransport().
-			Build()
+			// Targeted mappings (specific subcommands first)
+			Mapping("Bash").
+			CommandPrefixes("git status").
+			Tool("status", "checking repository status").
+			Reason(reason).
+			Done().
+			Mapping("Bash").
+			CommandPrefixes("git diff").
+			Tool("diff", "viewing changes").
+			Reason(reason).
+			Done().
+			Mapping("Bash").
+			CommandPrefixes("git log").
+			Tool("log", "viewing commit history").
+			Reason(reason).
+			Done().
+			Mapping("Bash").
+			CommandPrefixes("git branch").
+			Tool("branch_list", "listing branches").
+			Tool("branch_create", "creating a new branch").
+			Reason(reason).
+			Done().
+			Mapping("Bash").
+			CommandPrefixes("git checkout", "git switch").
+			Tool("checkout", "switching branches").
+			Reason(reason).
+			Done().
+			// ... other subcommands ...
+			// General catch-all last
+			Mapping("Bash").
+			CommandPrefixes("git ", "git -C ").
+			Tool("status", "checking repository status").
+			Tool("diff", "viewing changes").
+			Tool("log", "viewing commit history").
+			// ... all tools listed ...
+			Reason("Use grit MCP tools for git operations instead of shelling out. When the command uses git -C <path>, pass that path as the repo_path parameter").
+			Done()
 
-		if err := purse.WritePlugin(flag.Arg(1), p); err != nil {
+		p := b.Build()
+		dir := flag.Arg(1)
+
+		if err := purse.WritePlugin(dir, p); err != nil {
 			log.Fatalf("generating plugin: %v", err)
 		}
+
+		if mf := b.BuildMappings(); mf != nil {
+			if err := purse.WriteMappings(dir, p.Name, mf); err != nil {
+				log.Fatalf("generating mappings: %v", err)
+			}
+		}
+
 		return
 	}
 
 	// ... MCP server setup
 }
 ```
+
+Key design: targeted per-subcommand mappings come first so `FindMatch` returns focused suggestions (e.g., `git log` only suggests the `log` tool). The general `"git "` / `"git -C "` catch-all at the end handles any unrecognized git subcommands with the full tool list.
 
 ### flake.nix
 
@@ -66,7 +116,7 @@ grit = pkgs.buildGoApplication {
 };
 ```
 
-Simplest integration: no wrapping, no extra args, no runtime dependencies.
+The `postInstall` stays the same -- the binary writes both `plugin.json` and `mappings.json`.
 
 ---
 
@@ -296,3 +346,9 @@ The `symlinkJoin` merges all `share/purse-first/<name>/plugin.json` files into a
 4. **Input follows**: When adding to purse-first's flake.nix, use `inputs.nixpkgs.follows` and `inputs.nixpkgs-master.follows` to avoid duplicate nixpkgs evaluations.
 
 5. **Hidden subcommand**: Always mark `generate-plugin` as `Hidden: true` (cobra) or omit it from usage text (flag) -- it's a build-time utility, not user-facing.
+
+6. **Mapping order matters**: `FindMatch` returns the first matching mapping. Specific subcommand mappings (e.g., `"git log"`) must be declared before general catch-alls (e.g., `"git "`), otherwise the catch-all matches first and the targeted suggestion is never reached.
+
+7. **Multiple prefixes per mapping**: Use multiple `CommandPrefixes` when different commands map to the same tool (e.g., `"git checkout"` and `"git switch"` both map to the `checkout` tool).
+
+8. **Multiple tools per mapping**: Use multiple `Tool` calls when a subcommand maps to more than one MCP tool (e.g., `"git branch"` suggests both `branch_list` and `branch_create`).
