@@ -392,6 +392,46 @@ func TestGenerateWithMcpAndSkills(t *testing.T) {
 	}
 }
 
+func TestGenerateSelfPluginOmitsSkills(t *testing.T) {
+	config := Config{
+		Name:        "my-marketplace",
+		Description: "Self-plugin should not emit skills",
+		Repo:        "example/my-marketplace",
+		Owner:       Owner{Name: "test"},
+		Plugins: map[string]PluginMeta{
+			"my-marketplace": {
+				Description: "Self-referencing plugin with skills",
+				Version:     "0.1.0",
+				Repo:        "example/my-marketplace",
+			},
+		},
+	}
+
+	discovered := []DiscoveredPlugin{
+		{
+			Name: "my-marketplace",
+			Skills: []DiscoveredSkill{
+				{Name: "skill-a", Path: "./skills/skill-a"},
+				{Name: "skill-b", Path: "./skills/skill-b"},
+			},
+		},
+	}
+
+	m := Generate(config, discovered)
+
+	if len(m.Plugins) != 1 {
+		t.Fatalf("len(plugins) = %d, want 1", len(m.Plugins))
+	}
+
+	plugin := m.Plugins[0]
+	if plugin.Name != "my-marketplace" {
+		t.Errorf("plugin.name = %q, want %q", plugin.Name, "my-marketplace")
+	}
+	if plugin.Skills != nil {
+		t.Errorf("self-plugin should not have skills in marketplace entry, got %v", plugin.Skills)
+	}
+}
+
 func TestReadConfig(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.json")

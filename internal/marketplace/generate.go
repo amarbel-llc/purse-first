@@ -132,7 +132,12 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 			skills = append(skills, s.Path)
 		}
 
-		if len(mcpServers) == 0 && len(skills) == 0 {
+		// The self-plugin (marketplace's own repo) should not specify
+		// component specs in the marketplace entry — the installed
+		// plugin.json is the sole authority for its components.
+		isSelf := dp.Name == config.Name
+
+		if len(mcpServers) == 0 && len(skills) == 0 && !isSelf {
 			continue
 		}
 
@@ -168,7 +173,7 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 		if len(mcpServers) > 0 {
 			plugin.McpServers = mcpServers
 		}
-		if len(skills) > 0 {
+		if len(skills) > 0 && !isSelf {
 			plugin.Skills = skills
 		}
 
