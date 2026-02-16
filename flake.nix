@@ -31,6 +31,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
     };
+    batman = {
+      url = "github:amarbel-llc/batman";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+    };
   };
 
   outputs =
@@ -47,6 +52,7 @@
       get-hubbed,
       lux,
       nix-mcp-server,
+      batman,
     }:
     utils.lib.eachDefaultSystem (
       system:
@@ -87,6 +93,8 @@
                 cp -r ${get-hubbed-upstream}/share $out/share
               fi
             '';
+
+        robin-pkg = batman.packages.${system}.robin;
 
         purse-first-pkg = pkgs.buildGoApplication {
           pname = "purse-first";
@@ -138,6 +146,7 @@
             get-hubbed-pkg
             lux-pkg
             nix-mcp-server-pkg
+            robin-pkg
           ];
           nativeBuildInputs = [ pkgs.makeWrapper ];
           postBuild = ''
