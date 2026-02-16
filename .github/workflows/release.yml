@@ -35,8 +35,8 @@ jobs:
       - name: Build lux
         run: nix build .#lux
 
-      - name: Build nix-mcp-server
-        run: nix build .#nix-mcp-server
+      - name: Build chix
+        run: nix build .#chix
 
       - name: Build purse-first
         run: nix build .#purse-first
@@ -44,7 +44,7 @@ jobs:
       - name: Collect binaries
         run: |
           mkdir -p dist
-          for pkg in grit get-hubbed lux nix-mcp-server purse-first; do
+          for pkg in grit get-hubbed lux chix purse-first; do
             nix build ".#${pkg}"
             for bin in result/bin/*; do
               name=$(basename "$bin")

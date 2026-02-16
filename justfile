@@ -17,8 +17,8 @@ build-lux:
 build-get-hubbed:
     nix build .#get-hubbed
 
-build-nix-mcp:
-    nix build .#nix-mcp-server
+build-chix:
+    nix build .#chix
 
 build-purse-first:
     nix build .#purse-first
@@ -35,7 +35,7 @@ install:
 
 # Update MCP server flake inputs
 update-plugins:
-    nix flake update grit get-hubbed lux nix-mcp-server batman tap-dancer
+    nix flake update grit get-hubbed lux chix batman tap-dancer
 
 # Run tests
 test:

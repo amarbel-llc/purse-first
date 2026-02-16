@@ -130,7 +130,7 @@ When adding context-saving to a tool:
 
 ## Reference Files
 
-For detailed implementation examples from nix-mcp-server, consult:
+For detailed implementation examples from chix, consult:
 - **`references/implementation-patterns.md`** -- Side-by-side before/after code examples, schema updates, and a complete tool audit showing which tools got which pattern and why
 - **`examples/pagination.rs`** -- Minimal standalone pagination implementation
 - **`examples/truncation.rs`** -- Minimal standalone truncation implementation with JSON fallback

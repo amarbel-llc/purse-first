@@ -9,7 +9,7 @@ Side-by-side comparison of all four MCP servers currently integrated with purse-
 | grit | Go (flag) | generate | `grit` | none | none |
 | get-hubbed | Go (flag) | generate | `get-hubbed` | none | gh on PATH |
 | lux | Go (cobra) | generate | `lux` | `mcp stdio` | none |
-| nix-mcp-server | Rust | static | `nix-mcp-server` | none | fh, cachix, nil on PATH |
+| chix | Rust | static | `chix` | none | fh, cachix, nil on PATH |
 
 ## grit (Go, flag-based, with targeted mappings)
 
@@ -240,34 +240,48 @@ Shows coexistence with other postInstall tasks (man page generation).
 
 ---
 
-## nix-mcp-server (Rust, static)
+## chix (Rust, static)
 
-**Repo:** `github:friedenberg/nix-mcp-server`
+**Repo:** `github:amarbel-llc/chix`
 
-### plugin.json (static file at repo root)
+### plugin.json (static file in .claude-plugin/)
 
 ```json
 {
-  "name": "nix",
+  "name": "chix",
   "mcpServers": {
-    "nix": { "type": "stdio", "command": "nix-mcp-server" }
+    "chix": { "type": "stdio", "command": "chix" }
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/format-nix",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
   }
 }
 ```
 
-Note: plugin name is `nix` (short), but binary is `nix-mcp-server`.
+Note: chix is a combined plugin with MCP server, hooks, and skills.
 
 ### flake.nix
 
 Uses `runCommand` wrapping pattern because the binary needs fh, cachix, and nil on PATH:
 
 ```nix
-nix-mcp-server =
-  pkgs.runCommand "nix-mcp-server"
+chix =
+  pkgs.runCommand "chix"
     { nativeBuildInputs = [ pkgs.makeWrapper ]; }
     ''
       mkdir -p $out/bin
-      makeWrapper ${nix-mcp-server-unwrapped}/bin/nix-mcp-server $out/bin/nix-mcp-server \
+      makeWrapper ${chix-unwrapped}/bin/chix $out/bin/chix \
         --prefix PATH : ${
           pkgs.lib.makeBinPath [
             fhPkg
@@ -276,14 +290,16 @@ nix-mcp-server =
           ]
         }
 
-      mkdir -p $out/share/purse-first/nix
-      cp ${./plugin.json} $out/share/purse-first/nix/plugin.json
+      mkdir -p $out/share/purse-first/chix/hooks
+      cp ${./.claude-plugin/plugin.json} $out/share/purse-first/chix/plugin.json
+      install -m 755 ${formatNixHook} $out/share/purse-first/chix/hooks/format-nix
     '';
 ```
 
 Key details:
-- Static `plugin.json` at repo root, copied during build
-- Plugin directory name (`nix`) matches the `name` field, not the binary name
+- Static `plugin.json` in `.claude-plugin/`, copied during build
+- Plugin directory name matches the `name` field and binary name
+- Hooks are installed alongside the plugin manifest
 - No Go dependency needed
 
 ---
@@ -299,7 +315,7 @@ marketplace = pkgs.symlinkJoin {
     grit-pkg
     get-hubbed-pkg
     lux-pkg
-    nix-mcp-server-pkg
+    chix-pkg
   ];
   nativeBuildInputs = [ pkgs.makeWrapper ];
   postBuild = ''
@@ -341,7 +357,7 @@ The `symlinkJoin` merges all `share/purse-first/<name>/plugin.json` files into a
 
 2. **Share directory propagation**: When wrapping a binary with `makeWrapper`, the original `share/` directory is NOT automatically included. Copy or symlink it explicitly.
 
-3. **Plugin name vs binary name**: The plugin `name` field and the directory under `share/purse-first/` must match, but the `command` field uses the actual binary name. These can differ (e.g., plugin name `nix`, binary `nix-mcp-server`).
+3. **Plugin name vs binary name**: The plugin `name` field and the directory under `share/purse-first/` must match, but the `command` field uses the actual binary name. These can differ (e.g., plugin name `lux`, binary invoked with `lux mcp stdio`).
 
 4. **Input follows**: When adding to purse-first's flake.nix, use `inputs.nixpkgs.follows` and `inputs.nixpkgs-master.follows` to avoid duplicate nixpkgs evaluations.
 

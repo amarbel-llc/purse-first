@@ -31,13 +31,13 @@
       "category": "development",
       "tags": ["lsp", "code-intelligence", "mcp"]
     },
-    "nix": {
-      "description": "Nix CLI operations via MCP — build, evaluate, search, and manage flakes",
+    "chix": {
+      "description": "Nix MCP server and skills for Claude Code — build, evaluate, search, and manage flakes",
       "version": "0.1.0",
-      "homepage": "https://github.com/friedenberg/nix-mcp-server",
-      "repo": "friedenberg/nix-mcp-server",
+      "homepage": "https://github.com/amarbel-llc/chix",
+      "repo": "amarbel-llc/chix",
       "category": "development",
-      "tags": ["nix", "package-manager", "mcp"]
+      "tags": ["nix", "package-manager", "mcp", "skills"]
     },
     "bob": {
       "description": "Plugin integration skill — guides conversion of MCP servers into purse-first plugins",

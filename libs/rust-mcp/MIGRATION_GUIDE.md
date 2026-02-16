@@ -1,4 +1,4 @@
-# Migration Guide: nix-mcp-server to rust-lib-mcp
+# Migration Guide: chix to rust-lib-mcp
 
 ## Current Status
 
@@ -8,11 +8,11 @@
 - Builder pattern for server setup
 - All protocol infrastructure
 
-✅ **Dependency Added**: nix-mcp-server now depends on rust-lib-mcp via path dependency
+✅ **Dependency Added**: chix now depends on rust-lib-mcp via path dependency
 
 ## Migration Scope
 
-nix-mcp-server currently has:
+chix currently has:
 - **49 exported functions** in tools/mod.rs (30+ actual tools)
 - **3 resource types** (build-log, derivation, closure)
 - **~600 lines** in server.rs for dispatching
@@ -95,7 +95,7 @@ async fn nix_build(params: NixBuildParams) -> Result<NixBuildResult, String> {
 }
 
 // src/main.rs
-let server = McpServer::builder("nix-mcp-server", VERSION)
+let server = McpServer::builder("chix", VERSION)
     .with_tool(NixBuildTool)
     .with_tool(NixFlakeShowTool)
     // ... register all tools ...

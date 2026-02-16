@@ -26,8 +26,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
     };
-    nix-mcp-server = {
-      url = "github:friedenberg/nix-mcp-server";
+    chix = {
+      url = "github:amarbel-llc/chix";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
     };
@@ -56,7 +56,7 @@
       grit,
       get-hubbed,
       lux,
-      nix-mcp-server,
+      chix,
       batman,
       tap-dancer,
     }:
@@ -80,7 +80,7 @@
         # Upstream packages
         grit-pkg = grit.packages.${system}.default;
         lux-pkg = lux.packages.${system}.default;
-        nix-mcp-server-pkg = nix-mcp-server.packages.${system}.default;
+        chix-pkg = chix.packages.${system}.default;
 
         # get-hubbed wrapped with gh on PATH
         get-hubbed-upstream = get-hubbed.packages.${system}.default;
@@ -154,7 +154,7 @@
             grit-pkg
             get-hubbed-pkg
             lux-pkg
-            nix-mcp-server-pkg
+            chix-pkg
           ];
         };
 
@@ -164,7 +164,7 @@
             grit-pkg
             get-hubbed-pkg
             lux-pkg
-            nix-mcp-server-pkg
+            chix-pkg
             robin-pkg
             tap-dancer-pkg
           ];
@@ -189,7 +189,7 @@
           grit = grit-pkg;
           get-hubbed = get-hubbed-pkg;
           lux = lux-pkg;
-          nix-mcp-server = nix-mcp-server-pkg;
+          chix = chix-pkg;
           purse-first = purse-first-pkg;
           tap-dancer = tap-dancer-pkg;
         };

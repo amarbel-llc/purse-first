@@ -252,7 +252,7 @@ When multiple plugin derivations are composed via `symlinkJoin`:
 ```nix
 pkgs.symlinkJoin {
   name = "my-plugins";
-  paths = [ grit-pkg lux-pkg nix-mcp-server-pkg ];
+  paths = [ grit-pkg lux-pkg chix-pkg ];
 }
 ```
 

@@ -21,8 +21,8 @@ function lux_repo_validates { # @test
   assert_success
 }
 
-function nix_mcp_server_repo_validates { # @test
-  run claude plugin validate /home/sasha/eng/repos/nix-mcp-server
+function chix_repo_validates { # @test
+  run claude plugin validate /home/sasha/eng/repos/chix
   assert_success
 }
 
@@ -41,7 +41,7 @@ function purse_first_lux_repo_validates { # @test
   assert_success
 }
 
-function purse_first_nix_mcp_server_repo_validates { # @test
-  run "$purse_first" validate /home/sasha/eng/repos/nix-mcp-server
+function purse_first_chix_repo_validates { # @test
+  run "$purse_first" validate /home/sasha/eng/repos/chix
   assert_success
 }

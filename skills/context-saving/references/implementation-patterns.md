@@ -1,6 +1,6 @@
 # Context-Saving Implementation Patterns
 
-Detailed code examples from the nix-mcp-server project showing both pagination and truncation patterns applied across different tool categories.
+Detailed code examples from the chix project showing both pagination and truncation patterns applied across different tool categories.
 
 ## Pagination Pattern: Full Example (store_ls)
 
@@ -267,7 +267,7 @@ Always add the corresponding properties to the tool's JSON schema so callers kno
 
 ---
 
-## Full Audit Results from nix-mcp-server
+## Full Audit Results from chix
 
 ### Tools with pagination
 

@@ -7,7 +7,7 @@ type Defaults struct {
 	MaxItems int `json:"max_items"`
 }
 
-// StandardDefaults returns the standard default values matching nix-mcp-server.
+// StandardDefaults returns the standard default values matching chix.
 func StandardDefaults() Defaults {
 	return Defaults{
 		MaxBytes: 100_000,

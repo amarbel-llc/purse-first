@@ -14,7 +14,7 @@ A purse-first plugin ships a `plugin.json` manifest at `$out/share/purse-first/<
 
 | Flavor | Contents | Example |
 |--------|----------|---------|
-| **MCP-only** | MCP server(s) + optional tool mappings | grit, get-hubbed, nix-mcp-server |
+| **MCP-only** | MCP server(s) + optional tool mappings | grit, get-hubbed, chix |
 | **Skill-only** | Skills only (no MCP server) | bob |
 | **MCP + Skills** | MCP server(s) + bundled skills | (future) |
 
@@ -415,7 +415,7 @@ When adding purse-first support:
 ## Reference Files
 
 For detailed examples from existing integrations, consult:
-- **`references/existing-integrations.md`** -- Side-by-side comparison of grit, lux, get-hubbed, and nix-mcp-server implementations
+- **`references/existing-integrations.md`** -- Side-by-side comparison of grit, lux, get-hubbed, and chix implementations
 - **`references/mapping-api.md`** -- Full MappingBuilder API reference with detailed examples
 - **`examples/plugin.json`** -- Minimal MCP plugin manifest template
 - **`examples/plugin-skill-only.json`** -- Skill-only plugin manifest template
