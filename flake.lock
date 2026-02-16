@@ -284,11 +284,11 @@
         "utils": "utils_4"
       },
       "locked": {
-        "lastModified": 1771204234,
-        "narHash": "sha256-yX8gKoIvJIozSVLJNccUQAQy+iFlR+0XDPHr4SqWIs4=",
+        "lastModified": 1771250903,
+        "narHash": "sha256-UO9x5J+42ObyR5cimXXTJujSRMO3smNJdg4vAmZv3MM=",
         "owner": "amarbel-llc",
         "repo": "get-hubbed",
-        "rev": "c7d2ad72955957c4d2cd86f8d80cd362c18a45e4",
+        "rev": "d641fb8221b7e0ad58c1fe7a3215276687f6f4b2",
         "type": "github"
       },
       "original": {
@@ -519,11 +519,11 @@
         "utils": "utils_11"
       },
       "locked": {
-        "lastModified": 1771244718,
-        "narHash": "sha256-6DtfOcVOTtfAoiGDXcvt1vWBjco+rhwuBudWRRk4bN0=",
+        "lastModified": 1771249035,
+        "narHash": "sha256-dRnWKs7uF6uik7jjy5k6dZSF4ILg6xbPsu9dmc5VBVQ=",
         "owner": "friedenberg",
         "repo": "lux",
-        "rev": "bc715f82fb94678d31dadbda76f73d6ac2e4226f",
+        "rev": "3c2501df12b706f4e5369ad5b49d1a8cd4e9faf3",
         "type": "github"
       },
       "original": {
