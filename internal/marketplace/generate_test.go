@@ -78,8 +78,8 @@ func TestGenerate(t *testing.T) {
 		t.Errorf("plugin.source.repo = %q, want %q", source.Repo, "example/alpha")
 	}
 
-	if plugin.Strict == nil || *plugin.Strict != false {
-		t.Error("plugin.strict should be false")
+	if plugin.Strict == nil || *plugin.Strict != true {
+		t.Error("plugin.strict should be true")
 	}
 
 	if len(plugin.McpServers) != 2 {

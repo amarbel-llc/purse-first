@@ -138,10 +138,10 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 			continue
 		}
 
-		// The self-plugin (marketplace's own repo) uses strict: true
-		// so the marketplace entry is authoritative and doesn't conflict
-		// with the plugin.json in the installed git clone.
-		isSelf := config.Repo != "" && meta.Repo == config.Repo
+		// The marketplace entry is always authoritative since
+		// generate discovers all components from the Nix store.
+		// strict: true prevents conflicts when plugin.json also
+		// declares the same components.
 
 		var source any
 		switch {
@@ -158,7 +158,7 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 			description = config.Description
 		}
 
-		strict := isSelf
+		strict := true
 		plugin := Plugin{
 			Name:        dp.Name,
 			Description: description,
