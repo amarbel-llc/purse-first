@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
 
 	"github.com/amarbel-llc/purse-first/internal/hook"
+	"github.com/amarbel-llc/purse-first/internal/install"
 	"github.com/amarbel-llc/purse-first/internal/localplugin"
 	"github.com/amarbel-llc/purse-first/internal/marketplace"
-	"github.com/amarbel-llc/purse-first/internal/mcp"
 	"github.com/amarbel-llc/purse-first/internal/validate"
 )
 
@@ -53,43 +52,13 @@ func main() {
 		SilenceErrors: true,
 	}
 
-	var projectFlag bool
-
 	installCmd := &cobra.Command{
 		Use:   "install",
-		Short: "Install MCP servers and purse-first hook into Claude Code settings",
+		Short: "Install purse-first marketplace and plugins into Claude Code",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			binaryPath, err := selfPath()
-			if err != nil {
-				return fmt.Errorf("finding binary path: %w", err)
-			}
-
-			plugins, err := mcp.DiscoverPlugins()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "no plugins found, skipping MCP server install: %v\n", err)
-			} else {
-				count, err := mcp.InstallFromPlugins(plugins)
-				if err != nil {
-					return fmt.Errorf("installing MCP servers: %w", err)
-				}
-				fmt.Fprintf(os.Stderr, "installed %d MCP server(s) to ~/.claude.json\n", count)
-			}
-
-			if err := hook.Install(binaryPath, projectFlag); err != nil {
-				return err
-			}
-
-			scope := "global (~/.claude/settings.json)"
-			if projectFlag {
-				scope = "project (.claude/settings.json)"
-			}
-
-			fmt.Fprintf(os.Stderr, "purse-first hook installed to %s\n", scope)
-			return nil
+			return install.Run(os.Stderr)
 		},
 	}
-
-	installCmd.Flags().BoolVar(&projectFlag, "project", false, "install to project settings instead of global")
 
 	var (
 		pluginsDir string
@@ -206,21 +175,6 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
 	}
-}
-
-func selfPath() (string, error) {
-	exe, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
-
-	// Resolve symlinks to get the actual binary path
-	resolved, err := exec.LookPath(exe)
-	if err != nil {
-		return exe, nil
-	}
-
-	return resolved, nil
 }
 
 func parseDocType(s string) validate.DocType {

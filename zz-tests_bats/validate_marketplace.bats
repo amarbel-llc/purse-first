@@ -45,11 +45,11 @@ function all_plugins_have_github_source { # @test
 function plugin_names_match_config { # @test
   run jq -r '[.plugins[].name] | sort | join(",")' "$marketplace_json"
   assert_success
-  assert_output "purse-first"
+  assert_output "get-hubbed,grit,lux,nix,purse-first"
 }
 
 function marketplace_has_skills { # @test
-  run jq -e '.plugins[0].skills[] | select(endswith("plugin-mcp"))' "$marketplace_json"
+  run jq -e '[.plugins[].skills // [] | .[]] | map(select(endswith("plugin-mcp"))) | length > 0' "$marketplace_json"
   assert_success
 }
 
