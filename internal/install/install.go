@@ -80,28 +80,46 @@ func Run(w io.Writer) error {
 		return err
 	}
 
-	// Remove marketplace (ignore errors if not present)
+	// TAP header: 4 fixed steps + one per plugin
+	total := 4 + len(m.Plugins)
+	fmt.Fprintf(w, "TAP version 14\n")
+	fmt.Fprintf(w, "1..%d\n", total)
+
+	n := 1
+
+	// 1. Resolve marketplace root
+	fmt.Fprintf(w, "ok %d - resolve marketplace root\n", n)
+	n++
+
+	// 2. Read marketplace.json
+	fmt.Fprintf(w, "ok %d - read marketplace.json (%d plugins)\n", n, len(m.Plugins))
+	n++
+
+	// 3. Remove marketplace (ignore errors if not present)
 	remove := exec.Command("claude", "plugin", "marketplace", "remove", m.Name)
 	remove.Run()
-	fmt.Fprintf(w, "removed marketplace %q (if present)\n", m.Name)
+	fmt.Fprintf(w, "ok %d - remove marketplace %q\n", n, m.Name)
+	n++
 
-	// Add marketplace
+	// 4. Add marketplace
 	add := exec.Command("claude", "plugin", "marketplace", "add", root)
-	add.Stdout = w
-	add.Stderr = w
 	if err := add.Run(); err != nil {
+		fmt.Fprintf(w, "not ok %d - add marketplace %q\n", n, m.Name)
 		return fmt.Errorf("adding marketplace: %w", err)
 	}
+	fmt.Fprintf(w, "ok %d - add marketplace %q\n", n, m.Name)
+	n++
 
-	// Install all plugins from the marketplace
+	// 5..N Install each plugin
 	for _, plugin := range m.Plugins {
-		install := exec.Command("claude", "plugin", "install", plugin.Name+"@"+m.Name)
-		install.Stdout = w
-		install.Stderr = w
+		ref := plugin.Name + "@" + m.Name
+		install := exec.Command("claude", "plugin", "install", ref)
 		if err := install.Run(); err != nil {
+			fmt.Fprintf(w, "not ok %d - install plugin %q\n", n, plugin.Name)
 			return fmt.Errorf("installing plugin %q: %w", plugin.Name, err)
 		}
-		fmt.Fprintf(w, "installed plugin %s\n", plugin.Name)
+		fmt.Fprintf(w, "ok %d - install plugin %q\n", n, plugin.Name)
+		n++
 	}
 
 	return nil
