@@ -7,7 +7,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/charmbracelet/lipgloss"
 )
+
+var styleCode = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("#E88388")).
+	Background(lipgloss.Color("#1D1F21")).
+	Padding(0, 1)
 
 type marketplacePlugin struct {
 	Name string `json:"name"`
@@ -98,16 +105,16 @@ func Run(w io.Writer) error {
 	// 3. Remove marketplace (ignore errors if not present)
 	remove := exec.Command("claude", "plugin", "marketplace", "remove", m.Name)
 	remove.Run()
-	fmt.Fprintf(w, "ok %d - remove marketplace %q\n", n, m.Name)
+	fmt.Fprintf(w, "ok %d - remove marketplace %s\n", n, styleCode.Render(m.Name))
 	n++
 
 	// 4. Add marketplace
 	add := exec.Command("claude", "plugin", "marketplace", "add", root)
 	if err := add.Run(); err != nil {
-		fmt.Fprintf(w, "not ok %d - add marketplace %q\n", n, m.Name)
+		fmt.Fprintf(w, "not ok %d - add marketplace %s\n", n, styleCode.Render(m.Name))
 		return fmt.Errorf("adding marketplace: %w", err)
 	}
-	fmt.Fprintf(w, "ok %d - add marketplace %q\n", n, m.Name)
+	fmt.Fprintf(w, "ok %d - add marketplace %s\n", n, styleCode.Render(m.Name))
 	n++
 
 	// 5..N Install each plugin
@@ -115,10 +122,10 @@ func Run(w io.Writer) error {
 		ref := plugin.Name + "@" + m.Name
 		install := exec.Command("claude", "plugin", "install", ref)
 		if err := install.Run(); err != nil {
-			fmt.Fprintf(w, "not ok %d - install plugin %q\n", n, plugin.Name)
+			fmt.Fprintf(w, "not ok %d - install plugin %s\n", n, styleCode.Render(plugin.Name))
 			return fmt.Errorf("installing plugin %q: %w", plugin.Name, err)
 		}
-		fmt.Fprintf(w, "ok %d - install plugin %q\n", n, plugin.Name)
+		fmt.Fprintf(w, "ok %d - install plugin %s\n", n, styleCode.Render(plugin.Name))
 		n++
 	}
 
