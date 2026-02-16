@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
 	"github.com/amarbel-llc/purse-first/internal/hook"
+	"github.com/amarbel-llc/purse-first/internal/localplugin"
 	"github.com/amarbel-llc/purse-first/internal/marketplace"
 	"github.com/amarbel-llc/purse-first/internal/mcp"
 )
@@ -124,7 +126,33 @@ func main() {
 	genMarketplaceCmd.MarkFlagRequired("plugins-dir")
 	genMarketplaceCmd.MarkFlagRequired("config")
 
-	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, genMarketplaceCmd)
+	var localPluginRoot string
+
+	genLocalPluginCmd := &cobra.Command{
+		Use:   "generate-local-plugin",
+		Short: "Discover skills and update .claude-plugin/plugin.json",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if localPluginRoot == "" {
+				cwd, err := os.Getwd()
+				if err != nil {
+					return fmt.Errorf("getting working directory: %w", err)
+				}
+				localPluginRoot = cwd
+			}
+
+			pluginPath := filepath.Join(localPluginRoot, ".claude-plugin", "plugin.json")
+			if err := localplugin.Generate(localPluginRoot, pluginPath); err != nil {
+				return fmt.Errorf("generating local plugin: %w", err)
+			}
+
+			fmt.Fprintf(os.Stderr, "updated %s\n", pluginPath)
+			return nil
+		},
+	}
+
+	genLocalPluginCmd.Flags().StringVar(&localPluginRoot, "root", "", "repository root (defaults to cwd)")
+
+	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, genMarketplaceCmd, genLocalPluginCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)

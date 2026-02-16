@@ -72,6 +72,10 @@ test-validate-repos:
 # Run all tests (unit + integration)
 test-all: test test-integration
 
+# Generate local plugin.json with discovered skills
+generate-local-plugin:
+    nix develop --command go run ./cmd/purse-first generate-local-plugin
+
 # Clean build artifacts
 clean:
     rm -f purse-first
