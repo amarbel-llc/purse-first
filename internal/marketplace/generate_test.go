@@ -51,19 +51,31 @@ func TestGenerate(t *testing.T) {
 	}
 
 	plugin := m.Plugins[0]
-	if plugin.Name != "test-marketplace" {
-		t.Errorf("plugin.name = %q, want %q", plugin.Name, "test-marketplace")
+	if plugin.Name != "alpha" {
+		t.Errorf("plugin.name = %q, want %q", plugin.Name, "alpha")
 	}
-	if plugin.Description != "A test marketplace for unit tests" {
-		t.Errorf("plugin.description = %q", plugin.Description)
+	if plugin.Description != "Alpha MCP server for testing" {
+		t.Errorf("plugin.description = %q, want %q", plugin.Description, "Alpha MCP server for testing")
+	}
+	if plugin.Version != "1.0.0" {
+		t.Errorf("plugin.version = %q, want %q", plugin.Version, "1.0.0")
+	}
+	if plugin.Homepage != "https://github.com/example/alpha" {
+		t.Errorf("plugin.homepage = %q", plugin.Homepage)
+	}
+	if plugin.Category != "development" {
+		t.Errorf("plugin.category = %q", plugin.Category)
+	}
+	if len(plugin.Tags) != 2 || plugin.Tags[0] != "test" {
+		t.Errorf("plugin.tags = %v", plugin.Tags)
 	}
 
 	source, ok := plugin.Source.(GitHubSource)
 	if !ok {
 		t.Fatalf("plugin.source type = %T, want GitHubSource", plugin.Source)
 	}
-	if source.Repo != "example/test-marketplace" {
-		t.Errorf("plugin.source.repo = %q, want %q", source.Repo, "example/test-marketplace")
+	if source.Repo != "example/alpha" {
+		t.Errorf("plugin.source.repo = %q, want %q", source.Repo, "example/alpha")
 	}
 
 	if plugin.Strict == nil || *plugin.Strict != false {
@@ -119,12 +131,50 @@ func TestGenerateNoRepo(t *testing.T) {
 		t.Fatalf("len(plugins) = %d, want 1", len(m.Plugins))
 	}
 
+	if m.Plugins[0].Name != "alpha" {
+		t.Errorf("plugin.name = %q, want %q", m.Plugins[0].Name, "alpha")
+	}
+
 	source, ok := m.Plugins[0].Source.(string)
 	if !ok {
 		t.Fatalf("source type = %T, want string", m.Plugins[0].Source)
 	}
 	if source != "." {
 		t.Errorf("source = %q, want %q", source, ".")
+	}
+}
+
+func TestGenerateNoRepoFallsBackToConfig(t *testing.T) {
+	config := Config{
+		Name:  "test-marketplace",
+		Repo:  "example/fallback",
+		Owner: Owner{Name: "test"},
+		Plugins: map[string]PluginMeta{
+			"alpha": {Description: "no repo on meta"},
+		},
+	}
+
+	discovered := []DiscoveredPlugin{
+		{
+			Name: "alpha",
+			McpServers: map[string]purse.McpServer{
+				"alpha": {Type: "stdio", Command: "alpha-server"},
+			},
+		},
+	}
+
+	m := Generate(config, discovered)
+
+	if len(m.Plugins) != 1 {
+		t.Fatalf("len(plugins) = %d, want 1", len(m.Plugins))
+	}
+
+	source, ok := m.Plugins[0].Source.(GitHubSource)
+	if !ok {
+		t.Fatalf("source type = %T, want GitHubSource", m.Plugins[0].Source)
+	}
+	if source.Repo != "example/fallback" {
+		t.Errorf("source.repo = %q, want %q", source.Repo, "example/fallback")
 	}
 }
 
@@ -218,7 +268,7 @@ func TestDiscoverPluginsWithSkills(t *testing.T) {
 	if plugins[0].Skills[0].Name != "my-skill" {
 		t.Errorf("skill name = %q, want %q", plugins[0].Skills[0].Name, "my-skill")
 	}
-	expectedPath := "./share/purse-first/alpha/skills/my-skill"
+	expectedPath := "./skills/my-skill"
 	if plugins[0].Skills[0].Path != expectedPath {
 		t.Errorf("skill path = %q, want %q", plugins[0].Skills[0].Path, expectedPath)
 	}
@@ -230,14 +280,20 @@ func TestGenerateWithSkillsOnly(t *testing.T) {
 		Description: "A marketplace with skills only",
 		Repo:        "example/test-marketplace",
 		Owner:       Owner{Name: "test"},
-		Plugins:     map[string]PluginMeta{},
+		Plugins: map[string]PluginMeta{
+			"purse-first": {
+				Description: "Plugin integration skill",
+				Version:     "0.1.0",
+				Repo:        "example/purse-first",
+			},
+		},
 	}
 
 	discovered := []DiscoveredPlugin{
 		{
 			Name: "purse-first",
 			Skills: []DiscoveredSkill{
-				{Name: "plugin-mcp", Path: "./share/purse-first/purse-first/skills/plugin-mcp"},
+				{Name: "plugin-mcp", Path: "./skills/plugin-mcp"},
 			},
 		},
 	}
@@ -249,16 +305,24 @@ func TestGenerateWithSkillsOnly(t *testing.T) {
 	}
 
 	plugin := m.Plugins[0]
-	if plugin.Name != "test-marketplace" {
-		t.Errorf("plugin.name = %q, want %q", plugin.Name, "test-marketplace")
+	if plugin.Name != "purse-first" {
+		t.Errorf("plugin.name = %q, want %q", plugin.Name, "purse-first")
+	}
+
+	source, ok := plugin.Source.(GitHubSource)
+	if !ok {
+		t.Fatalf("source type = %T, want GitHubSource", plugin.Source)
+	}
+	if source.Repo != "example/purse-first" {
+		t.Errorf("source.repo = %q, want %q", source.Repo, "example/purse-first")
 	}
 
 	if len(plugin.Skills) != 1 {
 		t.Fatalf("len(skills) = %d, want 1", len(plugin.Skills))
 	}
 
-	if plugin.Skills[0] != "./share/purse-first/purse-first/skills/plugin-mcp" {
-		t.Errorf("skills[0] = %q, want %q", plugin.Skills[0], "./share/purse-first/purse-first/skills/plugin-mcp")
+	if plugin.Skills[0] != "./skills/plugin-mcp" {
+		t.Errorf("skills[0] = %q, want %q", plugin.Skills[0], "./skills/plugin-mcp")
 	}
 
 	if plugin.McpServers != nil {
@@ -272,7 +336,16 @@ func TestGenerateWithMcpAndSkills(t *testing.T) {
 		Description: "A marketplace with both MCP and skills",
 		Repo:        "example/test-marketplace",
 		Owner:       Owner{Name: "test"},
-		Plugins:     map[string]PluginMeta{},
+		Plugins: map[string]PluginMeta{
+			"alpha": {
+				Description: "Alpha server",
+				Repo:        "example/alpha",
+			},
+			"purse-first": {
+				Description: "Plugin skill",
+				Repo:        "example/purse-first",
+			},
+		},
 	}
 
 	discovered := []DiscoveredPlugin{
@@ -285,23 +358,37 @@ func TestGenerateWithMcpAndSkills(t *testing.T) {
 		{
 			Name: "purse-first",
 			Skills: []DiscoveredSkill{
-				{Name: "plugin-mcp", Path: "./share/purse-first/purse-first/skills/plugin-mcp"},
+				{Name: "plugin-mcp", Path: "./skills/plugin-mcp"},
 			},
 		},
 	}
 
 	m := Generate(config, discovered)
 
-	if len(m.Plugins) != 1 {
-		t.Fatalf("len(plugins) = %d, want 1 (skills merged into MCP plugin)", len(m.Plugins))
+	if len(m.Plugins) != 2 {
+		t.Fatalf("len(plugins) = %d, want 2 (one per discovered plugin)", len(m.Plugins))
 	}
 
-	plugin := m.Plugins[0]
-	if len(plugin.McpServers) != 1 {
-		t.Errorf("len(mcpServers) = %d, want 1", len(plugin.McpServers))
+	alphaPlugin := m.Plugins[0]
+	if alphaPlugin.Name != "alpha" {
+		t.Errorf("plugins[0].name = %q, want %q", alphaPlugin.Name, "alpha")
 	}
-	if len(plugin.Skills) != 1 {
-		t.Errorf("len(skills) = %d, want 1", len(plugin.Skills))
+	if len(alphaPlugin.McpServers) != 1 {
+		t.Errorf("plugins[0] len(mcpServers) = %d, want 1", len(alphaPlugin.McpServers))
+	}
+	if alphaPlugin.Skills != nil {
+		t.Errorf("plugins[0] should not have skills")
+	}
+
+	pursePlugin := m.Plugins[1]
+	if pursePlugin.Name != "purse-first" {
+		t.Errorf("plugins[1].name = %q, want %q", pursePlugin.Name, "purse-first")
+	}
+	if len(pursePlugin.Skills) != 1 {
+		t.Errorf("plugins[1] len(skills) = %d, want 1", len(pursePlugin.Skills))
+	}
+	if pursePlugin.McpServers != nil {
+		t.Errorf("plugins[1] should not have mcpServers")
 	}
 }
 

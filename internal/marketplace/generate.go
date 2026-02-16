@@ -45,7 +45,7 @@ func DiscoverPlugins(pluginsDir string) ([]DiscoveredPlugin, error) {
 		pluginName := filepath.Base(pluginDir)
 		storePath := resolveStorePath(path)
 
-		skills := discoverPluginSkills(pluginDir, pluginName)
+		skills := discoverPluginSkills(pluginDir)
 
 		plugins = append(plugins, DiscoveredPlugin{
 			Name:       pluginName,
@@ -58,7 +58,7 @@ func DiscoverPlugins(pluginsDir string) ([]DiscoveredPlugin, error) {
 	return plugins, nil
 }
 
-func discoverPluginSkills(pluginDir, pluginName string) []DiscoveredSkill {
+func discoverPluginSkills(pluginDir string) []DiscoveredSkill {
 	matches, err := filepath.Glob(filepath.Join(pluginDir, "skills", "*", "SKILL.md"))
 	if err != nil {
 		return nil
@@ -67,7 +67,7 @@ func discoverPluginSkills(pluginDir, pluginName string) []DiscoveredSkill {
 	var skills []DiscoveredSkill
 	for _, path := range matches {
 		skillName := filepath.Base(filepath.Dir(path))
-		relPath := "./" + filepath.Join("share", "purse-first", pluginName, "skills", skillName)
+		relPath := "./" + filepath.Join("skills", skillName)
 		skills = append(skills, DiscoveredSkill{Name: skillName, Path: relPath})
 	}
 
@@ -107,10 +107,10 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 		}
 	}
 
-	mcpServers := make(map[string]any)
-	var skills []string
-
 	for _, dp := range discovered {
+		mcpServers := make(map[string]any)
+		var skills []string
+
 		for name, srv := range dp.McpServers {
 			serverType := srv.Type
 			if serverType == "" {
@@ -131,21 +131,37 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 		for _, s := range dp.Skills {
 			skills = append(skills, s.Path)
 		}
-	}
 
-	if len(mcpServers) > 0 || len(skills) > 0 {
+		if len(mcpServers) == 0 && len(skills) == 0 {
+			continue
+		}
+
+		meta := config.Plugins[dp.Name]
+
 		var source any
-		if config.Repo != "" {
+		switch {
+		case meta.Repo != "":
+			source = GitHubSource{Source: "github", Repo: meta.Repo}
+		case config.Repo != "":
 			source = GitHubSource{Source: "github", Repo: config.Repo}
-		} else {
+		default:
 			source = "."
+		}
+
+		description := meta.Description
+		if description == "" {
+			description = config.Description
 		}
 
 		strict := false
 		plugin := Plugin{
-			Name:        config.Name,
-			Description: config.Description,
+			Name:        dp.Name,
+			Description: description,
+			Version:     meta.Version,
 			Source:      source,
+			Category:    meta.Category,
+			Homepage:    meta.Homepage,
+			Tags:        meta.Tags,
 			Strict:      &strict,
 		}
 
