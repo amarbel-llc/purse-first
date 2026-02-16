@@ -9,9 +9,10 @@ import (
 )
 
 type hookEntry struct {
-	Type    string `json:"type"`
-	Command string `json:"command"`
-	Timeout int    `json:"timeout"`
+	Type     string `json:"type"`
+	Command  string `json:"command"`
+	Timeout  int    `json:"timeout"`
+	Blocking *bool  `json:"blocking,omitempty"`
 }
 
 type hookMatcher struct {
@@ -37,6 +38,8 @@ func Install(binaryPath string, project bool) error {
 
 	toolMatcher := "Read|Edit|Write|Grep|Glob|Bash"
 
+	nonBlocking := false
+
 	hookDefs := []struct {
 		event string
 		entry hookMatcher
@@ -46,9 +49,10 @@ func Install(binaryPath string, project bool) error {
 			entry: hookMatcher{
 				Matcher: toolMatcher,
 				Hooks: []hookEntry{{
-					Type:    "command",
-					Command: binaryPath + " hook",
-					Timeout: 5,
+					Type:     "command",
+					Command:  binaryPath + " hook",
+					Timeout:  5,
+					Blocking: &nonBlocking,
 				}},
 			},
 		},
@@ -57,9 +61,10 @@ func Install(binaryPath string, project bool) error {
 			entry: hookMatcher{
 				Matcher: toolMatcher,
 				Hooks: []hookEntry{{
-					Type:    "command",
-					Command: binaryPath + " post-hook",
-					Timeout: 5,
+					Type:     "command",
+					Command:  binaryPath + " post-hook",
+					Timeout:  5,
+					Blocking: &nonBlocking,
 				}},
 			},
 		},
