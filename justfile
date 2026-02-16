@@ -35,7 +35,7 @@ install:
 
 # Update MCP server flake inputs
 update-plugins:
-    nix flake update grit get-hubbed lux nix-mcp-server
+    nix flake update grit get-hubbed lux nix-mcp-server batman tap-dancer
 
 # Run tests
 test:

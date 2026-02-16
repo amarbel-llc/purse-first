@@ -54,6 +54,14 @@
       "repo": "amarbel-llc/batman",
       "category": "testing",
       "tags": ["bats", "testing", "integration", "shell", "nix"]
+    },
+    "tap-dancer": {
+      "description": "TAP-14 writer libraries (Go + Rust) and skill for producing spec-compliant TAP output",
+      "version": "0.1.0",
+      "homepage": "https://github.com/amarbel-llc/tap-dancer",
+      "repo": "amarbel-llc/tap-dancer",
+      "category": "testing",
+      "tags": ["tap", "tap-14", "testing", "output-format"]
     }
   }
 }

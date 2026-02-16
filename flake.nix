@@ -36,6 +36,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
     };
+    tap-dancer = {
+      url = "github:amarbel-llc/tap-dancer";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+    };
   };
 
   outputs =
@@ -53,6 +58,7 @@
       lux,
       nix-mcp-server,
       batman,
+      tap-dancer,
     }:
     utils.lib.eachDefaultSystem (
       system:
@@ -95,6 +101,7 @@
             '';
 
         robin-pkg = batman.packages.${system}.robin;
+        tap-dancer-pkg = tap-dancer.packages.${system}.default;
 
         purse-first-pkg = pkgs.buildGoApplication {
           pname = "purse-first";
@@ -147,6 +154,7 @@
             lux-pkg
             nix-mcp-server-pkg
             robin-pkg
+            tap-dancer-pkg
           ];
           nativeBuildInputs = [ pkgs.makeWrapper ];
           postBuild = ''
@@ -171,6 +179,7 @@
           lux = lux-pkg;
           nix-mcp-server = nix-mcp-server-pkg;
           purse-first = purse-first-pkg;
+          tap-dancer = tap-dancer-pkg;
         };
 
         devShells.default = pkgs.mkShell {
