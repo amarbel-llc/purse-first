@@ -18,9 +18,16 @@ type marketplaceJSON struct {
 	Plugins []marketplacePlugin `json:"plugins"`
 }
 
+// rootFromPluginsDir returns the marketplace root given PURSE_FIRST_PLUGINS_DIR.
+// The layout is: <root>/share/purse-first (plugins dir) with marketplace.json
+// at <root>/.claude-plugin/marketplace.json — two levels up.
+func rootFromPluginsDir(pluginsDir string) string {
+	return filepath.Dir(filepath.Dir(pluginsDir))
+}
+
 func resolveMarketplaceRoot() (string, error) {
 	if envDir := os.Getenv("PURSE_FIRST_PLUGINS_DIR"); envDir != "" {
-		root := filepath.Dir(envDir)
+		root := rootFromPluginsDir(envDir)
 		path := filepath.Join(root, ".claude-plugin", "marketplace.json")
 		if _, err := os.Stat(path); err == nil {
 			return root, nil

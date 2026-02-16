@@ -189,14 +189,6 @@
           program = "${marketplace}/bin/purse-first";
         };
 
-        apps.install = {
-          type = "app";
-          program = toString (
-            pkgs.writeShellScript "install-marketplace" ''
-              exec ${marketplace}/bin/purse-first install "$@"
-            ''
-          );
-        };
       }
     );
 }
