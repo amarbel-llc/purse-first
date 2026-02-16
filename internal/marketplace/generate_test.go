@@ -399,7 +399,7 @@ func TestGenerateSelfPluginOmitsSkills(t *testing.T) {
 		Repo:        "example/my-marketplace",
 		Owner:       Owner{Name: "test"},
 		Plugins: map[string]PluginMeta{
-			"my-marketplace": {
+			"bob": {
 				Description: "Self-referencing plugin with skills",
 				Version:     "0.1.0",
 				Repo:        "example/my-marketplace",
@@ -409,7 +409,7 @@ func TestGenerateSelfPluginOmitsSkills(t *testing.T) {
 
 	discovered := []DiscoveredPlugin{
 		{
-			Name: "my-marketplace",
+			Name: "bob",
 			Skills: []DiscoveredSkill{
 				{Name: "skill-a", Path: "./skills/skill-a"},
 				{Name: "skill-b", Path: "./skills/skill-b"},
@@ -424,8 +424,8 @@ func TestGenerateSelfPluginOmitsSkills(t *testing.T) {
 	}
 
 	plugin := m.Plugins[0]
-	if plugin.Name != "my-marketplace" {
-		t.Errorf("plugin.name = %q, want %q", plugin.Name, "my-marketplace")
+	if plugin.Name != "bob" {
+		t.Errorf("plugin.name = %q, want %q", plugin.Name, "bob")
 	}
 	if plugin.Skills != nil {
 		t.Errorf("self-plugin should not have skills in marketplace entry, got %v", plugin.Skills)

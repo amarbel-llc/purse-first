@@ -101,11 +101,11 @@
           ];
 
           postInstall = ''
-            mkdir -p $out/share/purse-first/purse-first/skills
-            cp -r ${./skills}/plugin-mcp $out/share/purse-first/purse-first/skills/plugin-mcp
-            cat > $out/share/purse-first/purse-first/plugin.json << 'PLUGIN'
+            mkdir -p $out/share/purse-first/bob/skills
+            cp -r ${./skills}/plugin-mcp $out/share/purse-first/bob/skills/plugin-mcp
+            cat > $out/share/purse-first/bob/plugin.json << 'PLUGIN'
             {
-              "name": "purse-first"
+              "name": "bob"
             }
             PLUGIN
           '';
@@ -138,7 +138,7 @@
           ];
           nativeBuildInputs = [ pkgs.makeWrapper ];
           postBuild = ''
-            cp -r ${purse-first-pkg}/share/purse-first/purse-first $out/share/purse-first/purse-first
+            cp -r ${purse-first-pkg}/share/purse-first/bob $out/share/purse-first/bob
 
             makeWrapper ${purse-first-pkg}/bin/purse-first $out/bin/purse-first \
               --set PURSE_FIRST_PLUGINS_DIR "$out/share/purse-first"

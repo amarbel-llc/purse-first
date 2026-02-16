@@ -39,7 +39,7 @@
       "category": "development",
       "tags": ["nix", "package-manager", "mcp"]
     },
-    "purse-first": {
+    "bob": {
       "description": "Plugin integration skill — guides conversion of MCP servers into purse-first plugins",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/purse-first",

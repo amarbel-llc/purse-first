@@ -3,7 +3,7 @@
     "name": "friedenberg"
   },
   "description": "MCP-first tool routing for Claude Code — aggregates MCP servers into an installable marketplace with plugin integration skills",
-  "name": "purse-first",
+  "name": "bob",
   "skills": [
     "./skills/plugin-mcp",
     "./skills/context-saving"
