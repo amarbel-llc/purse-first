@@ -11,7 +11,7 @@ type McpServer struct {
 // server and its transport configuration.
 type Plugin struct {
 	Name       string               `json:"name"`
-	McpServers map[string]McpServer `json:"mcpServers"`
+	McpServers map[string]McpServer `json:"mcpServers,omitempty"`
 }
 
 // ToolSuggestion describes a tool that should be used instead of the replaced tool.

@@ -41,20 +41,37 @@ func DiscoverPlugins(pluginsDir string) ([]DiscoveredPlugin, error) {
 			continue
 		}
 
+		pluginDir := filepath.Dir(path)
+		pluginName := filepath.Base(pluginDir)
 		storePath := resolveStorePath(path)
 
-		for name, srv := range p.McpServers {
-			plugins = append(plugins, DiscoveredPlugin{
-				Name:      name,
-				Type:      srv.Type,
-				Command:   srv.Command,
-				Args:      srv.Args,
-				StorePath: storePath,
-			})
-		}
+		skills := discoverPluginSkills(pluginDir, pluginName)
+
+		plugins = append(plugins, DiscoveredPlugin{
+			Name:       pluginName,
+			McpServers: p.McpServers,
+			Skills:     skills,
+			StorePath:  storePath,
+		})
 	}
 
 	return plugins, nil
+}
+
+func discoverPluginSkills(pluginDir, pluginName string) []DiscoveredSkill {
+	matches, err := filepath.Glob(filepath.Join(pluginDir, "skills", "*", "SKILL.md"))
+	if err != nil {
+		return nil
+	}
+
+	var skills []DiscoveredSkill
+	for _, path := range matches {
+		skillName := filepath.Base(filepath.Dir(path))
+		relPath := "./" + filepath.Join("share", "purse-first", pluginName, "skills", skillName)
+		skills = append(skills, DiscoveredSkill{Name: skillName, Path: relPath})
+	}
+
+	return skills
 }
 
 func resolveStorePath(manifestPath string) string {
@@ -78,23 +95,7 @@ func resolveStorePath(manifestPath string) string {
 	return ""
 }
 
-func DiscoverSkills(skillsDir string) ([]DiscoveredSkill, error) {
-	matches, err := filepath.Glob(filepath.Join(skillsDir, "*", "SKILL.md"))
-	if err != nil {
-		return nil, fmt.Errorf("globbing skills: %w", err)
-	}
-
-	var skills []DiscoveredSkill
-	for _, path := range matches {
-		name := filepath.Base(filepath.Dir(path))
-		relPath := filepath.Join("skills", name, "SKILL.md")
-		skills = append(skills, DiscoveredSkill{Name: name, Path: relPath})
-	}
-
-	return skills, nil
-}
-
-func Generate(config Config, discovered []DiscoveredPlugin, skills []DiscoveredSkill) Marketplace {
+func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 	m := Marketplace{
 		Name:  config.Name,
 		Owner: config.Owner,
@@ -106,26 +107,33 @@ func Generate(config Config, discovered []DiscoveredPlugin, skills []DiscoveredS
 		}
 	}
 
-	mcpServers := make(map[string]any, len(discovered))
+	mcpServers := make(map[string]any)
+	var skills []string
 
 	for _, dp := range discovered {
-		serverType := dp.Type
-		if serverType == "" {
-			serverType = "stdio"
+		for name, srv := range dp.McpServers {
+			serverType := srv.Type
+			if serverType == "" {
+				serverType = "stdio"
+			}
+
+			server := map[string]any{
+				"type":    serverType,
+				"command": srv.Command,
+			}
+			if len(srv.Args) > 0 {
+				server["args"] = srv.Args
+			}
+
+			mcpServers[name] = server
 		}
 
-		server := map[string]any{
-			"type":    serverType,
-			"command": dp.Command,
+		for _, s := range dp.Skills {
+			skills = append(skills, s.Path)
 		}
-		if len(dp.Args) > 0 {
-			server["args"] = dp.Args
-		}
-
-		mcpServers[dp.Name] = server
 	}
 
-	if len(mcpServers) > 0 {
+	if len(mcpServers) > 0 || len(skills) > 0 {
 		var source any
 		if config.Repo != "" {
 			source = GitHubSource{Source: "github", Repo: config.Repo}
@@ -139,42 +147,13 @@ func Generate(config Config, discovered []DiscoveredPlugin, skills []DiscoveredS
 			Description: config.Description,
 			Source:      source,
 			Strict:      &strict,
-			McpServers:  mcpServers,
 		}
 
+		if len(mcpServers) > 0 {
+			plugin.McpServers = mcpServers
+		}
 		if len(skills) > 0 {
-			skillsMap := make(map[string]any, len(skills))
-			for _, s := range skills {
-				skillsMap[s.Name] = map[string]any{
-					"path": s.Path,
-				}
-			}
-			plugin.Skills = skillsMap
-		}
-
-		m.Plugins = append(m.Plugins, plugin)
-	} else if len(skills) > 0 {
-		skillsMap := make(map[string]any, len(skills))
-		for _, s := range skills {
-			skillsMap[s.Name] = map[string]any{
-				"path": s.Path,
-			}
-		}
-
-		var source any
-		if config.Repo != "" {
-			source = GitHubSource{Source: "github", Repo: config.Repo}
-		} else {
-			source = "."
-		}
-
-		strict := false
-		plugin := Plugin{
-			Name:        config.Name,
-			Description: config.Description,
-			Source:      source,
-			Strict:      &strict,
-			Skills:      skillsMap,
+			plugin.Skills = skills
 		}
 
 		m.Plugins = append(m.Plugins, plugin)

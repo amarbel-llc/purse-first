@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/amarbel-llc/purse-first/purse"
 )
 
 func TestGenerate(t *testing.T) {
@@ -26,11 +28,17 @@ func TestGenerate(t *testing.T) {
 	}
 
 	discovered := []DiscoveredPlugin{
-		{Name: "alpha", Type: "stdio", Command: "alpha-server", Args: []string{"serve"}, StorePath: "/nix/store/abc123-alpha-1.0.0"},
-		{Name: "beta", Type: "stdio", Command: "beta-server"},
+		{
+			Name: "alpha",
+			McpServers: map[string]purse.McpServer{
+				"alpha": {Type: "stdio", Command: "alpha-server", Args: []string{"serve"}},
+				"beta":  {Type: "stdio", Command: "beta-server"},
+			},
+			StorePath: "/nix/store/abc123-alpha-1.0.0",
+		},
 	}
 
-	m := Generate(config, discovered, nil)
+	m := Generate(config, discovered)
 
 	if m.Name != "test-marketplace" {
 		t.Errorf("name = %q, want %q", m.Name, "test-marketplace")
@@ -97,10 +105,15 @@ func TestGenerateNoRepo(t *testing.T) {
 	}
 
 	discovered := []DiscoveredPlugin{
-		{Name: "alpha", Type: "stdio", Command: "alpha-server"},
+		{
+			Name: "alpha",
+			McpServers: map[string]purse.McpServer{
+				"alpha": {Type: "stdio", Command: "alpha-server"},
+			},
+		},
 	}
 
-	m := Generate(config, discovered, nil)
+	m := Generate(config, discovered)
 
 	if len(m.Plugins) != 1 {
 		t.Fatalf("len(plugins) = %d, want 1", len(m.Plugins))
@@ -122,7 +135,7 @@ func TestGenerateEmpty(t *testing.T) {
 		Plugins: map[string]PluginMeta{},
 	}
 
-	m := Generate(config, nil, nil)
+	m := Generate(config, nil)
 
 	if len(m.Plugins) != 0 {
 		t.Errorf("len(plugins) = %d, want 0", len(m.Plugins))
@@ -159,8 +172,136 @@ func TestDiscoverPlugins(t *testing.T) {
 	if plugins[0].Name != "alpha" {
 		t.Errorf("name = %q", plugins[0].Name)
 	}
-	if plugins[0].Command != "alpha-cmd" {
-		t.Errorf("command = %q", plugins[0].Command)
+	if len(plugins[0].McpServers) != 1 {
+		t.Errorf("len(McpServers) = %d, want 1", len(plugins[0].McpServers))
+	}
+	srv, ok := plugins[0].McpServers["alpha"]
+	if !ok {
+		t.Fatal("McpServers[alpha] missing")
+	}
+	if srv.Command != "alpha-cmd" {
+		t.Errorf("command = %q", srv.Command)
+	}
+}
+
+func TestDiscoverPluginsWithSkills(t *testing.T) {
+	dir := t.TempDir()
+
+	alphaDir := filepath.Join(dir, "alpha")
+	skillDir := filepath.Join(alphaDir, "skills", "my-skill")
+	os.MkdirAll(skillDir, 0o755)
+
+	plugin := map[string]any{
+		"name": "alpha",
+		"mcpServers": map[string]any{
+			"alpha": map[string]any{
+				"type":    "stdio",
+				"command": "alpha-cmd",
+			},
+		},
+	}
+	data, _ := json.MarshalIndent(plugin, "", "  ")
+	os.WriteFile(filepath.Join(alphaDir, "plugin.json"), data, 0o644)
+	os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte("# My Skill"), 0o644)
+
+	plugins, err := DiscoverPlugins(dir)
+	if err != nil {
+		t.Fatalf("DiscoverPlugins: %v", err)
+	}
+	if len(plugins) != 1 {
+		t.Fatalf("len(plugins) = %d, want 1", len(plugins))
+	}
+
+	if len(plugins[0].Skills) != 1 {
+		t.Fatalf("len(Skills) = %d, want 1", len(plugins[0].Skills))
+	}
+	if plugins[0].Skills[0].Name != "my-skill" {
+		t.Errorf("skill name = %q, want %q", plugins[0].Skills[0].Name, "my-skill")
+	}
+	expectedPath := "./share/purse-first/alpha/skills/my-skill"
+	if plugins[0].Skills[0].Path != expectedPath {
+		t.Errorf("skill path = %q, want %q", plugins[0].Skills[0].Path, expectedPath)
+	}
+}
+
+func TestGenerateWithSkillsOnly(t *testing.T) {
+	config := Config{
+		Name:        "test-marketplace",
+		Description: "A marketplace with skills only",
+		Repo:        "example/test-marketplace",
+		Owner:       Owner{Name: "test"},
+		Plugins:     map[string]PluginMeta{},
+	}
+
+	discovered := []DiscoveredPlugin{
+		{
+			Name: "purse-first",
+			Skills: []DiscoveredSkill{
+				{Name: "plugin-mcp", Path: "./share/purse-first/purse-first/skills/plugin-mcp"},
+			},
+		},
+	}
+
+	m := Generate(config, discovered)
+
+	if len(m.Plugins) != 1 {
+		t.Fatalf("len(plugins) = %d, want 1", len(m.Plugins))
+	}
+
+	plugin := m.Plugins[0]
+	if plugin.Name != "test-marketplace" {
+		t.Errorf("plugin.name = %q, want %q", plugin.Name, "test-marketplace")
+	}
+
+	if len(plugin.Skills) != 1 {
+		t.Fatalf("len(skills) = %d, want 1", len(plugin.Skills))
+	}
+
+	if plugin.Skills[0] != "./share/purse-first/purse-first/skills/plugin-mcp" {
+		t.Errorf("skills[0] = %q, want %q", plugin.Skills[0], "./share/purse-first/purse-first/skills/plugin-mcp")
+	}
+
+	if plugin.McpServers != nil {
+		t.Errorf("plugin should not have mcpServers")
+	}
+}
+
+func TestGenerateWithMcpAndSkills(t *testing.T) {
+	config := Config{
+		Name:        "test-marketplace",
+		Description: "A marketplace with both MCP and skills",
+		Repo:        "example/test-marketplace",
+		Owner:       Owner{Name: "test"},
+		Plugins:     map[string]PluginMeta{},
+	}
+
+	discovered := []DiscoveredPlugin{
+		{
+			Name: "alpha",
+			McpServers: map[string]purse.McpServer{
+				"alpha": {Type: "stdio", Command: "alpha-server"},
+			},
+		},
+		{
+			Name: "purse-first",
+			Skills: []DiscoveredSkill{
+				{Name: "plugin-mcp", Path: "./share/purse-first/purse-first/skills/plugin-mcp"},
+			},
+		},
+	}
+
+	m := Generate(config, discovered)
+
+	if len(m.Plugins) != 1 {
+		t.Fatalf("len(plugins) = %d, want 1 (skills merged into MCP plugin)", len(m.Plugins))
+	}
+
+	plugin := m.Plugins[0]
+	if len(plugin.McpServers) != 1 {
+		t.Errorf("len(mcpServers) = %d, want 1", len(plugin.McpServers))
+	}
+	if len(plugin.Skills) != 1 {
+		t.Errorf("len(skills) = %d, want 1", len(plugin.Skills))
 	}
 }
 
@@ -193,102 +334,6 @@ func TestReadConfig(t *testing.T) {
 	}
 	if got.Plugins["tool"].Version != "2.0.0" {
 		t.Errorf("plugins.tool.version = %q", got.Plugins["tool"].Version)
-	}
-}
-
-func TestGenerateWithSkillsOnly(t *testing.T) {
-	config := Config{
-		Name:        "test-marketplace",
-		Description: "A marketplace with skills only",
-		Repo:        "example/test-marketplace",
-		Owner:       Owner{Name: "test"},
-		Plugins:     map[string]PluginMeta{},
-	}
-
-	skills := []DiscoveredSkill{
-		{Name: "plugin-mcp", Path: "skills/plugin-mcp/SKILL.md"},
-	}
-
-	m := Generate(config, nil, skills)
-
-	if len(m.Plugins) != 1 {
-		t.Fatalf("len(plugins) = %d, want 1", len(m.Plugins))
-	}
-
-	plugin := m.Plugins[0]
-	if plugin.Name != "test-marketplace" {
-		t.Errorf("plugin.name = %q, want %q", plugin.Name, "test-marketplace")
-	}
-
-	if len(plugin.Skills) != 1 {
-		t.Fatalf("len(skills) = %d, want 1", len(plugin.Skills))
-	}
-
-	skill, ok := plugin.Skills["plugin-mcp"].(map[string]any)
-	if !ok {
-		t.Fatal("skills.plugin-mcp missing")
-	}
-	if skill["path"] != "skills/plugin-mcp/SKILL.md" {
-		t.Errorf("skills.plugin-mcp.path = %v", skill["path"])
-	}
-
-	if plugin.McpServers != nil {
-		t.Errorf("plugin should not have mcpServers")
-	}
-}
-
-func TestGenerateWithMcpAndSkills(t *testing.T) {
-	config := Config{
-		Name:        "test-marketplace",
-		Description: "A marketplace with both MCP and skills",
-		Repo:        "example/test-marketplace",
-		Owner:       Owner{Name: "test"},
-		Plugins:     map[string]PluginMeta{},
-	}
-
-	discovered := []DiscoveredPlugin{
-		{Name: "alpha", Type: "stdio", Command: "alpha-server"},
-	}
-
-	skills := []DiscoveredSkill{
-		{Name: "plugin-mcp", Path: "skills/plugin-mcp/SKILL.md"},
-	}
-
-	m := Generate(config, discovered, skills)
-
-	if len(m.Plugins) != 1 {
-		t.Fatalf("len(plugins) = %d, want 1 (skills merged into MCP plugin)", len(m.Plugins))
-	}
-
-	plugin := m.Plugins[0]
-	if len(plugin.McpServers) != 1 {
-		t.Errorf("len(mcpServers) = %d, want 1", len(plugin.McpServers))
-	}
-	if len(plugin.Skills) != 1 {
-		t.Errorf("len(skills) = %d, want 1", len(plugin.Skills))
-	}
-}
-
-func TestDiscoverSkills(t *testing.T) {
-	dir := t.TempDir()
-
-	skillDir := filepath.Join(dir, "my-skill")
-	os.MkdirAll(skillDir, 0o755)
-	os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte("# My Skill"), 0o644)
-
-	skills, err := DiscoverSkills(dir)
-	if err != nil {
-		t.Fatalf("DiscoverSkills: %v", err)
-	}
-	if len(skills) != 1 {
-		t.Fatalf("len(skills) = %d, want 1", len(skills))
-	}
-
-	if skills[0].Name != "my-skill" {
-		t.Errorf("name = %q, want %q", skills[0].Name, "my-skill")
-	}
-	if skills[0].Path != "skills/my-skill/SKILL.md" {
-		t.Errorf("path = %q, want %q", skills[0].Path, "skills/my-skill/SKILL.md")
 	}
 }
 

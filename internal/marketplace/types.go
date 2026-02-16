@@ -1,5 +1,7 @@
 package marketplace
 
+import "github.com/amarbel-llc/purse-first/purse"
+
 // Marketplace is the top-level Claude Code marketplace.json structure.
 type Marketplace struct {
 	Schema      string    `json:"$schema,omitempty"`
@@ -38,7 +40,7 @@ type Plugin struct {
 	Strict       *bool          `json:"strict,omitempty"`
 	McpServers   map[string]any `json:"mcpServers,omitempty"`
 	LspServers   map[string]any `json:"lspServers,omitempty"`
-	Skills       map[string]any `json:"skills,omitempty"`
+	Skills       []string       `json:"skills,omitempty"`
 	Hooks        map[string]any `json:"hooks,omitempty"`
 	Commands     map[string]any `json:"commands,omitempty"`
 	Agents       map[string]any `json:"agents,omitempty"`
@@ -77,13 +79,12 @@ type PluginMeta struct {
 	Repo        string   `json:"repo,omitempty"`
 }
 
-// DiscoveredPlugin holds the MCP server fields read from a purse plugin.json.
+// DiscoveredPlugin holds a plugin's metadata discovered from a plugin directory.
 type DiscoveredPlugin struct {
-	Name      string   `json:"name"`
-	Type      string   `json:"type"`
-	Command   string   `json:"command"`
-	Args      []string `json:"args"`
-	StorePath string   `json:"-"`
+	Name       string
+	McpServers map[string]purse.McpServer
+	Skills     []DiscoveredSkill
+	StorePath  string
 }
 
 // DiscoveredSkill holds a skill found in the skills directory.

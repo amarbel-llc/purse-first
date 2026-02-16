@@ -39,7 +39,12 @@ function all_plugins_have_github_source { # @test
 function plugin_names_match_config { # @test
   run jq -r '[.plugins[].name] | sort | join(",")' "$marketplace_json"
   assert_success
-  assert_output "get-hubbed,grit,lux,nix"
+  assert_output "purse-first"
+}
+
+function marketplace_has_skills { # @test
+  run jq -e '.plugins[0].skills[] | select(endswith("plugin-mcp"))' "$marketplace_json"
+  assert_success
 }
 
 function description_in_metadata { # @test

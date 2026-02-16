@@ -100,6 +100,16 @@
             "-w"
           ];
 
+          postInstall = ''
+            mkdir -p $out/share/purse-first/purse-first/skills
+            cp -r ${./skills}/plugin-mcp $out/share/purse-first/purse-first/skills/plugin-mcp
+            cat > $out/share/purse-first/purse-first/plugin.json << 'PLUGIN'
+            {
+              "name": "purse-first"
+            }
+            PLUGIN
+          '';
+
           meta = with pkgs.lib; {
             description = "MCP-first tool routing for Claude Code";
             homepage = "https://github.com/friedenberg/purse-first";
@@ -128,14 +138,13 @@
           ];
           nativeBuildInputs = [ pkgs.makeWrapper ];
           postBuild = ''
+            cp -r ${purse-first-pkg}/share/purse-first/purse-first $out/share/purse-first/purse-first
+
             makeWrapper ${purse-first-pkg}/bin/purse-first $out/bin/purse-first \
               --set PURSE_FIRST_PLUGINS_DIR "$out/share/purse-first"
 
-            cp -r ${./skills} $out/skills
-
             $out/bin/purse-first generate-marketplace \
               --plugins-dir "$out/share/purse-first" \
-              --skills-dir "$out/skills" \
               --config ${./marketplace-config.json} \
               --output "$out/.claude-plugin/marketplace.json"
           '';
