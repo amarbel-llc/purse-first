@@ -79,12 +79,28 @@ test-validate:
 validate:
     nix develop --command go run ./cmd/purse-first validate .claude-plugin/plugin.json
 
-# Run all tests (unit + integration)
-test-all: test test-integration
+# Run all tests (unit + integration + libs)
+test-all: test test-go-mcp test-rust-mcp test-integration
 
 # Generate local plugin.json with discovered skills
 generate-local-plugin:
     nix develop --command go run ./cmd/purse-first generate-local-plugin
+
+# Build go-lib-mcp
+build-go-mcp:
+    cd libs/go-mcp && go build ./...
+
+# Test go-lib-mcp
+test-go-mcp:
+    cd libs/go-mcp && go test -v ./...
+
+# Build rust-lib-mcp
+build-rust-mcp:
+    nix build ./libs/rust-mcp
+
+# Test rust-lib-mcp
+test-rust-mcp:
+    cd libs/rust-mcp && nix develop --command cargo test
 
 # Clean build artifacts
 clean:
