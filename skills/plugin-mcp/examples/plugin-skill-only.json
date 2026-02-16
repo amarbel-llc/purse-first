@@ -1,0 +1,6 @@
+{
+  "name": "my-plugin",
+  "skills": [
+    "./skills/my-skill"
+  ]
+}

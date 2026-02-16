@@ -1,0 +1,12 @@
+{
+  "name": "my-mcp",
+  "mcpServers": {
+    "my-mcp": {
+      "type": "stdio",
+      "command": "my-mcp"
+    }
+  },
+  "skills": [
+    "./skills/usage-patterns"
+  ]
+}
