@@ -69,6 +69,16 @@ test-validate-repos:
     nix develop --command zz-tests_bats/bin/run-sandcastle-bats.bash \
       bats --tap zz-tests_bats/validate_plugin_repos.bats
 
+# Run validate-specific BATS tests
+test-validate:
+    nix build
+    nix develop --command zz-tests_bats/bin/run-sandcastle-bats.bash \
+      bats --tap zz-tests_bats/validate_documents.bats
+
+# Validate own plugin manifest
+validate:
+    nix develop --command go run ./cmd/purse-first validate .claude-plugin/plugin.json
+
 # Run all tests (unit + integration)
 test-all: test test-integration
 

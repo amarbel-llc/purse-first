@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/amarbel-llc/purse-first/internal/localplugin"
 	"github.com/amarbel-llc/purse-first/internal/marketplace"
 	"github.com/amarbel-llc/purse-first/internal/mcp"
+	"github.com/amarbel-llc/purse-first/internal/validate"
 )
 
 func main() {
@@ -152,7 +154,54 @@ func main() {
 
 	genLocalPluginCmd.Flags().StringVar(&localPluginRoot, "root", "", "repository root (defaults to cwd)")
 
-	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, genMarketplaceCmd, genLocalPluginCmd)
+	var (
+		validateType   string
+		validateStrict bool
+	)
+
+	validateCmd := &cobra.Command{
+		Use:   "validate [path]",
+		Short: "Validate plugin, mapping, or marketplace documents",
+		Long: `Validate Claude Code plugin documents.
+
+Accepts a file path, directory, or "-" for stdin.
+Auto-detects document type from filename or content.
+Use --type to override detection. Use --strict to promote warnings to errors.`,
+		Args:          cobra.MaximumNArgs(1),
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			docType := parseDocType(validateType)
+			if validateType != "" && docType == validate.Unknown {
+				return fmt.Errorf("unknown type %q; use plugin, mapping, or marketplace", validateType)
+			}
+
+			path := "."
+			if len(args) > 0 {
+				path = args[0]
+			}
+
+			if path == "-" {
+				return validateStdin(docType, validateStrict)
+			}
+
+			info, err := os.Stat(path)
+			if err != nil {
+				return fmt.Errorf("cannot access %s: %w", path, err)
+			}
+
+			if info.IsDir() {
+				return validateDir(path, validateStrict)
+			}
+
+			return validateFile(path, docType, validateStrict)
+		},
+	}
+
+	validateCmd.Flags().StringVar(&validateType, "type", "", "document type: plugin, mapping, marketplace")
+	validateCmd.Flags().BoolVar(&validateStrict, "strict", false, "promote warnings to errors")
+
+	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, genMarketplaceCmd, genLocalPluginCmd, validateCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
@@ -172,4 +221,83 @@ func selfPath() (string, error) {
 	}
 
 	return resolved, nil
+}
+
+func parseDocType(s string) validate.DocType {
+	switch s {
+	case "plugin":
+		return validate.PluginDoc
+	case "mapping":
+		return validate.MappingDoc
+	case "marketplace":
+		return validate.MarketplaceDoc
+	default:
+		return validate.Unknown
+	}
+}
+
+func validateStdin(docType validate.DocType, strict bool) error {
+	if docType == validate.Unknown {
+		return fmt.Errorf("--type is required when reading from stdin")
+	}
+
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return fmt.Errorf("reading stdin: %w", err)
+	}
+
+	r, dt, err := validate.ValidateBytes(data, docType, strict)
+	if err != nil {
+		return err
+	}
+
+	return reportResult(r, dt, "<stdin>", strict)
+}
+
+func validateFile(path string, docType validate.DocType, strict bool) error {
+	r, dt, err := validate.ValidateFile(path, docType, strict)
+	if err != nil {
+		return err
+	}
+
+	return reportResult(r, dt, path, strict)
+}
+
+func validateDir(dir string, strict bool) error {
+	r, err := validate.ValidateDirectory(dir, strict)
+	if err != nil {
+		return err
+	}
+
+	for _, issue := range r.Issues() {
+		fmt.Fprintf(os.Stderr, "%s\n", issue)
+	}
+
+	if r.HasErrors() {
+		return fmt.Errorf("validation failed")
+	}
+
+	if strict && r.HasWarnings() {
+		return fmt.Errorf("validation failed (strict mode)")
+	}
+
+	fmt.Fprintf(os.Stderr, "valid: %s\n", dir)
+	return nil
+}
+
+func reportResult(r *validate.Result, dt validate.DocType, path string, strict bool) error {
+	for _, issue := range r.Issues() {
+		fmt.Fprintf(os.Stderr, "%s: %s\n", path, issue)
+	}
+
+	if r.HasErrors() {
+		return fmt.Errorf("validation failed")
+	}
+
+	if strict && r.HasWarnings() {
+		return fmt.Errorf("validation failed (strict mode)")
+	}
+
+	fmt.Fprintf(os.Stderr, "valid %s: %s\n", dt, path)
+	return nil
 }

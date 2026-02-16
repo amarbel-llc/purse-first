@@ -4,6 +4,7 @@ setup() {
   load "$(dirname "$BATS_TEST_FILE")/common.bash"
   export output
   marketplace_json="$(marketplace_result)"
+  purse_first="$(purse_first_bin)"
 }
 
 function marketplace_json_exists { # @test
@@ -12,6 +13,11 @@ function marketplace_json_exists { # @test
 
 function validate_marketplace_json_passes { # @test
   run claude plugin validate "$marketplace_json"
+  assert_success
+}
+
+function purse_first_validate_marketplace_json_passes { # @test
+  run "$purse_first" validate "$marketplace_json"
   assert_success
 }
 

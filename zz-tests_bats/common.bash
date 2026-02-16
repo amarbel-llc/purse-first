@@ -12,3 +12,8 @@ marketplace_result() {
   local result_path="${PURSE_FIRST_RESULT:-$BATS_CWD/result}"
   echo "${result_path}/.claude-plugin/marketplace.json"
 }
+
+purse_first_bin() {
+  local result_path="${PURSE_FIRST_RESULT:-$BATS_CWD/result}"
+  echo "${result_path}/bin/purse-first"
+}
