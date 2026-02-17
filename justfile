@@ -115,6 +115,10 @@ build-rust-mcp:
 test-rust-mcp:
     cd libs/rust-mcp && nix develop --command cargo test
 
+# Test command package specifically
+test-command:
+    cd libs/go-mcp && go test -v ./command/
+
 # Clean build artifacts
 clean:
     rm -f purse-first
