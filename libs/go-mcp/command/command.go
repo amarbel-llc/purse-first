@@ -1,5 +1,12 @@
 package command
 
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/amarbel-llc/go-lib-mcp/protocol"
+)
+
 // ParamType identifies the data type of a command parameter.
 type ParamType int
 
@@ -59,6 +66,9 @@ type Command struct {
 
 	Params   []Param
 	MapsBash []BashMapping
+
+	// RunMCP handles MCP tool invocations.
+	RunMCP func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error)
 }
 
 // RequiredParams returns only the params marked as required.
