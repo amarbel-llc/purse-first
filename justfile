@@ -75,12 +75,25 @@ test-validate:
     nix develop --command zz-tests_bats/bin/run-sandcastle-bats.bash \
       bats --tap zz-tests_bats/validate_documents.bats
 
+# Run hook unit tests + BATS hook I/O tests
+test-hooks:
+    nix develop --command go test -v ./internal/hook/...
+    nix build
+    nix develop --command zz-tests_bats/bin/run-sandcastle-bats.bash \
+      bats --tap zz-tests_bats/hook_io.bats
+
+# Run lifecycle tests with sandcastle-isolated HOME
+test-lifecycle:
+    nix build
+    nix develop --command zz-tests_bats/bin/run-sandcastle-lifecycle.bash \
+      bats --tap zz-tests_bats/hook_lifecycle.bats
+
 # Validate own plugin manifest
 validate:
     nix develop --command go run ./cmd/purse-first validate .claude-plugin/plugin.json
 
 # Run all tests (unit + integration + libs)
-test-all: test test-go-mcp test-rust-mcp test-integration
+test-all: test test-go-mcp test-rust-mcp test-integration test-hooks test-lifecycle
 
 # Generate local plugin.json with discovered skills
 generate-local-plugin:
