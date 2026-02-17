@@ -86,3 +86,31 @@ func TestAppAllCommands(t *testing.T) {
 		t.Errorf("VisibleCommands count = %d, want 2", visible)
 	}
 }
+
+func TestAppAllCommandsYieldsCanonicalName(t *testing.T) {
+	app := NewApp("test", "test")
+	app.AddCommand(&Command{
+		Name:    "checkin",
+		Aliases: []string{"add", "save"},
+	})
+
+	for name, cmd := range app.AllCommands() {
+		if name != cmd.Name {
+			t.Errorf("AllCommands yielded name %q, want canonical %q", name, cmd.Name)
+		}
+	}
+}
+
+func TestAppVisibleCommandsYieldsCanonicalName(t *testing.T) {
+	app := NewApp("test", "test")
+	app.AddCommand(&Command{
+		Name:    "status",
+		Aliases: []string{"st"},
+	})
+
+	for name, cmd := range app.VisibleCommands() {
+		if name != cmd.Name {
+			t.Errorf("VisibleCommands yielded name %q, want canonical %q", name, cmd.Name)
+		}
+	}
+}

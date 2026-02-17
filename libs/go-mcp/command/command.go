@@ -15,6 +15,7 @@ const (
 	Int
 	Bool
 	Float
+	Array
 )
 
 // JSONSchemaType returns the JSON Schema type name for this ParamType.
@@ -26,6 +27,8 @@ func (pt ParamType) JSONSchemaType() string {
 		return "boolean"
 	case Float:
 		return "number"
+	case Array:
+		return "array"
 	default:
 		return "string"
 	}

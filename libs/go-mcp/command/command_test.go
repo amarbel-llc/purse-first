@@ -11,6 +11,7 @@ func TestParamTypeString(t *testing.T) {
 		{Int, "integer"},
 		{Bool, "boolean"},
 		{Float, "number"},
+		{Array, "array"},
 	}
 	for _, tt := range tests {
 		if got := tt.pt.JSONSchemaType(); got != tt.want {

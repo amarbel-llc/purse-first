@@ -47,12 +47,12 @@ func (a *App) GetCommand(name string) (*Command, bool) {
 func (a *App) AllCommands() func(yield func(string, *Command) bool) {
 	return func(yield func(string, *Command) bool) {
 		seen := make(map[*Command]bool)
-		for name, cmd := range a.commands {
+		for _, cmd := range a.commands {
 			if seen[cmd] {
 				continue
 			}
 			seen[cmd] = true
-			if !yield(name, cmd) {
+			if !yield(cmd.Name, cmd) {
 				return
 			}
 		}

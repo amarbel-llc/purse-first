@@ -2,10 +2,15 @@ package command
 
 import "encoding/json"
 
+type schemaItems struct {
+	Type string `json:"type"`
+}
+
 type schemaProperty struct {
-	Type        string `json:"type"`
-	Description string `json:"description,omitempty"`
-	Default     any    `json:"default,omitempty"`
+	Type        string       `json:"type"`
+	Description string       `json:"description,omitempty"`
+	Default     any          `json:"default,omitempty"`
+	Items       *schemaItems `json:"items,omitempty"`
 }
 
 type inputSchema struct {
@@ -27,6 +32,9 @@ func (c *Command) InputSchema() json.RawMessage {
 			Type:        p.Type.JSONSchemaType(),
 			Description: p.Description,
 			Default:     p.Default,
+		}
+		if p.Type == Array {
+			prop.Items = &schemaItems{Type: "string"}
 		}
 		schema.Properties[p.Name] = prop
 

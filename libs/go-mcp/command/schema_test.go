@@ -63,6 +63,34 @@ func TestCommandInputSchemaNoRequired(t *testing.T) {
 	}
 }
 
+func TestCommandInputSchemaArray(t *testing.T) {
+	cmd := Command{
+		Name: "diff",
+		Params: []Param{
+			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
+			{Name: "paths", Type: Array, Description: "Limit diff to specific paths"},
+		},
+	}
+
+	schema := cmd.InputSchema()
+
+	var parsed map[string]any
+	if err := json.Unmarshal(schema, &parsed); err != nil {
+		t.Fatalf("unmarshal schema: %v", err)
+	}
+
+	props := parsed["properties"].(map[string]any)
+	pathsProp := props["paths"].(map[string]any)
+	if pathsProp["type"] != "array" {
+		t.Errorf("paths.type = %v, want array", pathsProp["type"])
+	}
+
+	items := pathsProp["items"].(map[string]any)
+	if items["type"] != "string" {
+		t.Errorf("paths.items.type = %v, want string", items["type"])
+	}
+}
+
 func TestCommandInputSchemaWithDefault(t *testing.T) {
 	cmd := Command{
 		Name: "serve",
