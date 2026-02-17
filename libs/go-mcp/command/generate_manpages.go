@@ -1,0 +1,126 @@
+package command
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"time"
+)
+
+// GenerateManpages writes roff-formatted manpages to {dir}/share/man/man1/.
+// One page per app ({name}.1) and one per non-hidden command ({name}-{cmd}.1).
+func (a *App) GenerateManpages(dir string) error {
+	manDir := filepath.Join(dir, "share", "man", "man1")
+	if err := os.MkdirAll(manDir, 0o755); err != nil {
+		return err
+	}
+
+	if err := a.writeAppManpage(manDir); err != nil {
+		return err
+	}
+
+	for _, cmd := range a.AllCommands() {
+		if cmd.Hidden {
+			continue
+		}
+		if err := a.writeCommandManpage(manDir, cmd); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (a *App) writeAppManpage(dir string) error {
+	var b strings.Builder
+	date := time.Now().Format("2006-01-02")
+	name := strings.ToUpper(a.Name)
+
+	fmt.Fprintf(&b, ".TH %s 1 %q %q\n", name, date, a.Name+" "+a.Version)
+	fmt.Fprintf(&b, ".SH NAME\n")
+	fmt.Fprintf(&b, "%s \\- %s\n", a.Name, a.Description.Short)
+
+	if a.Description.Long != "" {
+		fmt.Fprintf(&b, ".SH DESCRIPTION\n")
+		fmt.Fprintf(&b, "%s\n", a.Description.Long)
+	}
+
+	type namedCmd struct {
+		name string
+		cmd  *Command
+	}
+	var cmds []namedCmd
+	for cmdName, cmd := range a.VisibleCommands() {
+		cmds = append(cmds, namedCmd{cmdName, cmd})
+	}
+	sort.Slice(cmds, func(i, j int) bool {
+		return cmds[i].name < cmds[j].name
+	})
+
+	if len(cmds) > 0 {
+		fmt.Fprintf(&b, ".SH COMMANDS\n")
+		for _, nc := range cmds {
+			fmt.Fprintf(&b, ".TP\n")
+			fmt.Fprintf(&b, ".B %s\n", nc.name)
+			fmt.Fprintf(&b, "%s\n", nc.cmd.Description.Short)
+		}
+	}
+
+	path := filepath.Join(dir, a.Name+".1")
+	return os.WriteFile(path, []byte(b.String()), 0o644)
+}
+
+func (a *App) writeCommandManpage(dir string, cmd *Command) error {
+	var b strings.Builder
+	date := time.Now().Format("2006-01-02")
+	fullName := a.Name + "-" + cmd.Name
+	upperName := strings.ToUpper(fullName)
+
+	fmt.Fprintf(&b, ".TH %s 1 %q %q\n", upperName, date, a.Name+" "+a.Version)
+	fmt.Fprintf(&b, ".SH NAME\n")
+	fmt.Fprintf(&b, "%s \\- %s\n", fullName, cmd.Description.Short)
+
+	// SYNOPSIS
+	fmt.Fprintf(&b, ".SH SYNOPSIS\n")
+	fmt.Fprintf(&b, ".B %s %s\n", a.Name, cmd.Name)
+	for _, p := range cmd.Params {
+		if p.Required {
+			fmt.Fprintf(&b, ".RI --%s = %s\n", p.Name, strings.ToUpper(p.Type.JSONSchemaType()))
+		} else {
+			fmt.Fprintf(&b, ".RI [ --%s = %s ]\n", p.Name, strings.ToUpper(p.Type.JSONSchemaType()))
+		}
+	}
+
+	desc := cmd.Description.Long
+	if desc == "" {
+		desc = cmd.Description.Short
+	}
+	fmt.Fprintf(&b, ".SH DESCRIPTION\n")
+	fmt.Fprintf(&b, "%s\n", desc)
+
+	if len(cmd.Params) > 0 {
+		fmt.Fprintf(&b, ".SH OPTIONS\n")
+		for _, p := range cmd.Params {
+			fmt.Fprintf(&b, ".TP\n")
+			label := fmt.Sprintf("--%s", p.Name)
+			if p.Required {
+				label += " (required)"
+			}
+			fmt.Fprintf(&b, ".B %s\n", label)
+			fmt.Fprintf(&b, "%s\n", p.Description)
+			if p.Default != nil {
+				fmt.Fprintf(&b, "Default: %v\n", p.Default)
+			}
+		}
+	}
+
+	if len(cmd.Aliases) > 0 {
+		fmt.Fprintf(&b, ".SH ALIASES\n")
+		fmt.Fprintf(&b, "%s\n", strings.Join(cmd.Aliases, ", "))
+	}
+
+	path := filepath.Join(dir, fullName+".1")
+	return os.WriteFile(path, []byte(b.String()), 0o644)
+}

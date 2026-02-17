@@ -1,0 +1,90 @@
+package command
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func TestGenerateManpageApp(t *testing.T) {
+	app := NewApp("grit", "Git operations MCP server")
+	app.Version = "0.1.0"
+	app.Description.Long = "An MCP server exposing git operations."
+
+	app.AddCommand(&Command{
+		Name:        "status",
+		Description: Description{Short: "Show working tree status"},
+	})
+	app.AddCommand(&Command{
+		Name:   "generate-all",
+		Hidden: true,
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	appPage, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "grit.1"))
+	if err != nil {
+		t.Fatalf("read grit.1: %v", err)
+	}
+
+	content := string(appPage)
+	if !strings.Contains(content, ".TH GRIT 1") {
+		t.Error("missing .TH header")
+	}
+	if !strings.Contains(content, "Git operations MCP server") {
+		t.Error("missing short description in NAME")
+	}
+	if !strings.Contains(content, "An MCP server exposing git operations.") {
+		t.Error("missing long description in DESCRIPTION")
+	}
+	if !strings.Contains(content, "status") {
+		t.Error("missing status in COMMANDS")
+	}
+	if strings.Contains(content, "generate-all") {
+		t.Error("hidden command should not appear in manpage")
+	}
+}
+
+func TestGenerateManpageCommand(t *testing.T) {
+	app := NewApp("grit", "Git operations")
+
+	app.AddCommand(&Command{
+		Name: "status",
+		Description: Description{
+			Short: "Show working tree status",
+			Long:  "Show working tree status with machine-readable output.",
+		},
+		Params: []Param{
+			{Name: "repo_path", Type: String, Description: "Path to the git repository", Required: true},
+			{Name: "verbose", Type: Bool, Description: "Show verbose output", Default: false},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	cmdPage, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "grit-status.1"))
+	if err != nil {
+		t.Fatalf("read grit-status.1: %v", err)
+	}
+
+	content := string(cmdPage)
+	if !strings.Contains(content, ".TH GRIT-STATUS 1") {
+		t.Error("missing .TH header")
+	}
+	if !strings.Contains(content, "repo_path") {
+		t.Error("missing repo_path in OPTIONS")
+	}
+	if !strings.Contains(content, "(required)") {
+		t.Error("missing required marker")
+	}
+	if !strings.Contains(content, "Path to the git repository") {
+		t.Error("missing param description")
+	}
+}
