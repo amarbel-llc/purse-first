@@ -1,4 +1,4 @@
-// Package main demonstrates a simple MCP server using go-lib-mcp.
+// Package main demonstrates a simple MCP server using go-mcp.
 package main
 
 import (
@@ -9,10 +9,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/amarbel-llc/go-lib-mcp/protocol"
-	"github.com/amarbel-llc/go-lib-mcp/purse"
-	"github.com/amarbel-llc/go-lib-mcp/server"
-	"github.com/amarbel-llc/go-lib-mcp/transport"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/purse"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
 )
 
 func main() {

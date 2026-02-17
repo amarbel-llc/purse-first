@@ -7,7 +7,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/amarbel-llc/go-lib-mcp/jsonrpc"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 )
 
 // Stdio implements MCP stdio transport using newline-delimited JSON.

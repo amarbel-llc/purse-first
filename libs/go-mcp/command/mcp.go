@@ -1,7 +1,7 @@
 package command
 
 import (
-	"github.com/amarbel-llc/go-lib-mcp/server"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
 )
 
 // RegisterMCPTools registers all non-hidden commands as MCP tools

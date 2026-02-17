@@ -30,23 +30,23 @@
 
         version = "0.1.0";
 
-        go-lib-mcp = pkgs.buildGoModule {
-          pname = "go-lib-mcp";
+        go-mcp = pkgs.buildGoModule {
+          pname = "go-mcp";
           inherit version;
           src = ./.;
           vendorHash = null;  # Library with no dependencies
 
           meta = with pkgs.lib; {
             description = "MCP (Model Context Protocol) library for building MCP servers in Go";
-            homepage = "https://github.com/amarbel-llc/go-lib-mcp";
+            homepage = "https://github.com/amarbel-llc/purse-first/libs/go-mcp";
             license = licenses.mit;
           };
         };
       in
       {
         packages = {
-          default = go-lib-mcp;
-          inherit go-lib-mcp;
+          default = go-mcp;
+          inherit go-mcp;
         };
 
         devShells.default = pkgs.mkShell {
@@ -61,7 +61,7 @@
           ];
 
           shellHook = ''
-            echo "go-lib-mcp: MCP library for Go - dev environment"
+            echo "go-mcp: MCP library for Go - dev environment"
           '';
         };
       }

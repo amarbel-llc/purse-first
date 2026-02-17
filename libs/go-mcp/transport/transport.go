@@ -4,7 +4,7 @@
 // - Stream transport for LSP (Content-Length headers, available via jsonrpc package)
 package transport
 
-import "github.com/amarbel-llc/go-lib-mcp/jsonrpc"
+import "github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 
 // Transport defines the interface for sending and receiving JSON-RPC messages.
 // Implementations handle the wire protocol details (framing, encoding, etc.).

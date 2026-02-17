@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/amarbel-llc/go-lib-mcp/protocol"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 )
 
 // ParamType identifies the data type of a command parameter.

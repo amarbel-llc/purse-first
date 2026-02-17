@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/amarbel-llc/go-lib-mcp/executor"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/executor"
 )
 
 // Executor builds and executes processes using Nix flakes.

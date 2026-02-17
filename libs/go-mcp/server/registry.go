@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amarbel-llc/go-lib-mcp/protocol"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 )
 
 // ToolRegistry is a helper for building tool providers.

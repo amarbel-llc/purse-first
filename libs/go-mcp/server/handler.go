@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/amarbel-llc/go-lib-mcp/jsonrpc"
-	"github.com/amarbel-llc/go-lib-mcp/protocol"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 )
 
 // Handler handles MCP protocol method calls.

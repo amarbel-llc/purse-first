@@ -1,10 +1,10 @@
-# go-lib-mcp
+# go-mcp
 
 A Go library for building MCP (Model Context Protocol) servers.
 
 ## Overview
 
-`go-lib-mcp` provides a clean, extensible foundation for creating MCP servers in Go. MCP is a protocol that enables AI assistants to interact with context providers (tools, resources, and prompts).
+`go-mcp` provides a clean, extensible foundation for creating MCP servers in Go. MCP is a protocol that enables AI assistants to interact with context providers (tools, resources, and prompts).
 
 This library handles the protocol details, letting you focus on implementing your server's functionality.
 
@@ -22,7 +22,7 @@ This library handles the protocol details, letting you focus on implementing you
 ## Installation
 
 ```bash
-go get github.com/amarbel-llc/go-lib-mcp
+go get github.com/amarbel-llc/purse-first/libs/go-mcp
 ```
 
 ## Quick Start
@@ -39,9 +39,9 @@ import (
     "log"
     "os"
 
-    "github.com/amarbel-llc/go-lib-mcp/protocol"
-    "github.com/amarbel-llc/go-lib-mcp/server"
-    "github.com/amarbel-llc/go-lib-mcp/transport"
+    "github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
+    "github.com/amarbel-llc/purse-first/libs/go-mcp/server"
+    "github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
 )
 
 func main() {
@@ -266,7 +266,7 @@ stream := jsonrpc.NewStream(reader, writer)
 The optional `executor` package helps manage subprocesses:
 
 ```go
-import "github.com/amarbel-llc/go-lib-mcp/executor/nix"
+import "github.com/amarbel-llc/purse-first/libs/go-mcp/executor/nix"
 
 exec := nix.New()
 
