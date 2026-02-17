@@ -163,6 +163,41 @@ func isPurseFirstEntry(entry map[string]any) bool {
 	return false
 }
 
+func Uninstall(project bool) error {
+	settingsPath, err := settingsFilePath(project)
+	if err != nil {
+		return err
+	}
+
+	settings, err := readSettings(settingsPath)
+	if err != nil {
+		return err
+	}
+
+	hooks, _ := settings["hooks"].(map[string]any)
+	if hooks == nil {
+		return nil
+	}
+
+	for event, val := range hooks {
+		entries, _ := val.([]any)
+		filtered := removePurseFirstEntries(entries)
+		if len(filtered) == 0 {
+			delete(hooks, event)
+		} else {
+			hooks[event] = filtered
+		}
+	}
+
+	if len(hooks) == 0 {
+		delete(settings, "hooks")
+	} else {
+		settings["hooks"] = hooks
+	}
+
+	return writeSettings(settingsPath, settings)
+}
+
 func writeSettings(path string, settings map[string]any) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return fmt.Errorf("creating directory for %s: %w", path, err)

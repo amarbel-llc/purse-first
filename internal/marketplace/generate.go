@@ -95,7 +95,16 @@ func resolveStorePath(manifestPath string) string {
 	return ""
 }
 
-func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
+type GenerateOptions struct {
+	StripHooks bool
+}
+
+func Generate(config Config, discovered []DiscoveredPlugin, opts ...GenerateOptions) Marketplace {
+	var opt GenerateOptions
+	if len(opts) > 0 {
+		opt = opts[0]
+	}
+
 	m := Marketplace{
 		Name:  config.Name,
 		Owner: config.Owner,
@@ -175,6 +184,10 @@ func Generate(config Config, discovered []DiscoveredPlugin) Marketplace {
 		}
 		if len(skills) > 0 {
 			plugin.Skills = skills
+		}
+
+		if opt.StripHooks {
+			plugin.Hooks = nil
 		}
 
 		m.Plugins = append(m.Plugins, plugin)

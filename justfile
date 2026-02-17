@@ -29,9 +29,17 @@ build-gomod2nix:
 build-go: build-gomod2nix
     nix develop --command go build -o purse-first ./cmd/purse-first
 
+# Build marketplace without hooks
+build-no-hooks:
+    nix build .#marketplace-no-hooks
+
 # Install MCP servers and purse-first hook
 install:
     nix run .#install
+
+# Remove purse-first hooks from Claude Code settings
+uninstall-hooks:
+    nix run -- .#default -- uninstall-hooks
 
 # Update MCP server flake inputs
 update-plugins:

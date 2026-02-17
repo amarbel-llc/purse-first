@@ -52,18 +52,31 @@ func main() {
 		SilenceErrors: true,
 	}
 
+	uninstallHooksCmd := &cobra.Command{
+		Use:   "uninstall-hooks",
+		Short: "Remove purse-first hook entries from Claude Code settings",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return hook.Uninstall(false)
+		},
+	}
+
+	var installHooks bool
+
 	installCmd := &cobra.Command{
 		Use:   "install",
 		Short: "Install purse-first marketplace and plugins into Claude Code",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return install.Run(os.Stderr)
+			return install.Run(os.Stderr, install.Options{NoHooks: !installHooks})
 		},
 	}
 
+	installCmd.Flags().BoolVar(&installHooks, "hooks", false, "install purse-first hooks into settings (default: hooks are removed)")
+
 	var (
-		pluginsDir string
-		configPath string
-		outputPath string
+		pluginsDir    string
+		configPath    string
+		outputPath    string
+		genNoHooks    bool
 	)
 
 	genMarketplaceCmd := &cobra.Command{
@@ -80,7 +93,9 @@ func main() {
 				return fmt.Errorf("discovering plugins: %w", err)
 			}
 
-			m := marketplace.Generate(config, discovered)
+			m := marketplace.Generate(config, discovered, marketplace.GenerateOptions{
+				StripHooks: genNoHooks,
+			})
 
 			if err := marketplace.Write(m, outputPath); err != nil {
 				return fmt.Errorf("writing marketplace.json: %w", err)
@@ -94,6 +109,7 @@ func main() {
 	genMarketplaceCmd.Flags().StringVar(&pluginsDir, "plugins-dir", "", "directory containing plugin.json files")
 	genMarketplaceCmd.Flags().StringVar(&configPath, "config", "", "marketplace config file with metadata")
 	genMarketplaceCmd.Flags().StringVar(&outputPath, "output", ".claude-plugin/marketplace.json", "output path")
+	genMarketplaceCmd.Flags().BoolVar(&genNoHooks, "no-hooks", false, "strip hooks from generated marketplace plugins")
 	genMarketplaceCmd.MarkFlagRequired("plugins-dir")
 	genMarketplaceCmd.MarkFlagRequired("config")
 
@@ -170,7 +186,7 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 	validateCmd.Flags().StringVar(&validateType, "type", "", "document type: plugin, mapping, marketplace")
 	validateCmd.Flags().BoolVar(&validateStrict, "strict", false, "promote warnings to errors")
 
-	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, genMarketplaceCmd, genLocalPluginCmd, validateCmd)
+	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, uninstallHooksCmd, genMarketplaceCmd, genLocalPluginCmd, validateCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)

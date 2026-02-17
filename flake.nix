@@ -181,11 +181,53 @@
               --output "$out/.claude-plugin/marketplace.json"
           '';
         };
+
+        marketplace-no-hooks = pkgs.symlinkJoin {
+          name = "claude-plugin-marketplace-no-hooks";
+          paths = [
+            grit-pkg
+            get-hubbed-pkg
+            lux-pkg
+            chix-pkg
+            robin-pkg
+            tap-dancer-pkg
+          ];
+          nativeBuildInputs = [
+            pkgs.makeWrapper
+            pkgs.jq
+          ];
+          postBuild = ''
+            cp -r --no-preserve=mode ${purse-first-pkg}/share/purse-first/bob $out/share/purse-first/bob
+
+            # Strip hooks from each plugin.json.
+            # symlinkJoin creates symlinks for individual files — replace
+            # each plugin.json symlink with a hook-stripped copy.
+            for pj in $out/share/purse-first/*/plugin.json; do
+              ${pkgs.jq}/bin/jq 'del(.hooks)' "$pj" > "$pj.tmp"
+              rm "$pj"
+              mv "$pj.tmp" "$pj"
+            done
+
+            # Remove hook script directories
+            for d in $out/share/purse-first/*/hooks; do
+              [ -e "$d" ] && rm -rf "$d"
+            done
+
+            makeWrapper ${purse-first-pkg}/bin/purse-first $out/bin/purse-first \
+              --set PURSE_FIRST_PLUGINS_DIR "$out/share/purse-first"
+
+            $out/bin/purse-first generate-marketplace \
+              --no-hooks \
+              --plugins-dir "$out/share/purse-first" \
+              --config ${./marketplace-config.json} \
+              --output "$out/.claude-plugin/marketplace.json"
+          '';
+        };
       in
       {
         packages = {
           default = marketplace;
-          inherit mcp-all;
+          inherit mcp-all marketplace-no-hooks;
           grit = grit-pkg;
           get-hubbed = get-hubbed-pkg;
           lux = lux-pkg;
