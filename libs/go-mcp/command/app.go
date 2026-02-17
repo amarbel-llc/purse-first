@@ -7,7 +7,8 @@ type App struct {
 	Name        string
 	Description Description
 	Version     string
-	Params      []Param // global flags
+	MCPArgs     []string // extra args passed to the binary in plugin manifests
+	Params      []Param  // global flags
 	commands    map[string]*Command
 }
 
