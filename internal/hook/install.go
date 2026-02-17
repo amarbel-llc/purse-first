@@ -38,6 +38,7 @@ func Install(binaryPath string, project bool) error {
 
 	toolMatcher := "Read|Edit|Write|Grep|Glob|Bash"
 
+	blocking := true
 	nonBlocking := false
 
 	hookDefs := []struct {
@@ -52,7 +53,7 @@ func Install(binaryPath string, project bool) error {
 					Type:     "command",
 					Command:  binaryPath + " hook",
 					Timeout:  5,
-					Blocking: &nonBlocking,
+					Blocking: &blocking,
 				}},
 			},
 		},

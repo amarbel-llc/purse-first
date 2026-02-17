@@ -22,8 +22,8 @@ func setupMappings(t *testing.T, dir string) {
 				Replaces:   "Read",
 				Extensions: []string{".go", ".py"},
 				Tools: []mapping.ToolSuggestion{
-					{Name: "lsp_document_symbols", UseWhen: "understanding file structure"},
-					{Name: "lsp_hover", UseWhen: "getting type info"},
+					{Name: "document_symbols", UseWhen: "understanding file structure"},
+					{Name: "hover", UseWhen: "getting type info"},
 				},
 				Reason: "Use lux MCP tools instead",
 			},
@@ -31,7 +31,7 @@ func setupMappings(t *testing.T, dir string) {
 				Replaces:   "Grep",
 				Extensions: []string{".go"},
 				Tools: []mapping.ToolSuggestion{
-					{Name: "lsp_workspace_symbols", UseWhen: "finding symbols by name"},
+					{Name: "workspace_symbols", UseWhen: "finding symbols by name"},
 				},
 				Reason: "Use lux MCP tools for semantic search",
 			},
@@ -107,11 +107,11 @@ func TestHandlerDeniesMatchingTool(t *testing.T) {
 	}
 
 	reason := output.HookSpecificOutput.PermissionDecisionReason
-	if !strings.Contains(reason, "mcp__lux__lsp_document_symbols") {
-		t.Errorf("expected mcp__lux__ prefix in reason, got: %s", reason)
+	if !strings.Contains(reason, "mcp__plugin_lux_lux__document_symbols") {
+		t.Errorf("expected mcp__plugin_lux_lux__ prefix in reason, got: %s", reason)
 	}
 
-	if !strings.Contains(reason, "mcp__lux__lsp_hover") {
+	if !strings.Contains(reason, "mcp__plugin_lux_lux__hover") {
 		t.Errorf("expected lsp_hover suggestion in reason, got: %s", reason)
 	}
 }
@@ -265,7 +265,7 @@ func TestHandlerDeniesGitCommand(t *testing.T) {
 	}
 
 	reason := output.HookSpecificOutput.PermissionDecisionReason
-	if !strings.Contains(reason, "mcp__grit__status") {
+	if !strings.Contains(reason, "mcp__plugin_grit_grit__status") {
 		t.Errorf("expected grit status suggestion in reason, got: %s", reason)
 	}
 }

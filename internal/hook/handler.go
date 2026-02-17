@@ -45,7 +45,7 @@ func formatDenyReason(server string, m mapping.Mapping) string {
 	b.WriteString(":\n")
 
 	for _, t := range m.Tools {
-		fmt.Fprintf(&b, "- mcp__%s__%s: %s\n", server, t.Name, t.UseWhen)
+		fmt.Fprintf(&b, "- mcp__plugin_%s_%s__%s: %s\n", server, server, t.Name, t.UseWhen)
 	}
 
 	return strings.TrimRight(b.String(), "\n")
