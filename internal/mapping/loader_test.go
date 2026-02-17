@@ -397,3 +397,29 @@ func TestFindMatchExtensionOrPrefix(t *testing.T) {
 		t.Errorf("expected no match, got %+v", match)
 	}
 }
+
+func TestFindMatchChecksGlobParam(t *testing.T) {
+	t.Skip("TODO: FindMatch should check glob/type params when path is a directory (issue #8)")
+
+	files := []MappingFile{
+		{
+			Server: "lux",
+			Mappings: []Mapping{
+				{
+					Replaces:   "Grep",
+					Extensions: []string{".go"},
+					Tools: []ToolSuggestion{
+						{Name: "references", UseWhen: "finding usages"},
+					},
+					Reason: "Use lux",
+				},
+			},
+		},
+	}
+
+	// path is a directory, but type/glob indicates Go files
+	match := FindMatch(files, "Grep", "/some/directory", "")
+	if match == nil {
+		t.Error("expected match when path is directory but file type is known from context")
+	}
+}
