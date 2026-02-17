@@ -81,11 +81,11 @@
       },
       "locked": {
         "dir": "devenvs/bats",
-        "lastModified": 1771335930,
-        "narHash": "sha256-S71RbQudSBxEWzLc4U4Gm3aUP27ddeoivsRtixnwNq0=",
+        "lastModified": 1771353758,
+        "narHash": "sha256-lQrnw2TxNZUh/OpzL9cSrZiOtn2yVyP6475GE6uAhmM=",
         "owner": "friedenberg",
         "repo": "eng",
-        "rev": "ae8c1c01c41c9e9e101327a734ea651ea616e8cd",
+        "rev": "dd3d5938b241db67b826b11df5fe56ce58f4b065",
         "type": "github"
       },
       "original": {
@@ -1249,11 +1249,11 @@
       },
       "locked": {
         "dir": "devenvs/go",
-        "lastModified": 1771335930,
-        "narHash": "sha256-S71RbQudSBxEWzLc4U4Gm3aUP27ddeoivsRtixnwNq0=",
+        "lastModified": 1771353758,
+        "narHash": "sha256-lQrnw2TxNZUh/OpzL9cSrZiOtn2yVyP6475GE6uAhmM=",
         "owner": "friedenberg",
         "repo": "eng",
-        "rev": "ae8c1c01c41c9e9e101327a734ea651ea616e8cd",
+        "rev": "dd3d5938b241db67b826b11df5fe56ce58f4b065",
         "type": "github"
       },
       "original": {
@@ -1691,11 +1691,11 @@
         "utils": "utils_30"
       },
       "locked": {
-        "lastModified": 1771216149,
-        "narHash": "sha256-CBSh/rqgswwUReWeu+b2koKjaiR25YigWov+MXEWrXE=",
+        "lastModified": 1771349368,
+        "narHash": "sha256-qM8OrbpiuSScEMJEPAKX7Gn5NbaACiNm+VTSrLELV0c=",
         "owner": "amarbel-llc",
         "repo": "grit",
-        "rev": "c7fcc3bd8688eff3f40ef8d3d256edae46847f13",
+        "rev": "1e876aa1b9e0fe44787914789b1839c274027e82",
         "type": "github"
       },
       "original": {
@@ -3829,11 +3829,11 @@
         "utils": "utils_56"
       },
       "locked": {
-        "lastModified": 1771271066,
-        "narHash": "sha256-cFjfqqNCKGgW5Z+ll3ef0nPmjHdSs8NiTF7xaDWrX0k=",
+        "lastModified": 1771341919,
+        "narHash": "sha256-L1Yz9N9JPQW5yFwjS7KYsRnmZ/NPNAXRyt42Mfe7I9g=",
         "owner": "amarbel-llc",
         "repo": "sandcastle",
-        "rev": "a1d51e31d5b9608abfbd5d062cb4199c8aa1768c",
+        "rev": "1fbaa2377188553ce7991744700e8ff939a05ad7",
         "type": "github"
       },
       "original": {
@@ -3982,11 +3982,11 @@
       },
       "locked": {
         "dir": "devenvs/shell",
-        "lastModified": 1771335930,
-        "narHash": "sha256-S71RbQudSBxEWzLc4U4Gm3aUP27ddeoivsRtixnwNq0=",
+        "lastModified": 1771353758,
+        "narHash": "sha256-lQrnw2TxNZUh/OpzL9cSrZiOtn2yVyP6475GE6uAhmM=",
         "owner": "friedenberg",
         "repo": "eng",
-        "rev": "ae8c1c01c41c9e9e101327a734ea651ea616e8cd",
+        "rev": "dd3d5938b241db67b826b11df5fe56ce58f4b065",
         "type": "github"
       },
       "original": {
