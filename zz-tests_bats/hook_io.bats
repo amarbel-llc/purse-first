@@ -4,6 +4,34 @@ setup() {
   load "$(dirname "$BATS_TEST_FILE")/common.bash"
   export output
   purse_first="$(purse_first_bin)"
+
+  # Create a temp project dir with local lux mappings
+  project_dir="$(mktemp -d "$BATS_TEST_TMPDIR/project-XXXXXX")"
+  mkdir -p "$project_dir/.purse-first"
+  cat >"$project_dir/.purse-first/lux.json" <<'MAPPING'
+{
+  "server": "lux",
+  "mappings": [
+    {
+      "replaces": "Read",
+      "extensions": [".go", ".py"],
+      "tools": [
+        {"name": "hover", "use_when": "getting type info"},
+        {"name": "document_symbols", "use_when": "understanding file structure"}
+      ],
+      "reason": "Use lux MCP tools instead"
+    },
+    {
+      "replaces": "Grep",
+      "extensions": [".go"],
+      "tools": [
+        {"name": "workspace_symbols", "use_when": "finding symbols by name"}
+      ],
+      "reason": "Use lux MCP tools for semantic search"
+    }
+  ]
+}
+MAPPING
 }
 
 function deny_read_go_suggests_correct_plugin_tool_names { # @test
@@ -12,7 +40,7 @@ function deny_read_go_suggests_correct_plugin_tool_names { # @test
   local payload
   payload=$(hook_payload Read file_path=/path/to/foo.go)
 
-  run sh -c 'echo "$1" | "$2" hook' -- "$payload" "$purse_first"
+  run sh -c 'cd "$3" && echo "$1" | "$2" hook' -- "$payload" "$purse_first" "$project_dir"
   assert_success
 
   # Must contain the plugin-prefixed tool name format
@@ -38,13 +66,13 @@ function passthrough_non_matching_extension { # @test
   local payload
   payload=$(hook_payload Read file_path=/path/to/readme.md)
 
-  run sh -c 'echo "$1" | "$2" hook' -- "$payload" "$purse_first"
+  run sh -c 'cd "$3" && echo "$1" | "$2" hook' -- "$payload" "$purse_first" "$project_dir"
   assert_success
   assert_output ""
 }
 
 function passthrough_no_file_path { # @test
-  run sh -c 'echo "{\"session_id\":\"test\",\"tool_name\":\"Read\",\"tool_input\":{},\"hook_event_name\":\"PreToolUse\"}" | "$1" hook' -- "$purse_first"
+  run sh -c 'cd "$2" && echo "{\"session_id\":\"test\",\"tool_name\":\"Read\",\"tool_input\":{},\"hook_event_name\":\"PreToolUse\"}" | "$1" hook' -- "$purse_first" "$project_dir"
   assert_success
   assert_output ""
 }
@@ -53,7 +81,7 @@ function deny_output_valid_hook_json { # @test
   local payload
   payload=$(hook_payload Read file_path=/path/to/foo.go)
 
-  run sh -c 'echo "$1" | "$2" hook' -- "$payload" "$purse_first"
+  run sh -c 'cd "$3" && echo "$1" | "$2" hook' -- "$payload" "$purse_first" "$project_dir"
   assert_success
 
   # Must be valid JSON with expected structure
@@ -86,7 +114,7 @@ function post_hook_reads_stdin_cleanly { # @test
   local payload
   payload=$(hook_payload Read file_path=/path/to/foo.go)
 
-  run sh -c 'echo "$1" | "$2" post-hook' -- "$payload" "$purse_first"
+  run sh -c 'cd "$3" && echo "$1" | "$2" post-hook' -- "$payload" "$purse_first" "$project_dir"
   assert_success
 }
 
