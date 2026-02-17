@@ -6,6 +6,7 @@
   "name": "bob",
   "skills": [
     "./skills/plugin-mcp",
-    "./skills/context-saving"
+    "./skills/context-saving",
+    "./skills/go-cli-framework"
   ]
 }
