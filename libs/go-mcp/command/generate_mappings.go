@@ -31,7 +31,7 @@ type mappingFile struct {
 func (a *App) GenerateMappings(dir string) error {
 	var entries []mappingEntry
 
-	for _, cmd := range a.AllCommands() {
+	for name, cmd := range a.AllCommands() {
 		if cmd.Hidden {
 			continue
 		}
@@ -41,7 +41,7 @@ func (a *App) GenerateMappings(dir string) error {
 				Extensions:      tm.Extensions,
 				CommandPrefixes: tm.CommandPrefixes,
 				Tools: []mappingToolSuggestion{
-					{Name: cmd.Name, UseWhen: tm.UseWhen},
+					{Name: name, UseWhen: tm.UseWhen},
 				},
 				Reason: "Use the " + a.Name + " MCP tool instead",
 			})

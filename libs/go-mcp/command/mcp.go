@@ -12,14 +12,14 @@ import (
 // in the given ToolRegistry, using each command's description and
 // auto-generated JSON schema.
 func (a *App) RegisterMCPTools(registry *server.ToolRegistry) {
-	for _, cmd := range a.AllCommands() {
+	for name, cmd := range a.AllCommands() {
 		if cmd.Hidden || cmd.Run == nil {
 			continue
 		}
 
 		run := cmd.Run // capture for closure
 		registry.Register(
-			cmd.Name,
+			name,
 			cmd.Description.Short,
 			cmd.InputSchema(),
 			func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {

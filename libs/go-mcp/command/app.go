@@ -10,15 +10,17 @@ type App struct {
 	MCPArgs     []string // extra args passed to the binary in plugin manifests
 	MCPBinary   string   // binary name for plugin.json command; defaults to Name
 	Params      []Param  // global flags
-	commands    map[string]*Command
+	commands       map[string]*Command
+	canonicalNames map[*Command]string
 }
 
 // NewApp creates a new App with the given name and short description.
 func NewApp(name, short string) *App {
 	a := &App{
-		Name:        name,
-		Description: Description{Short: short},
-		commands:    make(map[string]*Command),
+		Name:           name,
+		Description:    Description{Short: short},
+		commands:       make(map[string]*Command),
+		canonicalNames: make(map[*Command]string),
 	}
 
 	a.addDevMCPCommand()
@@ -39,6 +41,9 @@ func (a *App) addName(name string, cmd *Command) {
 		panic(fmt.Sprintf("command added more than once: %s", name))
 	}
 	a.commands[name] = cmd
+	if _, ok := a.canonicalNames[cmd]; !ok {
+		a.canonicalNames[cmd] = name
+	}
 }
 
 // GetCommand looks up a command by name or alias.
@@ -57,7 +62,7 @@ func (a *App) AllCommands() func(yield func(string, *Command) bool) {
 				continue
 			}
 			seen[cmd] = true
-			if !yield(cmd.Name, cmd) {
+			if !yield(a.canonicalNames[cmd], cmd) {
 				return
 			}
 		}
@@ -86,5 +91,6 @@ func (a *App) MergeWithPrefix(other *App, prefix string) {
 			key = prefix + "-" + name
 		}
 		a.addName(key, cmd)
+		a.canonicalNames[cmd] = key
 	}
 }

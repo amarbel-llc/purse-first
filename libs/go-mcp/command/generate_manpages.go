@@ -21,11 +21,11 @@ func (a *App) GenerateManpages(dir string) error {
 		return err
 	}
 
-	for _, cmd := range a.AllCommands() {
+	for name, cmd := range a.AllCommands() {
 		if cmd.Hidden {
 			continue
 		}
-		if err := a.writeCommandManpage(manDir, cmd); err != nil {
+		if err := a.writeCommandManpage(manDir, name, cmd); err != nil {
 			return err
 		}
 	}
@@ -72,10 +72,10 @@ func (a *App) writeAppManpage(dir string) error {
 	return os.WriteFile(path, []byte(b.String()), 0o644)
 }
 
-func (a *App) writeCommandManpage(dir string, cmd *Command) error {
+func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Command) error {
 	var b strings.Builder
 	date := time.Now().Format("2006-01-02")
-	fullName := a.Name + "-" + cmd.Name
+	fullName := a.Name + "-" + registeredName
 	upperName := strings.ToUpper(fullName)
 
 	fmt.Fprintf(&b, ".TH %s 1 %q %q\n", upperName, date, a.Name+" "+a.Version)
@@ -84,7 +84,7 @@ func (a *App) writeCommandManpage(dir string, cmd *Command) error {
 
 	// SYNOPSIS
 	fmt.Fprintf(&b, ".SH SYNOPSIS\n")
-	fmt.Fprintf(&b, ".B %s %s\n", a.Name, cmd.Name)
+	fmt.Fprintf(&b, ".B %s %s\n", a.Name, registeredName)
 	for _, p := range cmd.Params {
 		if p.Required {
 			fmt.Fprintf(&b, ".RI --%s = %s\n", p.Name, strings.ToUpper(p.Type.JSONSchemaType()))

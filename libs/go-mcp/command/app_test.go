@@ -114,3 +114,30 @@ func TestAppVisibleCommandsYieldsCanonicalName(t *testing.T) {
 		}
 	}
 }
+
+func TestAppMergeWithPrefixAllCommandsYieldsPrefixedName(t *testing.T) {
+	parent := NewApp("dodder", "main")
+	child := NewApp("perms", "permissions")
+
+	child.AddCommand(&Command{Name: "list"})
+	child.AddCommand(&Command{Name: "grant"})
+
+	parent.MergeWithPrefix(child, "perms")
+
+	found := make(map[string]bool)
+	for name := range parent.AllCommands() {
+		found[name] = true
+	}
+
+	for _, want := range []string{"perms-list", "perms-grant"} {
+		if !found[want] {
+			t.Errorf("AllCommands missing prefixed name %q, got %v", want, found)
+		}
+	}
+
+	for name := range found {
+		if name == "list" || name == "grant" {
+			t.Errorf("AllCommands yielded unprefixed name %q", name)
+		}
+	}
+}
