@@ -2,6 +2,9 @@
 
 A Go library for building MCP (Model Context Protocol) servers.
 
+`go-mcp` is part of [purse-first](../../README.md), a package framework for
+bundling CLIs, MCP servers, and skills into composable, Nix-built packages.
+
 ## Overview
 
 `go-mcp` provides a clean, extensible foundation for creating MCP servers in Go. MCP is a protocol that enables AI assistants to interact with context providers (tools, resources, and prompts).

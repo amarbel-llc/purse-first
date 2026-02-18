@@ -1,5 +1,8 @@
 package localplugin
 
+// TODO(terminology): rename package localplugin → localpackage
+// when breaking change lands.
+
 import (
 	"encoding/json"
 	"fmt"

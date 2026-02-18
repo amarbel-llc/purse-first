@@ -1,5 +1,8 @@
 package mcp
 
+// TODO(terminology): rename DiscoverPlugins → DiscoverPackages,
+// discoverFromPluginDir → discoverFromPackageDir when breaking change lands.
+
 import (
 	"encoding/json"
 	"fmt"

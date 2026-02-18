@@ -1,5 +1,8 @@
 package marketplace
 
+// TODO(terminology): rename Plugin → Package, PluginMeta → PackageMeta,
+// DiscoveredPlugin → DiscoveredPackage when breaking change lands.
+
 import "github.com/amarbel-llc/purse-first/purse"
 
 // Marketplace is the top-level Claude Code marketplace.json structure.

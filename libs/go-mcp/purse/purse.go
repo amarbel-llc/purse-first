@@ -1,5 +1,8 @@
 package purse
 
+// TODO(terminology): rename Plugin → Package, PluginBuilder → PackageBuilder,
+// NewPluginBuilder → NewPackageBuilder when breaking change lands.
+
 import "sort"
 
 // Built-in tool names that purse-first can intercept.

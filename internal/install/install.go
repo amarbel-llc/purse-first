@@ -1,5 +1,8 @@
 package install
 
+// TODO(terminology): rename marketplacePlugin → marketplacePackage
+// when breaking change lands.
+
 import (
 	"encoding/json"
 	"fmt"

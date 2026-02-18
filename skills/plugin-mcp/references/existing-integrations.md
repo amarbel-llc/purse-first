@@ -1,6 +1,6 @@
-# Existing Purse-First Integrations
+# Existing Purse-First Packages
 
-Side-by-side comparison of all four MCP servers currently integrated with purse-first.
+Side-by-side comparison of all four MCP packages currently integrated with purse-first.
 
 ## Summary Table
 
@@ -174,7 +174,7 @@ get-hubbed-pkg =
     '';
 ```
 
-Key lesson: when wrapping, always propagate the `share/` directory so the plugin manifest survives.
+Key lesson: when wrapping, always propagate the `share/` directory so the package manifest survives.
 
 ---
 
@@ -269,7 +269,7 @@ Shows coexistence with other postInstall tasks (man page generation).
 }
 ```
 
-Note: chix is a combined plugin with MCP server, hooks, and skills.
+Note: chix is a combined package with MCP server, hooks, and skills.
 
 ### flake.nix
 
@@ -298,8 +298,8 @@ chix =
 
 Key details:
 - Static `plugin.json` in `.claude-plugin/`, copied during build
-- Plugin directory name matches the `name` field and binary name
-- Hooks are installed alongside the plugin manifest
+- Package directory name matches the `name` field and binary name
+- Hooks are installed alongside the package manifest
 - No Go dependency needed
 
 ---
@@ -357,7 +357,7 @@ The `symlinkJoin` merges all `share/purse-first/<name>/plugin.json` files into a
 
 2. **Share directory propagation**: When wrapping a binary with `makeWrapper`, the original `share/` directory is NOT automatically included. Copy or symlink it explicitly.
 
-3. **Plugin name vs binary name**: The plugin `name` field and the directory under `share/purse-first/` must match, but the `command` field uses the actual binary name. These can differ (e.g., plugin name `lux`, binary invoked with `lux mcp stdio`).
+3. **Package name vs binary name**: The package `name` field and the directory under `share/purse-first/` must match, but the `command` field uses the actual binary name. These can differ (e.g., package name `lux`, binary invoked with `lux mcp stdio`).
 
 4. **Input follows**: When adding to purse-first's flake.nix, use `inputs.nixpkgs.follows` and `inputs.nixpkgs-master.follows` to avoid duplicate nixpkgs evaluations.
 
@@ -368,3 +368,4 @@ The `symlinkJoin` merges all `share/purse-first/<name>/plugin.json` files into a
 7. **Multiple prefixes per mapping**: Use multiple `CommandPrefixes` when different commands map to the same tool (e.g., `"git checkout"` and `"git switch"` both map to the `checkout` tool).
 
 8. **Multiple tools per mapping**: Use multiple `Tool` calls when a subcommand maps to more than one MCP tool (e.g., `"git branch"` suggests both `branch_list` and `branch_create`).
+

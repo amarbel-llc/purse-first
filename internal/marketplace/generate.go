@@ -1,5 +1,8 @@
 package marketplace
 
+// TODO(terminology): rename DiscoverPlugins → DiscoverPackages,
+// discoverPluginSkills → discoverPackageSkills when breaking change lands.
+
 import (
 	"encoding/json"
 	"fmt"

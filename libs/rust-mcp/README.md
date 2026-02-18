@@ -1,4 +1,8 @@
 # mcp-server
+<!-- TODO(terminology): rename crate from rust-mcp/mcp-server when breaking change lands. -->
+
+Part of [purse-first](../../README.md), a package framework for bundling CLIs,
+MCP servers, and skills into composable, Nix-built packages.
 
 A reusable Rust library for building MCP (Model Context Protocol) servers.
 

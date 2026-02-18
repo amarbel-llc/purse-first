@@ -1,5 +1,8 @@
 package purse
 
+// TODO(terminology): rename WritePlugin → WritePackage, plugin.json → package.json (or .toml)
+// when breaking change lands.
+
 import (
 	"encoding/json"
 	"os"

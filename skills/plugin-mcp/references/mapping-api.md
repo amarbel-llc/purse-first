@@ -1,6 +1,6 @@
 # Tool Mapping API Reference
 
-Mappings redirect built-in Claude Code tools (e.g., `Bash`, `Grep`, `Read`) to MCP server tools exposed by the plugin. The purse-first PreToolUse hook denies matching Bash commands and suggests specific MCP tools instead.
+Mappings redirect built-in Claude Code tools (e.g., `Bash`, `Grep`, `Read`) to MCP server tools exposed by the package. The purse-first PreToolUse hook denies matching Bash commands and suggests specific MCP tools instead.
 
 ## How Matching Works
 
@@ -10,7 +10,7 @@ Mappings redirect built-in Claude Code tools (e.g., `Bash`, `Grep`, `Read`) to M
 
 ## Targeted Per-Subcommand Mappings
 
-The recommended pattern is one mapping per subcommand, each suggesting only the relevant tool(s). This gives focused denial messages instead of listing every tool in the plugin.
+The recommended pattern is one mapping per subcommand, each suggesting only the relevant tool(s). This gives focused denial messages instead of listing every tool in the package.
 
 ### Flag-based CLI Example
 
