@@ -16,8 +16,8 @@ func TestGenerateAll(t *testing.T) {
 		Params: []Param{
 			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
 		},
-		MapsBash: []BashMapping{
-			{Prefixes: []string{"git status"}, UseWhen: "checking status"},
+		MapsTools: []ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"git status"}, UseWhen: "checking status"},
 		},
 	})
 

@@ -13,16 +13,16 @@ func TestGenerateMappings(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		MapsBash: []BashMapping{
-			{Prefixes: []string{"git status"}, UseWhen: "checking repository status"},
+		MapsTools: []ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"git status"}, UseWhen: "checking repository status"},
 		},
 	})
 
 	app.AddCommand(&Command{
 		Name:        "diff",
 		Description: Description{Short: "Show changes"},
-		MapsBash: []BashMapping{
-			{Prefixes: []string{"git diff"}, UseWhen: "viewing changes"},
+		MapsTools: []ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"git diff"}, UseWhen: "viewing changes"},
 		},
 	})
 

@@ -13,6 +13,7 @@ type mappingToolSuggestion struct {
 
 type mappingEntry struct {
 	Replaces        string                  `json:"replaces"`
+	Extensions      []string                `json:"extensions,omitempty"`
 	CommandPrefixes []string                `json:"command_prefixes,omitempty"`
 	Tools           []mappingToolSuggestion `json:"tools"`
 	Reason          string                  `json:"reason"`
@@ -24,8 +25,8 @@ type mappingFile struct {
 }
 
 // GenerateMappings writes a mappings.json file to {dir}/{app.Name}/mappings.json.
-// Only commands with MapsBash declarations are included. Each BashMapping on a
-// command produces a separate mapping entry. If no commands have bash mappings,
+// Only commands with MapsTools declarations are included. Each ToolMapping on a
+// command produces a separate mapping entry. If no commands have tool mappings,
 // no file is written.
 func (a *App) GenerateMappings(dir string) error {
 	var entries []mappingEntry
@@ -34,14 +35,15 @@ func (a *App) GenerateMappings(dir string) error {
 		if cmd.Hidden {
 			continue
 		}
-		for _, bm := range cmd.MapsBash {
+		for _, tm := range cmd.MapsTools {
 			entries = append(entries, mappingEntry{
-				Replaces:        "Bash",
-				CommandPrefixes: bm.Prefixes,
+				Replaces:        tm.Replaces,
+				Extensions:      tm.Extensions,
+				CommandPrefixes: tm.CommandPrefixes,
 				Tools: []mappingToolSuggestion{
-					{Name: cmd.Name, UseWhen: bm.UseWhen},
+					{Name: cmd.Name, UseWhen: tm.UseWhen},
 				},
-				Reason: "Use the " + a.Name + " MCP tool instead of shelling out",
+				Reason: "Use the " + a.Name + " MCP tool instead",
 			})
 		}
 	}

@@ -40,11 +40,13 @@ type Description struct {
 	Long  string // paragraph: manpage DESCRIPTION, --help output
 }
 
-// BashMapping declares a bash command prefix that should be intercepted
-// and redirected to this command's MCP tool.
-type BashMapping struct {
-	Prefixes []string // e.g., "git status"
-	UseWhen  string   // shown to Claude in mapping denial
+// ToolMapping declares that this command's MCP tool should intercept
+// a specific Claude Code tool under certain conditions.
+type ToolMapping struct {
+	Replaces        string   // Claude Code tool to intercept: "Read", "Grep", "Glob", "Bash"
+	Extensions      []string // file extensions to match, e.g. [".go", ".py"]
+	CommandPrefixes []string // bash command prefixes, e.g. ["git status"]
+	UseWhen         string   // shown to Claude in denial reason
 }
 
 // Param declares a single command parameter, used for CLI flags,
@@ -68,7 +70,7 @@ type Command struct {
 	Hidden      bool
 
 	Params   []Param
-	MapsBash []BashMapping
+	MapsTools []ToolMapping
 
 	// RunMCP handles MCP tool invocations.
 	RunMCP func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error)

@@ -8,7 +8,7 @@ import "path/filepath"
 // Output layout:
 //
 //	{dir}/share/purse-first/{name}/plugin.json
-//	{dir}/share/purse-first/{name}/mappings.json (if any commands have MapsBash)
+//	{dir}/share/purse-first/{name}/mappings.json (if any commands have MapsTools)
 //	{dir}/share/man/man1/{name}.1
 //	{dir}/share/man/man1/{name}-{cmd}.1 (per visible command)
 //	{dir}/share/bash-completion/completions/{name}
