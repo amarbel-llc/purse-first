@@ -1,4 +1,4 @@
-# Purse-First Plugin Protocol
+# Purse-First Package Protocol
 
 **Version:** 0.1.0
 **Status:** Draft
@@ -6,7 +6,7 @@
 
 ## Abstract
 
-This document specifies how Nix flake derivations expose Claude Code plugin
+This document specifies how Nix flake derivations expose Claude Code package
 metadata, MCP server declarations, tool routing mappings, and skills through
 well-known paths in the `share/` directory of the derivation output. The
 protocol follows the conventions established by the XDG Base Directory
@@ -15,7 +15,7 @@ output convention.
 
 ## Motivation
 
-Claude Code plugins bundle MCP servers, tool-routing rules, and skills.
+Claude Code packages bundle MCP servers, tool-routing rules, and skills.
 Today each aggregator must know how to extract this metadata from each
 upstream project. A standard `share/` layout lets any Nix derivation
 advertise its Claude Code capabilities declaratively — without coordination
@@ -26,7 +26,7 @@ Goals:
 
 - A single derivation output is self-describing: consumers can discover
   everything by globbing well-known paths.
-- Individual plugins compose via `symlinkJoin` without conflicts.
+- Individual packages compose via `symlinkJoin` without conflicts.
 - The protocol is language-agnostic: a Go binary, a Rust binary, and a
   static JSON file all produce the same directory shape.
 - Skills, mappings, and future extension types are opt-in and independently
@@ -37,21 +37,21 @@ Goals:
 | Term | Definition |
 |------|-----------|
 | **derivation output** | The Nix store path produced by a derivation, conventionally referred to as `$out`. |
-| **plugin** | A named unit of Claude Code functionality. One derivation produces exactly one plugin. |
-| **MCP server** | A Model Context Protocol server exposed by a plugin. |
+| **package** | A named unit of Claude Code functionality. One derivation produces exactly one package. The manifest filename `plugin.json` is retained for backwards compatibility. |
+| **MCP server** | A Model Context Protocol server exposed by a package. |
 | **mapping** | A tool-routing rule that redirects a built-in Claude Code tool to an MCP tool. |
-| **skill** | A Markdown document (with YAML frontmatter) that teaches Claude Code how to use a plugin. |
-| **marketplace** | An aggregation of multiple plugins into a single installable derivation with a `.claude-plugin/` directory. |
+| **skill** | A Markdown document (with YAML frontmatter) that teaches Claude Code how to use a package. |
+| **marketplace** | An aggregation of multiple packages into a single installable derivation with a `.claude-plugin/` directory. |
 
 ## 1. Base Directory
 
-All plugin metadata MUST reside under:
+All package metadata MUST reside under:
 
 ```
-$out/share/purse-first/<plugin-name>/
+$out/share/purse-first/<package-name>/
 ```
 
-Where `<plugin-name>` is the plugin identifier: lowercase ASCII, alphanumeric
+Where `<package-name>` is the package identifier: lowercase ASCII, alphanumeric
 with hyphens, matching the pattern `^[a-z][a-z0-9-]*$`.
 
 This mirrors the freedesktop convention of
@@ -60,7 +60,7 @@ read-only data under `share/`.
 
 ### 1.1. Relationship to `bin/`
 
-Plugin binaries are installed to `$out/bin/` as usual. The `command` field
+Package binaries are installed to `$out/bin/` as usual. The `command` field
 in `plugin.json` references a bare binary name (not an absolute path).
 Consumers resolve it to `<root>/bin/<command>` where `<root>` is the
 ancestor of the `share/` directory.
@@ -70,13 +70,13 @@ This separation means `share/purse-first/` is purely declarative data and
 
 ## 2. Required Files
 
-### 2.1. `plugin.json` — Plugin Manifest
+### 2.1. `plugin.json` — Package Manifest
 
 ```
-$out/share/purse-first/<plugin-name>/plugin.json
+$out/share/purse-first/<package-name>/plugin.json
 ```
 
-This file MUST exist. It declares the plugin's identity and its MCP server
+This file MUST exist. It declares the package's identity and its MCP server
 configuration.
 
 **Schema:** `https://anthropic.com/claude-code/plugin.schema.json`
@@ -99,7 +99,7 @@ configuration.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | Plugin identifier. MUST match the directory name under `share/purse-first/`. |
+| `name` | string | Yes | Package identifier. MUST match the directory name under `share/purse-first/`. |
 | `mcpServers` | object | No | Map of server-name to MCP server config. |
 | `description` | string | No | Human-readable description. |
 | `version` | string | No | SemVer version. |
@@ -125,11 +125,11 @@ SHOULD reject manifests where the name does not match.
 ### 3.1. `mappings.json` — Tool Routing
 
 ```
-$out/share/purse-first/<plugin-name>/mappings.json
+$out/share/purse-first/<package-name>/mappings.json
 ```
 
 Declares tool-routing rules that redirect built-in Claude Code tools (e.g.,
-`Bash`, `Grep`, `Read`) to MCP server tools exposed by this plugin.
+`Bash`, `Grep`, `Read`) to MCP server tools exposed by this package.
 
 **Example:**
 
@@ -160,7 +160,7 @@ Declares tool-routing rules that redirect built-in Claude Code tools (e.g.,
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `server` | string | Yes | MCP server name this mapping refers to. MUST match a key in the plugin's `mcpServers`. |
+| `server` | string | Yes | MCP server name this mapping refers to. MUST match a key in the package's `mcpServers`. |
 | `mappings` | array | Yes | List of mapping entries. |
 
 **Mapping entry:**
@@ -180,11 +180,11 @@ present, the mapping applies only when the invocation matches.
 ### 3.2. `skills/` — Skill Documents
 
 ```
-$out/share/purse-first/<plugin-name>/skills/<skill-name>/SKILL.md
+$out/share/purse-first/<package-name>/skills/<skill-name>/SKILL.md
 ```
 
 Skills are Markdown files with YAML frontmatter that teach Claude Code how
-to use the plugin. Each skill lives in a named subdirectory.
+to use the package. Each skill lives in a named subdirectory.
 
 **Frontmatter:**
 
@@ -232,13 +232,13 @@ The following paths are reserved for future use:
 | `output-styles/` | Output formatting rules. |
 
 Consumers MUST ignore unrecognized directories under
-`share/purse-first/<plugin-name>/`.
+`share/purse-first/<package-name>/`.
 
 ## 4. Discovery
 
-### 4.1. Single Plugin Discovery
+### 4.1. Single Package Discovery
 
-Given a derivation output at `$out`, a consumer discovers the plugin by:
+Given a derivation output at `$out`, a consumer discovers the package by:
 
 1. Glob `$out/share/purse-first/*/plugin.json`
 2. For each match, parse the JSON and validate `name` matches the directory.
@@ -247,25 +247,25 @@ Given a derivation output at `$out`, a consumer discovers the plugin by:
 
 ### 4.2. Aggregated Discovery (symlinkJoin)
 
-When multiple plugin derivations are composed via `symlinkJoin`:
+When multiple package derivations are composed via `symlinkJoin`:
 
 ```nix
 pkgs.symlinkJoin {
-  name = "my-plugins";
+  name = "my-packages";
   paths = [ grit-pkg lux-pkg chix-pkg ];
 }
 ```
 
-The resulting `$out/share/purse-first/` contains a symlink for each plugin
+The resulting `$out/share/purse-first/` contains a symlink for each package
 directory. Discovery uses the same glob pattern and works transparently.
 
 **Conflict rule:** Two derivations MUST NOT produce the same
-`<plugin-name>` directory. `symlinkJoin` will fail at build time if this
+`<package-name>` directory. `symlinkJoin` will fail at build time if this
 invariant is violated.
 
 ### 4.3. Runtime Resolution Order
 
-At runtime, the consumer resolves the plugin root by:
+At runtime, the consumer resolves the package root by:
 
 1. `$PURSE_FIRST_PLUGINS_DIR` environment variable (if set and valid).
 2. `<exe-dir>/../share/purse-first/` relative to the resolved (symlink-followed) binary path.
@@ -275,10 +275,10 @@ At runtime, the consumer resolves the plugin root by:
 MCP server commands are resolved as:
 
 ```
-<plugin-root>/../../bin/<command>
+<package-root>/../../bin/<command>
 ```
 
-Where `<plugin-root>` is the `share/purse-first/` directory. This means the
+Where `<package-root>` is the `share/purse-first/` directory. This means the
 aggregated derivation's `bin/` directory (populated by `symlinkJoin`) is the
 lookup path.
 
@@ -288,19 +288,19 @@ Tool-routing mappings are loaded from three sources in increasing priority:
 
 | Priority | Source | Path Pattern |
 |----------|--------|-------------|
-| 1 (lowest) | Plugin-shipped | `$out/share/purse-first/<name>/mappings.json` |
+| 1 (lowest) | Package-shipped | `$out/share/purse-first/<name>/mappings.json` |
 | 2 | Global user | `$XDG_STATE_HOME/purse-first/*.json` |
 | 3 (highest) | Project-local | `.purse-first/*.json` |
 
 Higher-priority sources override lower-priority ones for the same
-`(replaces, server)` pair. Users can override or disable plugin-shipped
+`(replaces, server)` pair. Users can override or disable package-shipped
 mappings without modifying the derivation.
 
 **XDG fallback:** `$XDG_STATE_HOME` defaults to `$HOME/.local/state`.
 
 ## 6. Marketplace Generation
 
-A marketplace aggregates multiple plugins into a single `.claude-plugin/`
+A marketplace aggregates multiple packages into a single `.claude-plugin/`
 directory for consumption by `claude plugin validate` and `claude plugin
 install`.
 
@@ -333,7 +333,7 @@ $out/
 ```
 
 The marketplace is generated by scanning `share/purse-first/`, discovering
-both MCP servers and skills per-plugin, merging the discovered data with a
+both MCP servers and skills per-package, merging the discovered data with a
 `marketplace-config.json`, and writing the result to
 `.claude-plugin/marketplace.json`.
 
@@ -403,8 +403,8 @@ $out/
 │   └── <binary>                              # executable
 └── share/
     └── purse-first/
-        └── <plugin-name>/                    # MUST match plugin.name
-            ├── plugin.json                   # REQUIRED — plugin manifest
+        └── <package-name>/                   # MUST match plugin.name
+            ├── plugin.json                   # REQUIRED — package manifest
             ├── mappings.json                 # OPTIONAL — tool routing
             └── skills/                       # OPTIONAL — skill documents
                 └── <skill-name>/
@@ -425,10 +425,10 @@ $out/
 
 ## 10. Security Considerations
 
-- **Store path immutability.** Nix store paths are read-only. Plugin
+- **Store path immutability.** Nix store paths are read-only. Package
   manifests cannot be tampered with after build.
 - **Binary provenance.** Because commands are resolved relative to the same
-  derivation root, a plugin cannot reference binaries outside its closure.
+  derivation root, a package cannot reference binaries outside its closure.
 - **Hook fail-open.** Tool routing hooks return success on I/O or parse
   errors to avoid blocking the agent. This is intentional: a broken mapping
   file should degrade gracefully, not deny all tool use.
@@ -454,6 +454,6 @@ documents.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PURSE_FIRST_PLUGINS_DIR` | `<exe>/../share/purse-first/` | Override the plugin discovery root. |
+| `PURSE_FIRST_PLUGINS_DIR` | `<exe>/../share/purse-first/` | Override the package discovery root. |
 | `XDG_STATE_HOME` | `$HOME/.local/state` | Base for user-level mapping overrides. |
 | `XDG_CONFIG_HOME` | `$HOME/.config` | Base for user-level configuration. |
