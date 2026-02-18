@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            system: x86_64-linux
+          - os: macos-13
+            system: x86_64-darwin
+          - os: macos-latest
+            system: aarch64-darwin
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Check flake
+        run: nix flake check
+
+      - name: Build marketplace
+        run: nix build --show-trace
+
+      - name: Build no-hooks variant
+        run: nix build .#marketplace-no-hooks --show-trace
+
+  # Uncomment to publish to FlakeHub on push to main/master.
+  # Requires: Settings -> Secrets -> FLAKEHUB_TOKEN or OIDC id-token permissions.
+  #
+  # flakehub:
+  #   needs: build
+  #   if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     id-token: write
+  #     contents: read
+  #
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - uses: DeterminateSystems/nix-installer-action@main
+  #
+  #     - uses: DeterminateSystems/flakehub-push@main
+  #       with:
+  #         visibility: public
