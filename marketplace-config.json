@@ -1,6 +1,6 @@
 {
   "name": "purse-first",
-  "description": "MCP servers and tool routing for Claude Code, built with Nix",
+  "description": "Package framework for bundling CLIs, MCP servers, and skills into composable, Nix-built packages",
   "repo": "amarbel-llc/purse-first",
   "owner": {
     "name": "friedenberg",
@@ -40,7 +40,7 @@
       "tags": ["nix", "package-manager", "mcp", "skills"]
     },
     "purse-first": {
-      "description": "Plugin integration skills — guides conversion of MCP servers into purse-first plugins",
+      "description": "Package integration skills — guides conversion of MCP servers into purse-first packages",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/purse-first",
       "repo": "amarbel-llc/purse-first",
