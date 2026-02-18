@@ -304,7 +304,7 @@ func TestFormatDenyReasonUsesPluginPrefix(t *testing.T) {
 		Reason: "Use lux MCP tools instead",
 	}
 
-	reason := formatDenyReason("lux", m)
+	reason := formatDenyReason("mcp__plugin_lux_lux", m)
 
 	if !strings.Contains(reason, "mcp__plugin_lux_lux__hover") {
 		t.Errorf("expected plugin-prefixed tool name mcp__plugin_lux_lux__hover, got:\n%s", reason)
@@ -316,6 +316,87 @@ func TestFormatDenyReasonUsesPluginPrefix(t *testing.T) {
 
 	if strings.Contains(reason, "mcp__lux__") {
 		t.Errorf("should not contain old-style mcp__lux__ prefix, got:\n%s", reason)
+	}
+}
+
+func TestFormatDenyReasonUsesToolPrefix(t *testing.T) {
+	projectDir := t.TempDir()
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	purseDir := filepath.Join(projectDir, ".purse-first")
+	os.MkdirAll(purseDir, 0o755)
+
+	m := `{
+		"server": "lux",
+		"tool_prefix": "mcp__lux-dev",
+		"mappings": [{
+			"replaces": "Read",
+			"extensions": [".go"],
+			"tools": [{"name": "hover", "use_when": "getting type info"}],
+			"reason": "Use lux-dev"
+		}]
+	}`
+	os.WriteFile(filepath.Join(purseDir, "lux.json"), []byte(m), 0o644)
+
+	input := `{"session_id":"test","tool_name":"Read","tool_input":{"file_path":"/path/to/foo.go"},"hook_event_name":"PreToolUse"}`
+
+	var stdout bytes.Buffer
+	err := HandlePreToolUse(bytes.NewReader([]byte(input)), &stdout, projectDir)
+	if err != nil {
+		t.Fatalf("HandlePreToolUse: %v", err)
+	}
+
+	var output struct {
+		HookSpecificOutput struct {
+			PermissionDecisionReason string `json:"permissionDecisionReason"`
+		} `json:"hookSpecificOutput"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &output); err != nil {
+		t.Fatalf("unmarshal output: %v", err)
+	}
+
+	reason := output.HookSpecificOutput.PermissionDecisionReason
+	if !strings.Contains(reason, "mcp__lux-dev__hover") {
+		t.Errorf("reason = %q, want to contain mcp__lux-dev__hover", reason)
+	}
+}
+
+func TestFormatDenyReasonDefaultPrefix(t *testing.T) {
+	projectDir := t.TempDir()
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	purseDir := filepath.Join(projectDir, ".purse-first")
+	os.MkdirAll(purseDir, 0o755)
+
+	m := `{
+		"server": "lux",
+		"mappings": [{
+			"replaces": "Read",
+			"extensions": [".go"],
+			"tools": [{"name": "hover", "use_when": "getting type info"}],
+			"reason": "Use lux"
+		}]
+	}`
+	os.WriteFile(filepath.Join(purseDir, "lux.json"), []byte(m), 0o644)
+
+	input := `{"session_id":"test","tool_name":"Read","tool_input":{"file_path":"/path/to/foo.go"},"hook_event_name":"PreToolUse"}`
+
+	var stdout bytes.Buffer
+	err := HandlePreToolUse(bytes.NewReader([]byte(input)), &stdout, projectDir)
+	if err != nil {
+		t.Fatalf("HandlePreToolUse: %v", err)
+	}
+
+	var output struct {
+		HookSpecificOutput struct {
+			PermissionDecisionReason string `json:"permissionDecisionReason"`
+		} `json:"hookSpecificOutput"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &output); err != nil {
+		t.Fatalf("unmarshal output: %v", err)
+	}
+
+	reason := output.HookSpecificOutput.PermissionDecisionReason
+	if !strings.Contains(reason, "mcp__plugin_lux_lux__hover") {
+		t.Errorf("reason = %q, want to contain mcp__plugin_lux_lux__hover", reason)
 	}
 }
 

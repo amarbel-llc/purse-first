@@ -14,6 +14,7 @@ type Mapping struct {
 }
 
 type MappingFile struct {
-	Server   string    `json:"server"`
-	Mappings []Mapping `json:"mappings"`
+	Server     string    `json:"server"`
+	ToolPrefix string    `json:"tool_prefix,omitempty"`
+	Mappings   []Mapping `json:"mappings"`
 }

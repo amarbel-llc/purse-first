@@ -116,8 +116,9 @@ func LoadMappings(projectDir string) ([]MappingFile, error) {
 }
 
 type Match struct {
-	Server  string
-	Mapping Mapping
+	Server     string
+	ToolPrefix string
+	Mapping    Mapping
 }
 
 func matchesCriteria(m Mapping, filePath, command string) bool {
@@ -156,7 +157,7 @@ func FindMatch(files []MappingFile, toolName, filePath, command string) *Match {
 			}
 
 			if matchesCriteria(m, filePath, command) {
-				return &Match{Server: f.Server, Mapping: m}
+				return &Match{Server: f.Server, ToolPrefix: f.ToolPrefix, Mapping: m}
 			}
 		}
 	}

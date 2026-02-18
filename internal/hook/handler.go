@@ -38,14 +38,14 @@ func extractCommand(toolInput map[string]any) string {
 	return ""
 }
 
-func formatDenyReason(server string, m mapping.Mapping) string {
+func formatDenyReason(toolPrefix string, m mapping.Mapping) string {
 	var b strings.Builder
 
 	b.WriteString(m.Reason)
 	b.WriteString(":\n")
 
 	for _, t := range m.Tools {
-		fmt.Fprintf(&b, "- mcp__plugin_%s_%s__%s: %s\n", server, server, t.Name, t.UseWhen)
+		fmt.Fprintf(&b, "- %s__%s: %s\n", toolPrefix, t.Name, t.UseWhen)
 	}
 
 	return strings.TrimRight(b.String(), "\n")
@@ -84,11 +84,16 @@ func HandlePreToolUse(stdin io.Reader, stdout io.Writer, projectDir string) erro
 		return nil
 	}
 
+	prefix := match.ToolPrefix
+	if prefix == "" {
+		prefix = fmt.Sprintf("mcp__plugin_%s_%s", match.Server, match.Server)
+	}
+
 	output := decision.HookOutput{
 		HookSpecificOutput: decision.HookSpecificOutput{
 			HookEventName:            "PreToolUse",
 			PermissionDecision:       "deny",
-			PermissionDecisionReason: formatDenyReason(match.Server, match.Mapping),
+			PermissionDecisionReason: formatDenyReason(prefix, match.Mapping),
 		},
 	}
 
