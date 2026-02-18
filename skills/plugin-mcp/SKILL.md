@@ -1,16 +1,16 @@
 ---
 name: Plugin MCP Integration
-description: This skill should be used when the user asks to "add purse-first support", "turn an MCP into a plugin", "create a plugin manifest", "add generate-plugin command", "register with purse-first marketplace", "add skills to a plugin", "bundle skills in a plugin", or mentions purse-first plugin integration, plugin manifest generation, or skill bundling.
+description: This skill should be used when the user asks to "add purse-first support", "turn an MCP into a package", "create a package manifest", "add generate-plugin command", "register with purse-first marketplace", "add skills to a package", "bundle skills in a package", or mentions purse-first package integration, package manifest generation, or skill bundling.
 version: 0.1.0
 ---
 
-# Adding Purse-First Plugin Support
+# Adding Purse-First Package Support
 
-A purse-first plugin ships MCP servers, skills, or both. The Nix build outputs a `share/purse-first/<name>/` directory containing a `plugin.json` manifest and optional skills, enabling purse-first to discover, aggregate, and install it as part of a Claude Code plugin marketplace.
+A purse-first package ships MCP servers, skills, or both. The Nix build outputs a `share/purse-first/<name>/` directory containing a `plugin.json` manifest and optional skills, enabling purse-first to discover, aggregate, and install it as part of a Claude Code package marketplace.
 
 ## Overview
 
-A purse-first plugin ships a `plugin.json` manifest at `$out/share/purse-first/<name>/plugin.json` and declares itself via a `.claude-plugin/plugin.json` in the repo (for standalone validation). Plugins come in three flavors:
+A purse-first package ships a `plugin.json` manifest at `$out/share/purse-first/<name>/plugin.json` and declares itself via a `.claude-plugin/plugin.json` in the repo (for standalone validation). Packages come in three flavors:
 
 | Flavor | Contents | Example |
 |--------|----------|---------|
@@ -18,7 +18,7 @@ A purse-first plugin ships a `plugin.json` manifest at `$out/share/purse-first/<
 | **Skill-only** | Skills only (no MCP server) | bob |
 | **MCP + Skills** | MCP server(s) + bundled skills | (future) |
 
-For MCP-containing plugins, there are two patterns depending on language:
+For MCP-containing packages, there are two patterns depending on language:
 
 | Pattern | Language | How plugin.json is produced |
 |---------|----------|-----------------------------|
@@ -37,14 +37,14 @@ Then run `gomod2nix` to regenerate `gomod2nix.toml`.
 
 ### Step 2: Add the generate-plugin subcommand
 
-Add a hidden `generate-plugin` subcommand that writes the plugin manifest. The subcommand takes a single argument: the output directory.
+Add a hidden `generate-plugin` subcommand that writes the package manifest. The subcommand takes a single argument: the output directory.
 
 For **cobra-based** CLIs (like lux):
 
 ```go
 var generatePluginCmd = &cobra.Command{
 	Use:    "generate-plugin <output-dir>",
-	Short:  "Generate purse-first plugin manifest",
+	Short:  "Generate purse-first package manifest",
 	Hidden: true,
 	Args:   cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -75,7 +75,7 @@ func main() {
 			Build()
 
 		if err := purse.WritePlugin(flag.Arg(1), p); err != nil {
-			log.Fatalf("generating plugin: %v", err)
+			log.Fatalf("generating package: %v", err)
 		}
 		return
 	}
@@ -170,7 +170,7 @@ For the full MappingBuilder API, detailed examples, and the `BuildMappings`/`Wri
 
 ## Both Patterns: Repo-Level .claude-plugin/plugin.json
 
-Regardless of the integration pattern, also create `.claude-plugin/plugin.json` in the repo for standalone plugin validation and direct Claude Code discovery:
+Regardless of the integration pattern, also create `.claude-plugin/plugin.json` in the repo for standalone package validation and direct Claude Code discovery:
 
 ```json
 {
@@ -185,7 +185,7 @@ Check this file into git for standalone validation. Purse-first's BATS integrati
 
 ## Registering with the Purse-First Marketplace
 
-After the MCP server outputs its plugin manifest, register it in purse-first.
+After the MCP server outputs its package manifest, register it in purse-first.
 
 ### Step 1: Add as a flake input in purse-first's flake.nix
 
@@ -258,16 +258,16 @@ marketplace = pkgs.symlinkJoin {
 ```bash
 just update-plugins   # or: nix flake update my-mcp
 just build-all        # verify marketplace builds
-just test-validate-repos  # validate plugin manifests
+just test-validate-repos  # validate package manifests
 ```
 
-## Plugin Manifest Format
+## Package Manifest Format
 
 The `plugin.json` manifest follows this schema:
 
 ```json
 {
-  "name": "plugin-name",
+  "name": "my-mcp",
   "mcpServers": {
     "server-name": {
       "type": "stdio",
@@ -278,20 +278,20 @@ The `plugin.json` manifest follows this schema:
 }
 ```
 
-- **name**: Plugin identifier, kebab-case, matches the directory name in `share/purse-first/`
+- **name**: Package identifier, kebab-case, matches the directory name in `share/purse-first/`
 - **mcpServers**: Map of server name to MCP server config
-- **type**: Always `"stdio"` for purse-first plugins
+- **type**: Always `"stdio"` for purse-first packages
 - **command**: The binary name (bare, not a path -- purse-first resolves it from the aggregated bin/)
 - **args**: Optional arguments to pass to the binary
 
-## Adding Skills to a Plugin
+## Adding Skills to a Package
 
-Skills are SKILL.md files (with YAML frontmatter) that teach Claude Code domain-specific workflows. Any purse-first plugin — MCP-containing or not — can ship skills.
+Skills are SKILL.md files (with YAML frontmatter) that teach Claude Code domain-specific workflows. Any purse-first package — MCP-containing or not — can ship skills.
 
 ### Directory Layout
 
 ```
-$out/share/purse-first/<plugin-name>/
+$out/share/purse-first/<package-name>/
 ├── plugin.json
 └── skills/
     └── <skill-name>/
@@ -300,22 +300,22 @@ $out/share/purse-first/<plugin-name>/
         └── examples/          # optional working examples
 ```
 
-### Skill-Only Plugins
+### Skill-Only Packages
 
-For plugins that ship only skills (no MCP server), the `plugin.json` declares skills but omits `mcpServers`:
+For packages that ship only skills (no MCP server), the `plugin.json` declares skills but omits `mcpServers`:
 
 ```json
 {
-  "name": "my-plugin",
+  "name": "my-package",
   "skills": [
     "./skills/my-skill"
   ]
 }
 ```
 
-The `skills` array uses relative paths from the plugin root directory to each skill directory.
+The `skills` array uses relative paths from the package root directory to each skill directory.
 
-### MCP Plugins with Bundled Skills
+### MCP Packages with Bundled Skills
 
 An MCP server can also bundle skills alongside its server declaration:
 
@@ -333,22 +333,22 @@ An MCP server can also bundle skills alongside its server declaration:
 
 ### Shipping Skills in Nix Builds
 
-Copy the skills directory into the plugin's share output and use `generate-local-plugin` to discover them and update the manifest.
+Copy the skills directory into the package's share output and use `generate-local-plugin` to discover them and update the manifest.
 
-For **skill-only plugins** (bob pattern):
+For **skill-only packages** (bob pattern):
 
 ```nix
 postInstall = ''
-  mkdir -p $out/share/purse-first/my-plugin/skills
-  cp -r ${./skills}/* $out/share/purse-first/my-plugin/skills/
+  mkdir -p $out/share/purse-first/my-package/skills
+  cp -r ${./skills}/* $out/share/purse-first/my-package/skills/
 
   staging=$(mktemp -d)
-  ln -s $out/share/purse-first/my-plugin/skills $staging/skills
+  ln -s $out/share/purse-first/my-package/skills $staging/skills
   mkdir -p $staging/.claude-plugin
   cp ${./.claude-plugin/plugin.json} $staging/.claude-plugin/plugin.json
   chmod u+w $staging/.claude-plugin/plugin.json
   $out/bin/purse-first generate-local-plugin --root $staging
-  cp $staging/.claude-plugin/plugin.json $out/share/purse-first/my-plugin/plugin.json
+  cp $staging/.claude-plugin/plugin.json $out/share/purse-first/my-package/plugin.json
 '';
 ```
 
@@ -356,10 +356,10 @@ For **MCP servers adding skills** (extend existing postInstall):
 
 ```nix
 postInstall = ''
-  # Generate plugin manifest (existing)
+  # Generate package manifest (existing)
   $out/bin/my-mcp generate-plugin $out/share/purse-first
 
-  # Copy skills into the plugin directory
+  # Copy skills into the package directory
   mkdir -p $out/share/purse-first/my-mcp/skills
   cp -r ${./skills}/* $out/share/purse-first/my-mcp/skills/
 '';
@@ -369,7 +369,7 @@ When the MCP already uses `generate-plugin`, add the skills array to the static 
 
 ### Skill Discovery
 
-Purse-first discovers skills by globbing `skills/*/SKILL.md` under each plugin directory. Skills are included in the marketplace manifest automatically — no explicit registration is needed beyond placing them in the correct directory.
+Purse-first discovers skills by globbing `skills/*/SKILL.md` under each package directory. Skills are included in the marketplace manifest automatically — no explicit registration is needed beyond placing them in the correct directory.
 
 ### Writing Effective SKILL.md Files
 
@@ -392,10 +392,10 @@ Key guidelines:
 
 When adding purse-first support:
 
-### MCP Plugin
+### MCP Package
 1. Create `.claude-plugin/plugin.json` in the repo
-2. Add plugin manifest generation (Go: `generate-plugin` command, other: static file)
-3. Add tool mappings if the plugin replaces CLI commands (use targeted per-subcommand mappings with a catch-all)
+2. Add package manifest generation (Go: `generate-plugin` command, other: static file)
+3. Add tool mappings if the package replaces CLI commands (use targeted per-subcommand mappings with a catch-all)
 4. Update `flake.nix` to output `$out/share/purse-first/<name>/plugin.json` (and `mappings.json` if applicable)
 5. Build and verify: `nix build && ls ./result/share/purse-first/`
 
@@ -417,9 +417,9 @@ When adding purse-first support:
 For detailed examples from existing integrations, consult:
 - **`references/existing-integrations.md`** -- Side-by-side comparison of grit, lux, get-hubbed, and chix implementations
 - **`references/mapping-api.md`** -- Full MappingBuilder API reference with detailed examples
-- **`examples/plugin.json`** -- Minimal MCP plugin manifest template
-- **`examples/plugin-skill-only.json`** -- Skill-only plugin manifest template
-- **`examples/plugin-mcp-with-skills.json`** -- MCP plugin with bundled skills manifest template
+- **`examples/plugin.json`** -- Minimal MCP package manifest template
+- **`examples/plugin-skill-only.json`** -- Skill-only package manifest template
+- **`examples/plugin-mcp-with-skills.json`** -- MCP package with bundled skills manifest template
 - **`examples/generate-plugin-cobra.go`** -- Cobra-based generate-plugin command
 - **`examples/generate-plugin-flag.go`** -- Flag-based generate-plugin command
 - **`examples/flake-go.nix`** -- Flake snippet for Go MCP with postInstall
