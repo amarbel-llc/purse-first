@@ -32,7 +32,7 @@ type marketplaceJSON struct {
 }
 
 // rootFromPluginsDir returns the marketplace root given PURSE_FIRST_PLUGINS_DIR.
-// The layout is: <root>/share/purse-first (plugins dir) with marketplace.json
+// The layout is: <root>/share/purse-first (packages dir) with marketplace.json
 // at <root>/.claude-plugin/marketplace.json — two levels up.
 func rootFromPluginsDir(pluginsDir string) string {
 	return filepath.Dir(filepath.Dir(pluginsDir))
@@ -98,7 +98,7 @@ func Run(w io.Writer, opts ...Options) error {
 		return err
 	}
 
-	// TAP header: 4 fixed steps + one per plugin + optional hook uninstall
+	// TAP header: 4 fixed steps + one per package + optional hook uninstall
 	total := 4 + len(m.Plugins)
 	if opt.NoHooks {
 		total++
@@ -113,7 +113,7 @@ func Run(w io.Writer, opts ...Options) error {
 	n++
 
 	// 2. Read marketplace.json
-	fmt.Fprintf(w, "ok %d - read marketplace.json (%d plugins)\n", n, len(m.Plugins))
+	fmt.Fprintf(w, "ok %d - read marketplace.json (%d packages)\n", n, len(m.Plugins))
 	n++
 
 	// 3. Remove marketplace (ignore errors if not present)
@@ -131,15 +131,15 @@ func Run(w io.Writer, opts ...Options) error {
 	fmt.Fprintf(w, "ok %d - add marketplace %s\n", n, styleCode.Render(m.Name))
 	n++
 
-	// 5..N Install each plugin
+	// 5..N Install each package
 	for _, plugin := range m.Plugins {
 		ref := plugin.Name + "@" + m.Name
 		install := exec.Command("claude", "plugin", "install", ref)
 		if err := install.Run(); err != nil {
-			fmt.Fprintf(w, "not ok %d - install plugin %s\n", n, styleCode.Render(plugin.Name))
-			return fmt.Errorf("installing plugin %q: %w", plugin.Name, err)
+			fmt.Fprintf(w, "not ok %d - install package %s\n", n, styleCode.Render(plugin.Name))
+			return fmt.Errorf("installing package %q: %w", plugin.Name, err)
 		}
-		fmt.Fprintf(w, "ok %d - install plugin %s\n", n, styleCode.Render(plugin.Name))
+		fmt.Fprintf(w, "ok %d - install package %s\n", n, styleCode.Render(plugin.Name))
 		n++
 	}
 
