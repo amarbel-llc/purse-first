@@ -10,7 +10,9 @@ import (
 
 // RunCLI parses CLI arguments, dispatches to the matched command handler,
 // and prints the result. Global params (App.Params) are parsed before
-// the subcommand name; command params are parsed after.
+// the subcommand name; command params and global params are both accepted
+// after. Prefix subcommands joined by hyphens are resolved from
+// space-separated args (e.g. "perms check" → "perms-check").
 func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 	globalVals := make(map[string]any)
 	remaining, err := parseFlags(args, a.Params, globalVals)
@@ -28,7 +30,18 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 
 	cmd, ok := a.GetCommand(name)
 	if !ok {
-		return fmt.Errorf("unknown command: %s", name)
+		// Try joining with subsequent args for prefix subcommands:
+		// "perms check" → "perms-check"
+		for i := 1; i < len(remaining); i++ {
+			name = name + "-" + remaining[i]
+			if cmd, ok = a.GetCommand(name); ok {
+				cmdArgs = remaining[i+1:]
+				break
+			}
+		}
+		if !ok {
+			return fmt.Errorf("unknown command: %s", remaining[0])
+		}
 	}
 
 	cmdVals := make(map[string]any)
@@ -36,9 +49,31 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 		cmdVals[k] = v
 	}
 
-	_, err = parseFlags(cmdArgs, cmd.Params, cmdVals)
+	// Merge command params and global params so flags after the subcommand
+	// can include global params like --format.
+	allParams := append(cmd.Params, a.Params...)
+	positional, err := parseFlags(cmdArgs, allParams, cmdVals)
 	if err != nil {
 		return fmt.Errorf("parsing flags for %s: %w", name, err)
+	}
+
+	// Assign positional args to command params that weren't set by flags,
+	// in declaration order.
+	if len(positional) > 0 {
+		pi := 0
+		for _, param := range cmd.Params {
+			if pi >= len(positional) {
+				break
+			}
+			if _, set := cmdVals[param.Name]; set {
+				continue
+			}
+			if param.Type == Bool {
+				continue
+			}
+			cmdVals[param.Name] = positional[pi]
+			pi++
+		}
 	}
 
 	argsJSON, err := json.Marshal(cmdVals)
@@ -85,7 +120,9 @@ func (a *App) printUsage() {
 	}
 }
 
-// parseFlags extracts --flag values from args into vals, returning unconsumed args.
+// parseFlags extracts --flag values from args into vals, returning unconsumed
+// positional args. Non-flag args are collected but parsing continues, so
+// flags can appear after positional args (e.g. "open target --format tap").
 func parseFlags(args []string, params []Param, vals map[string]any) ([]string, error) {
 	paramMap := make(map[string]Param)
 	for _, p := range params {
@@ -97,8 +134,8 @@ func parseFlags(args []string, params []Param, vals map[string]any) ([]string, e
 		arg := args[i]
 
 		if !strings.HasPrefix(arg, "--") {
-			remaining = append(remaining, args[i:]...)
-			break
+			remaining = append(remaining, arg)
+			continue
 		}
 
 		key := strings.TrimPrefix(arg, "--")
@@ -113,8 +150,8 @@ func parseFlags(args []string, params []Param, vals map[string]any) ([]string, e
 
 		p, ok := paramMap[key]
 		if !ok {
-			remaining = append(remaining, args[i:]...)
-			break
+			remaining = append(remaining, arg)
+			continue
 		}
 
 		switch p.Type {

@@ -219,3 +219,117 @@ func TestRunCLIEqualsFlag(t *testing.T) {
 		t.Errorf("name = %q, want %q", got, "alice")
 	}
 }
+
+func TestRunCLIGlobalParamsAfterSubcommand(t *testing.T) {
+	var format string
+	app := NewApp("test", "test app")
+	app.Params = []Param{
+		{Name: "format", Type: String, Description: "Output format"},
+	}
+	app.AddCommand(&Command{
+		Name: "status",
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			var params struct {
+				Format string `json:"format"`
+			}
+			json.Unmarshal(args, &params)
+			format = params.Format
+			return TextResult(""), nil
+		},
+	})
+
+	err := app.RunCLI(context.Background(), []string{"status", "--format", "tap"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if format != "tap" {
+		t.Errorf("format = %q, want %q", format, "tap")
+	}
+}
+
+func TestRunCLIPositionalArg(t *testing.T) {
+	var got string
+	app := NewApp("test", "test app")
+	app.AddCommand(&Command{
+		Name: "open",
+		Params: []Param{
+			{Name: "target", Type: String, Description: "target path"},
+			{Name: "verbose", Type: Bool, Description: "verbose output"},
+		},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			var params struct {
+				Target string `json:"target"`
+			}
+			json.Unmarshal(args, &params)
+			got = params.Target
+			return TextResult(""), nil
+		},
+	})
+
+	err := app.RunCLI(context.Background(), []string{"open", "eng/worktrees/repo/branch"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if got != "eng/worktrees/repo/branch" {
+		t.Errorf("target = %q, want %q", got, "eng/worktrees/repo/branch")
+	}
+}
+
+func TestRunCLIPositionalArgWithFlags(t *testing.T) {
+	var target, format string
+	app := NewApp("test", "test app")
+	app.Params = []Param{
+		{Name: "format", Type: String, Description: "Output format"},
+	}
+	app.AddCommand(&Command{
+		Name: "open",
+		Params: []Param{
+			{Name: "target", Type: String, Description: "target path"},
+			{Name: "no-attach", Type: Bool, Description: "skip attach"},
+		},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			var params struct {
+				Target string `json:"target"`
+				Format string `json:"format"`
+			}
+			json.Unmarshal(args, &params)
+			target = params.Target
+			format = params.Format
+			return TextResult(""), nil
+		},
+	})
+
+	err := app.RunCLI(context.Background(), []string{"open", "eng/worktrees/repo/branch", "--format", "tap"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if target != "eng/worktrees/repo/branch" {
+		t.Errorf("target = %q, want %q", target, "eng/worktrees/repo/branch")
+	}
+	if format != "tap" {
+		t.Errorf("format = %q, want %q", format, "tap")
+	}
+}
+
+func TestRunCLIPrefixSubcommand(t *testing.T) {
+	var called bool
+	app := NewApp("test", "test app")
+
+	sub := NewApp("perms", "Manage permissions")
+	sub.AddCommand(&Command{
+		Name: "check",
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			called = true
+			return TextResult("ok"), nil
+		},
+	})
+	app.MergeWithPrefix(sub, "perms")
+
+	err := app.RunCLI(context.Background(), []string{"perms", "check"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if !called {
+		t.Error("perms-check handler was not called")
+	}
+}
