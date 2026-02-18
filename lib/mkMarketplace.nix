@@ -102,13 +102,13 @@ utils.lib.eachDefaultSystem (
                 "cp ${pluginBaseJson} $staging/.claude-plugin/plugin.json"
               else
                 ''
-                  cat > $staging/.claude-plugin/plugin.json <<PLUGIN_EOF
-                  {
-                    "name": "${name}",
-                    "author": { "name": "${owner.name}" },
-                    "description": "${description}"
-                  }
-                  PLUGIN_EOF
+                  cat > $staging/.claude-plugin/plugin.json <<'PLUGIN_EOF'
+{
+  "name": "${name}",
+  "author": { "name": "${owner.name}" },
+  "description": "${description}"
+}
+PLUGIN_EOF
                 ''
             }
             chmod u+w $staging/.claude-plugin/plugin.json
@@ -133,7 +133,7 @@ utils.lib.eachDefaultSystem (
         null;
 
     # All packages to join: plugins + meta plugin (if present).
-    allPaths = pluginPkgs ++ (if metaPlugin != null then [ metaPlugin ] else [ ]);
+    allPaths = pluginPkgs ++ pkgs.lib.optional (skills != null) metaPlugin;
 
     # Main marketplace derivation.
     marketplace = pkgs.symlinkJoin {
