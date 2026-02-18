@@ -8,6 +8,7 @@ type App struct {
 	Description Description
 	Version     string
 	MCPArgs     []string // extra args passed to the binary in plugin manifests
+	MCPBinary   string   // binary name for plugin.json command; defaults to Name
 	Params      []Param  // global flags
 	commands    map[string]*Command
 }

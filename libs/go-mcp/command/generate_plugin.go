@@ -19,12 +19,17 @@ type pluginManifest struct {
 
 // GeneratePlugin writes a plugin.json manifest to {dir}/{app.Name}/plugin.json.
 func (a *App) GeneratePlugin(dir string) error {
+	cmdName := a.Name
+	if a.MCPBinary != "" {
+		cmdName = a.MCPBinary
+	}
+
 	manifest := pluginManifest{
 		Name: a.Name,
 		McpServers: map[string]pluginMcpServer{
 			a.Name: {
 				Type:    "stdio",
-				Command: a.Name,
+				Command: cmdName,
 				Args:    a.MCPArgs,
 			},
 		},

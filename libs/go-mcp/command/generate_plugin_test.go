@@ -66,3 +66,42 @@ func TestGeneratePluginWithArgs(t *testing.T) {
 		t.Errorf("args = %v, want [mcp stdio]", args)
 	}
 }
+
+func TestGeneratePluginUsesMCPBinary(t *testing.T) {
+	app := NewApp("sweatshop", "Worktree manager")
+	app.MCPBinary = "sweatshop-mcp"
+
+	dir := t.TempDir()
+	if err := app.GeneratePlugin(dir); err != nil {
+		t.Fatalf("GeneratePlugin: %v", err)
+	}
+
+	data, _ := os.ReadFile(filepath.Join(dir, "sweatshop", "plugin.json"))
+	var plugin map[string]any
+	json.Unmarshal(data, &plugin)
+
+	servers := plugin["mcpServers"].(map[string]any)
+	srv := servers["sweatshop"].(map[string]any)
+	if srv["command"] != "sweatshop-mcp" {
+		t.Errorf("command = %v, want sweatshop-mcp", srv["command"])
+	}
+}
+
+func TestGeneratePluginDefaultsMCPBinaryToName(t *testing.T) {
+	app := NewApp("grit", "Git operations")
+
+	dir := t.TempDir()
+	if err := app.GeneratePlugin(dir); err != nil {
+		t.Fatalf("GeneratePlugin: %v", err)
+	}
+
+	data, _ := os.ReadFile(filepath.Join(dir, "grit", "plugin.json"))
+	var plugin map[string]any
+	json.Unmarshal(data, &plugin)
+
+	servers := plugin["mcpServers"].(map[string]any)
+	srv := servers["grit"].(map[string]any)
+	if srv["command"] != "grit" {
+		t.Errorf("command = %v, want grit (default)", srv["command"])
+	}
+}
