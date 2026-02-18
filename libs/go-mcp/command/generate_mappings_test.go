@@ -71,6 +71,69 @@ func TestGenerateMappings(t *testing.T) {
 	}
 }
 
+func TestGenerateMappingsWithExtensions(t *testing.T) {
+	app := NewApp("lux", "LSP multiplexer")
+
+	app.AddCommand(&Command{
+		Name:        "hover",
+		Description: Description{Short: "Get type info"},
+		MapsTools: []ToolMapping{
+			{Replaces: "Read", Extensions: []string{".go", ".py"}, UseWhen: "getting type info"},
+		},
+	})
+
+	app.AddCommand(&Command{
+		Name:        "document_symbols",
+		Description: Description{Short: "Get symbols"},
+		MapsTools: []ToolMapping{
+			{Replaces: "Read", Extensions: []string{".go", ".py"}, UseWhen: "understanding file structure"},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateMappings(dir); err != nil {
+		t.Fatalf("GenerateMappings: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(dir, "lux", "mappings.json"))
+	if err != nil {
+		t.Fatalf("read mappings.json: %v", err)
+	}
+
+	var mf struct {
+		Server   string `json:"server"`
+		Mappings []struct {
+			Replaces   string   `json:"replaces"`
+			Extensions []string `json:"extensions"`
+			Tools      []struct {
+				Name    string `json:"name"`
+				UseWhen string `json:"use_when"`
+			} `json:"tools"`
+		} `json:"mappings"`
+	}
+	if err := json.Unmarshal(data, &mf); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	if mf.Server != "lux" {
+		t.Errorf("server = %q, want lux", mf.Server)
+	}
+
+	// Two separate entries (no consolidation yet — one per MapsTools entry)
+	if len(mf.Mappings) != 2 {
+		t.Fatalf("mappings len = %d, want 2", len(mf.Mappings))
+	}
+
+	for _, m := range mf.Mappings {
+		if m.Replaces != "Read" {
+			t.Errorf("replaces = %q, want Read", m.Replaces)
+		}
+		if len(m.Extensions) != 2 || m.Extensions[0] != ".go" {
+			t.Errorf("extensions = %v, want [.go .py]", m.Extensions)
+		}
+	}
+}
+
 func TestGenerateMappingsNoMappings(t *testing.T) {
 	app := NewApp("test", "test")
 	app.AddCommand(&Command{Name: "foo"})
