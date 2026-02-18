@@ -100,8 +100,8 @@ test-lifecycle:
 validate:
     nix develop --command go run ./cmd/purse-first validate .claude-plugin/plugin.json
 
-# Run all tests (unit + integration + libs)
-test-all: test test-go-mcp test-rust-mcp test-integration test-hooks test-lifecycle
+# Run all tests (unit + integration + libs + framework)
+test-all: test test-go-mcp test-rust-mcp test-integration test-hooks test-lifecycle test-template
 
 # Generate local plugin.json with discovered skills
 generate-local-plugin:
@@ -126,6 +126,18 @@ test-rust-mcp:
 # Test command package specifically
 test-command:
     cd libs/go-mcp && go test -v ./command/
+
+# Verify mkMarketplace.nix parses
+check-lib:
+    nix-instantiate --parse lib/mkMarketplace.nix
+
+# Verify template parses
+check-template:
+    nix-instantiate --parse templates/marketplace/flake.nix
+
+# Run template tests
+test-template:
+    nix develop --command bats --tap zz-tests_bats/marketplace_template.bats
 
 # Clean build artifacts
 clean:
