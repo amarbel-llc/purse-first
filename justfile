@@ -70,37 +70,33 @@ deps:
     nix develop --command go mod tidy
     nix develop --command gomod2nix
 
-# Run integration tests with sandcastle
+# Run integration tests
 test-integration:
     nix build
-    nix develop --command zz-tests_bats/bin/run-sandcastle-bats.bash \
-      bats --tap \
+    nix develop --command bats --tap \
       zz-tests_bats/validate_marketplace.bats \
-      zz-tests_bats/validate_documents.bats
+      zz-tests_bats/validate_documents.bats \
+      zz-tests_bats/validate_plugin_repos.bats
 
 # Validate plugin repos have correct .claude-plugin/plugin.json
 test-validate-repos:
-    nix develop --command zz-tests_bats/bin/run-sandcastle-bats.bash \
-      bats --tap zz-tests_bats/validate_plugin_repos.bats
+    nix develop --command bats --tap zz-tests_bats/validate_plugin_repos.bats
 
 # Run validate-specific BATS tests
 test-validate:
     nix build
-    nix develop --command zz-tests_bats/bin/run-sandcastle-bats.bash \
-      bats --tap zz-tests_bats/validate_documents.bats
+    nix develop --command bats --tap zz-tests_bats/validate_documents.bats
 
 # Run hook unit tests + BATS hook I/O tests
 test-hooks:
     nix develop --command go test -v ./internal/hook/...
     nix build
-    nix develop --command zz-tests_bats/bin/run-sandcastle-bats.bash \
-      bats --tap zz-tests_bats/hook_io.bats
+    nix develop --command bats --tap zz-tests_bats/hook_io.bats
 
-# Run lifecycle tests with sandcastle-isolated HOME
+# Run lifecycle tests
 test-lifecycle:
     nix build
-    nix develop --command zz-tests_bats/bin/run-sandcastle-lifecycle.bash \
-      bats --tap zz-tests_bats/hook_lifecycle.bats
+    nix develop --command bats --tap zz-tests_bats/hook_lifecycle.bats
 
 # Validate own plugin manifest
 validate:

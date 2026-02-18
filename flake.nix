@@ -9,7 +9,6 @@
     go.url = "github:friedenberg/eng?dir=devenvs/go";
     shell.url = "github:friedenberg/eng?dir=devenvs/shell";
     bats.url = "github:friedenberg/eng?dir=devenvs/bats";
-    sandcastle.url = "github:amarbel-llc/sandcastle";
 
     grit = {
       url = "github:amarbel-llc/grit";
@@ -52,7 +51,6 @@
       go,
       shell,
       bats,
-      sandcastle,
       grit,
       get-hubbed,
       lux,
@@ -138,10 +136,7 @@
         devShellPackages =
           system: pkgs: pkgs-master: [
             pkgs-master.claude-code
-            pkgs.bats
-            pkgs.bats.libraries.bats-support
-            pkgs.bats.libraries.bats-assert
-            sandcastle.packages.${system}.default
+            batman.packages.${system}.default
           ];
         devShellInputsFrom = system: [
           go.devShells.${system}.default
@@ -184,9 +179,7 @@
               ];
             };
           };
-          devShells.default = (marketplaceOutputs.devShells.${system}.default).overrideAttrs (old: {
-            BATS_LIB_PATH = "${pkgs.bats.libraries.bats-support}/share/bats:${pkgs.bats.libraries.bats-assert}/share/bats";
-          });
+          devShells.default = marketplaceOutputs.devShells.${system}.default;
         }
       ))
     );
