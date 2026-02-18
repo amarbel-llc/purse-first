@@ -37,8 +37,8 @@ func main() {
 			{Name: "path", Type: command.String, Description: "File path to inspect", Required: true},
 			{Name: "format", Type: command.String, Description: "Output format: json or text", Default: "text"},
 		},
-		MapsBash: []command.BashMapping{
-			{Prefixes: []string{"stat "}, UseWhen: "getting file metadata"},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"stat "}, UseWhen: "getting file metadata"},
 		},
 		RunMCP: func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
 			var params struct {
@@ -72,8 +72,8 @@ func main() {
 			{Name: "offset", Type: command.Int, Description: "Skip first N entries. Defaults to 0."},
 			{Name: "limit", Type: command.Int, Description: "Maximum entries to return."},
 		},
-		MapsBash: []command.BashMapping{
-			{Prefixes: []string{"ls "}, UseWhen: "listing directory contents"},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"ls "}, UseWhen: "listing directory contents"},
 		},
 		RunMCP: func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
 			var params struct {

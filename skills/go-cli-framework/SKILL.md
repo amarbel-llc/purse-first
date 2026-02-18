@@ -35,11 +35,11 @@ Define commands once, get CLI + MCP + completions + manpages + plugin manifests.
 | Type | Purpose |
 |------|---------|
 | `command.App` | Top-level application container with command registry |
-| `command.Command` | Single subcommand with params, descriptions, bash mappings, and RunMCP handler |
+| `command.Command` | Single subcommand with params, descriptions, tool mappings, and RunMCP handler |
 | `command.Param` | Parameter declaration (name, type, description, required, default, completer) |
 | `command.ParamType` | `String`, `Int`, `Bool`, `Float`, `Array` |
 | `command.Description` | Short (one-line) and Long (paragraph) descriptions |
-| `command.BashMapping` | Bash command prefixes to intercept and redirect to this tool |
+| `command.ToolMapping` | Tool interception declarations: Bash command prefixes, file extensions, or both |
 
 ### Pattern
 
@@ -57,8 +57,8 @@ app.AddCommand(&command.Command{
     Params: []command.Param{
         {Name: "path", Type: command.String, Description: "Target path", Required: true},
     },
-    MapsBash: []command.BashMapping{
-        {Prefixes: []string{"my-tool status"}, UseWhen: "checking status"},
+    MapsTools: []command.ToolMapping{
+        {Replaces: "Bash", CommandPrefixes: []string{"my-tool status"}, UseWhen: "checking status"},
     },
     RunMCP: func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
         var p struct{ Path string `json:"path"` }

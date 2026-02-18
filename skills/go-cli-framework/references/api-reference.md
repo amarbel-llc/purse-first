@@ -4,7 +4,7 @@ Complete type and method reference for `github.com/amarbel-llc/go-lib-mcp`.
 
 ## command
 
-Unified command abstraction that generates CLI parsing, MCP tool registration, plugin manifests, bash mappings, manpages, and shell completions from a single definition.
+Unified command abstraction that generates CLI parsing, MCP tool registration, plugin manifests, tool mappings, manpages, and shell completions from a single definition.
 
 ### ParamType
 
@@ -31,14 +31,16 @@ type Description struct {
 }
 ```
 
-### BashMapping
+### ToolMapping
 
-Declares a bash command prefix that should be intercepted and redirected to this command's MCP tool.
+Declares a tool interception: which Claude Code built-in tool to replace, and the conditions under which to intercept (bash command prefixes, file extensions, or both).
 
 ```go
-type BashMapping struct {
-    Prefixes []string // e.g., "git status"
-    UseWhen  string   // shown to Claude in mapping denial
+type ToolMapping struct {
+    Replaces        string   // Claude Code tool to intercept: "Read", "Grep", "Glob", "Bash"
+    Extensions      []string // file extensions to match, e.g. [".go", ".py"]
+    CommandPrefixes []string // bash command prefixes, e.g. ["git status"]
+    UseWhen         string   // shown to Claude in denial reason
 }
 ```
 
@@ -64,7 +66,7 @@ type Command struct {
     Description Description
     Hidden      bool
     Params      []Param
-    MapsBash    []BashMapping
+    MapsTools   []ToolMapping
     RunMCP      func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error)
 }
 ```
@@ -102,14 +104,14 @@ MCP integration:
 Artifact generation:
 - `GenerateAll(dir string) error` — Writes all artifacts to standard paths under `dir`:
   - `{dir}/share/purse-first/{name}/plugin.json`
-  - `{dir}/share/purse-first/{name}/mappings.json` (if any commands have MapsBash)
+  - `{dir}/share/purse-first/{name}/mappings.json` (if any commands have MapsTools)
   - `{dir}/share/man/man1/{name}.1`
   - `{dir}/share/man/man1/{name}-{cmd}.1` (per visible command)
   - `{dir}/share/bash-completion/completions/{name}`
   - `{dir}/share/zsh/site-functions/_{name}`
   - `{dir}/share/fish/vendor_completions.d/{name}.fish`
 - `GeneratePlugin(dir string) error` — Writes only `{dir}/{name}/plugin.json`.
-- `GenerateMappings(dir string) error` — Writes only `{dir}/{name}/mappings.json`. Skips if no commands have bash mappings.
+- `GenerateMappings(dir string) error` — Writes only `{dir}/{name}/mappings.json`. Skips if no commands have tool mappings.
 - `GenerateManpages(dir string) error` — Writes roff manpages to `{dir}/share/man/man1/`.
 - `GenerateCompletions(dir string) error` — Writes bash, zsh, and fish completion scripts.
 
