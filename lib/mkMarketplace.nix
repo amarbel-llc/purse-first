@@ -1,0 +1,207 @@
+# lib/mkMarketplace.nix
+#
+# mkMarketplace — build a Claude plugin marketplace from a set of plugins.
+#
+# Called by purse-first's own flake.nix and available to downstream consumers
+# via `purse-first.lib.mkMarketplace`.
+{
+  # Required — Nix infrastructure
+  nixpkgs,
+  nixpkgs-master,
+  utils,
+
+  # Required — marketplace identity
+  name,
+  owner,
+
+  # Required — plugin set
+  # function: system → list of plugin derivations
+  plugins,
+
+  # Optional — how to obtain the purse-first CLI.
+  # When purse-first builds itself, it passes its own source + build config.
+  # Downstream consumers pass the purse-first package from the flake input.
+  purse-first-cli ? null,
+  purse-first-build ? null,
+
+  # Optional — metadata
+  description ? "${name} — Claude plugin marketplace",
+  repo ? null,
+
+  # Optional — customization
+  pluginConfig ? null,
+  skills ? null,
+  pluginBaseJson ? null,
+
+  # Optional — extra devShell configuration
+  devShellPackages ? (_system: _pkgs: _pkgs-master: []),
+  devShellInputsFrom ? (_system: []),
+  devShellHook ? ''echo "${name} - dev environment"'',
+}:
+
+utils.lib.eachDefaultSystem (
+  system:
+  let
+    pkgs = import nixpkgs { inherit system; };
+    pkgs-master = import nixpkgs-master {
+      inherit system;
+      config.allowUnfree = true;
+    };
+
+    # Resolve the purse-first CLI package.
+    # Self-build: purse-first-build is an attrset with src, modules, overlays, version.
+    # Downstream: purse-first-cli is a package from the flake input.
+    cli =
+      if purse-first-cli != null then
+        purse-first-cli.packages.${system}.purse-first
+      else if purse-first-build != null then
+        let
+          pkgs-go = import nixpkgs {
+            inherit system;
+            overlays = purse-first-build.overlays or [ ];
+          };
+        in
+        pkgs-go.buildGoApplication {
+          pname = "purse-first";
+          version = purse-first-build.version or "0.0.0";
+          src = purse-first-build.src;
+          modules = purse-first-build.modules;
+          subPackages = [ "cmd/purse-first" ];
+          CGO_ENABLED = "0";
+          ldflags = [
+            "-s"
+            "-w"
+          ];
+          meta = with pkgs.lib; {
+            description = "MCP-first tool routing for Claude Code";
+            license = licenses.mit;
+          };
+        }
+      else
+        throw "mkMarketplace: must provide either purse-first-cli or purse-first-build";
+
+    # Resolve plugin packages for this system.
+    pluginPkgs = plugins system;
+
+    # Build the meta plugin (skills carrier) if skills are provided.
+    metaPlugin =
+      if skills != null then
+        pkgs.runCommand "${name}-meta"
+          {
+            nativeBuildInputs = [ cli ];
+          }
+          ''
+            mkdir -p $out/share/purse-first/${name}/skills
+            cp -r ${skills}/* $out/share/purse-first/${name}/skills/
+
+            staging=$(mktemp -d)
+            ln -s $out/share/purse-first/${name}/skills $staging/skills
+            mkdir -p $staging/.claude-plugin
+            ${
+              if pluginBaseJson != null then
+                "cp ${pluginBaseJson} $staging/.claude-plugin/plugin.json"
+              else
+                ''
+                  cat > $staging/.claude-plugin/plugin.json <<PLUGIN_EOF
+                  {
+                    "name": "${name}",
+                    "author": { "name": "${owner.name}" },
+                    "description": "${description}"
+                  }
+                  PLUGIN_EOF
+                ''
+            }
+            chmod u+w $staging/.claude-plugin/plugin.json
+            purse-first generate-local-plugin --root $staging
+            cp $staging/.claude-plugin/plugin.json $out/share/purse-first/${name}/plugin.json
+          ''
+      else
+        null;
+
+    # Write marketplace-config.json if pluginConfig is provided.
+    configFile =
+      if pluginConfig != null then
+        pkgs.writeText "${name}-marketplace-config.json" (builtins.toJSON (
+          {
+            inherit name description;
+            inherit owner;
+          }
+          // (if repo != null then { inherit repo; } else { })
+          // (if pluginConfig ? plugins then { inherit (pluginConfig) plugins; } else { })
+        ))
+      else
+        null;
+
+    # All packages to join: plugins + meta plugin (if present).
+    allPaths = pluginPkgs ++ (if metaPlugin != null then [ metaPlugin ] else [ ]);
+
+    # Main marketplace derivation.
+    marketplace = pkgs.symlinkJoin {
+      name = "${name}-marketplace";
+      paths = allPaths;
+      nativeBuildInputs = [ pkgs.makeWrapper ];
+      postBuild = ''
+        makeWrapper ${cli}/bin/purse-first $out/bin/purse-first \
+          --set PURSE_FIRST_PLUGINS_DIR "$out/share/purse-first"
+
+        $out/bin/purse-first generate-marketplace \
+          --plugins-dir "$out/share/purse-first" \
+          ${if configFile != null then "--config ${configFile}" else ""} \
+          --output "$out/.claude-plugin/marketplace.json"
+      '';
+    };
+
+    # No-hooks variant.
+    marketplace-no-hooks = pkgs.symlinkJoin {
+      name = "${name}-marketplace-no-hooks";
+      paths = allPaths;
+      nativeBuildInputs = [
+        pkgs.makeWrapper
+        pkgs.jq
+      ];
+      postBuild = ''
+        # Replace plugin.json symlinks with hook-stripped copies.
+        for pj in $out/share/purse-first/*/plugin.json; do
+          ${pkgs.jq}/bin/jq 'del(.hooks)' "$pj" > "$pj.tmp"
+          rm "$pj"
+          mv "$pj.tmp" "$pj"
+        done
+
+        # Remove hook script directories.
+        for d in $out/share/purse-first/*/hooks; do
+          [ -e "$d" ] && rm -rf "$d"
+        done
+
+        makeWrapper ${cli}/bin/purse-first $out/bin/purse-first \
+          --set PURSE_FIRST_PLUGINS_DIR "$out/share/purse-first"
+
+        $out/bin/purse-first generate-marketplace \
+          --no-hooks \
+          --plugins-dir "$out/share/purse-first" \
+          ${if configFile != null then "--config ${configFile}" else ""} \
+          --output "$out/.claude-plugin/marketplace.json"
+      '';
+    };
+  in
+  {
+    packages = {
+      default = marketplace;
+      inherit marketplace-no-hooks;
+    } // (if purse-first-build != null then { purse-first = cli; } else { });
+
+    apps.default = {
+      type = "app";
+      program = "${marketplace}/bin/purse-first";
+    };
+
+    devShells.default = pkgs.mkShell {
+      packages = [
+        pkgs.just
+      ] ++ (devShellPackages system pkgs pkgs-master);
+
+      inputsFrom = devShellInputsFrom system;
+
+      shellHook = devShellHook;
+    };
+  }
+)
