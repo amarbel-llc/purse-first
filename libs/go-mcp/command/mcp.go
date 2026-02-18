@@ -1,6 +1,10 @@
 package command
 
 import (
+	"context"
+	"encoding/json"
+
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
 )
 
@@ -9,18 +13,36 @@ import (
 // auto-generated JSON schema.
 func (a *App) RegisterMCPTools(registry *server.ToolRegistry) {
 	for _, cmd := range a.AllCommands() {
-		if cmd.Hidden {
-			continue
-		}
-		if cmd.RunMCP == nil {
+		if cmd.Hidden || cmd.Run == nil {
 			continue
 		}
 
+		run := cmd.Run // capture for closure
 		registry.Register(
 			cmd.Name,
 			cmd.Description.Short,
 			cmd.InputSchema(),
-			cmd.RunMCP,
+			func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+				result, err := run(ctx, args, StubPrompter{})
+				if err != nil {
+					return nil, err
+				}
+				return resultToMCP(result), nil
+			},
 		)
+	}
+}
+
+func resultToMCP(r *Result) *protocol.ToolCallResult {
+	var text string
+	if r.JSON != nil {
+		data, _ := json.Marshal(r.JSON)
+		text = string(data)
+	} else {
+		text = r.Text
+	}
+	return &protocol.ToolCallResult{
+		Content: []protocol.ContentBlock{protocol.TextContent(text)},
+		IsError: r.IsErr,
 	}
 }

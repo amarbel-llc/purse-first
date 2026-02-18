@@ -3,8 +3,6 @@ package command
 import (
 	"context"
 	"encoding/json"
-
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 )
 
 // ParamType identifies the data type of a command parameter.
@@ -72,8 +70,14 @@ type Command struct {
 	Params   []Param
 	MapsTools []ToolMapping
 
-	// RunMCP handles MCP tool invocations.
-	RunMCP func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error)
+	// Run handles both MCP tool invocations and CLI execution.
+	// In MCP mode, Prompter is a StubPrompter that returns errors.
+	// In CLI mode, Prompter is a real interactive implementation.
+	Run func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error)
+
+	// RunCLI handles CLI-only invocations. Commands with only RunCLI
+	// are not registered as MCP tools or included in plugin.json.
+	RunCLI func(ctx context.Context, args json.RawMessage) error
 }
 
 // RequiredParams returns only the params marked as required.

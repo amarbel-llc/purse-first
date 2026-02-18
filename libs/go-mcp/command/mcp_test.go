@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
 )
 
@@ -18,16 +17,21 @@ func TestAppRegisterMCPTools(t *testing.T) {
 		Params: []Param{
 			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
 		},
-		RunMCP: func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
-			return &protocol.ToolCallResult{
-				Content: []protocol.ContentBlock{protocol.TextContent("ok")},
-			}, nil
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			return TextResult("ok"), nil
 		},
 	})
 
 	app.AddCommand(&Command{
 		Name:   "internal",
 		Hidden: true,
+	})
+
+	app.AddCommand(&Command{
+		Name: "interactive",
+		RunCLI: func(ctx context.Context, args json.RawMessage) error {
+			return nil
+		},
 	})
 
 	registry := server.NewToolRegistry()
@@ -39,7 +43,7 @@ func TestAppRegisterMCPTools(t *testing.T) {
 	}
 
 	if len(tools) != 1 {
-		t.Fatalf("tools len = %d, want 1 (hidden commands excluded)", len(tools))
+		t.Fatalf("tools len = %d, want 1 (hidden and CLI-only excluded)", len(tools))
 	}
 
 	if tools[0].Name != "status" {
@@ -67,14 +71,12 @@ func TestAppMCPToolCall(t *testing.T) {
 		Params: []Param{
 			{Name: "message", Type: String, Description: "Message to echo"},
 		},
-		RunMCP: func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
 			var params struct {
 				Message string `json:"message"`
 			}
 			json.Unmarshal(args, &params)
-			return &protocol.ToolCallResult{
-				Content: []protocol.ContentBlock{protocol.TextContent(params.Message)},
-			}, nil
+			return TextResult(params.Message), nil
 		},
 	})
 
