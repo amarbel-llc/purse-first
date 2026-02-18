@@ -12,10 +12,13 @@ jobs:
         include:
           - os: ubuntu-latest
             system: x86_64-linux
+            brew-platform: linux-amd64
           - os: macos-13
             system: x86_64-darwin
+            brew-platform: darwin-amd64
           - os: macos-latest
             system: aarch64-darwin
+            brew-platform: darwin-arm64
 
     runs-on: ${{ matrix.os }}
 
@@ -58,6 +61,22 @@ jobs:
           name: binaries-${{ matrix.system }}
           path: dist/
 
+      - name: Package tarballs for Homebrew
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          for pkg in grit get-hubbed lux purse-first robin tap-dancer; do
+            nix build ".#${pkg}" -o "result-${pkg}"
+            bash bin/brew-build-tarball.bash \
+              "result-${pkg}" "$pkg" "$version" \
+              "${{ matrix.brew-platform }}" dist/tarballs/
+          done
+
+      - name: Upload tarball artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tarballs-${{ matrix.system }}
+          path: dist/tarballs/
+
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -76,6 +95,48 @@ jobs:
         with:
           files: dist/*
           generate_release_notes: true
+
+  update-tap:
+    needs: [build, release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Build formula templates
+        run: nix build .#homebrew-tap -o result-tap
+
+      - name: Download all tarballs
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/tarballs
+          pattern: tarballs-*
+          merge-multiple: true
+
+      - name: Generate final formulas
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p tap-output/Formula
+          cp result-tap/Formula/*.rb tap-output/Formula/
+          cp result-tap/README.md tap-output/
+          chmod -R u+w tap-output/
+          bash bin/brew-update-hashes.bash tap-output/Formula dist/tarballs "$version"
+
+      - name: Push to homebrew-purse-first
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
+        with:
+          source-directory: tap-output
+          destination-github-username: amarbel-llc
+          destination-repository-name: homebrew-purse-first
+          target-branch: main
+          commit-message: "Update formulas for ${{ github.ref_name }}"
 
   flakehub:
     runs-on: ubuntu-latest

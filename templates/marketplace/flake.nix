@@ -50,5 +50,15 @@
 
       # Optional: per-plugin metadata for the marketplace.
       # pluginConfig = builtins.fromJSON (builtins.readFile ./marketplace-config.json);
+
+      # Optional: generate a Homebrew tap for macOS distribution.
+      # brewConfig = {
+      #   releaseRepo = "my-org/my-marketplace";
+      #   tapName = "my-org/my-marketplace";
+      #   exclude = [];
+      #   dependencies = {};
+      #   binaryPackages = [];
+      #   license = "MIT";
+      # };
     };
 }

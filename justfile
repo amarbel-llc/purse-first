@@ -29,6 +29,10 @@ build-gomod2nix:
 build-go: build-gomod2nix
     nix develop --command go build -o purse-first ./cmd/purse-first
 
+# Build Homebrew tap formula templates
+build-brew:
+    nix build .#homebrew-tap
+
 # Build marketplace without hooks
 build-no-hooks:
     nix build .#marketplace-no-hooks
@@ -100,8 +104,13 @@ test-lifecycle:
 validate:
     nix develop --command go run ./cmd/purse-first validate .claude-plugin/plugin.json
 
+# Run Homebrew tap BATS tests
+test-brew:
+    nix build .#homebrew-tap
+    nix develop --command bats --tap zz-tests_bats/homebrew_tap.bats
+
 # Run all tests (unit + integration + libs + framework)
-test-all: test test-go-mcp test-rust-mcp test-integration test-hooks test-lifecycle test-template
+test-all: test test-go-mcp test-rust-mcp test-integration test-hooks test-lifecycle test-template test-brew
 
 # Generate local plugin.json with discovered skills
 generate-local-plugin:

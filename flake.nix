@@ -120,6 +120,21 @@
         skills = ./skills;
         pluginBaseJson = ./.claude-plugin/plugin.json;
         pluginConfig = builtins.fromJSON (builtins.readFile ./marketplace-config.json);
+        brewConfig = {
+          releaseRepo = "amarbel-llc/purse-first";
+          tapName = "amarbel-llc/purse-first";
+          exclude = [ "chix" ];
+          dependencies = {
+            get-hubbed = [ "gh" ];
+          };
+          binaryPackages = [
+            "purse-first"
+            "grit"
+            "lux"
+            "get-hubbed"
+          ];
+          license = "MIT";
+        };
         devShellPackages =
           system: pkgs: pkgs-master: [
             pkgs-master.claude-code
@@ -157,6 +172,7 @@
             get-hubbed = wrapGetHubbed system;
             lux = lux.packages.${system}.default;
             chix = chix.packages.${system}.default;
+            robin = batman.packages.${system}.robin;
             tap-dancer = tap-dancer.packages.${system}.default;
             mcp-all = pkgs.symlinkJoin {
               name = "mcp-all";

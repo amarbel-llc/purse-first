@@ -33,6 +33,10 @@
   skills ? null,
   pluginBaseJson ? null,
 
+  # Optional — Homebrew tap generation.
+  # When set, produces a packages.homebrew-tap output.
+  brewConfig ? null,
+
   # Optional — extra devShell configuration
   devShellPackages ? (_system: _pkgs: _pkgs-master: []),
   devShellInputsFrom ? (_system: []),
@@ -151,6 +155,15 @@ PLUGIN_EOF
       '';
     };
 
+    # Homebrew tap derivation (optional).
+    brewTap =
+      if brewConfig != null && pluginConfig != null then
+        import ./mkBrewTap.nix {
+          inherit pkgs pluginConfig brewConfig;
+        }
+      else
+        null;
+
     # No-hooks variant.
     marketplace-no-hooks = pkgs.symlinkJoin {
       name = "${name}-marketplace-no-hooks";
@@ -187,7 +200,8 @@ PLUGIN_EOF
     packages = {
       default = marketplace;
       inherit marketplace-no-hooks;
-    } // (if purse-first-build != null then { purse-first = cli; } else { });
+    } // (if purse-first-build != null then { purse-first = cli; } else { })
+      // (if brewTap != null then { homebrew-tap = brewTap; } else { });
 
     apps.default = {
       type = "app";
