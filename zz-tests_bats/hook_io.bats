@@ -110,6 +110,34 @@ function glob_directory_path_pattern { # @test
   assert_output --partial "deny"
 }
 
+function deny_read_go_with_tool_prefix_uses_prefix { # @test
+  # Create a mapping with tool_prefix set (dev mode)
+  cat >"$project_dir/.purse-first/lux.json" <<'MAPPING'
+{
+  "server": "lux",
+  "tool_prefix": "mcp__lux-dev",
+  "mappings": [
+    {
+      "replaces": "Read",
+      "extensions": [".go"],
+      "tools": [
+        {"name": "hover", "use_when": "getting type info"}
+      ],
+      "reason": "Use lux-dev MCP tools"
+    }
+  ]
+}
+MAPPING
+
+  local payload
+  payload=$(hook_payload Read file_path=/path/to/foo.go)
+
+  run sh -c 'cd "$3" && echo "$1" | "$2" hook' -- "$payload" "$purse_first" "$project_dir"
+  assert_success
+  assert_output --partial "mcp__lux-dev__hover"
+  refute_output --partial "mcp__plugin_lux_lux__"
+}
+
 function post_hook_reads_stdin_cleanly { # @test
   local payload
   payload=$(hook_payload Read file_path=/path/to/foo.go)
