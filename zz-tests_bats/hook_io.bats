@@ -138,6 +138,97 @@ MAPPING
   refute_output --partial "mcp__plugin_lux_lux__"
 }
 
+function deny_git_status_with_dev_mcp_prefix { # @test
+  # Simulate dev-mcp: grit mappings with tool_prefix set
+  cat >"$project_dir/.purse-first/grit.json" <<'MAPPING'
+{
+  "server": "grit",
+  "tool_prefix": "mcp__grit-dev",
+  "mappings": [
+    {
+      "replaces": "Bash",
+      "command_prefixes": ["git status"],
+      "tools": [
+        {"name": "status", "use_when": "checking repository status"}
+      ],
+      "reason": "Use the grit MCP tool instead"
+    }
+  ]
+}
+MAPPING
+
+  local payload
+  payload=$(hook_payload Bash command="git status")
+
+  run sh -c 'cd "$3" && echo "$1" | "$2" hook' -- "$payload" "$purse_first" "$project_dir"
+  assert_success
+
+  assert_output --partial "mcp__grit-dev__status"
+  refute_output --partial "mcp__plugin_grit_grit__"
+
+  echo "$output" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
+}
+
+function deny_git_log_with_dev_mcp_prefix { # @test
+  cat >"$project_dir/.purse-first/grit.json" <<'MAPPING'
+{
+  "server": "grit",
+  "tool_prefix": "mcp__grit-dev",
+  "mappings": [
+    {
+      "replaces": "Bash",
+      "command_prefixes": ["git log"],
+      "tools": [
+        {"name": "log", "use_when": "viewing commit history"}
+      ],
+      "reason": "Use the grit MCP tool instead"
+    }
+  ]
+}
+MAPPING
+
+  local payload
+  payload=$(hook_payload Bash command="git log --oneline -10")
+
+  run sh -c 'cd "$3" && echo "$1" | "$2" hook' -- "$payload" "$purse_first" "$project_dir"
+  assert_success
+
+  assert_output --partial "mcp__grit-dev__log"
+  refute_output --partial "mcp__plugin_grit_grit__"
+
+  echo "$output" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
+}
+
+function deny_git_show_with_dev_mcp_prefix { # @test
+  cat >"$project_dir/.purse-first/grit.json" <<'MAPPING'
+{
+  "server": "grit",
+  "tool_prefix": "mcp__grit-dev",
+  "mappings": [
+    {
+      "replaces": "Bash",
+      "command_prefixes": ["git show"],
+      "tools": [
+        {"name": "show", "use_when": "inspecting commits or objects"}
+      ],
+      "reason": "Use the grit MCP tool instead"
+    }
+  ]
+}
+MAPPING
+
+  local payload
+  payload=$(hook_payload Bash command="git show HEAD")
+
+  run sh -c 'cd "$3" && echo "$1" | "$2" hook' -- "$payload" "$purse_first" "$project_dir"
+  assert_success
+
+  assert_output --partial "mcp__grit-dev__show"
+  refute_output --partial "mcp__plugin_grit_grit__"
+
+  echo "$output" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
+}
+
 function post_hook_reads_stdin_cleanly { # @test
   local payload
   payload=$(hook_payload Read file_path=/path/to/foo.go)
