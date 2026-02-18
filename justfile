@@ -74,7 +74,9 @@ deps:
 test-integration:
     nix build
     nix develop --command zz-tests_bats/bin/run-sandcastle-bats.bash \
-      bats --tap zz-tests_bats/*.bats
+      bats --tap \
+      zz-tests_bats/validate_marketplace.bats \
+      zz-tests_bats/validate_documents.bats
 
 # Validate plugin repos have correct .claude-plugin/plugin.json
 test-validate-repos:

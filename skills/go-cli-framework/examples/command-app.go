@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Example: Building a CLI + MCP tool using command.App.
 //
 // This creates a "fileinfo" tool that provides file metadata.
@@ -14,11 +16,11 @@ import (
 	"log"
 	"os"
 
-	"github.com/amarbel-llc/go-lib-mcp/command"
-	"github.com/amarbel-llc/go-lib-mcp/output"
-	"github.com/amarbel-llc/go-lib-mcp/protocol"
-	"github.com/amarbel-llc/go-lib-mcp/server"
-	"github.com/amarbel-llc/go-lib-mcp/transport"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/output"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
 )
 
 func main() {

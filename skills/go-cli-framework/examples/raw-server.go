@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Example: Building an MCP server directly with registries.
 //
 // Use this pattern when you only need an MCP server (no CLI surface).
@@ -12,10 +14,10 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/amarbel-llc/go-lib-mcp/output"
-	"github.com/amarbel-llc/go-lib-mcp/protocol"
-	"github.com/amarbel-llc/go-lib-mcp/server"
-	"github.com/amarbel-llc/go-lib-mcp/transport"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/output"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
 )
 
 func main() {
