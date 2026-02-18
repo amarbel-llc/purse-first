@@ -3,7 +3,7 @@ package huh
 import (
 	"testing"
 
-	"github.com/amarbel-llc/go-lib-mcp/command"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
 )
 
 func TestHuhPrompterImplementsPrompter(t *testing.T) {

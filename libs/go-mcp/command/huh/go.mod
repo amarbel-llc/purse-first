@@ -1,9 +1,9 @@
-module github.com/amarbel-llc/go-lib-mcp/command/huh
+module github.com/amarbel-llc/purse-first/libs/go-mcp/command/huh
 
 go 1.23
 
 require (
-	github.com/amarbel-llc/go-lib-mcp v0.0.0
+	github.com/amarbel-llc/purse-first/libs/go-mcp v0.0.0
 	github.com/charmbracelet/huh v0.6.0
 )
 
@@ -33,4 +33,4 @@ require (
 	golang.org/x/text v0.18.0 // indirect
 )
 
-replace github.com/amarbel-llc/go-lib-mcp => ../..
+replace github.com/amarbel-llc/purse-first/libs/go-mcp => ../..
