@@ -83,9 +83,13 @@ func main() {
 		Use:   "generate-marketplace",
 		Short: "Generate .claude-plugin/marketplace.json from discovered plugins",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := marketplace.ReadConfig(configPath)
-			if err != nil {
-				return fmt.Errorf("reading config: %w", err)
+			var config marketplace.Config
+			if configPath != "" {
+				var err error
+				config, err = marketplace.ReadConfig(configPath)
+				if err != nil {
+					return fmt.Errorf("reading config: %w", err)
+				}
 			}
 
 			discovered, err := marketplace.DiscoverPlugins(pluginsDir)
@@ -111,7 +115,6 @@ func main() {
 	genMarketplaceCmd.Flags().StringVar(&outputPath, "output", ".claude-plugin/marketplace.json", "output path")
 	genMarketplaceCmd.Flags().BoolVar(&genNoHooks, "no-hooks", false, "strip hooks from generated marketplace plugins")
 	genMarketplaceCmd.MarkFlagRequired("plugins-dir")
-	genMarketplaceCmd.MarkFlagRequired("config")
 
 	var localPluginRoot string
 
