@@ -60,210 +60,118 @@
       batman,
       tap-dancer,
     }:
-    utils.lib.eachDefaultSystem (
-      system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [
-            go.overlays.default
-          ];
+    let
+      mkMarketplace = import ./lib/mkMarketplace.nix;
+
+      purse-first-src = nixpkgs.lib.cleanSourceWith {
+        src = ./.;
+        filter =
+          path: type:
+          let
+            baseName = builtins.baseNameOf path;
+          in
+          baseName != "go.work" && baseName != "go.work.sum" && !nixpkgs.lib.hasPrefix (toString ./libs) path;
+      };
+
+      wrapGetHubbed =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          get-hubbed-upstream = get-hubbed.packages.${system}.default;
+        in
+        pkgs.runCommand "get-hubbed"
+          {
+            nativeBuildInputs = [ pkgs.makeWrapper ];
+          }
+          ''
+            mkdir -p $out/bin
+            makeWrapper ${get-hubbed-upstream}/bin/get-hubbed $out/bin/get-hubbed \
+              --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.gh ]}
+
+            # Propagate share directory (plugin manifest, etc.)
+            if [ -d "${get-hubbed-upstream}/share" ]; then
+              cp -r ${get-hubbed-upstream}/share $out/share
+            fi
+          '';
+
+      marketplaceOutputs = mkMarketplace {
+        inherit nixpkgs nixpkgs-master utils;
+        name = "purse-first";
+        owner = {
+          name = "friedenberg";
+          email = "sasha@friedenberg.me";
         };
-
-        pkgs-master = import nixpkgs-master {
-          inherit system;
-          config.allowUnfree = true;
-        };
-
-        version = "0.1.0";
-
-        # Upstream packages
-        grit-pkg = grit.packages.${system}.default;
-        lux-pkg = lux.packages.${system}.default;
-        chix-pkg = chix.packages.${system}.default;
-
-        # get-hubbed wrapped with gh on PATH
-        get-hubbed-upstream = get-hubbed.packages.${system}.default;
-        get-hubbed-pkg =
-          pkgs.runCommand "get-hubbed"
-            {
-              nativeBuildInputs = [ pkgs.makeWrapper ];
-            }
-            ''
-              mkdir -p $out/bin
-              makeWrapper ${get-hubbed-upstream}/bin/get-hubbed $out/bin/get-hubbed \
-                --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.gh ]}
-
-              # Propagate share directory (plugin manifest, etc.)
-              if [ -d "${get-hubbed-upstream}/share" ]; then
-                cp -r ${get-hubbed-upstream}/share $out/share
-              fi
-            '';
-
-        robin-pkg = batman.packages.${system}.robin;
-        tap-dancer-pkg = tap-dancer.packages.${system}.default;
-
-        # Filter out go.work and libs/ from the nix build source so that
-        # buildGoApplication doesn't enter Go workspace mode.
-        purse-first-src = pkgs.lib.cleanSourceWith {
-          src = ./.;
-          filter =
-            path: type:
-            let
-              baseName = builtins.baseNameOf path;
-            in
-            baseName != "go.work" && baseName != "go.work.sum" && !pkgs.lib.hasPrefix (toString ./libs) path;
-        };
-
-        purse-first-pkg = pkgs.buildGoApplication {
-          pname = "purse-first";
-          inherit version;
+        description = "MCP servers and tool routing for Claude Code, built with Nix";
+        repo = "amarbel-llc/purse-first";
+        purse-first-build = {
           src = purse-first-src;
           modules = ./gomod2nix.toml;
-          subPackages = [ "cmd/purse-first" ];
-          CGO_ENABLED = "0";
-          ldflags = [
-            "-s"
-            "-w"
-          ];
-
-          postInstall = ''
-            mkdir -p $out/share/purse-first/bob/skills
-            cp -r ${./skills}/* $out/share/purse-first/bob/skills/
-
-            staging=$(mktemp -d)
-            ln -s $out/share/purse-first/bob/skills $staging/skills
-            mkdir -p $staging/.claude-plugin
-            cp ${./.claude-plugin/plugin.json} $staging/.claude-plugin/plugin.json
-            chmod u+w $staging/.claude-plugin/plugin.json
-            $out/bin/purse-first generate-local-plugin --root $staging
-            cp $staging/.claude-plugin/plugin.json $out/share/purse-first/bob/plugin.json
-          '';
-
-          meta = with pkgs.lib; {
-            description = "MCP-first tool routing for Claude Code";
-            homepage = "https://github.com/friedenberg/purse-first";
-            license = licenses.mit;
-          };
+          version = "0.1.0";
+          overlays = [ go.overlays.default ];
         };
-
-        # Aggregated packages
-        mcp-all = pkgs.symlinkJoin {
-          name = "mcp-all";
-          paths = [
-            grit-pkg
-            get-hubbed-pkg
-            lux-pkg
-            chix-pkg
-          ];
-        };
-
-        marketplace = pkgs.symlinkJoin {
-          name = "claude-plugin-marketplace";
-          paths = [
-            grit-pkg
-            get-hubbed-pkg
-            lux-pkg
-            chix-pkg
-            robin-pkg
-            tap-dancer-pkg
-          ];
-          nativeBuildInputs = [ pkgs.makeWrapper ];
-          postBuild = ''
-            cp -r ${purse-first-pkg}/share/purse-first/bob $out/share/purse-first/bob
-
-            makeWrapper ${purse-first-pkg}/bin/purse-first $out/bin/purse-first \
-              --set PURSE_FIRST_PLUGINS_DIR "$out/share/purse-first"
-
-            $out/bin/purse-first generate-marketplace \
-              --plugins-dir "$out/share/purse-first" \
-              --config ${./marketplace-config.json} \
-              --output "$out/.claude-plugin/marketplace.json"
-          '';
-        };
-
-        marketplace-no-hooks = pkgs.symlinkJoin {
-          name = "claude-plugin-marketplace-no-hooks";
-          paths = [
-            grit-pkg
-            get-hubbed-pkg
-            lux-pkg
-            chix-pkg
-            robin-pkg
-            tap-dancer-pkg
-          ];
-          nativeBuildInputs = [
-            pkgs.makeWrapper
-            pkgs.jq
-          ];
-          postBuild = ''
-            cp -r --no-preserve=mode ${purse-first-pkg}/share/purse-first/bob $out/share/purse-first/bob
-
-            # Strip hooks from each plugin.json.
-            # symlinkJoin creates symlinks for individual files — replace
-            # each plugin.json symlink with a hook-stripped copy.
-            for pj in $out/share/purse-first/*/plugin.json; do
-              ${pkgs.jq}/bin/jq 'del(.hooks)' "$pj" > "$pj.tmp"
-              rm "$pj"
-              mv "$pj.tmp" "$pj"
-            done
-
-            # Remove hook script directories
-            for d in $out/share/purse-first/*/hooks; do
-              [ -e "$d" ] && rm -rf "$d"
-            done
-
-            makeWrapper ${purse-first-pkg}/bin/purse-first $out/bin/purse-first \
-              --set PURSE_FIRST_PLUGINS_DIR "$out/share/purse-first"
-
-            $out/bin/purse-first generate-marketplace \
-              --no-hooks \
-              --plugins-dir "$out/share/purse-first" \
-              --config ${./marketplace-config.json} \
-              --output "$out/.claude-plugin/marketplace.json"
-          '';
-        };
-      in
-      {
-        packages = {
-          default = marketplace;
-          inherit mcp-all marketplace-no-hooks;
-          grit = grit-pkg;
-          get-hubbed = get-hubbed-pkg;
-          lux = lux-pkg;
-          chix = chix-pkg;
-          purse-first = purse-first-pkg;
-          tap-dancer = tap-dancer-pkg;
-        };
-
-        devShells.default = pkgs.mkShell {
-          packages = [
-            pkgs.just
+        plugins = system: [
+          grit.packages.${system}.default
+          lux.packages.${system}.default
+          chix.packages.${system}.default
+          (wrapGetHubbed system)
+          batman.packages.${system}.robin
+          tap-dancer.packages.${system}.default
+        ];
+        skills = ./skills;
+        pluginBaseJson = ./.claude-plugin/plugin.json;
+        pluginConfig = builtins.fromJSON (builtins.readFile ./marketplace-config.json);
+        devShellPackages =
+          system: pkgs: pkgs-master: [
             pkgs-master.claude-code
             pkgs.bats
             pkgs.bats.libraries.bats-support
             pkgs.bats.libraries.bats-assert
             sandcastle.packages.${system}.default
           ];
-
-          inputsFrom = [
-            go.devShells.${system}.default
-            shell.devShells.${system}.default
-            bats.devShells.${system}.default
-          ];
-
-          BATS_LIB_PATH = "${pkgs.bats.libraries.bats-support}/share/bats:${pkgs.bats.libraries.bats-assert}/share/bats";
-
-          shellHook = ''
-            echo "purse-first - dev environment"
-          '';
+        devShellInputsFrom = system: [
+          go.devShells.${system}.default
+          shell.devShells.${system}.default
+          bats.devShells.${system}.default
+        ];
+        devShellHook = ''
+          echo "purse-first - dev environment"
+        '';
+      };
+    in
+    nixpkgs.lib.recursiveUpdate marketplaceOutputs (
+      {
+        lib.mkMarketplace = mkMarketplace;
+        templates.marketplace = {
+          path = ./templates/marketplace;
+          description = "Scaffold a new Claude plugin marketplace with Nix";
         };
-
-        apps.default = {
-          type = "app";
-          program = "${marketplace}/bin/purse-first";
-        };
-
       }
+      // (utils.lib.eachDefaultSystem (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        {
+          packages = (marketplaceOutputs.packages.${system} or { }) // {
+            grit = grit.packages.${system}.default;
+            get-hubbed = wrapGetHubbed system;
+            lux = lux.packages.${system}.default;
+            chix = chix.packages.${system}.default;
+            tap-dancer = tap-dancer.packages.${system}.default;
+            mcp-all = pkgs.symlinkJoin {
+              name = "mcp-all";
+              paths = [
+                grit.packages.${system}.default
+                (wrapGetHubbed system)
+                lux.packages.${system}.default
+                chix.packages.${system}.default
+              ];
+            };
+          };
+          devShells.default = (marketplaceOutputs.devShells.${system}.default).overrideAttrs (old: {
+            BATS_LIB_PATH = "${pkgs.bats.libraries.bats-support}/share/bats:${pkgs.bats.libraries.bats-assert}/share/bats";
+          });
+        }
+      ))
     );
 }
