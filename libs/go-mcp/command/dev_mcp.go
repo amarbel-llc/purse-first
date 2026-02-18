@@ -136,3 +136,17 @@ func cleanDevMCP(projectDir string) error {
 	os.RemoveAll(filepath.Join(projectDir, ".purse-first"))
 	return nil
 }
+
+func (a *App) addDevMCPCommand() {
+	a.AddCommand(&Command{
+		Name:   "dev-mcp",
+		Hidden: true,
+		Description: Description{
+			Short: "Generate project-local MCP config for dev testing",
+		},
+		Params: []Param{
+			{Name: "suffix", Type: String, Description: "Suffix for the MCP server name", Default: "dev"},
+			{Name: "clean", Type: Bool, Description: "Remove generated dev artifacts", Default: false},
+		},
+	})
+}

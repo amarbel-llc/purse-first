@@ -14,11 +14,15 @@ type App struct {
 
 // NewApp creates a new App with the given name and short description.
 func NewApp(name, short string) *App {
-	return &App{
+	a := &App{
 		Name:        name,
 		Description: Description{Short: short},
 		commands:    make(map[string]*Command),
 	}
+
+	a.addDevMCPCommand()
+
+	return a
 }
 
 // AddCommand registers a command and its aliases. Panics on duplicate names.

@@ -99,6 +99,18 @@ func TestDevMCPGeneratesArtifacts(t *testing.T) {
 	}
 }
 
+func TestAppHasDevMCPCommand(t *testing.T) {
+	app := NewApp("lux", "LSP multiplexer")
+
+	cmd, ok := app.GetCommand("dev-mcp")
+	if !ok {
+		t.Fatal("dev-mcp command not registered")
+	}
+	if !cmd.Hidden {
+		t.Error("dev-mcp should be hidden")
+	}
+}
+
 func TestDevMCPClean(t *testing.T) {
 	projectDir := t.TempDir()
 
