@@ -18,7 +18,7 @@ import (
 func main() {
 	root := &cobra.Command{
 		Use:   "purse-first",
-		Short: "MCP-first tool routing for Claude Code",
+		Short: "Package framework for Claude Code",
 	}
 
 	hookCmd := &cobra.Command{
@@ -34,7 +34,7 @@ func main() {
 
 	postHookCmd := &cobra.Command{
 		Use:   "post-hook",
-		Short: "PostToolUse hook handler (fires plugin notifications)",
+		Short: "PostToolUse hook handler (fires package notifications)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return hook.HandlePostToolUse(os.Stdin, os.Stdout)
 		},
@@ -44,7 +44,7 @@ func main() {
 
 	sessionEndCmd := &cobra.Command{
 		Use:   "session-end",
-		Short: "SessionEnd hook handler (fires plugin stop notifications)",
+		Short: "SessionEnd hook handler (fires package stop notifications)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return hook.HandleSessionEnd(os.Stdin, os.Stdout)
 		},
@@ -64,7 +64,7 @@ func main() {
 
 	installCmd := &cobra.Command{
 		Use:   "install",
-		Short: "Install purse-first marketplace and plugins into Claude Code",
+		Short: "Install purse-first marketplace and packages into Claude Code",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return install.Run(os.Stderr, install.Options{NoHooks: !installHooks})
 		},
@@ -81,7 +81,7 @@ func main() {
 
 	genMarketplaceCmd := &cobra.Command{
 		Use:   "generate-marketplace",
-		Short: "Generate .claude-plugin/marketplace.json from discovered plugins",
+		Short: "Generate .claude-plugin/marketplace.json from discovered packages",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var config marketplace.Config
 			if configPath != "" {
@@ -94,7 +94,7 @@ func main() {
 
 			discovered, err := marketplace.DiscoverPlugins(pluginsDir)
 			if err != nil {
-				return fmt.Errorf("discovering plugins: %w", err)
+				return fmt.Errorf("discovering packages: %w", err)
 			}
 
 			m := marketplace.Generate(config, discovered, marketplace.GenerateOptions{
@@ -105,15 +105,15 @@ func main() {
 				return fmt.Errorf("writing marketplace.json: %w", err)
 			}
 
-			fmt.Fprintf(os.Stderr, "wrote %s (%d plugins)\n", outputPath, len(m.Plugins))
+			fmt.Fprintf(os.Stderr, "wrote %s (%d packages)\n", outputPath, len(m.Plugins))
 			return nil
 		},
 	}
 
-	genMarketplaceCmd.Flags().StringVar(&pluginsDir, "plugins-dir", "", "directory containing plugin.json files")
+	genMarketplaceCmd.Flags().StringVar(&pluginsDir, "plugins-dir", "", "directory containing package manifest files")
 	genMarketplaceCmd.Flags().StringVar(&configPath, "config", "", "marketplace config file with metadata")
 	genMarketplaceCmd.Flags().StringVar(&outputPath, "output", ".claude-plugin/marketplace.json", "output path")
-	genMarketplaceCmd.Flags().BoolVar(&genNoHooks, "no-hooks", false, "strip hooks from generated marketplace plugins")
+	genMarketplaceCmd.Flags().BoolVar(&genNoHooks, "no-hooks", false, "strip hooks from generated marketplace packages")
 	genMarketplaceCmd.MarkFlagRequired("plugins-dir")
 
 	var localPluginRoot string
@@ -132,7 +132,7 @@ func main() {
 
 			pluginPath := filepath.Join(localPluginRoot, ".claude-plugin", "plugin.json")
 			if err := localplugin.Generate(localPluginRoot, pluginPath); err != nil {
-				return fmt.Errorf("generating local plugin: %w", err)
+				return fmt.Errorf("generating local package manifest: %w", err)
 			}
 
 			fmt.Fprintf(os.Stderr, "updated %s\n", pluginPath)
@@ -149,8 +149,8 @@ func main() {
 
 	validateCmd := &cobra.Command{
 		Use:   "validate [path]",
-		Short: "Validate plugin, mapping, or marketplace documents",
-		Long: `Validate Claude Code plugin documents.
+		Short: "Validate package, mapping, or marketplace documents",
+		Long: `Validate purse-first package documents.
 
 Accepts a file path, directory, or "-" for stdin.
 Auto-detects document type from filename or content.
