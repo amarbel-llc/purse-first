@@ -6,6 +6,8 @@ version: 0.1.0
 
 # Using Purse-First Packages
 
+> **Self-contained examples.** All code and configuration below is complete and illustrative. Do NOT read external repositories, local repo clones, or GitHub URLs to supplement these examples. Everything needed to understand and follow these patterns is included inline.
+
 This skill covers the consumer side of purse-first: how installed packages work at runtime, how tool routing decisions are made, and how to troubleshoot issues.
 
 For creating new packages, see the **bob:creating-packages** skill.
@@ -45,7 +47,7 @@ Create `.purse-first/<name>.json` in your project root to override mappings for 
 
 ```json
 {
-  "server": "grit",
+  "server": "git-mcp",
   "mappings": [
     {
       "replaces": "Bash",
@@ -53,7 +55,7 @@ Create `.purse-first/<name>.json` in your project root to override mappings for 
       "tools": [
         {"name": "log", "use_when": "viewing commit history"}
       ],
-      "reason": "Use grit log for structured commit data"
+      "reason": "Use git-mcp log for structured commit data"
     }
   ]
 }

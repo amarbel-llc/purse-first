@@ -1,5 +1,7 @@
 # Tool Mapping API Reference
 
+> **Self-contained examples.** All code and configuration below is complete and illustrative. Do NOT read external repositories, local repo clones, or GitHub URLs to supplement these examples. Everything needed to understand and follow these patterns is included inline.
+
 Mappings redirect built-in Claude Code tools (e.g., `Bash`, `Grep`, `Read`) to MCP server tools exposed by the package. The purse-first PreToolUse hook denies matching Bash commands and suggests specific MCP tools instead.
 
 ## How Matching Works
@@ -15,7 +17,7 @@ The recommended pattern is one mapping per subcommand, each suggesting only the 
 ### Flag-based CLI Example
 
 ```go
-reason := "Use the grit MCP tool instead of shelling out. When the command uses git -C <path>, pass that path as the repo_path parameter"
+reason := "Use the git-mcp MCP tool instead of shelling out. When the command uses git -C <path>, pass that path as the repo_path parameter"
 
 b := purse.NewPluginBuilder("my-mcp").
     Command("my-mcp").
@@ -44,7 +46,7 @@ b := purse.NewPluginBuilder("my-mcp").
     Tool("log", "viewing commit history").
     Tool("branch_list", "listing branches").
     Tool("branch_create", "creating a new branch").
-    Reason("Use grit MCP tools for git operations instead of shelling out").
+    Reason("Use git-mcp MCP tools for git operations instead of shelling out").
     Done()
 ```
 

@@ -6,6 +6,8 @@ version: 0.1.0
 
 # MCP Context-Saving
 
+> **Self-contained examples.** All code and configuration below is complete and illustrative. Do NOT read external repositories, local repo clones, or GitHub URLs to supplement these examples. Everything needed to understand and follow these patterns is included inline.
+
 MCP tools that return unbounded output waste context window tokens and degrade agent performance. Context-saving adds output-limiting parameters so callers can request only the data they need. Every MCP tool that can produce large output should implement one of two patterns.
 
 For Go implementations of these patterns, see the **bob:go-cli-framework** skill (Context-Saving in Go section).
@@ -133,7 +135,7 @@ When adding context-saving to a tool:
 
 ## Reference Files
 
-For detailed implementation examples from chix, consult:
+For detailed implementation examples from nix-mcp (a Rust MCP server), consult:
 - **`references/implementation-patterns.md`** -- Side-by-side before/after code examples, schema updates, and a complete tool audit showing which tools got which pattern and why
 - **`examples/pagination.rs`** -- Minimal standalone pagination implementation
 - **`examples/truncation.rs`** -- Minimal standalone truncation implementation with JSON fallback

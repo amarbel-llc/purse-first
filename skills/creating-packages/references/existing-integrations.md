@@ -1,27 +1,27 @@
 # Existing Purse-First Packages
 
-Side-by-side comparison of all four MCP packages currently integrated with purse-first.
+> **Self-contained examples.** All code and configuration below is complete and illustrative. Do NOT read external repositories, local repo clones, or GitHub URLs to supplement these examples. Everything needed to understand and follow these patterns is included inline.
+
+Side-by-side comparison of all four MCP packages currently integrated with purse-first. Package names below are archetypes describing what each package does — use them as pattern references when building your own package.
 
 ## Summary Table
 
-| Project | Language | Pattern | Command | Args | Extra wrapping |
+| Package | Language | Pattern | Command | Args | Extra wrapping |
 |---------|----------|---------|---------|------|----------------|
-| grit | Go (flag) | generate | `grit` | none | none |
-| get-hubbed | Go (flag) | generate | `get-hubbed` | none | gh on PATH |
-| lux | Go (cobra) | generate | `lux` | `mcp stdio` | none |
-| chix | Rust | static | `chix` | none | fh, cachix, nil on PATH |
+| git-mcp | Go (flag) | generate | `git-mcp` | none | none |
+| github-mcp | Go (flag) | generate | `github-mcp` | none | gh on PATH |
+| lsp-mcp | Go (cobra) | generate | `lsp-mcp` | `mcp stdio` | none |
+| nix-mcp | Rust | static | `nix-mcp` | none | fh, cachix, nil on PATH |
 
-## grit (Go, flag-based, with targeted mappings)
-
-**Repo:** `github:amarbel-llc/grit`
+## git-mcp (Go, flag-based, with targeted mappings)
 
 ### plugin.json and mappings.json (both generated at build time)
 
 ```json
 {
-  "name": "grit",
+  "name": "git-mcp",
   "mcpServers": {
-    "grit": { "type": "stdio", "command": "grit" }
+    "git-mcp": { "type": "stdio", "command": "git-mcp" }
   }
 }
 ```
@@ -35,10 +35,10 @@ func main() {
 	flag.Parse()
 
 	if flag.NArg() == 2 && flag.Arg(0) == "generate-plugin" {
-		reason := "Use the grit MCP tool instead of shelling out. When the command uses git -C <path>, pass that path as the repo_path parameter"
+		reason := "Use the git-mcp MCP tool instead of shelling out. When the command uses git -C <path>, pass that path as the repo_path parameter"
 
-		b := purse.NewPluginBuilder("grit").
-			Command("grit").
+		b := purse.NewPluginBuilder("git-mcp").
+			Command("git-mcp").
 			StdioTransport().
 			// Targeted mappings (specific subcommands first)
 			Mapping("Bash").
@@ -75,7 +75,7 @@ func main() {
 			Tool("diff", "viewing changes").
 			Tool("log", "viewing commit history").
 			// ... all tools listed ...
-			Reason("Use grit MCP tools for git operations instead of shelling out. When the command uses git -C <path>, pass that path as the repo_path parameter").
+			Reason("Use git-mcp MCP tools for git operations instead of shelling out. When the command uses git -C <path>, pass that path as the repo_path parameter").
 			Done()
 
 		p := b.Build()
@@ -103,15 +103,15 @@ Key design: targeted per-subcommand mappings come first so `FindMatch` returns f
 ### flake.nix
 
 ```nix
-grit = pkgs.buildGoApplication {
-  pname = "grit";
+git-mcp = pkgs.buildGoApplication {
+  pname = "git-mcp";
   inherit version;
   src = ./.;
   modules = ./gomod2nix.toml;
-  subPackages = [ "cmd/grit" ];
+  subPackages = [ "cmd/git-mcp" ];
 
   postInstall = ''
-    $out/bin/grit generate-plugin $out/share/purse-first
+    $out/bin/git-mcp generate-plugin $out/share/purse-first
   '';
 };
 ```
@@ -120,56 +120,54 @@ The `postInstall` stays the same -- the binary writes both `plugin.json` and `ma
 
 ---
 
-## get-hubbed (Go, flag-based)
-
-**Repo:** `github:amarbel-llc/get-hubbed`
+## github-mcp (Go, flag-based)
 
 ### plugin.json (generated at build time)
 
 ```json
 {
-  "name": "get-hubbed",
+  "name": "github-mcp",
   "mcpServers": {
-    "get-hubbed": { "type": "stdio", "command": "get-hubbed" }
+    "github-mcp": { "type": "stdio", "command": "github-mcp" }
   }
 }
 ```
 
 ### flake.nix (in MCP server repo)
 
-Same pattern as grit:
+Same pattern as git-mcp:
 
 ```nix
-get_hubbed = pkgs.buildGoApplication {
-  pname = "get-hubbed";
+github-mcp = pkgs.buildGoApplication {
+  pname = "github-mcp";
   inherit version;
   src = ./.;
   modules = ./gomod2nix.toml;
-  subPackages = [ "cmd/get-hubbed" ];
+  subPackages = [ "cmd/github-mcp" ];
 
   postInstall = ''
-    $out/bin/get-hubbed generate-plugin $out/share/purse-first
+    $out/bin/github-mcp generate-plugin $out/share/purse-first
   '';
 };
 ```
 
 ### flake.nix (in purse-first -- wrapping)
 
-get-hubbed requires `gh` on PATH at runtime, so purse-first wraps it:
+github-mcp requires `gh` on PATH at runtime, so purse-first wraps it:
 
 ```nix
-get-hubbed-upstream = get-hubbed.packages.${system}.default;
-get-hubbed-pkg =
-  pkgs.runCommand "get-hubbed"
+github-mcp-upstream = github-mcp.packages.${system}.default;
+github-mcp-pkg =
+  pkgs.runCommand "github-mcp"
     { nativeBuildInputs = [ pkgs.makeWrapper ]; }
     ''
       mkdir -p $out/bin
-      makeWrapper ${get-hubbed-upstream}/bin/get-hubbed $out/bin/get-hubbed \
+      makeWrapper ${github-mcp-upstream}/bin/github-mcp $out/bin/github-mcp \
         --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.gh ]}
 
       # Propagate share directory (plugin manifest, etc.)
-      if [ -d "${get-hubbed-upstream}/share" ]; then
-        cp -r ${get-hubbed-upstream}/share $out/share
+      if [ -d "${github-mcp-upstream}/share" ]; then
+        cp -r ${github-mcp-upstream}/share $out/share
       fi
     '';
 ```
@@ -178,22 +176,20 @@ Key lesson: when wrapping, always propagate the `share/` directory so the packag
 
 ---
 
-## lux (Go, cobra-based)
-
-**Repo:** `github:friedenberg/lux`
+## lsp-mcp (Go, cobra-based)
 
 ### plugin.json (generated at build time)
 
 ```json
 {
-  "name": "lux",
+  "name": "lsp-mcp",
   "mcpServers": {
-    "lux": { "type": "stdio", "command": "lux", "args": ["mcp", "stdio"] }
+    "lsp-mcp": { "type": "stdio", "command": "lsp-mcp", "args": ["mcp", "stdio"] }
   }
 }
 ```
 
-Note the `args` field: lux's MCP mode is a subcommand (`lux mcp stdio`), not the default behavior.
+Note the `args` field: lsp-mcp's MCP mode is a subcommand (`lsp-mcp mcp stdio`), not the default behavior.
 
 ### main.go integration (cobra)
 
@@ -204,8 +200,8 @@ var generatePluginCmd = &cobra.Command{
 	Hidden: true,
 	Args:   cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		p := purse.NewPluginBuilder("lux").
-			Command("lux", "mcp", "stdio").
+		p := purse.NewPluginBuilder("lsp-mcp").
+			Command("lsp-mcp", "mcp", "stdio").
 			Build()
 
 		return purse.WritePlugin(args[0], p)
@@ -218,20 +214,20 @@ Register in init: `rootCmd.AddCommand(generatePluginCmd)`
 ### flake.nix
 
 ```nix
-lux = pkgs.buildGoApplication {
-  pname = "lux";
+lsp-mcp = pkgs.buildGoApplication {
+  pname = "lsp-mcp";
   inherit version;
   src = ./.;
   modules = ./gomod2nix.toml;
-  subPackages = [ "cmd/lux" ];
+  subPackages = [ "cmd/lsp-mcp" ];
 
   postInstall = ''
     # man pages
     mkdir -p $out/share/man/man1
-    $out/bin/lux genman $out/share/man/man1
+    $out/bin/lsp-mcp genman $out/share/man/man1
 
     # purse-first plugin manifest
-    $out/bin/lux generate-plugin $out/share/purse-first
+    $out/bin/lsp-mcp generate-plugin $out/share/purse-first
   '';
 };
 ```
@@ -240,17 +236,15 @@ Shows coexistence with other postInstall tasks (man page generation).
 
 ---
 
-## chix (Rust, static)
-
-**Repo:** `github:amarbel-llc/chix`
+## nix-mcp (Rust, static)
 
 ### plugin.json (static file in .claude-plugin/)
 
 ```json
 {
-  "name": "chix",
+  "name": "nix-mcp",
   "mcpServers": {
-    "chix": { "type": "stdio", "command": "chix" }
+    "nix-mcp": { "type": "stdio", "command": "nix-mcp" }
   },
   "hooks": {
     "PostToolUse": [
@@ -269,19 +263,19 @@ Shows coexistence with other postInstall tasks (man page generation).
 }
 ```
 
-Note: chix is a combined package with MCP server, hooks, and skills.
+Note: nix-mcp is a combined package with MCP server, hooks, and skills.
 
 ### flake.nix
 
 Uses `runCommand` wrapping pattern because the binary needs fh, cachix, and nil on PATH:
 
 ```nix
-chix =
-  pkgs.runCommand "chix"
+nix-mcp =
+  pkgs.runCommand "nix-mcp"
     { nativeBuildInputs = [ pkgs.makeWrapper ]; }
     ''
       mkdir -p $out/bin
-      makeWrapper ${chix-unwrapped}/bin/chix $out/bin/chix \
+      makeWrapper ${nix-mcp-unwrapped}/bin/nix-mcp $out/bin/nix-mcp \
         --prefix PATH : ${
           pkgs.lib.makeBinPath [
             fhPkg
@@ -290,9 +284,9 @@ chix =
           ]
         }
 
-      mkdir -p $out/share/purse-first/chix/hooks
-      cp ${./.claude-plugin/plugin.json} $out/share/purse-first/chix/plugin.json
-      install -m 755 ${formatNixHook} $out/share/purse-first/chix/hooks/format-nix
+      mkdir -p $out/share/purse-first/nix-mcp/hooks
+      cp ${./.claude-plugin/plugin.json} $out/share/purse-first/nix-mcp/plugin.json
+      install -m 755 ${formatNixHook} $out/share/purse-first/nix-mcp/hooks/format-nix
     '';
 ```
 
@@ -312,10 +306,10 @@ All four packages are aggregated in purse-first's `flake.nix`:
 marketplace = pkgs.symlinkJoin {
   name = "claude-plugin-marketplace";
   paths = [
-    grit-pkg
-    get-hubbed-pkg
-    lux-pkg
-    chix-pkg
+    git-mcp-pkg
+    github-mcp-pkg
+    lsp-mcp-pkg
+    nix-mcp-pkg
   ];
   nativeBuildInputs = [ pkgs.makeWrapper ];
   postBuild = ''
@@ -357,7 +351,7 @@ The `symlinkJoin` merges all `share/purse-first/<name>/plugin.json` files into a
 
 2. **Share directory propagation**: When wrapping a binary with `makeWrapper`, the original `share/` directory is NOT automatically included. Copy or symlink it explicitly.
 
-3. **Package name vs binary name**: The package `name` field and the directory under `share/purse-first/` must match, but the `command` field uses the actual binary name. These can differ (e.g., package name `lux`, binary invoked with `lux mcp stdio`).
+3. **Package name vs binary name**: The package `name` field and the directory under `share/purse-first/` must match, but the `command` field uses the actual binary name. These can differ (e.g., package name `lsp-mcp`, binary invoked with `lsp-mcp mcp stdio`).
 
 4. **Input follows**: When adding to purse-first's flake.nix, use `inputs.nixpkgs.follows` and `inputs.nixpkgs-master.follows` to avoid duplicate nixpkgs evaluations.
 
@@ -368,4 +362,3 @@ The `symlinkJoin` merges all `share/purse-first/<name>/plugin.json` files into a
 7. **Multiple prefixes per mapping**: Use multiple `CommandPrefixes` when different commands map to the same tool (e.g., `"git checkout"` and `"git switch"` both map to the `checkout` tool).
 
 8. **Multiple tools per mapping**: Use multiple `Tool` calls when a subcommand maps to more than one MCP tool (e.g., `"git branch"` suggests both `branch_list` and `branch_create`).
-

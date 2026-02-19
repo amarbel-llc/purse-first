@@ -6,6 +6,8 @@ version: 0.1.0
 
 # Creating Purse-First Packages
 
+> **Self-contained examples.** All code and configuration below is complete and illustrative. Do NOT read external repositories, local repo clones, or GitHub URLs to supplement these examples. Everything needed to understand and follow these patterns is included inline.
+
 If you're building an MCP server, CLI tool, or skill set and want Claude Code users to discover and use it without manual configuration, package it with purse-first. The framework handles discovery, installation, and tool routing automatically.
 
 For a high-level understanding of the framework, see the **bob:overview** skill.
@@ -19,7 +21,7 @@ A purse-first package ships a `plugin.json` manifest at `$out/share/purse-first/
 
 | Flavor | Contents | Example |
 |--------|----------|---------|
-| **MCP-only** | MCP server(s) + optional tool mappings | grit, get-hubbed, chix |
+| **MCP-only** | MCP server(s) + optional tool mappings | git-mcp, github-mcp, nix-mcp |
 | **Skill-only** | Skills only (no MCP server) | bob |
 | **MCP + Skills** | MCP server(s) + bundled skills | (future) |
 
@@ -44,7 +46,7 @@ Then run `gomod2nix` to regenerate `gomod2nix.toml`.
 
 Add a hidden `generate-plugin` subcommand that writes the package manifest. The subcommand takes a single argument: the output directory.
 
-For **cobra-based** CLIs (like lux):
+For **cobra-based** CLIs (like lsp-mcp):
 
 ```go
 var generatePluginCmd = &cobra.Command{
@@ -65,7 +67,7 @@ var generatePluginCmd = &cobra.Command{
 
 Register with: `rootCmd.AddCommand(generatePluginCmd)`
 
-For **flag-based** CLIs (like grit):
+For **flag-based** CLIs (like git-mcp):
 
 ```go
 import "github.com/amarbel-llc/purse-first/purse"
@@ -92,7 +94,7 @@ func main() {
 Key details for the builder:
 - **Name**: Short, kebab-case identifier (becomes the key in `mcpServers`)
 - **Command**: The binary name as it appears in `$out/bin/`
-- **Args**: Additional arguments if the MCP mode requires a subcommand (e.g., `"mcp", "stdio"` for lux)
+- **Args**: Additional arguments if the MCP mode requires a subcommand (e.g., `"mcp", "stdio"` for lsp-mcp)
 
 ### Step 3: Add postInstall to flake.nix
 
@@ -151,7 +153,7 @@ my-mcp = pkgs.runCommand "my-mcp"
 
 ## Adding Tool Mappings (Bash Command Interception)
 
-Use mappings to redirect Bash commands to MCP tools. The purse-first PreToolUse hook denies matching commands and suggests the corresponding MCP tool instead (e.g., `git status` redirects to `grit status`).
+Use mappings to redirect Bash commands to MCP tools. The purse-first PreToolUse hook denies matching commands and suggests the corresponding MCP tool instead (e.g., `git status` redirects to the `git-mcp status` tool).
 
 Key rules:
 - Declare one mapping per subcommand for focused denial messages
@@ -167,7 +169,7 @@ b := purse.NewPluginBuilder("my-mcp").
     Mapping("Bash").
     CommandPrefixes("git status").
     Tool("status", "checking repository status").
-    Reason("Use the grit MCP tool instead of shelling out").
+    Reason("Use the git-mcp MCP tool instead of shelling out").
     Done()
 ```
 
@@ -421,7 +423,7 @@ When adding purse-first support:
 
 Consult these when you need detailed implementation examples:
 
-- **`references/existing-integrations.md`** — Read this when comparing approaches across languages. Shows side-by-side grit (Go/flag), lux (Go/cobra), get-hubbed (Go/cobra), and chix (Rust) implementations.
+- **`references/existing-integrations.md`** — Read this when comparing approaches across languages. Shows side-by-side git-mcp (Go/flag), lsp-mcp (Go/cobra), github-mcp (Go/flag), and nix-mcp (Rust) implementations.
 - **`references/mapping-api.md`** — Read this when adding tool mappings. Full MappingBuilder API reference with per-subcommand and catch-all mapping examples.
 - **`examples/plugin.json`** — Minimal MCP package manifest template
 - **`examples/plugin-skill-only.json`** — Skill-only package manifest template

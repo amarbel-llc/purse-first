@@ -6,6 +6,8 @@ version: 0.1.0
 
 # Purse-First Package Framework
 
+> **Self-contained examples.** All code and configuration below is complete and illustrative. Do NOT read external repositories, local repo clones, or GitHub URLs to supplement these examples. Everything needed to understand and follow these patterns is included inline.
+
 Purse-first is a package framework for bundling CLIs, MCP servers, and skills into composable, Nix-built packages for Claude Code. It lets package authors distribute tools that Claude Code agents discover and use automatically — no manual configuration by end users.
 
 ## Why Purse-First Exists
@@ -20,9 +22,9 @@ A **package** is the unit of distribution. Every package outputs a `share/purse-
 
 | Flavor | Ships | Examples |
 |--------|-------|----------|
-| **MCP-only** | MCP server(s) + optional tool mappings | grit, get-hubbed, lux |
+| **MCP-only** | MCP server(s) + optional tool mappings | git-mcp, github-mcp, lsp-mcp |
 | **Skill-only** | Skills only (no MCP server) | bob, robin, tap-dancer |
-| **MCP + Skills** | MCP server(s) + bundled skills | chix |
+| **MCP + Skills** | MCP server(s) + bundled skills | nix-mcp |
 
 ### Marketplace
 
@@ -30,7 +32,7 @@ A **marketplace** aggregates multiple packages into a single installable derivat
 
 ### Tool Mappings
 
-**Mappings** redirect built-in Claude Code tools to MCP tools. For example, grit's mappings intercept `git status` Bash commands and suggest using the `grit status` MCP tool instead. The purse-first PreToolUse hook enforces these at runtime.
+**Mappings** redirect built-in Claude Code tools to MCP tools. For example, git-mcp's mappings intercept `git status` Bash commands and suggest using the `git-mcp status` MCP tool instead. The purse-first PreToolUse hook enforces these at runtime.
 
 ### Skills
 
