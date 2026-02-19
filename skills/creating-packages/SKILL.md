@@ -1,5 +1,5 @@
 ---
-name: Plugin MCP Integration
+name: Creating Packages
 description: This skill should be used when the user asks to "add purse-first support", "turn an MCP into a package", "create a package manifest", "add generate-plugin command", "register with purse-first marketplace", "add skills to a package", "bundle skills in a package", or mentions purse-first package integration, package manifest generation, or skill bundling.
 version: 0.1.0
 ---
