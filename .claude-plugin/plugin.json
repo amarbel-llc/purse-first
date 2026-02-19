@@ -9,6 +9,7 @@
     "./skills/creating-packages",
     "./skills/using-packages",
     "./skills/context-saving",
-    "./skills/go-cli-framework"
+    "./skills/go-cli-framework",
+    "./skills/voldemort"
   ]
 }
