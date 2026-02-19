@@ -1,12 +1,15 @@
 ---
 name: MCP Context-Saving
-description: This skill should be used when the user asks to "add context-saving", "add pagination", "add truncation", "limit output size", "add offset and limit", "reduce token usage", or mentions unbounded output, large responses, PaginationInfo, TruncationInfo, or output size management for MCP server tools.
+description: This skill should be used when the user asks to "add context-saving", "add pagination", "add truncation", "limit output size", "add offset and limit", "reduce token usage", "add head and tail parameters", "limit results", or mentions unbounded output, large responses, PaginationInfo, TruncationInfo, output size management, or token waste in MCP server tools. Also applies when an MCP tool's output is too long, agent token usage is too high, or MCP responses need size limits.
 version: 0.1.0
 ---
 
 # MCP Context-Saving
 
 MCP tools that return unbounded output waste context window tokens and degrade agent performance. Context-saving adds output-limiting parameters so callers can request only the data they need. Every MCP tool that can produce large output should implement one of two patterns.
+
+For Go implementations of these patterns, see the **bob:go-cli-framework** skill (Context-Saving in Go section).
+For packaging your MCP server after adding context-saving, see the **bob:creating-packages** skill.
 
 ## When to Apply
 
@@ -134,3 +137,9 @@ For detailed implementation examples from chix, consult:
 - **`references/implementation-patterns.md`** -- Side-by-side before/after code examples, schema updates, and a complete tool audit showing which tools got which pattern and why
 - **`examples/pagination.rs`** -- Minimal standalone pagination implementation
 - **`examples/truncation.rs`** -- Minimal standalone truncation implementation with JSON fallback
+
+## Related Skills
+
+- **bob:go-cli-framework** — Go implementations of pagination and truncation via the `output` package
+- **bob:creating-packages** — Packaging your MCP server for distribution via purse-first
+- **bob:overview** — Framework orientation and concept definitions
