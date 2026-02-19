@@ -123,6 +123,9 @@ func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Comman
 
 	writeExamples(&b, cmd.Examples)
 
+	fmt.Fprintf(&b, ".SH SEE ALSO\n")
+	fmt.Fprintf(&b, ".BR %s (1)\n", a.Name)
+
 	path := filepath.Join(dir, fullName+".1")
 	return os.WriteFile(path, []byte(b.String()), 0o644)
 }

@@ -147,6 +147,13 @@ func TestGenerateManpageCommand(t *testing.T) {
 		t.Error("missing .fi (end no-fill) block")
 	}
 
+	// SEE ALSO assertions (Task 3)
+	if !strings.Contains(content, ".SH SEE ALSO") {
+		t.Error("missing SEE ALSO section")
+	}
+	if !strings.Contains(content, "grit (1)") {
+		t.Error("missing back-reference to main app page")
+	}
 }
 
 func TestGenerateManpageCommandNoExamples(t *testing.T) {
