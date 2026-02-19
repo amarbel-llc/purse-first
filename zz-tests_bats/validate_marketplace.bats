@@ -49,7 +49,7 @@ function plugin_names_match_config { # @test
 }
 
 function marketplace_has_skills { # @test
-  run jq -e '[.plugins[].skills // [] | .[]] | map(select(endswith("plugin-mcp"))) | length > 0' "$marketplace_json"
+  run jq -e '[.plugins[].skills // [] | .[]] | map(select(endswith("creating-packages"))) | length > 0' "$marketplace_json"
   assert_success
 }
 
