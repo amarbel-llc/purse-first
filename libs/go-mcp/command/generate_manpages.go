@@ -69,7 +69,7 @@ func (a *App) writeAppManpage(dir string) error {
 		fmt.Fprintf(&b, ".SH COMMANDS\n")
 		for _, nc := range cmds {
 			fmt.Fprintf(&b, ".TP\n")
-			fmt.Fprintf(&b, ".B %s\n", nc.name)
+			fmt.Fprintf(&b, ".BR %s (1)\n", nc.name)
 			fmt.Fprintf(&b, "%s\n", nc.cmd.Description.Short)
 		}
 	}

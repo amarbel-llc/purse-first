@@ -80,6 +80,11 @@ func TestGenerateManpageApp(t *testing.T) {
 	if !strings.Contains(content, "grit-status (1)") {
 		t.Error("missing cross-reference to subcommand page")
 	}
+
+	// Task 7: COMMANDS cross-reference
+	if !strings.Contains(content, ".BR status (1)") {
+		t.Error("COMMANDS should cross-reference subcommand manpage with (1)")
+	}
 }
 
 func TestCommandExamplesField(t *testing.T) {
