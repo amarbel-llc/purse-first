@@ -49,6 +49,34 @@ func TestGenerateManpageApp(t *testing.T) {
 	}
 }
 
+func TestCommandExamplesField(t *testing.T) {
+	cmd := &Command{
+		Name:        "status",
+		Description: Description{Short: "Show status"},
+		Examples: []Example{
+			{
+				Description: "Check status of current directory",
+				Command:     "grit status --repo_path=.",
+			},
+			{
+				Description: "Check with output",
+				Command:     "grit status --repo_path=/tmp/repo",
+				Output:      `{"branch": "main", "clean": true}`,
+			},
+		},
+	}
+
+	if len(cmd.Examples) != 2 {
+		t.Fatalf("expected 2 examples, got %d", len(cmd.Examples))
+	}
+	if cmd.Examples[0].Description != "Check status of current directory" {
+		t.Error("wrong example description")
+	}
+	if cmd.Examples[1].Output == "" {
+		t.Error("expected non-empty output on second example")
+	}
+}
+
 func TestGenerateManpageCommand(t *testing.T) {
 	app := NewApp("grit", "Git operations")
 

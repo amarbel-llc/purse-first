@@ -58,6 +58,13 @@ type Param struct {
 	Completer   func() map[string]string
 }
 
+// Example represents a single usage example for a command or app.
+type Example struct {
+	Description string // what this example demonstrates
+	Command     string // shell invocation (may be multi-line)
+	Output      string // optional expected output snippet
+}
+
 // Command declares a single subcommand with all metadata needed
 // to generate CLI parsing, MCP tool registration, manpages,
 // completions, and plugin manifests.
@@ -67,8 +74,9 @@ type Command struct {
 	Description Description
 	Hidden      bool
 
-	Params   []Param
+	Params    []Param
 	MapsTools []ToolMapping
+	Examples  []Example
 
 	// Run handles both MCP tool invocations and CLI execution.
 	// In MCP mode, Prompter is a StubPrompter that returns errors.

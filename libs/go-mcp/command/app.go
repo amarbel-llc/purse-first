@@ -10,6 +10,7 @@ type App struct {
 	MCPArgs     []string // extra args passed to the binary in plugin manifests
 	MCPBinary   string   // binary name for plugin.json command; defaults to Name
 	Params      []Param  // global flags
+	Examples    []Example // app-level workflow examples
 	commands       map[string]*Command
 	canonicalNames map[*Command]string
 }
