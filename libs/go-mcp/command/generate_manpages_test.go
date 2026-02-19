@@ -90,6 +90,17 @@ func TestGenerateManpageCommand(t *testing.T) {
 			{Name: "repo_path", Type: String, Description: "Path to the git repository", Required: true},
 			{Name: "verbose", Type: Bool, Description: "Show verbose output", Default: false},
 		},
+		Examples: []Example{
+			{
+				Description: "Check status of current directory",
+				Command:     "grit status --repo_path=.",
+			},
+			{
+				Description: "Check with JSON output",
+				Command:     "grit status --repo_path=/tmp/repo",
+				Output:      `{"branch": "main"}`,
+			},
+		},
 	})
 
 	dir := t.TempDir()
@@ -114,5 +125,48 @@ func TestGenerateManpageCommand(t *testing.T) {
 	}
 	if !strings.Contains(content, "Path to the git repository") {
 		t.Error("missing param description")
+	}
+
+	// EXAMPLES assertions (Task 2)
+	if !strings.Contains(content, ".SH EXAMPLES") {
+		t.Error("missing EXAMPLES section")
+	}
+	if !strings.Contains(content, "Check status of current directory") {
+		t.Error("missing example description")
+	}
+	if !strings.Contains(content, "grit status --repo_path=.") {
+		t.Error("missing example command")
+	}
+	if !strings.Contains(content, `{"branch": "main"}`) {
+		t.Error("missing example output")
+	}
+	if !strings.Contains(content, ".nf") {
+		t.Error("missing .nf (no-fill) block")
+	}
+	if !strings.Contains(content, ".fi") {
+		t.Error("missing .fi (end no-fill) block")
+	}
+
+}
+
+func TestGenerateManpageCommandNoExamples(t *testing.T) {
+	app := NewApp("grit", "Git operations")
+	app.AddCommand(&Command{
+		Name:        "log",
+		Description: Description{Short: "Show commit history"},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	cmdPage, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "grit-log.1"))
+	if err != nil {
+		t.Fatalf("read grit-log.1: %v", err)
+	}
+
+	if strings.Contains(string(cmdPage), ".SH EXAMPLES") {
+		t.Error("EXAMPLES section should not appear when no examples defined")
 	}
 }

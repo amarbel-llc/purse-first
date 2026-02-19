@@ -121,6 +121,27 @@ func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Comman
 		fmt.Fprintf(&b, "%s\n", strings.Join(cmd.Aliases, ", "))
 	}
 
+	writeExamples(&b, cmd.Examples)
+
 	path := filepath.Join(dir, fullName+".1")
 	return os.WriteFile(path, []byte(b.String()), 0o644)
+}
+
+func writeExamples(b *strings.Builder, examples []Example) {
+	if len(examples) == 0 {
+		return
+	}
+	fmt.Fprintf(b, ".SH EXAMPLES\n")
+	for _, ex := range examples {
+		fmt.Fprintf(b, ".TP\n")
+		fmt.Fprintf(b, "%s\n", ex.Description)
+		fmt.Fprintf(b, ".nf\n")
+		for _, line := range strings.Split(ex.Command, "\n") {
+			fmt.Fprintf(b, "$ %s\n", line)
+		}
+		if ex.Output != "" {
+			fmt.Fprintf(b, "%s\n", ex.Output)
+		}
+		fmt.Fprintf(b, ".fi\n")
+	}
 }
