@@ -74,6 +74,8 @@ func (a *App) writeAppManpage(dir string) error {
 		}
 	}
 
+	writeExamples(&b, a.Examples)
+
 	path := filepath.Join(dir, a.Name+".1")
 	return os.WriteFile(path, []byte(b.String()), 0o644)
 }

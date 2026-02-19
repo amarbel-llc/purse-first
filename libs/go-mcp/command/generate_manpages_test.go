@@ -11,6 +11,12 @@ func TestGenerateManpageApp(t *testing.T) {
 	app := NewApp("grit", "Git operations MCP server")
 	app.Version = "0.1.0"
 	app.Description.Long = "An MCP server exposing git operations."
+	app.Examples = []Example{
+		{
+			Description: "Stage and commit changes",
+			Command:     "grit add --repo_path=. --paths='[\"main.go\"]'\ngrit commit --repo_path=. --message='initial'",
+		},
+	}
 
 	app.AddCommand(&Command{
 		Name:        "status",
@@ -54,6 +60,17 @@ func TestGenerateManpageApp(t *testing.T) {
 	}
 	if !strings.Contains(content, ".I command") {
 		t.Error("missing command placeholder in SYNOPSIS")
+	}
+
+	// Task 5: EXAMPLES
+	if !strings.Contains(content, ".SH EXAMPLES") {
+		t.Error("missing EXAMPLES section")
+	}
+	if !strings.Contains(content, "Stage and commit changes") {
+		t.Error("missing app example description")
+	}
+	if !strings.Contains(content, "grit add") {
+		t.Error("missing app example command")
 	}
 }
 
@@ -182,6 +199,29 @@ func TestGenerateManpageCommandNoExamples(t *testing.T) {
 	}
 
 	if strings.Contains(string(cmdPage), ".SH EXAMPLES") {
+		t.Error("EXAMPLES section should not appear when no examples defined")
+	}
+}
+
+func TestGenerateManpageAppNoExamples(t *testing.T) {
+	app := NewApp("mytool", "A simple tool")
+	app.Version = "0.1.0"
+	app.AddCommand(&Command{
+		Name:        "run",
+		Description: Description{Short: "Run the tool"},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	appPage, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "mytool.1"))
+	if err != nil {
+		t.Fatalf("read mytool.1: %v", err)
+	}
+
+	if strings.Contains(string(appPage), ".SH EXAMPLES") {
 		t.Error("EXAMPLES section should not appear when no examples defined")
 	}
 }
