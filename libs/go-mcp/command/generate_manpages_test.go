@@ -72,6 +72,14 @@ func TestGenerateManpageApp(t *testing.T) {
 	if !strings.Contains(content, "grit add") {
 		t.Error("missing app example command")
 	}
+
+	// Task 6: SEE ALSO
+	if !strings.Contains(content, ".SH SEE ALSO") {
+		t.Error("missing SEE ALSO section")
+	}
+	if !strings.Contains(content, "grit-status (1)") {
+		t.Error("missing cross-reference to subcommand page")
+	}
 }
 
 func TestCommandExamplesField(t *testing.T) {

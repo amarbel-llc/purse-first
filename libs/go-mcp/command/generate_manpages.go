@@ -76,6 +76,15 @@ func (a *App) writeAppManpage(dir string) error {
 
 	writeExamples(&b, a.Examples)
 
+	if len(cmds) > 0 {
+		fmt.Fprintf(&b, ".SH SEE ALSO\n")
+		var refs []string
+		for _, nc := range cmds {
+			refs = append(refs, fmt.Sprintf(".BR %s-%s (1)", a.Name, nc.name))
+		}
+		fmt.Fprintf(&b, "%s\n", strings.Join(refs, ",\n"))
+	}
+
 	path := filepath.Join(dir, a.Name+".1")
 	return os.WriteFile(path, []byte(b.String()), 0o644)
 }
