@@ -57,6 +57,18 @@ type Param struct {
 }
 ```
 
+### Example
+
+```go
+type Example struct {
+    Description string // what this example demonstrates
+    Command     string // shell invocation (may be multi-line)
+    Output      string // optional expected output snippet
+}
+```
+
+Used in both `Command` (per-command examples) and `App` (workflow examples spanning multiple commands). Rendered in manpage EXAMPLES sections and available to agents for understanding tool usage patterns.
+
 ### Command
 
 ```go
@@ -67,6 +79,7 @@ type Command struct {
     Hidden      bool
     Params      []Param
     MapsTools   []ToolMapping
+    Examples    []Example
     RunMCP      func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error)
 }
 ```
@@ -83,8 +96,9 @@ type App struct {
     Name        string
     Description Description
     Version     string
-    MCPArgs     []string // extra args passed to the binary in plugin manifests
-    Params      []Param  // global flags
+    MCPArgs     []string  // extra args passed to the binary in plugin manifests
+    Params      []Param   // global flags
+    Examples    []Example // app-level workflow examples
 }
 ```
 

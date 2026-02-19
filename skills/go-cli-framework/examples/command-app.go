@@ -26,6 +26,12 @@ import (
 func main() {
 	app := command.NewApp("fileinfo", "File metadata MCP server")
 	app.Version = "0.1.0"
+	app.Examples = []command.Example{
+		{
+			Description: "Inspect a file and list its directory",
+			Command:     "fileinfo stat --path=src/main.go\nfileinfo ls --path=src/",
+		},
+	}
 
 	// Command with required and optional params, bash mapping, and MCP handler.
 	app.AddCommand(&command.Command{
@@ -41,6 +47,13 @@ func main() {
 		},
 		MapsTools: []command.ToolMapping{
 			{Replaces: "Bash", CommandPrefixes: []string{"stat "}, UseWhen: "getting file metadata"},
+		},
+		Examples: []command.Example{
+			{
+				Description: "Get metadata for a Go source file",
+				Command:     "fileinfo stat --path=main.go",
+				Output:      `{"name": "main.go", "size": 1234, "mode": "-rw-r--r--"}`,
+			},
 		},
 		RunMCP: func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
 			var params struct {
