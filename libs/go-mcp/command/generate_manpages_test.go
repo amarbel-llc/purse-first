@@ -238,3 +238,62 @@ func TestGenerateManpageAppNoExamples(t *testing.T) {
 		t.Error("EXAMPLES section should not appear when no examples defined")
 	}
 }
+
+func TestManpageSectionOrdering(t *testing.T) {
+	app := NewApp("demo", "Demo tool")
+	app.Version = "1.0.0"
+	app.Description.Long = "A demonstration tool."
+	app.Examples = []Example{
+		{Description: "Run a workflow", Command: "demo greet --name=world"},
+	}
+
+	app.AddCommand(&Command{
+		Name:        "greet",
+		Description: Description{Short: "Say hello", Long: "Greet someone by name."},
+		Params:      []Param{{Name: "name", Type: String, Description: "Who to greet", Required: true}},
+		Examples: []Example{
+			{Description: "Basic greeting", Command: "demo greet --name=world", Output: "Hello, world!"},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	// Verify app page section ordering
+	appPage, _ := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "demo.1"))
+	appContent := string(appPage)
+
+	sections := []string{".SH NAME", ".SH SYNOPSIS", ".SH DESCRIPTION", ".SH COMMANDS", ".SH EXAMPLES", ".SH SEE ALSO"}
+	lastIdx := -1
+	for _, section := range sections {
+		idx := strings.Index(appContent, section)
+		if idx == -1 {
+			t.Errorf("app page missing section: %s", section)
+			continue
+		}
+		if idx <= lastIdx {
+			t.Errorf("section %s appears out of order", section)
+		}
+		lastIdx = idx
+	}
+
+	// Verify command page section ordering
+	cmdPage, _ := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "demo-greet.1"))
+	cmdContent := string(cmdPage)
+
+	cmdSections := []string{".SH NAME", ".SH SYNOPSIS", ".SH DESCRIPTION", ".SH OPTIONS", ".SH EXAMPLES", ".SH SEE ALSO"}
+	lastIdx = -1
+	for _, section := range cmdSections {
+		idx := strings.Index(cmdContent, section)
+		if idx == -1 {
+			t.Errorf("command page missing section: %s", section)
+			continue
+		}
+		if idx <= lastIdx {
+			t.Errorf("section %s appears out of order in command page", section)
+		}
+		lastIdx = idx
+	}
+}
