@@ -1,11 +1,15 @@
 ---
 name: Go CLI and MCP Framework
-description: This skill should be used when the user asks to "build a Go MCP server", "create a Go CLI tool", "add an MCP tool in Go", "use go-lib-mcp", "use command.App", "add a command", "register MCP tools", "add context-saving in Go", or is building any Go project that serves MCP tools, CLI subcommands, or both using the purse-first go-lib-mcp library.
+description: This skill should be used when the user asks to "build a Go MCP server", "create a Go CLI tool", "add an MCP tool in Go", "use go-lib-mcp", "use command.App", "register MCP tools", "add context-saving in Go", "build a CLI with MCP support", "unified CLI and MCP server", or is building a Go project that imports go-lib-mcp, serves MCP tools, or combines CLI subcommands with MCP tool registration. Also applies when adding a subcommand to a go-lib-mcp-based project or working with the command, server, transport, output, or purse packages from go-lib-mcp.
 ---
 
 # Go CLI and MCP Framework
 
 `go-lib-mcp` (`github.com/amarbel-llc/go-lib-mcp`) is a zero-dependency Go library for building MCP servers and CLI tools. It provides two layers: a high-level `command` package that generates CLI parsing, MCP registration, plugin manifests, manpages, and shell completions from a single definition, and low-level packages for building MCP servers directly.
+
+For framework orientation and when to use each skill, see the **bob:overview** skill.
+For detailed context-saving patterns (pagination/truncation), see the **bob:context-saving** skill.
+For packaging your tool for distribution via purse-first, see the **bob:creating-packages** skill.
 
 ## Which Layer?
 
@@ -151,10 +155,17 @@ For detailed context-saving patterns, see the **bob:context-saving** skill.
 
 ## Plugin Integration
 
-To ship a `command.App`-based tool as a purse-first plugin, use `app.GenerateAll(outputDir)` in a `postInstall` step or hidden `generate-plugin` subcommand. For full plugin integration guidance, see the **bob:plugin-mcp** skill.
+To ship a `command.App`-based tool as a purse-first plugin, use `app.GenerateAll(outputDir)` in a `postInstall` step or hidden `generate-plugin` subcommand. For full plugin integration guidance, see the **bob:creating-packages** skill.
 
 ## Reference Files
 
 - **`references/api-reference.md`** -- Complete type signatures, method docs, and interface definitions for all packages
 - **`examples/command-app.go`** -- Full command.App example with CLI + MCP + artifact generation
 - **`examples/raw-server.go`** -- Full raw server example with tools, resources, and prompts
+
+## Related Skills
+
+- **bob:context-saving** — Detailed pagination and truncation patterns for MCP tools
+- **bob:creating-packages** — Packaging your tool for distribution via purse-first
+- **bob:overview** — Framework orientation, terminology, and workflow overview
+- **bob:using-packages** — How installed packages work at runtime
