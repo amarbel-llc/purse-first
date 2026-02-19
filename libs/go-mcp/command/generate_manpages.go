@@ -42,6 +42,12 @@ func (a *App) writeAppManpage(dir string) error {
 	fmt.Fprintf(&b, ".SH NAME\n")
 	fmt.Fprintf(&b, "%s \\- %s\n", a.Name, a.Description.Short)
 
+	// SYNOPSIS
+	fmt.Fprintf(&b, ".SH SYNOPSIS\n")
+	fmt.Fprintf(&b, ".B %s\n", a.Name)
+	fmt.Fprintf(&b, ".I command\n")
+	fmt.Fprintf(&b, ".RI [ options ]\n")
+
 	if a.Description.Long != "" {
 		fmt.Fprintf(&b, ".SH DESCRIPTION\n")
 		fmt.Fprintf(&b, "%s\n", a.Description.Long)

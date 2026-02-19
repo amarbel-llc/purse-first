@@ -47,6 +47,14 @@ func TestGenerateManpageApp(t *testing.T) {
 	if strings.Contains(content, "generate-all") {
 		t.Error("hidden command should not appear in manpage")
 	}
+
+	// Task 4: SYNOPSIS
+	if !strings.Contains(content, ".SH SYNOPSIS") {
+		t.Error("missing SYNOPSIS section")
+	}
+	if !strings.Contains(content, ".I command") {
+		t.Error("missing command placeholder in SYNOPSIS")
+	}
 }
 
 func TestCommandExamplesField(t *testing.T) {
