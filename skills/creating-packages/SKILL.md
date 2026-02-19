@@ -1,12 +1,17 @@
 ---
 name: Creating Packages
-description: This skill should be used when the user asks to "add purse-first support", "turn an MCP into a package", "create a package manifest", "add generate-plugin command", "register with purse-first marketplace", "add skills to a package", "bundle skills in a package", or mentions purse-first package integration, package manifest generation, or skill bundling.
+description: This skill should be used when the user asks to "add purse-first support", "turn an MCP into a package", "create a package manifest", "add generate-plugin command", "register with purse-first marketplace", "add skills to a package", "bundle skills in a package", "make this available as a Claude Code tool", "distribute this MCP server", "share this CLI with Claude", "set up plugin.json", "ship this as a package", or wants to package an MCP server, CLI, or skill set for distribution via purse-first. Also applies when working in a repo that has a `.claude-plugin/` directory, editing a `plugin.json` or `mappings.json`, or modifying a `flake.nix` that uses `mkMarketplace` or references purse-first as a flake input.
 version: 0.1.0
 ---
 
-# Adding Purse-First Package Support
+# Creating Purse-First Packages
 
-A purse-first package ships MCP servers, skills, or both. The Nix build outputs a `share/purse-first/<name>/` directory containing a `plugin.json` manifest and optional skills, enabling purse-first to discover, aggregate, and install it as part of a Claude Code package marketplace.
+If you're building an MCP server, CLI tool, or skill set and want Claude Code users to discover and use it without manual configuration, package it with purse-first. The framework handles discovery, installation, and tool routing automatically.
+
+For a high-level understanding of the framework, see the **bob:overview** skill.
+For understanding how installed packages behave at runtime, see the **bob:using-packages** skill.
+For adding output-limiting to MCP tools, see the **bob:context-saving** skill.
+For building Go MCP servers and CLIs, see the **bob:go-cli-framework** skill.
 
 ## Overview
 
@@ -414,13 +419,21 @@ When adding purse-first support:
 
 ## Reference Files
 
-For detailed examples from existing integrations, consult:
-- **`references/existing-integrations.md`** -- Side-by-side comparison of grit, lux, get-hubbed, and chix implementations
-- **`references/mapping-api.md`** -- Full MappingBuilder API reference with detailed examples
-- **`examples/plugin.json`** -- Minimal MCP package manifest template
-- **`examples/plugin-skill-only.json`** -- Skill-only package manifest template
-- **`examples/plugin-mcp-with-skills.json`** -- MCP package with bundled skills manifest template
-- **`examples/generate-plugin-cobra.go`** -- Cobra-based generate-plugin command
-- **`examples/generate-plugin-flag.go`** -- Flag-based generate-plugin command
-- **`examples/flake-go.nix`** -- Flake snippet for Go MCP with postInstall
-- **`examples/flake-rust.nix`** -- Flake snippet for Rust MCP with static copy
+Consult these when you need detailed implementation examples:
+
+- **`references/existing-integrations.md`** — Read this when comparing approaches across languages. Shows side-by-side grit (Go/flag), lux (Go/cobra), get-hubbed (Go/cobra), and chix (Rust) implementations.
+- **`references/mapping-api.md`** — Read this when adding tool mappings. Full MappingBuilder API reference with per-subcommand and catch-all mapping examples.
+- **`examples/plugin.json`** — Minimal MCP package manifest template
+- **`examples/plugin-skill-only.json`** — Skill-only package manifest template
+- **`examples/plugin-mcp-with-skills.json`** — MCP package with bundled skills manifest template
+- **`examples/generate-plugin-cobra.go`** — Cobra-based generate-plugin command
+- **`examples/generate-plugin-flag.go`** — Flag-based generate-plugin command
+- **`examples/flake-go.nix`** — Flake snippet for Go MCP with postInstall
+- **`examples/flake-rust.nix`** — Flake snippet for Rust MCP with static copy
+
+## Related Skills
+
+- **bob:overview** — Framework orientation, terminology, and workflow overview
+- **bob:using-packages** — How installed packages work at runtime, troubleshooting
+- **bob:context-saving** — Adding output-limiting to MCP tools (pagination, truncation)
+- **bob:go-cli-framework** — Building Go CLIs and MCP servers with go-lib-mcp
