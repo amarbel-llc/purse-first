@@ -111,16 +111,76 @@ This preserves structured JSON when no truncation occurs and degrades gracefully
 - Check output (stdout/stderr)
 - Any tool producing text blobs
 
+## Pattern 3: Stderr Truncation (Command Output)
+
+Every tool that executes an external command captures stderr. This stderr is
+**never caller-controllable** — unlike stdout, there are no parameters the
+caller can set to limit it. Commands like `nix search --json` emit per-package
+evaluation progress on stderr (~8.5M characters for nixpkgs), inflating tool
+responses far beyond token limits.
+
+Stderr requires **automatic, default-on truncation** via a convenience function.
+This is fundamentally different from Patterns 1 and 2, which are opt-in via
+caller parameters.
+
+### When to Apply
+
+**Every tool that shells out to an external command.** This includes tools whose
+primary output is "naturally bounded" (hash computation, status checks, single
+results). The primary output may be small, but stderr is always unbounded.
+
+### Implementation
+
+Use the `LimitStderr` convenience function from the `output` package:
+
+```go
+result, err := exec.RunCommand(ctx, args...)
+limited := output.LimitStderr(result.Stderr)
+
+return &ToolResult{
+    Output:         result.Stdout,
+    Stderr:         limited.Content,
+    Truncated:      limited.Truncated,
+    TruncationInfo: limited.TruncationInfo,
+}, nil
+```
+
+For Rust, use `limit_stderr()` from the `output` module (same 100KB default).
+
+### Important: Inspect Before Truncating
+
+When a tool needs to inspect stderr before truncation (e.g., checking for
+authentication status or specific error patterns), read it first:
+
+```go
+isAuthed := strings.Contains(result.Stderr, "authenticated")
+limited := output.LimitStderr(result.Stderr)
+```
+
+### Combined Truncation
+
+When both stdout and stderr are independently truncated, combine the signals:
+
+```go
+limitedStdout := output.LimitText(result.Stdout, limits)
+limitedStderr := output.LimitStderr(result.Stderr)
+truncated := limitedStdout.Truncated || limitedStderr.Truncated
+```
+
 ## Decision Checklist
 
 For each tool, determine context-saving applicability:
 
-| Output Type | Pattern | Example Tools |
-|-------------|---------|---------------|
-| `Vec<T>` or JSON array | Pagination | store_ls, search, diagnostics, completions, list APIs |
-| Text or JSON object/blob | Truncation | build logs, eval, flake show/metadata, check output |
-| Single scalar value | None needed | hash, status, resolve |
-| User-initiated output | None needed | run, develop_run (user controls the command) |
+| Output Type | Primary Output | Stderr | Example Tools |
+|-------------|---------------|--------|---------------|
+| `Vec<T>` or JSON array | Pagination | Truncate | store_ls, search, diagnostics, completions, list APIs |
+| Text or JSON object/blob | Truncation | Truncate | build logs, eval, flake show/metadata, check output |
+| Single scalar value | None needed | Truncate | hash, status, resolve |
+| User-initiated output | None needed | Truncate | run, develop_run (user controls the command) |
+
+**Note:** The "Stderr" column applies to every tool that executes an external
+command. Even tools with naturally bounded primary output can produce unbounded
+stderr.
 
 ## Implementation Checklist
 
@@ -132,6 +192,7 @@ When adding context-saving to a tool:
 4. Implement the limiting logic in the tool function
 5. Update server dispatch if the function signature changed
 6. Build and run tests to verify
+7. Apply `LimitStderr()` to stderr from any external command before including it in the result
 
 ## Reference Files
 
