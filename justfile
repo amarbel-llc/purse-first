@@ -1,7 +1,7 @@
 # claude-plugin-marketplace
 
-default:
-    @just --list
+default: && build-all test-all
+  nix flake update
 
 # Build all packages (default = marketplace bundle)
 build-all:
