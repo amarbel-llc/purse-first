@@ -151,6 +151,7 @@
     nixpkgs.lib.recursiveUpdate marketplaceOutputs (
       {
         lib.mkMarketplace = mkMarketplace;
+        lib.goSrc = purse-first-src;
         templates.marketplace = {
           path = ./templates/marketplace;
           description = "Scaffold a new Claude plugin marketplace with Nix";
