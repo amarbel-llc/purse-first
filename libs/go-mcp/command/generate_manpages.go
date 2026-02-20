@@ -103,10 +103,14 @@ func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Comman
 	fmt.Fprintf(&b, ".SH SYNOPSIS\n")
 	fmt.Fprintf(&b, ".B %s %s\n", a.Name, registeredName)
 	for _, p := range cmd.Params {
+		flagStr := fmt.Sprintf("--%s", p.Name)
+		if p.Short != 0 {
+			flagStr = fmt.Sprintf("-%c | --%s", p.Short, p.Name)
+		}
 		if p.Required {
-			fmt.Fprintf(&b, ".RI --%s = %s\n", p.Name, strings.ToUpper(p.Type.JSONSchemaType()))
+			fmt.Fprintf(&b, ".RI %s = %s\n", flagStr, strings.ToUpper(p.Type.JSONSchemaType()))
 		} else {
-			fmt.Fprintf(&b, ".RI [ --%s = %s ]\n", p.Name, strings.ToUpper(p.Type.JSONSchemaType()))
+			fmt.Fprintf(&b, ".RI [ %s = %s ]\n", flagStr, strings.ToUpper(p.Type.JSONSchemaType()))
 		}
 	}
 
@@ -122,6 +126,9 @@ func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Comman
 		for _, p := range cmd.Params {
 			fmt.Fprintf(&b, ".TP\n")
 			label := fmt.Sprintf("--%s", p.Name)
+			if p.Short != 0 {
+				label = fmt.Sprintf("-%c, --%s", p.Short, p.Name)
+			}
 			if p.Required {
 				label += " (required)"
 			}

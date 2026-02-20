@@ -69,6 +69,9 @@ func (a *App) generateBashCompletion(dir string) error {
 		var flags []string
 		for _, p := range c.cmd.Params {
 			flags = append(flags, "--"+p.Name)
+			if p.Short != 0 {
+				flags = append(flags, fmt.Sprintf("-%c", p.Short))
+			}
 		}
 		if len(flags) > 0 {
 			fmt.Fprintf(&b, "        %s)\n", c.name)
@@ -129,8 +132,12 @@ func (a *App) generateFishCompletion(dir string) error {
 	for _, c := range cmds {
 		for _, p := range c.cmd.Params {
 			desc := strings.ReplaceAll(p.Description, "'", "\\'")
-			fmt.Fprintf(&b, "complete -c %s -n '__fish_seen_subcommand_from %s' -l %s -d '%s'\n",
-				a.Name, c.name, p.Name, desc)
+			shortOpt := ""
+			if p.Short != 0 {
+				shortOpt = fmt.Sprintf(" -s %c", p.Short)
+			}
+			fmt.Fprintf(&b, "complete -c %s -n '__fish_seen_subcommand_from %s' -l %s%s -d '%s'\n",
+				a.Name, c.name, p.Name, shortOpt, desc)
 		}
 	}
 

@@ -72,3 +72,17 @@ func TestCommandParamsRequired(t *testing.T) {
 		t.Errorf("RequiredParams()[0].Name = %q, want %q", required[0].Name, "repo_path")
 	}
 }
+
+func TestParamShortFieldZeroValueMeansNoShortFlag(t *testing.T) {
+	p := Param{Name: "verbose", Type: Bool, Description: "Verbose output"}
+	if p.Short != 0 {
+		t.Errorf("Short zero value = %q, want 0", p.Short)
+	}
+}
+
+func TestParamShortFieldSet(t *testing.T) {
+	p := Param{Name: "verbose", Type: Bool, Description: "Verbose output", Short: 'v'}
+	if p.Short != 'v' {
+		t.Errorf("Short = %q, want 'v'", p.Short)
+	}
+}

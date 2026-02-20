@@ -239,6 +239,52 @@ func TestGenerateManpageAppNoExamples(t *testing.T) {
 	}
 }
 
+func TestGenerateManpageShortFlags(t *testing.T) {
+	app := NewApp("grit", "Git operations")
+
+	app.AddCommand(&Command{
+		Name: "status",
+		Description: Description{
+			Short: "Show working tree status",
+			Long:  "Show working tree status with machine-readable output.",
+		},
+		Params: []Param{
+			{Name: "repo_path", Type: String, Description: "Path to the git repository", Required: true},
+			{Name: "verbose", Type: Bool, Description: "Show verbose output", Short: 'v'},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	cmdPage, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "grit-status.1"))
+	if err != nil {
+		t.Fatalf("read grit-status.1: %v", err)
+	}
+
+	content := string(cmdPage)
+
+	// Short flag should appear in OPTIONS
+	if !strings.Contains(content, "-v") {
+		t.Error("OPTIONS should include short flag -v")
+	}
+	if !strings.Contains(content, "--verbose") {
+		t.Error("OPTIONS should include long flag --verbose")
+	}
+
+	// Param without short flag should only show long form
+	if !strings.Contains(content, "--repo_path") {
+		t.Error("OPTIONS should include long flag --repo_path")
+	}
+
+	// SYNOPSIS should include short flag
+	if !strings.Contains(content, "-v") {
+		t.Error("SYNOPSIS should include short flag -v")
+	}
+}
+
 func TestManpageSectionOrdering(t *testing.T) {
 	app := NewApp("demo", "Demo tool")
 	app.Version = "1.0.0"

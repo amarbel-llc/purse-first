@@ -51,6 +51,7 @@ type ToolMapping struct {
 // MCP JSON schema properties, manpage OPTIONS, and completions.
 type Param struct {
 	Name        string
+	Short       rune // single-character CLI alias (e.g. 'v' for -v); zero means none
 	Type        ParamType
 	Description string
 	Required    bool

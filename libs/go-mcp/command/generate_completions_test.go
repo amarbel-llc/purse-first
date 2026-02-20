@@ -49,6 +49,66 @@ func TestGenerateCompletionsBash(t *testing.T) {
 	}
 }
 
+func TestGenerateCompletionsBashShortFlags(t *testing.T) {
+	app := NewApp("grit", "Git operations")
+
+	app.AddCommand(&Command{
+		Name:        "status",
+		Description: Description{Short: "Show status"},
+		Params: []Param{
+			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
+			{Name: "verbose", Type: Bool, Description: "Verbose output", Short: 'v'},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateCompletions(dir); err != nil {
+		t.Fatalf("GenerateCompletions: %v", err)
+	}
+
+	bashPath := filepath.Join(dir, "share", "bash-completion", "completions", "grit")
+	data, err := os.ReadFile(bashPath)
+	if err != nil {
+		t.Fatalf("read bash completion: %v", err)
+	}
+
+	content := string(data)
+	if !strings.Contains(content, "-v") {
+		t.Error("bash completion missing short flag -v")
+	}
+	if !strings.Contains(content, "--repo_path") {
+		t.Error("bash completion missing long flag --repo_path")
+	}
+}
+
+func TestGenerateCompletionsFishShortFlags(t *testing.T) {
+	app := NewApp("grit", "Git operations")
+
+	app.AddCommand(&Command{
+		Name:        "status",
+		Description: Description{Short: "Show status"},
+		Params: []Param{
+			{Name: "verbose", Type: Bool, Description: "Verbose output", Short: 'v'},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateCompletions(dir); err != nil {
+		t.Fatalf("GenerateCompletions: %v", err)
+	}
+
+	fishPath := filepath.Join(dir, "share", "fish", "vendor_completions.d", "grit.fish")
+	data, err := os.ReadFile(fishPath)
+	if err != nil {
+		t.Fatalf("read fish completion: %v", err)
+	}
+
+	content := string(data)
+	if !strings.Contains(content, "-s v") {
+		t.Error("fish completion missing short flag -s v for verbose")
+	}
+}
+
 func TestGenerateCompletionsZsh(t *testing.T) {
 	app := NewApp("grit", "Git operations")
 	app.AddCommand(&Command{

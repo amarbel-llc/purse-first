@@ -120,36 +120,66 @@ func (a *App) printUsage() {
 	}
 }
 
-// parseFlags extracts --flag values from args into vals, returning unconsumed
-// positional args. Non-flag args are collected but parsing continues, so
-// flags can appear after positional args (e.g. "open target --format tap").
+// parseFlags extracts --flag and -x values from args into vals, returning
+// unconsumed positional args. Non-flag args are collected but parsing
+// continues, so flags can appear after positional args (e.g. "open target
+// --format tap"). Short flags (-x) are resolved to their param name.
 func parseFlags(args []string, params []Param, vals map[string]any) ([]string, error) {
 	paramMap := make(map[string]Param)
+	shortMap := make(map[rune]Param)
 	for _, p := range params {
 		paramMap[p.Name] = p
+		if p.Short != 0 {
+			if existing, ok := shortMap[p.Short]; ok {
+				panic(fmt.Sprintf(
+					"duplicate short flag -%c: used by both %q and %q",
+					p.Short, existing.Name, p.Name,
+				))
+			}
+			shortMap[p.Short] = p
+		}
 	}
 
 	var remaining []string
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 
-		if !strings.HasPrefix(arg, "--") {
+		var p Param
+		var key, value string
+		var hasEquals, found bool
+
+		switch {
+		case strings.HasPrefix(arg, "--"):
+			key = strings.TrimPrefix(arg, "--")
+			if idx := strings.IndexByte(key, '='); idx >= 0 {
+				value = key[idx+1:]
+				key = key[:idx]
+				hasEquals = true
+			}
+			p, found = paramMap[key]
+
+		case strings.HasPrefix(arg, "-") && len(arg) >= 2:
+			// Parse -x or -x=value; resolve short to param name.
+			rest := arg[1:]
+			if idx := strings.IndexByte(rest, '='); idx >= 0 {
+				value = rest[idx+1:]
+				rest = rest[:idx]
+				hasEquals = true
+			}
+			short := []rune(rest)
+			if len(short) == 1 {
+				p, found = shortMap[short[0]]
+				if found {
+					key = p.Name
+				}
+			}
+
+		default:
 			remaining = append(remaining, arg)
 			continue
 		}
 
-		key := strings.TrimPrefix(arg, "--")
-		var value string
-		hasEquals := false
-
-		if idx := strings.IndexByte(key, '='); idx >= 0 {
-			value = key[idx+1:]
-			key = key[:idx]
-			hasEquals = true
-		}
-
-		p, ok := paramMap[key]
-		if !ok {
+		if !found {
 			remaining = append(remaining, arg)
 			continue
 		}
