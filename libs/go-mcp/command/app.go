@@ -29,8 +29,39 @@ func NewApp(name, short string) *App {
 	return a
 }
 
-// AddCommand registers a command and its aliases. Panics on duplicate names.
+// AddCommand registers a command and its aliases. Panics on duplicate names
+// or if any command param's Short rune conflicts with a global param's Short rune.
 func (a *App) AddCommand(cmd *Command) {
+	// Check for short flag collisions between command params and global params.
+	for _, gp := range a.Params {
+		if gp.Short == 0 {
+			continue
+		}
+		for _, cp := range cmd.Params {
+			if cp.Short == gp.Short {
+				panic(fmt.Sprintf(
+					"short flag -%c on command %q param %q conflicts with global param %q",
+					cp.Short, cmd.Name, cp.Name, gp.Name,
+				))
+			}
+		}
+	}
+
+	// Check for duplicate short flags within the command's own params.
+	shortSeen := make(map[rune]string)
+	for _, cp := range cmd.Params {
+		if cp.Short == 0 {
+			continue
+		}
+		if existing, ok := shortSeen[cp.Short]; ok {
+			panic(fmt.Sprintf(
+				"duplicate short flag -%c: used by both %q and %q",
+				cp.Short, existing, cp.Name,
+			))
+		}
+		shortSeen[cp.Short] = cp.Name
+	}
+
 	a.addName(cmd.Name, cmd)
 	for _, alias := range cmd.Aliases {
 		a.addName(alias, cmd)

@@ -120,6 +120,21 @@ func (a *App) printUsage() {
 	}
 }
 
+// flagLabel returns a user-facing label for the flag the user typed.
+// When the user typed a short flag like -c, it returns "-c (--count)".
+// When they typed --count, it returns "--count".
+func flagLabel(arg string, key string) string {
+	if strings.HasPrefix(arg, "--") {
+		return "--" + key
+	}
+	// Short flag: show what was typed plus the long name for context.
+	shortPart := arg
+	if idx := strings.IndexByte(shortPart, '='); idx >= 0 {
+		shortPart = shortPart[:idx]
+	}
+	return fmt.Sprintf("%s (--%s)", shortPart, key)
+}
+
 // parseFlags extracts --flag and -x values from args into vals, returning
 // unconsumed positional args. Non-flag args are collected but parsing
 // continues, so flags can appear after positional args (e.g. "open target
@@ -130,12 +145,6 @@ func parseFlags(args []string, params []Param, vals map[string]any) ([]string, e
 	for _, p := range params {
 		paramMap[p.Name] = p
 		if p.Short != 0 {
-			if existing, ok := shortMap[p.Short]; ok {
-				panic(fmt.Sprintf(
-					"duplicate short flag -%c: used by both %q and %q",
-					p.Short, existing.Name, p.Name,
-				))
-			}
 			shortMap[p.Short] = p
 		}
 	}
@@ -184,6 +193,8 @@ func parseFlags(args []string, params []Param, vals map[string]any) ([]string, e
 			continue
 		}
 
+		label := flagLabel(arg, key)
+
 		switch p.Type {
 		case Bool:
 			if hasEquals {
@@ -195,33 +206,33 @@ func parseFlags(args []string, params []Param, vals map[string]any) ([]string, e
 			if !hasEquals {
 				i++
 				if i >= len(args) {
-					return nil, fmt.Errorf("flag --%s requires a value", key)
+					return nil, fmt.Errorf("flag %s requires a value", label)
 				}
 				value = args[i]
 			}
 			n, err := strconv.Atoi(value)
 			if err != nil {
-				return nil, fmt.Errorf("flag --%s: invalid integer %q", key, value)
+				return nil, fmt.Errorf("flag %s: invalid integer %q", label, value)
 			}
 			vals[key] = n
 		case Float:
 			if !hasEquals {
 				i++
 				if i >= len(args) {
-					return nil, fmt.Errorf("flag --%s requires a value", key)
+					return nil, fmt.Errorf("flag %s requires a value", label)
 				}
 				value = args[i]
 			}
 			f, err := strconv.ParseFloat(value, 64)
 			if err != nil {
-				return nil, fmt.Errorf("flag --%s: invalid number %q", key, value)
+				return nil, fmt.Errorf("flag %s: invalid number %q", label, value)
 			}
 			vals[key] = f
 		case Array:
 			if !hasEquals {
 				i++
 				if i >= len(args) {
-					return nil, fmt.Errorf("flag --%s requires a value", key)
+					return nil, fmt.Errorf("flag %s requires a value", label)
 				}
 				value = args[i]
 			}
@@ -231,7 +242,7 @@ func parseFlags(args []string, params []Param, vals map[string]any) ([]string, e
 			if !hasEquals {
 				i++
 				if i >= len(args) {
-					return nil, fmt.Errorf("flag --%s requires a value", key)
+					return nil, fmt.Errorf("flag %s requires a value", label)
 				}
 				value = args[i]
 			}

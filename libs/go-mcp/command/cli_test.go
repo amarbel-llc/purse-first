@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -566,6 +567,7 @@ func TestDuplicateShortFlagsPanic(t *testing.T) {
 	}()
 
 	app := NewApp("test", "test app")
+	// Panic should fire at AddCommand, not at RunCLI.
 	app.AddCommand(&Command{
 		Name: "cmd",
 		Params: []Param{
@@ -576,9 +578,106 @@ func TestDuplicateShortFlagsPanic(t *testing.T) {
 			return TextResult(""), nil
 		},
 	})
+}
 
-	// Force validation by trying to use the command
-	app.RunCLI(context.Background(), []string{"cmd"}, StubPrompter{})
+func TestShortFlagCollisionGlobalAndCommandPanics(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Error("expected panic when command param short flag conflicts with global param")
+		}
+		msg, ok := r.(string)
+		if !ok {
+			t.Errorf("panic value is not a string: %v", r)
+			return
+		}
+		if !strings.Contains(msg, "conflicts with global param") {
+			t.Errorf("unexpected panic message: %s", msg)
+		}
+	}()
+
+	app := NewApp("test", "test app")
+	app.Params = []Param{
+		{Name: "format", Type: String, Description: "Output format", Short: 'f'},
+	}
+	// This should panic at AddCommand because -f is already used by global param.
+	app.AddCommand(&Command{
+		Name: "cmd",
+		Params: []Param{
+			{Name: "file", Type: String, Description: "File path", Short: 'f'},
+		},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			return TextResult(""), nil
+		},
+	})
+}
+
+// TestBundledShortFlagsArePositional documents that multi-character short flag
+// args like -vf (bundled flags) are intentionally treated as positional args.
+// This is an accepted design choice: we only recognize single-character short
+// flags, so -vf is not expanded into -v -f.
+func TestBundledShortFlagsArePositional(t *testing.T) {
+	var got string
+	app := NewApp("test", "test app")
+	app.AddCommand(&Command{
+		Name: "cmd",
+		Params: []Param{
+			{Name: "target", Type: String, Description: "Target"},
+			{Name: "verbose", Type: Bool, Description: "Verbose", Short: 'v'},
+			{Name: "force", Type: Bool, Description: "Force", Short: 'f'},
+		},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			var params struct {
+				Target  string `json:"target"`
+				Verbose bool   `json:"verbose"`
+				Force   bool   `json:"force"`
+			}
+			json.Unmarshal(args, &params)
+			got = params.Target
+			if params.Verbose {
+				t.Error("verbose should not be set by bundled -vf")
+			}
+			if params.Force {
+				t.Error("force should not be set by bundled -vf")
+			}
+			return TextResult(""), nil
+		},
+	})
+
+	err := app.RunCLI(context.Background(), []string{"cmd", "-vf"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if got != "-vf" {
+		t.Errorf("target = %q, want %q (bundled flags should be positional)", got, "-vf")
+	}
+}
+
+func TestRunCLIShortFloatFlag(t *testing.T) {
+	var got float64
+	app := NewApp("test", "test app")
+	app.AddCommand(&Command{
+		Name: "cmd",
+		Params: []Param{
+			{Name: "ratio", Type: Float, Description: "Ratio", Short: 'r'},
+		},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			var params struct {
+				Ratio float64 `json:"ratio"`
+			}
+			json.Unmarshal(args, &params)
+			got = params.Ratio
+			return TextResult(""), nil
+		},
+	})
+
+	err := app.RunCLI(context.Background(), []string{"cmd", "-r", "3.14"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if got != 3.14 {
+		t.Errorf("ratio = %v, want 3.14", got)
+	}
 }
 
 func TestShortFlagNotInJSONSchema(t *testing.T) {
