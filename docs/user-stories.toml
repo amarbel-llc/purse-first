@@ -1,16 +1,18 @@
 [meta]
 project = "go-lib-mcp"
 repo = "amarbel-llc/purse-first"
-last_updated = 2026-02-19
+last_updated = 2026-02-20
 
 [[stories]]
 id = "short-flags"
 title = "Support short flags in command framework"
 priority = 1
-status = "not-started"
+status = "done"
 evidence = [
   "libs/go-mcp/command/cli.go",
   "libs/go-mcp/command/command.go",
+  "63aafb58009a95dc0e77c76de52f67faefff47f1",
+  "87f43e043194d0f742892efc2a67c88c57cb4392",
 ]
 acceptance = [
   "Param has an optional Short rune field",
@@ -132,7 +134,6 @@ acceptance = [
   "cobra dependency is removed",
 ]
 blockers = [
-  "short-flags story must be completed first",
   "output-format-awareness story must be completed first",
 ]
 
