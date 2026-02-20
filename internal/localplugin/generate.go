@@ -6,8 +6,12 @@ package localplugin
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/amarbel-llc/purse-first/internal/hook"
+	tap "github.com/amarbel-llc/tap-dancer/go"
 )
 
 func DiscoverSkills(root string) ([]string, error) {
@@ -54,4 +58,55 @@ func Generate(root, pluginPath string) error {
 
 	out = append(out, '\n')
 	return os.WriteFile(pluginPath, out, 0o644)
+}
+
+// InstallLocal sets up the local development environment: discovers skills,
+// installs MCP servers, and registers hooks in project-scoped settings.
+func InstallLocal(w io.Writer, root string) error {
+	tw := tap.NewWriter(w)
+	tw.PlanAhead(3)
+
+	// 1. Discover and update skills
+	pluginPath := filepath.Join(root, ".claude-plugin", "plugin.json")
+	if err := Generate(root, pluginPath); err != nil {
+		tw.NotOk("discover and update skills in plugin.json", map[string]string{
+			"error": err.Error(),
+		})
+		return err
+	}
+	tw.Ok("discover and update skills in plugin.json")
+
+	// 2. Install MCP servers
+	settingsPath := filepath.Join(root, ".claude", "settings.json")
+	count, err := installMCPServers(root, settingsPath)
+	if err != nil {
+		tw.NotOk("install MCP servers to .claude/settings.json", map[string]string{
+			"error": err.Error(),
+		})
+		return err
+	}
+	if count == 0 {
+		tw.Skip("install MCP servers to .claude/settings.json", "no mcpServers declared")
+	} else {
+		tw.Ok(fmt.Sprintf("install MCP servers to .claude/settings.json (%d server%s)", count, plural(count)))
+	}
+
+	// 3. Install hooks
+	binaryPath := "go run ./cmd/purse-first"
+	if err := hook.Install(binaryPath, true); err != nil {
+		tw.NotOk("install hooks to .claude/settings.json", map[string]string{
+			"error": err.Error(),
+		})
+		return err
+	}
+	tw.Ok("install hooks to .claude/settings.json")
+
+	return nil
+}
+
+func plural(n int) string {
+	if n == 1 {
+		return ""
+	}
+	return "s"
 }
