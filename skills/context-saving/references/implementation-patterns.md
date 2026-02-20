@@ -312,3 +312,108 @@ Always add the corresponding properties to the tool's JSON schema so callers kno
 | run, develop_run | User-initiated; output is their responsibility |
 | flake_update, flake_lock, flake_init | Small operational output |
 | task_status | Small metadata |
+
+---
+
+## Stderr Truncation Pattern
+
+### The Problem
+
+Every tool that shells out to an external command captures stderr. This stderr
+is returned verbatim — unbounded. In nix-mcp, `nix search --json` produced
+~8.5M characters of per-package evaluation progress on stderr, inflating the
+tool response far beyond token limits.
+
+The existing pagination and truncation patterns only address the tool's primary
+output (stdout). Stderr is a separate, hidden channel that must be truncated
+independently.
+
+### Before (unbounded stderr)
+
+```go
+func Run(ctx context.Context, args ...string) (string, error) {
+    var stdout, stderr bytes.Buffer
+    cmd.Stdout = &stdout
+    cmd.Stderr = &stderr
+
+    if err := cmd.Run(); err != nil {
+        return "", fmt.Errorf("command failed: %w: %s", err, stderr.String())
+    }
+
+    return stdout.String(), nil
+}
+```
+
+### After (truncated stderr)
+
+```go
+import "github.com/amarbel-llc/go-lib-mcp/output"
+
+func Run(ctx context.Context, args ...string) (string, output.LimitedText, error) {
+    var stdout, stderr bytes.Buffer
+    cmd.Stdout = &stdout
+    cmd.Stderr = &stderr
+
+    if err := cmd.Run(); err != nil {
+        limited := output.LimitStderr(stderr.String())
+        return "", limited, fmt.Errorf("command failed: %w: %s", err, limited.Content)
+    }
+
+    limited := output.LimitStderr(stderr.String())
+    return stdout.String(), limited, nil
+}
+```
+
+### Key details
+
+- `LimitStderr()` applies only `MaxBytes` (100KB) — no head/tail/max_lines
+- Stderr is never caller-controllable, so no tool parameters are needed
+- Apply before embedding stderr in error messages or result structs
+- When inspecting stderr before truncation (e.g., auth checks), read first, then truncate
+
+### Rust equivalent (from nix-mcp/chix)
+
+```rust
+use crate::output::limit_stderr;
+
+let limited_stderr = limit_stderr(&result.stderr);
+
+Ok(ToolResult {
+    success: result.success,
+    output: result.stdout,
+    stderr: limited_stderr.content,
+    truncated: if limited_stderr.truncated { Some(true) } else { None },
+    truncation_info: limited_stderr.truncation_info,
+})
+```
+
+### Combined stdout + stderr truncation
+
+When a tool truncates both stdout and stderr independently, combine the signals
+in the result:
+
+```go
+limitedStdout := output.LimitText(result.Stdout, limits)
+limitedStderr := output.LimitStderr(result.Stderr)
+truncated := limitedStdout.Truncated || limitedStderr.Truncated
+
+return &ToolResult{
+    Output:         limitedStdout.Content,
+    Stderr:         limitedStderr.Content,
+    Truncated:      truncated,
+    TruncationInfo: limitedStdout.TruncationInfo, // prefer stdout info
+}
+```
+
+### Updated audit: Stderr treatment
+
+**All tools that shell out to external commands** should truncate stderr,
+regardless of their primary output pattern:
+
+| Tool Category | Primary Output | Stderr Treatment |
+|---------------|---------------|-----------------|
+| Pagination tools (search, ls, diagnostics) | Paginated | `LimitStderr()` |
+| Truncation tools (build, eval, logs) | Truncated | `LimitStderr()` |
+| Scalar tools (hash, status, resolve) | None needed | `LimitStderr()` |
+| User-initiated (run, develop_run) | None needed | `LimitStderr()` |
+| Pure computation (no external command) | N/A | N/A |
