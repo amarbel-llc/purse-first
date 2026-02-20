@@ -63,7 +63,7 @@ fmt:
 
 # Lint code
 lint:
-    go vet ./...
+    nix develop --command go vet ./...
 
 # Update go dependencies and regenerate gomod2nix.toml
 deps:
@@ -112,11 +112,11 @@ test-all: test test-go-mcp test-rust-mcp test-integration test-hooks test-lifecy
 
 # Build go-lib-mcp
 build-go-mcp:
-    cd libs/go-mcp && go build ./...
+    cd libs/go-mcp && nix develop ../../ --command go build ./...
 
 # Test go-lib-mcp
 test-go-mcp:
-    cd libs/go-mcp && go test -v ./...
+    cd libs/go-mcp && nix develop ../../ --command go test -v ./...
 
 # Build rust-lib-mcp
 build-rust-mcp:
@@ -128,7 +128,7 @@ test-rust-mcp:
 
 # Test command package specifically
 test-command:
-    cd libs/go-mcp && go test -v ./command/
+    cd libs/go-mcp && nix develop ../../ --command go test -v ./command/
 
 # Verify mkMarketplace.nix parses
 check-lib:
