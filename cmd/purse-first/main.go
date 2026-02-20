@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -135,6 +136,33 @@ func main() {
 
 	installLocalCmd.Flags().StringVar(&installLocalRoot, "root", "", "repository root (defaults to cwd)")
 
+	// Hidden alias for Nix build compatibility — only does skill discovery
+	genLocalPluginCmd := &cobra.Command{
+		Use:    "generate-local-plugin",
+		Hidden: true,
+		Short:  "Deprecated: use install-local",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			root := installLocalRoot
+			if root == "" {
+				cwd, err := os.Getwd()
+				if err != nil {
+					return fmt.Errorf("getting working directory: %w", err)
+				}
+				root = cwd
+			}
+
+			pluginPath := filepath.Join(root, ".claude-plugin", "plugin.json")
+			if err := localplugin.Generate(root, pluginPath); err != nil {
+				return fmt.Errorf("generating local package manifest: %w", err)
+			}
+
+			fmt.Fprintf(os.Stderr, "updated %s\n", pluginPath)
+			return nil
+		},
+	}
+
+	genLocalPluginCmd.Flags().StringVar(&installLocalRoot, "root", "", "repository root (defaults to cwd)")
+
 	var (
 		validateType   string
 		validateStrict bool
@@ -182,7 +210,7 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 	validateCmd.Flags().StringVar(&validateType, "type", "", "document type: plugin, mapping, marketplace")
 	validateCmd.Flags().BoolVar(&validateStrict, "strict", false, "promote warnings to errors")
 
-	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, uninstallHooksCmd, genMarketplaceCmd, installLocalCmd, validateCmd)
+	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, uninstallHooksCmd, genMarketplaceCmd, installLocalCmd, genLocalPluginCmd, validateCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
