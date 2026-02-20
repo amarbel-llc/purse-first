@@ -165,3 +165,11 @@ func truncateUTF8(s string, maxBytes int) string {
 
 	return s
 }
+
+// LimitStderr applies default max_bytes truncation to stderr output.
+// Use this for stderr from external commands before including it in tool results.
+// Stderr is never caller-controllable, so defaults are always applied.
+func LimitStderr(stderr string) LimitedText {
+	defaults := StandardDefaults()
+	return LimitText(stderr, TextLimits{MaxBytes: defaults.MaxBytes})
+}

@@ -314,3 +314,72 @@ func TestLimitTextLargeInput(t *testing.T) {
 		t.Fatalf("expected content <= 1000 bytes, got %d", len(result.Content))
 	}
 }
+
+func TestLimitStderrSmallInput(t *testing.T) {
+	result := LimitStderr("some warning\n")
+	if result.Truncated {
+		t.Fatal("small stderr should not be truncated")
+	}
+
+	if result.Content != "some warning\n" {
+		t.Fatalf("expected original content, got %q", result.Content)
+	}
+
+	if result.TruncationInfo != nil {
+		t.Fatal("expected nil TruncationInfo when not truncated")
+	}
+}
+
+func TestLimitStderrEmptyInput(t *testing.T) {
+	result := LimitStderr("")
+	if result.Truncated {
+		t.Fatal("empty stderr should not be truncated")
+	}
+
+	if result.Content != "" {
+		t.Fatalf("expected empty content, got %q", result.Content)
+	}
+}
+
+func TestLimitStderrLargeInput(t *testing.T) {
+	// Build stderr larger than 100KB default
+	line := strings.Repeat("x", 99) + "\n" // 100 bytes per line
+	input := strings.Repeat(line, 1500)     // 150,000 bytes
+
+	result := LimitStderr(input)
+	if !result.Truncated {
+		t.Fatal("expected truncation for 150KB stderr")
+	}
+
+	if len(result.Content) > 100_000 {
+		t.Fatalf("expected content <= 100KB, got %d bytes", len(result.Content))
+	}
+
+	if result.TruncationInfo == nil {
+		t.Fatal("expected TruncationInfo when truncated")
+	}
+
+	if result.TruncationInfo.OriginalBytes != 150_000 {
+		t.Fatalf("expected OriginalBytes=150000, got %d", result.TruncationInfo.OriginalBytes)
+	}
+}
+
+func TestLimitStderrUsesMaxBytesOnly(t *testing.T) {
+	// Verify LimitStderr uses MaxBytes but not Head/Tail/MaxLines
+	// A 50-line input under 100KB should not be truncated even though
+	// StandardDefaults().MaxLines is 2000
+	lines := make([]string, 50)
+	for i := range lines {
+		lines[i] = "stderr line"
+	}
+	input := strings.Join(lines, "\n")
+
+	result := LimitStderr(input)
+	if result.Truncated {
+		t.Fatal("input under MaxBytes should not be truncated")
+	}
+
+	if result.Content != input {
+		t.Fatalf("expected original content preserved")
+	}
+}
