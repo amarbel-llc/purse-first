@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -116,31 +115,25 @@ func main() {
 	genMarketplaceCmd.Flags().BoolVar(&genNoHooks, "no-hooks", false, "strip hooks from generated marketplace packages")
 	genMarketplaceCmd.MarkFlagRequired("plugins-dir")
 
-	var localPluginRoot string
+	var installLocalRoot string
 
-	genLocalPluginCmd := &cobra.Command{
-		Use:   "generate-local-plugin",
-		Short: "Discover skills and update .claude-plugin/plugin.json",
+	installLocalCmd := &cobra.Command{
+		Use:   "install-local",
+		Short: "Set up local dev environment: skills, MCP servers, and hooks",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if localPluginRoot == "" {
+			if installLocalRoot == "" {
 				cwd, err := os.Getwd()
 				if err != nil {
 					return fmt.Errorf("getting working directory: %w", err)
 				}
-				localPluginRoot = cwd
+				installLocalRoot = cwd
 			}
 
-			pluginPath := filepath.Join(localPluginRoot, ".claude-plugin", "plugin.json")
-			if err := localplugin.Generate(localPluginRoot, pluginPath); err != nil {
-				return fmt.Errorf("generating local package manifest: %w", err)
-			}
-
-			fmt.Fprintf(os.Stderr, "updated %s\n", pluginPath)
-			return nil
+			return localplugin.InstallLocal(os.Stderr, installLocalRoot)
 		},
 	}
 
-	genLocalPluginCmd.Flags().StringVar(&localPluginRoot, "root", "", "repository root (defaults to cwd)")
+	installLocalCmd.Flags().StringVar(&installLocalRoot, "root", "", "repository root (defaults to cwd)")
 
 	var (
 		validateType   string
@@ -189,7 +182,7 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 	validateCmd.Flags().StringVar(&validateType, "type", "", "document type: plugin, mapping, marketplace")
 	validateCmd.Flags().BoolVar(&validateStrict, "strict", false, "promote warnings to errors")
 
-	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, uninstallHooksCmd, genMarketplaceCmd, genLocalPluginCmd, validateCmd)
+	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, uninstallHooksCmd, genMarketplaceCmd, installLocalCmd, validateCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)

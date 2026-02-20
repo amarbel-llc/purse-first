@@ -110,10 +110,6 @@ test-brew:
 # Run all tests (unit + integration + libs + framework)
 test-all: test test-go-mcp test-rust-mcp test-integration test-hooks test-lifecycle test-template test-brew
 
-# Generate local plugin.json with discovered skills
-generate-local-plugin:
-    nix develop --command go run ./cmd/purse-first generate-local-plugin
-
 # Build go-lib-mcp
 build-go-mcp:
     cd libs/go-mcp && go build ./...
