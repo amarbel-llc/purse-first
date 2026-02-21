@@ -2,8 +2,17 @@
 // MCP is a protocol for communication between AI assistants and context providers.
 package protocol
 
-// ProtocolVersion is the MCP protocol version this library implements.
-const ProtocolVersion = "2024-11-05"
+// Protocol version constants.
+const (
+	// ProtocolVersionV0 is the original MCP protocol version (2024-11-05).
+	ProtocolVersionV0 = "2024-11-05"
+
+	// ProtocolVersionV1 is the updated MCP protocol version (2025-11-25).
+	ProtocolVersionV1 = "2025-11-25"
+
+	// ProtocolVersion is the current default protocol version.
+	ProtocolVersion = ProtocolVersionV0
+)
 
 // MCP method name constants define the available protocol methods.
 const (
@@ -37,26 +46,6 @@ const (
 	// MethodPromptsGet retrieves a prompt with arguments.
 	MethodPromptsGet = "prompts/get"
 )
-
-// ContentBlock represents a piece of content in a tool response or prompt message.
-type ContentBlock struct {
-	// Type is the content type (e.g., "text", "image", "resource").
-	Type string `json:"type"`
-
-	// Text is the text content (for type="text").
-	Text string `json:"text"`
-
-	// MimeType is the MIME type for non-text content.
-	MimeType string `json:"mimeType,omitempty"`
-
-	// Data is base64-encoded binary data (for type="blob").
-	Data string `json:"data,omitempty"`
-}
-
-// TextContent creates a ContentBlock containing plain text.
-func TextContent(text string) ContentBlock {
-	return ContentBlock{Type: "text", Text: text}
-}
 
 // Implementation describes the server or client implementation.
 type Implementation struct {

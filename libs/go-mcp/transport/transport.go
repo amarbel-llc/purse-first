@@ -2,9 +2,14 @@
 // Different transports can be used depending on the communication channel:
 // - Stdio transport for MCP (newline-delimited JSON)
 // - Stream transport for LSP (Content-Length headers, available via jsonrpc package)
+// - Streamable HTTP transport for MCP V1 (POST + SSE)
 package transport
 
-import "github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+import (
+	"context"
+
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+)
 
 // Transport defines the interface for sending and receiving JSON-RPC messages.
 // Implementations handle the wire protocol details (framing, encoding, etc.).
@@ -18,4 +23,18 @@ type Transport interface {
 
 	// Close closes the transport and releases any resources.
 	Close() error
+}
+
+// LifecycleTransport extends Transport with lifecycle management for transports
+// that need to start background services (e.g., HTTP servers).
+type LifecycleTransport interface {
+	Transport
+
+	// Start starts the transport's background services (e.g., HTTP listener).
+	// The context controls the transport's lifetime.
+	Start(ctx context.Context) error
+
+	// Addr returns the transport's listen address (e.g., "127.0.0.1:8080").
+	// Only valid after Start() returns.
+	Addr() string
 }

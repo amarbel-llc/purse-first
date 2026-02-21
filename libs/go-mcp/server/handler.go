@@ -10,8 +10,9 @@ import (
 
 // Handler handles MCP protocol method calls.
 type Handler struct {
-	server      *Server
-	initialized bool
+	server            *Server
+	initialized       bool
+	negotiatedVersion string
 }
 
 // NewHandler creates a new handler for the given server.
@@ -42,6 +43,32 @@ func (h *Handler) Handle(ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Me
 		return h.handlePromptsList(ctx, msg)
 	case protocol.MethodPromptsGet:
 		return h.handlePromptsGet(ctx, msg)
+
+	// V1 methods
+	case protocol.MethodCompletionComplete:
+		return h.handleCompletionComplete(ctx, msg)
+	case protocol.MethodLoggingSetLevel:
+		return h.handleLoggingSetLevel(ctx, msg)
+	case protocol.MethodTasksGet:
+		return h.handleTasksGet(ctx, msg)
+	case protocol.MethodTasksResult:
+		return h.handleTasksResult(ctx, msg)
+	case protocol.MethodTasksCancel:
+		return h.handleTasksCancel(ctx, msg)
+	case protocol.MethodTasksList:
+		return h.handleTasksList(ctx, msg)
+
+	// Notifications (no response)
+	case protocol.MethodNotificationsProgress,
+		protocol.MethodNotificationsCancelled,
+		protocol.MethodNotificationsTaskStatus,
+		protocol.MethodNotificationsResourcesListChanged,
+		protocol.MethodNotificationsResourceUpdated,
+		protocol.MethodNotificationsPromptsListChanged,
+		protocol.MethodNotificationsToolsListChanged,
+		protocol.MethodNotificationsRootsListChanged:
+		return nil, nil
+
 	default:
 		if msg.IsRequest() {
 			return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.MethodNotFound,
@@ -51,6 +78,34 @@ func (h *Handler) Handle(ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Me
 	}
 }
 
+// hasV1Providers returns true if any V1-only providers are configured.
+func (h *Handler) hasV1Providers() bool {
+	if _, ok := h.server.opts.Tools.(ToolProviderV1); ok {
+		return true
+	}
+	if _, ok := h.server.opts.Resources.(ResourceProviderV1); ok {
+		return true
+	}
+	if _, ok := h.server.opts.Prompts.(PromptProviderV1); ok {
+		return true
+	}
+	if h.server.opts.Completions != nil {
+		return true
+	}
+	if h.server.opts.Tasks != nil {
+		return true
+	}
+	if h.server.opts.Logging != nil {
+		return true
+	}
+	return false
+}
+
+// isV1 returns true if V1 was negotiated.
+func (h *Handler) isV1() bool {
+	return h.negotiatedVersion == protocol.ProtocolVersionV1
+}
+
 func (h *Handler) handleInitialize(ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {
 	var params protocol.InitializeParams
 	if err := json.Unmarshal(msg.Params, &params); err != nil {
@@ -58,6 +113,16 @@ func (h *Handler) handleInitialize(ctx context.Context, msg *jsonrpc.Message) (*
 	}
 
 	h.initialized = true
+
+	// Version negotiation: if client requests V1 and we have V1 providers, negotiate V1.
+	clientVersion := params.ProtocolVersion
+	if clientVersion == protocol.ProtocolVersionV1 && h.hasV1Providers() {
+		h.negotiatedVersion = protocol.ProtocolVersionV1
+		return h.handleInitializeV1(ctx, msg)
+	}
+
+	// Fall back to V0.
+	h.negotiatedVersion = protocol.ProtocolVersionV0
 
 	capabilities := protocol.ServerCapabilities{}
 	if h.server.opts.Tools != nil {
@@ -71,7 +136,7 @@ func (h *Handler) handleInitialize(ctx context.Context, msg *jsonrpc.Message) (*
 	}
 
 	result := protocol.InitializeResult{
-		ProtocolVersion: protocol.ProtocolVersion,
+		ProtocolVersion: protocol.ProtocolVersionV0,
 		Capabilities:    capabilities,
 		ServerInfo: protocol.Implementation{
 			Name:    h.server.opts.ServerName,
@@ -89,6 +154,24 @@ func (h *Handler) handlePing(ctx context.Context, msg *jsonrpc.Message) (*jsonrp
 func (h *Handler) handleToolsList(ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {
 	if h.server.opts.Tools == nil {
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, "tools not supported", nil)
+	}
+
+	// If V1 negotiated and provider supports V1, use V1 listing.
+	if h.isV1() {
+		if p, ok := h.server.opts.Tools.(ToolProviderV1); ok {
+			var cursor string
+			if msg.Params != nil {
+				var pagination protocol.PaginationParams
+				if err := json.Unmarshal(msg.Params, &pagination); err == nil {
+					cursor = pagination.Cursor
+				}
+			}
+			result, err := p.ListToolsV1(ctx, cursor)
+			if err != nil {
+				return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, err.Error(), nil)
+			}
+			return jsonrpc.NewResponse(*msg.ID, result)
+		}
 	}
 
 	tools, err := h.server.opts.Tools.ListTools(ctx)
@@ -110,6 +193,17 @@ func (h *Handler) handleToolsCall(ctx context.Context, msg *jsonrpc.Message) (*j
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InvalidParams, "invalid params", nil)
 	}
 
+	// If V1 negotiated and provider supports V1, use V1 call.
+	if h.isV1() {
+		if p, ok := h.server.opts.Tools.(ToolProviderV1); ok {
+			result, err := p.CallToolV1(ctx, params.Name, params.Arguments)
+			if err != nil {
+				return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, err.Error(), nil)
+			}
+			return jsonrpc.NewResponse(*msg.ID, result)
+		}
+	}
+
 	result, err := h.server.opts.Tools.CallTool(ctx, params.Name, params.Arguments)
 	if err != nil {
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, err.Error(), nil)
@@ -121,6 +215,23 @@ func (h *Handler) handleToolsCall(ctx context.Context, msg *jsonrpc.Message) (*j
 func (h *Handler) handleResourcesList(ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {
 	if h.server.opts.Resources == nil {
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, "resources not supported", nil)
+	}
+
+	if h.isV1() {
+		if p, ok := h.server.opts.Resources.(ResourceProviderV1); ok {
+			var cursor string
+			if msg.Params != nil {
+				var pagination protocol.PaginationParams
+				if err := json.Unmarshal(msg.Params, &pagination); err == nil {
+					cursor = pagination.Cursor
+				}
+			}
+			result, err := p.ListResourcesV1(ctx, cursor)
+			if err != nil {
+				return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, err.Error(), nil)
+			}
+			return jsonrpc.NewResponse(*msg.ID, result)
+		}
 	}
 
 	resources, err := h.server.opts.Resources.ListResources(ctx)
@@ -155,6 +266,23 @@ func (h *Handler) handleResourcesTemplates(ctx context.Context, msg *jsonrpc.Mes
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, "resources not supported", nil)
 	}
 
+	if h.isV1() {
+		if p, ok := h.server.opts.Resources.(ResourceProviderV1); ok {
+			var cursor string
+			if msg.Params != nil {
+				var pagination protocol.PaginationParams
+				if err := json.Unmarshal(msg.Params, &pagination); err == nil {
+					cursor = pagination.Cursor
+				}
+			}
+			result, err := p.ListResourceTemplatesV1(ctx, cursor)
+			if err != nil {
+				return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, err.Error(), nil)
+			}
+			return jsonrpc.NewResponse(*msg.ID, result)
+		}
+	}
+
 	templates, err := h.server.opts.Resources.ListResourceTemplates(ctx)
 	if err != nil {
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, err.Error(), nil)
@@ -167,6 +295,23 @@ func (h *Handler) handleResourcesTemplates(ctx context.Context, msg *jsonrpc.Mes
 func (h *Handler) handlePromptsList(ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {
 	if h.server.opts.Prompts == nil {
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, "prompts not supported", nil)
+	}
+
+	if h.isV1() {
+		if p, ok := h.server.opts.Prompts.(PromptProviderV1); ok {
+			var cursor string
+			if msg.Params != nil {
+				var pagination protocol.PaginationParams
+				if err := json.Unmarshal(msg.Params, &pagination); err == nil {
+					cursor = pagination.Cursor
+				}
+			}
+			result, err := p.ListPromptsV1(ctx, cursor)
+			if err != nil {
+				return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, err.Error(), nil)
+			}
+			return jsonrpc.NewResponse(*msg.ID, result)
+		}
 	}
 
 	prompts, err := h.server.opts.Prompts.ListPrompts(ctx)
@@ -186,6 +331,16 @@ func (h *Handler) handlePromptsGet(ctx context.Context, msg *jsonrpc.Message) (*
 	var params protocol.PromptGetParams
 	if err := json.Unmarshal(msg.Params, &params); err != nil {
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InvalidParams, "invalid params", nil)
+	}
+
+	if h.isV1() {
+		if p, ok := h.server.opts.Prompts.(PromptProviderV1); ok {
+			result, err := p.GetPromptV1(ctx, params.Name, params.Arguments)
+			if err != nil {
+				return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, err.Error(), nil)
+			}
+			return jsonrpc.NewResponse(*msg.ID, result)
+		}
 	}
 
 	result, err := h.server.opts.Prompts.GetPrompt(ctx, params.Name, params.Arguments)

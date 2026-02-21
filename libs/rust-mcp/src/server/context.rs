@@ -14,6 +14,9 @@ pub struct Context {
     /// Client capabilities from initialize
     pub client_capabilities: ClientCapabilities,
 
+    /// Negotiated protocol version (set during initialize)
+    pub negotiated_version: String,
+
     /// Application-specific extensions
     extensions: HashMap<String, Arc<dyn Any + Send + Sync>>,
 }
@@ -28,6 +31,7 @@ impl Context {
             server_name: server_name.into(),
             server_version: server_version.into(),
             client_capabilities,
+            negotiated_version: String::new(),
             extensions: HashMap::new(),
         }
     }
@@ -51,6 +55,7 @@ impl Clone for Context {
             server_name: self.server_name.clone(),
             server_version: self.server_version.clone(),
             client_capabilities: self.client_capabilities.clone(),
+            negotiated_version: self.negotiated_version.clone(),
             extensions: self.extensions.clone(),
         }
     }
