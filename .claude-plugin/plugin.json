@@ -10,6 +10,7 @@
     "./skills/using-packages",
     "./skills/context-saving",
     "./skills/go-cli-framework",
-    "./skills/voldemort"
+    "./skills/voldemort",
+    "./skills/design_patterns-just"
   ]
 }
