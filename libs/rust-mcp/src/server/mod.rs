@@ -2,11 +2,18 @@ pub mod context;
 pub mod dispatcher;
 pub mod stdio;
 
+#[cfg(feature = "http-transport")]
+pub mod http;
+
 pub use context::Context;
 pub use dispatcher::McpServer;
 pub use stdio::run_stdio_server;
 
-use crate::protocol::{Capabilities, ServerInfo};
+#[cfg(feature = "http-transport")]
+pub use http::run_http_server;
+
+use crate::protocol::{Capabilities, ServerInfo, PROTOCOL_VERSION_V0};
+use crate::protocol::capabilities_v1::CapabilitiesV1;
 
 #[cfg(feature = "tools")]
 use crate::tools::ToolRegistry;
@@ -25,6 +32,8 @@ pub struct McpServerBuilder {
     name: String,
     version: String,
     protocol_version: String,
+    instructions: Option<String>,
+    enable_v1: bool,
 
     #[cfg(feature = "tools")]
     tool_registry: ToolRegistry,
@@ -44,7 +53,9 @@ impl McpServerBuilder {
         McpServerBuilder {
             name: name.into(),
             version: version.into(),
-            protocol_version: "2024-11-05".to_string(),
+            protocol_version: PROTOCOL_VERSION_V0.to_string(),
+            instructions: None,
+            enable_v1: false,
 
             #[cfg(feature = "tools")]
             tool_registry: ToolRegistry::new(),
@@ -65,9 +76,24 @@ impl McpServerBuilder {
         self
     }
 
+    /// Set server instructions (V1 feature, enables V1 negotiation).
+    pub fn instructions(mut self, instructions: impl Into<String>) -> Self {
+        self.instructions = Some(instructions.into());
+        self.enable_v1 = true;
+        self
+    }
+
     #[cfg(feature = "tools")]
     pub fn with_tool<T: crate::tools::Tool + 'static>(mut self, tool: T) -> Self {
         self.tool_registry.register(tool);
+        self
+    }
+
+    /// Register a V1 tool (enables V1 negotiation).
+    #[cfg(feature = "tools")]
+    pub fn with_tool_v1<T: crate::tools::ToolV1 + 'static>(mut self, tool: T) -> Self {
+        self.tool_registry.register_v1(tool);
+        self.enable_v1 = true;
         self
     }
 
@@ -77,9 +103,25 @@ impl McpServerBuilder {
         self
     }
 
+    /// Register a V1 resource (enables V1 negotiation).
+    #[cfg(feature = "resources")]
+    pub fn with_resource_v1<R: crate::resources::ResourceV1 + 'static>(mut self, resource: R) -> Self {
+        self.resource_registry.register_v1(resource);
+        self.enable_v1 = true;
+        self
+    }
+
     #[cfg(feature = "prompts")]
     pub fn with_prompt<P: crate::prompts::Prompt + 'static>(mut self, prompt: P) -> Self {
         self.prompt_registry.register(prompt);
+        self
+    }
+
+    /// Register a V1 prompt (enables V1 negotiation).
+    #[cfg(feature = "prompts")]
+    pub fn with_prompt_v1<P: crate::prompts::PromptV1 + 'static>(mut self, prompt: P) -> Self {
+        self.prompt_registry.register_v1(prompt);
+        self.enable_v1 = true;
         self
     }
 
@@ -144,6 +186,26 @@ impl McpServerBuilder {
             }
         }
 
+        // Build V1 capabilities if any V1 features are enabled.
+        let capabilities_v1 = if self.enable_v1 {
+            let mut caps = CapabilitiesV1::new();
+            if has_tools {
+                caps = caps.with_tools();
+            }
+            if has_resources {
+                caps = caps.with_resources();
+            }
+            if has_prompts {
+                caps = caps.with_prompts();
+            }
+            if has_sampling {
+                caps = caps.with_sampling();
+            }
+            Some(caps)
+        } else {
+            None
+        };
+
         McpServer {
             server_info: ServerInfo {
                 name: self.name,
@@ -151,6 +213,8 @@ impl McpServerBuilder {
             },
             protocol_version: self.protocol_version,
             capabilities,
+            capabilities_v1,
+            instructions: self.instructions,
 
             #[cfg(feature = "tools")]
             tool_registry: self.tool_registry,

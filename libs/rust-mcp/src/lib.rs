@@ -84,12 +84,18 @@ pub use server::{Context, McpServer, McpServerBuilder};
 
 #[cfg(feature = "tools")]
 pub use tools::{Tool, ToolError, ToolRegistry, ToolResult};
+#[cfg(feature = "tools")]
+pub use tools::{ToolAnnotations, ToolResultV1, ToolV1};
 
 #[cfg(feature = "resources")]
 pub use resources::{Resource, ResourceContent, ResourceError, ResourceRegistry};
+#[cfg(feature = "resources")]
+pub use resources::{ResourceInfoV1, ResourceV1};
 
 #[cfg(feature = "prompts")]
 pub use prompts::{Prompt, PromptError, PromptMessage, PromptRegistry};
+#[cfg(feature = "prompts")]
+pub use prompts::{PromptMessageV1, PromptV1};
 
 #[cfg(feature = "sampling")]
 pub use sampling::{

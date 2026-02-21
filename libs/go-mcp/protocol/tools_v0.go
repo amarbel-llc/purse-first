@@ -2,8 +2,9 @@ package protocol
 
 import "encoding/json"
 
-// Tool describes a tool that can be invoked by the client.
-type Tool struct {
+// ToolV0 describes a tool that can be invoked by the client.
+// This is the V0 (2024-11-05) tool type.
+type ToolV0 struct {
 	// Name is the unique identifier for the tool.
 	Name string `json:"name"`
 
@@ -14,13 +15,19 @@ type Tool struct {
 	InputSchema json.RawMessage `json:"inputSchema"`
 }
 
-// ToolsListResult is the response to tools/list.
-type ToolsListResult struct {
+// Tool is a type alias for backward compatibility.
+type Tool = ToolV0
+
+// ToolsListResultV0 is the response to tools/list.
+type ToolsListResultV0 struct {
 	Tools []Tool `json:"tools"`
 }
 
-// ToolCallParams contains the parameters for invoking a tool.
-type ToolCallParams struct {
+// ToolsListResult is a type alias for backward compatibility.
+type ToolsListResult = ToolsListResultV0
+
+// ToolCallParamsV0 contains the parameters for invoking a tool.
+type ToolCallParamsV0 struct {
 	// Name is the tool to invoke.
 	Name string `json:"name"`
 
@@ -28,14 +35,20 @@ type ToolCallParams struct {
 	Arguments json.RawMessage `json:"arguments,omitempty"`
 }
 
-// ToolCallResult is the result of invoking a tool.
-type ToolCallResult struct {
+// ToolCallParams is a type alias for backward compatibility.
+type ToolCallParams = ToolCallParamsV0
+
+// ToolCallResultV0 is the result of invoking a tool.
+type ToolCallResultV0 struct {
 	// Content contains the tool's output.
 	Content []ContentBlock `json:"content"`
 
 	// IsError indicates whether the tool execution failed.
 	IsError bool `json:"isError,omitempty"`
 }
+
+// ToolCallResult is a type alias for backward compatibility.
+type ToolCallResult = ToolCallResultV0
 
 // ErrorResult creates a ToolCallResult representing an error.
 func ErrorResult(msg string) *ToolCallResult {
