@@ -1,6 +1,6 @@
 ---
 name: Project Story Inventory
-description: This skill should be used when the user asks to "inventory the project", "what are the top user stories", "assess project status", "what features are missing", "prioritize work", "what should I build next", "track user stories", "update project status", or mentions user stories, project assessment, feature inventory, story tracking, or gap analysis. Also applies when the user wants to understand what a project does vs. what it should do, or when a docs/user-stories.toml file exists in the project.
+description: Inventories a project's top user stories and tracks their completion status against the codebase. Opt-in only — invoke explicitly with /voldemort.
 version: 0.1.0
 ---
 

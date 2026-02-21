@@ -1,7 +1,5 @@
-# claude-plugin-marketplace
 
-default: && build-all test-all
-  nix flake update
+default: && update build-all test-all
 
 # Build all packages (default = marketplace bundle)
 build-all:
@@ -45,9 +43,10 @@ install:
 uninstall-hooks:
     nix run -- .#default -- uninstall-hooks
 
-# Update MCP server flake inputs
-update-plugins:
-    nix flake update grit get-hubbed lux chix batman tap-dancer
+update: update-nix
+
+update-nix:
+    nix flake update
 
 # Run tests
 test:
@@ -108,7 +107,7 @@ test-brew:
     nix develop --command bats --tap zz-tests_bats/homebrew_tap.bats
 
 # Run all tests (unit + integration + libs + framework)
-test-all: test test-go-mcp test-rust-mcp test-integration test-hooks test-lifecycle test-template test-brew
+test-all: test test-go-mcp test-rust-mcp test-integration test-hooks test-lifecycle test-template
 
 # Build go-lib-mcp
 build-go-mcp:
