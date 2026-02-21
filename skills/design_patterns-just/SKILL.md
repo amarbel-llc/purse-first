@@ -205,6 +205,8 @@ codemod-fmt-nix:
 update-go: && build-gomod2nix
     nix develop --command go mod tidy
 
+clean: clean-build
+
 clean-build:
     rm -rf result build/
 ```

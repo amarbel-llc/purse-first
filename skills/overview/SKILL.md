@@ -74,6 +74,7 @@ Runtime: PreToolUse hook routes tools via mappings
 | Understand how installed packages work at runtime | **bob:using-packages** |
 | Add output-limiting to MCP tools (pagination, truncation) | **bob:context-saving** |
 | Build a Go CLI or MCP server with go-lib-mcp | **bob:go-cli-framework** |
+| Create or modify a justfile | **bob:design_patterns-just** |
 
 ## Terminology Reference
 
