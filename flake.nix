@@ -17,12 +17,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/*.tar.gz";
-    sandcastle = {
-      url = "github:amarbel-llc/sandcastle";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-master.follows = "nixpkgs-master";
-      inputs.utils.follows = "utils";
-    };
   };
 
   outputs =
@@ -38,7 +32,6 @@
       crane,
       rust-overlay,
       fh,
-      sandcastle,
     }:
     let
       mkMarketplace = import ./lib/mkMarketplace.nix;
@@ -67,7 +60,26 @@
           craneLib = (crane.mkLib pkgs).overrideToolchain (pkgs-overlay.rust-bin.stable.latest.default);
           goOverlay = go.overlays.default;
           fhPkg = fh.packages.${system}.default;
-          sandcastlePkg = sandcastle.packages.${system}.default;
+
+          sandcastlePkg = import ./lib/packages/sandcastle.nix {
+            inherit pkgs;
+            src = ./packages/sandcastle;
+          };
+
+          andSoCanYouRepoPkg = import ./lib/packages/and-so-can-you-repo.nix {
+            inherit pkgs;
+            src = ./packages/and-so-can-you-repo;
+          };
+
+          potatoPkg = import ./lib/packages/potato.nix {
+            inherit pkgs goOverlay;
+            src = ./packages/potato;
+          };
+
+          spinclassPkg = import ./lib/packages/spinclass.nix {
+            inherit pkgs goOverlay;
+            src = ./packages/spinclass;
+          };
 
           gritPkg = import ./lib/packages/grit.nix {
             inherit pkgs goOverlay;
@@ -147,6 +159,10 @@
             chixPkg
             tapDancerPkgs
             batmanPkgs
+            sandcastlePkg
+            andSoCanYouRepoPkg
+            potatoPkg
+            spinclassPkg
             ;
         };
 
@@ -240,6 +256,10 @@
             robin = localPkgs.batmanPkgs.robin;
             batman = localPkgs.batmanPkgs.default;
             tap-dancer = localPkgs.tapDancerPkgs.default;
+            sandcastle = localPkgs.sandcastlePkg;
+            and-so-can-you-repo = localPkgs.andSoCanYouRepoPkg;
+            potato = localPkgs.potatoPkg;
+            spinclass = localPkgs.spinclassPkg;
             mcp-all = pkgs.symlinkJoin {
               name = "mcp-all";
               paths = [

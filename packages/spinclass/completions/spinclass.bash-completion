@@ -1,0 +1,17 @@
+_spinclass_complete() {
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+  COMPREPLY=()
+
+  if [[ "$COMP_CWORD" -eq 1 ]]; then
+    COMPREPLY=($(compgen -W "open attach status merge clean" -- "$cur"))
+    return
+  fi
+
+  local subcommand="${COMP_WORDS[1]}"
+  if [[ "$subcommand" == "open" || "$subcommand" == "attach" ]]; then
+    while IFS=$'\t' read -r path _desc; do
+      [[ "$path" == "$cur"* ]] && COMPREPLY+=("$path")
+    done < <(spinclass completions 2>/dev/null)
+  fi
+}
+complete -F _spinclass_complete spinclass

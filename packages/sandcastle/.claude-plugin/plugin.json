@@ -1,0 +1,9 @@
+{
+  "name": "sandcastle",
+  "version": "0.1.0",
+  "description": "Sandcastle CLI usage, Nix integration, and test isolation patterns",
+  "author": {
+    "name": "Sasha F"
+  },
+  "repository": "https://github.com/amarbel-llc/sandcastle"
+}

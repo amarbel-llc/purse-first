@@ -62,6 +62,38 @@
       "repo": "amarbel-llc/purse-first",
       "category": "testing",
       "tags": ["tap", "tap-14", "testing", "output-format"]
+    },
+    "sandcastle": {
+      "description": "Sandbox runtime for wrapping security boundaries around arbitrary processes",
+      "version": "0.0.37",
+      "homepage": "https://github.com/amarbel-llc/purse-first",
+      "repo": "amarbel-llc/purse-first",
+      "category": "security",
+      "tags": ["sandbox", "security", "isolation", "testing"]
+    },
+    "and-so-can-you-repo": {
+      "description": "Interactive scaffold for creating new Nix-flake-backed repositories",
+      "version": "0.1.0",
+      "homepage": "https://github.com/amarbel-llc/purse-first",
+      "repo": "amarbel-llc/purse-first",
+      "category": "development",
+      "tags": ["scaffold", "nix", "templates", "cli"]
+    },
+    "potato": {
+      "description": "Pomodoro timer that detaches from terminal sessions",
+      "version": "0.1.0",
+      "homepage": "https://github.com/amarbel-llc/purse-first",
+      "repo": "amarbel-llc/purse-first",
+      "category": "productivity",
+      "tags": ["pomodoro", "timer", "tui", "cli"]
+    },
+    "spinclass": {
+      "description": "Shell-agnostic git worktree session manager",
+      "version": "0.1.0",
+      "homepage": "https://github.com/amarbel-llc/purse-first",
+      "repo": "amarbel-llc/purse-first",
+      "category": "development",
+      "tags": ["git", "worktrees", "sessions", "cli"]
     }
   }
 }

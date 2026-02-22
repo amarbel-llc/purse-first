@@ -7,5 +7,7 @@ use (
 	./packages/get-hubbed
 	./packages/grit
 	./packages/lux
+	./packages/potato
+	./packages/spinclass
 	./packages/tap-dancer/go
 )
