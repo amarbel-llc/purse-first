@@ -10,35 +10,18 @@
     shell.url = "github:amarbel-llc/eng?dir=devenvs/shell";
     bats.url = "github:amarbel-llc/eng?dir=devenvs/bats";
 
-    grit = {
-      url = "github:amarbel-llc/grit";
+    rust.url = "github:amarbel-llc/eng?dir=devenvs/rust";
+    crane.url = "github:ipetkov/crane";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-master.follows = "nixpkgs-master";
     };
-    get-hubbed = {
-      url = "github:amarbel-llc/get-hubbed";
+    fh.url = "https://flakehub.com/f/DeterminateSystems/fh/*.tar.gz";
+    sandcastle = {
+      url = "github:amarbel-llc/sandcastle";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
-    };
-    lux = {
-      url = "github:friedenberg/lux";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-master.follows = "nixpkgs-master";
-    };
-    chix = {
-      url = "github:amarbel-llc/chix";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-master.follows = "nixpkgs-master";
-    };
-    batman = {
-      url = "github:amarbel-llc/batman";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-master.follows = "nixpkgs-master";
-    };
-    tap-dancer = {
-      url = "github:amarbel-llc/tap-dancer";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-master.follows = "nixpkgs-master";
+      inputs.utils.follows = "utils";
     };
   };
 
@@ -51,12 +34,11 @@
       go,
       shell,
       bats,
-      grit,
-      get-hubbed,
-      lux,
-      chix,
-      batman,
-      tap-dancer,
+      rust,
+      crane,
+      rust-overlay,
+      fh,
+      sandcastle,
     }:
     let
       mkMarketplace = import ./lib/mkMarketplace.nix;
@@ -68,29 +50,104 @@
           let
             baseName = builtins.baseNameOf path;
           in
-          baseName != "go.work" && baseName != "go.work.sum" && !nixpkgs.lib.hasPrefix (toString ./libs) path;
+          baseName != "go.work"
+          && baseName != "go.work.sum"
+          && !nixpkgs.lib.hasPrefix (toString ./libs) path
+          && !nixpkgs.lib.hasPrefix (toString ./packages) path;
       };
 
-      wrapGetHubbed =
+      buildPackages =
         system:
         let
           pkgs = import nixpkgs { inherit system; };
-          get-hubbed-upstream = get-hubbed.packages.${system}.default;
-        in
-        pkgs.runCommand "get-hubbed"
-          {
-            nativeBuildInputs = [ pkgs.makeWrapper ];
-          }
-          ''
-            mkdir -p $out/bin
-            makeWrapper ${get-hubbed-upstream}/bin/get-hubbed $out/bin/get-hubbed \
-              --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.gh ]}
+          pkgs-overlay = import nixpkgs {
+            inherit system;
+            overlays = [ (import rust-overlay) ];
+          };
+          craneLib = (crane.mkLib pkgs).overrideToolchain (pkgs-overlay.rust-bin.stable.latest.default);
+          goOverlay = go.overlays.default;
+          fhPkg = fh.packages.${system}.default;
+          sandcastlePkg = sandcastle.packages.${system}.default;
 
-            # Propagate share directory (plugin manifest, etc.)
-            if [ -d "${get-hubbed-upstream}/share" ]; then
-              cp -r ${get-hubbed-upstream}/share $out/share
-            fi
-          '';
+          gritPkg = import ./lib/packages/grit.nix {
+            inherit pkgs goOverlay;
+            src = ./packages/grit;
+          };
+
+          get-hubbed-unwrapped = import ./lib/packages/get-hubbed.nix {
+            inherit pkgs goOverlay purse-first-src;
+            src = ./packages/get-hubbed;
+          };
+
+          get-hubbed-wrapped =
+            pkgs.runCommand "get-hubbed"
+              {
+                nativeBuildInputs = [ pkgs.makeWrapper ];
+              }
+              ''
+                mkdir -p $out/bin
+                makeWrapper ${get-hubbed-unwrapped}/bin/get-hubbed $out/bin/get-hubbed \
+                  --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.gh ]}
+
+                # Propagate share directory (plugin manifest, etc.)
+                if [ -d "${get-hubbed-unwrapped}/share" ]; then
+                  cp -r ${get-hubbed-unwrapped}/share $out/share
+                fi
+              '';
+
+          luxPkg = import ./lib/packages/lux.nix {
+            inherit pkgs goOverlay;
+            src = ./packages/lux;
+          };
+
+          chixPkg = import ./lib/packages/chix.nix {
+            inherit pkgs craneLib fhPkg;
+            src = ./packages/chix;
+          };
+
+          tapDancerPkgs = import ./lib/packages/tap-dancer.nix {
+            inherit pkgs goOverlay craneLib;
+            src = ./packages/tap-dancer;
+          };
+
+          # batman needs the purse-first CLI to build robin's plugin.json.
+          # We resolve it the same way mkMarketplace does for self-builds.
+          purse-first-cli =
+            let
+              pkgs-go = import nixpkgs {
+                inherit system;
+                overlays = [ goOverlay ];
+              };
+            in
+            pkgs-go.buildGoApplication {
+              pname = "purse-first";
+              version = "0.1.0";
+              src = purse-first-src;
+              modules = ./gomod2nix.toml;
+              subPackages = [ "cmd/purse-first" ];
+              CGO_ENABLED = "0";
+              ldflags = [
+                "-s"
+                "-w"
+              ];
+            };
+
+          batmanPkgs = import ./lib/packages/batman.nix {
+            inherit pkgs purse-first-cli;
+            sandcastle = sandcastlePkg;
+            src = ./packages/batman;
+          };
+        in
+        {
+          inherit
+            gritPkg
+            get-hubbed-wrapped
+            luxPkg
+            chixPkg
+            tapDancerPkgs
+            batmanPkgs
+            ;
+        };
 
       marketplaceOutputs = mkMarketplace {
         inherit nixpkgs nixpkgs-master utils;
@@ -107,14 +164,19 @@
           version = "0.1.0";
           overlays = [ go.overlays.default ];
         };
-        plugins = system: [
-          grit.packages.${system}.default
-          lux.packages.${system}.default
-          chix.packages.${system}.default
-          (wrapGetHubbed system)
-          batman.packages.${system}.robin
-          tap-dancer.packages.${system}.default
-        ];
+        plugins =
+          system:
+          let
+            pkgs = buildPackages system;
+          in
+          [
+            pkgs.gritPkg
+            pkgs.luxPkg
+            pkgs.chixPkg
+            pkgs.get-hubbed-wrapped
+            pkgs.batmanPkgs.robin
+            pkgs.tapDancerPkgs.default
+          ];
         skills = ./skills;
         pluginBaseJson = ./.claude-plugin/plugin.json;
         pluginConfig = builtins.fromJSON (builtins.readFile ./marketplace-config.json);
@@ -134,9 +196,13 @@
           license = "MIT";
         };
         devShellPackages =
-          system: pkgs: pkgs-master: [
+          system: pkgs: pkgs-master:
+          let
+            localPkgs = buildPackages system;
+          in
+          [
             pkgs-master.claude-code
-            batman.packages.${system}.default
+            localPkgs.batmanPkgs.default
           ];
         devShellInputsFrom = system: [
           go.devShells.${system}.default
@@ -161,22 +227,23 @@
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+          localPkgs = buildPackages system;
         in
         {
           packages = (marketplaceOutputs.packages.${system} or { }) // {
-            grit = grit.packages.${system}.default;
-            get-hubbed = wrapGetHubbed system;
-            lux = lux.packages.${system}.default;
-            chix = chix.packages.${system}.default;
-            robin = batman.packages.${system}.robin;
-            tap-dancer = tap-dancer.packages.${system}.default;
+            grit = localPkgs.gritPkg;
+            get-hubbed = localPkgs.get-hubbed-wrapped;
+            lux = localPkgs.luxPkg;
+            chix = localPkgs.chixPkg;
+            robin = localPkgs.batmanPkgs.robin;
+            tap-dancer = localPkgs.tapDancerPkgs.default;
             mcp-all = pkgs.symlinkJoin {
               name = "mcp-all";
               paths = [
-                grit.packages.${system}.default
-                (wrapGetHubbed system)
-                lux.packages.${system}.default
-                chix.packages.${system}.default
+                localPkgs.gritPkg
+                localPkgs.get-hubbed-wrapped
+                localPkgs.luxPkg
+                localPkgs.chixPkg
               ];
             };
           };
