@@ -1,3 +1,0 @@
-- [ ] add go, rust, zig, and java libraries (examine a bash lib too)
-- [ ] go-test: handle build failures (FailedBuild field) — emit Bail out! per package subtest, set exit code 2
-- [ ] cargo-test: add new `cargo-test` subcommand (like `go-test`)
