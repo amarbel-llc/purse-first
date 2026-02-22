@@ -99,7 +99,8 @@ func resolveStorePath(manifestPath string) string {
 }
 
 type GenerateOptions struct {
-	StripHooks bool
+	StripHooks    bool
+	PluginsPrefix string
 }
 
 func Generate(config Config, discovered []DiscoveredPlugin, opts ...GenerateOptions) Marketplace {
@@ -157,6 +158,8 @@ func Generate(config Config, discovered []DiscoveredPlugin, opts ...GenerateOpti
 
 		var source any
 		switch {
+		case opt.PluginsPrefix != "":
+			source = "./" + opt.PluginsPrefix + "/" + dp.Name
 		case meta.Repo != "":
 			source = GitHubSource{Source: "github", Repo: meta.Repo}
 		case config.Repo != "":

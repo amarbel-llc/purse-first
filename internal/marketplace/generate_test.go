@@ -435,6 +435,46 @@ func TestGenerateSelfPluginUsesStrictTrue(t *testing.T) {
 	}
 }
 
+func TestGenerateWithPluginsPrefix(t *testing.T) {
+	config := Config{
+		Name:  "test-marketplace",
+		Repo:  "example/test-marketplace",
+		Owner: Owner{Name: "test"},
+		Plugins: map[string]PluginMeta{
+			"alpha": {
+				Description: "Alpha MCP server",
+				Version:     "1.0.0",
+				Repo:        "example/alpha",
+			},
+		},
+	}
+
+	discovered := []DiscoveredPlugin{
+		{
+			Name: "alpha",
+			McpServers: map[string]purse.McpServer{
+				"alpha": {Type: "stdio", Command: "alpha-server"},
+			},
+		},
+	}
+
+	m := Generate(config, discovered, GenerateOptions{
+		PluginsPrefix: "share/purse-first",
+	})
+
+	if len(m.Plugins) != 1 {
+		t.Fatalf("len(plugins) = %d, want 1", len(m.Plugins))
+	}
+
+	source, ok := m.Plugins[0].Source.(string)
+	if !ok {
+		t.Fatalf("source type = %T, want string", m.Plugins[0].Source)
+	}
+	if source != "./share/purse-first/alpha" {
+		t.Errorf("source = %q, want %q", source, "./share/purse-first/alpha")
+	}
+}
+
 func TestReadConfig(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.json")
