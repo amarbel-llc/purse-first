@@ -21,8 +21,18 @@ inputs = {
   nixpkgs.url = "github:NixOS/nixpkgs/<stable-sha>";
   nixpkgs-master.url = "github:NixOS/nixpkgs/<master-sha>";
   utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
-  go.url = "github:friedenberg/eng?dir=devenvs/go";
-  shell.url = "github:friedenberg/eng?dir=devenvs/shell";
+  go = {
+    url = "github:amarbel-llc/eng?dir=devenvs/go";
+    inputs.nixpkgs.follows = "nixpkgs";
+    inputs.nixpkgs-master.follows = "nixpkgs-master";
+    inputs.utils.follows = "utils";
+  };
+  shell = {
+    url = "github:amarbel-llc/eng?dir=devenvs/shell";
+    inputs.nixpkgs.follows = "nixpkgs";
+    inputs.nixpkgs-master.follows = "nixpkgs-master";
+    inputs.utils.follows = "utils";
+  };
 };
 ```
 
@@ -30,7 +40,7 @@ inputs = {
 
 ```nix
 inputs = {
-  devenv-rust.url = "github:friedenberg/eng?dir=devenvs/rust";
+  devenv-rust.url = "github:amarbel-llc/eng?dir=devenvs/rust";
   nixpkgs.follows = "devenv-rust/nixpkgs";
   utils.follows = "devenv-rust/utils";
 };
@@ -43,9 +53,17 @@ inputs = {
   nixpkgs.url = "github:NixOS/nixpkgs/<stable-sha>";
   nixpkgs-master.url = "github:NixOS/nixpkgs/<master-sha>";
   utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
-  rust-overlay.url = "github:oxalica/rust-overlay";
+  rust-overlay = {
+    url = "github:oxalica/rust-overlay";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
   crane.url = "github:ipetkov/crane";
-  rust.url = "github:friedenberg/eng?dir=devenvs/rust";
+  rust = {
+    url = "github:amarbel-llc/eng?dir=devenvs/rust";
+    inputs.nixpkgs.follows = "nixpkgs";
+    inputs.nixpkgs-master.follows = "nixpkgs-master";
+    inputs.utils.follows = "utils";
+  };
 };
 ```
 
@@ -56,7 +74,12 @@ inputs = {
   nixpkgs.url = "github:NixOS/nixpkgs/<stable-sha>";
   nixpkgs-master.url = "github:NixOS/nixpkgs/<master-sha>";
   utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
-  shell.url = "github:friedenberg/eng?dir=devenvs/shell";
+  shell = {
+    url = "github:amarbel-llc/eng?dir=devenvs/shell";
+    inputs.nixpkgs.follows = "nixpkgs";
+    inputs.nixpkgs-master.follows = "nixpkgs-master";
+    inputs.utils.follows = "utils";
+  };
 };
 ```
 
@@ -70,8 +93,18 @@ inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/<stable-sha>";
     nixpkgs-master.url = "github:NixOS/nixpkgs/<master-sha>";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
-    go.url = "github:friedenberg/eng?dir=devenvs/go";
-    shell.url = "github:friedenberg/eng?dir=devenvs/shell";
+    go = {
+      url = "github:amarbel-llc/eng?dir=devenvs/go";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+      inputs.utils.follows = "utils";
+    };
+    shell = {
+      url = "github:amarbel-llc/eng?dir=devenvs/shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+      inputs.utils.follows = "utils";
+    };
   };
 
   outputs =
@@ -138,7 +171,7 @@ inputs = {
   description = "Rust project description";
 
   inputs = {
-    devenv-rust.url = "github:friedenberg/eng?dir=devenvs/rust";
+    devenv-rust.url = "github:amarbel-llc/eng?dir=devenvs/rust";
     nixpkgs.follows = "devenv-rust/nixpkgs";
     utils.follows = "devenv-rust/utils";
   };
@@ -186,9 +219,17 @@ inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/<stable-sha>";
     nixpkgs-master.url = "github:NixOS/nixpkgs/<master-sha>";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
-    rust-overlay.url = "github:oxalica/rust-overlay";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     crane.url = "github:ipetkov/crane";
-    rust.url = "github:friedenberg/eng?dir=devenvs/rust";
+    rust = {
+      url = "github:amarbel-llc/eng?dir=devenvs/rust";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+      inputs.utils.follows = "utils";
+    };
   };
 
   outputs =
@@ -251,7 +292,7 @@ devShells.default = pkgs.mkShell {
 };
 ```
 
-Available devenvs (from `github:friedenberg/eng?dir=devenvs/<name>`):
+Available devenvs (from `github:amarbel-llc/eng?dir=devenvs/<name>`):
 
 | Devenv | Provides |
 |--------|----------|
@@ -328,14 +369,85 @@ This ensures all devenv tools (including `gomod2nix`) are available when enterin
 Format all `.nix` files with `nixfmt-rfc-style`:
 
 ```bash
-nix run github:friedenberg/eng?dir=devenvs/nix#fmt -- path/to/flake.nix
+nix run github:amarbel-llc/eng?dir=devenvs/nix#fmt -- path/to/flake.nix
 ```
 
 Or from within a nix devenv:
 
 ```bash
-nix develop github:friedenberg/eng?dir=devenvs/nix --command nixfmt path/to/flake.nix
+nix develop github:amarbel-llc/eng?dir=devenvs/nix --command nixfmt path/to/flake.nix
 ```
+
+## Cascading `follows` for Shared Inputs
+
+### The Problem
+
+In a monorepo or multi-repo setup, each flake input brings its own transitive copy of `nixpkgs`, `nixpkgs-master`, `utils`, and `systems`. Without `follows`, a flake.lock can balloon to thousands of nodes — mostly duplicates.
+
+### The Solution: Cascading `follows`
+
+Every flake that has sub-inputs sharing common dependencies must forward them via `follows`. This allows a single top-level override to cascade through the entire dependency tree.
+
+### How It Works
+
+Each layer takes responsibility for forwarding its own common inputs to its sub-inputs:
+
+```
+eng/flake.nix:         dodder.inputs.nixpkgs.follows = "nixpkgs"     ← top-level override
+dodger/flake.nix:      dodder-go.inputs.nixpkgs.follows = "nixpkgs"  ← forwards to child
+dodder/go/flake.nix:   devenv-go.inputs.nixpkgs.follows = "nixpkgs"  ← forwards to child
+```
+
+When the top-level overrides `dodder.inputs.nixpkgs`, dodder's `nixpkgs` becomes the top-level one. Since dodder already forwards its `nixpkgs` to `dodder-go`, and `dodder-go` forwards to `devenv-go`, the override cascades automatically.
+
+### Required Pattern
+
+Every sub-input that declares `nixpkgs`, `nixpkgs-master`, or `utils` must have `follows` set. Transform simple URL inputs into block-style with follows:
+
+```nix
+# WRONG — each sub-input gets its own independent copy
+go.url = "github:amarbel-llc/eng?dir=devenvs/go";
+shell.url = "github:amarbel-llc/eng?dir=devenvs/shell";
+
+# CORRECT — sub-inputs share the parent's common inputs
+go = {
+  url = "github:amarbel-llc/eng?dir=devenvs/go";
+  inputs.nixpkgs.follows = "nixpkgs";
+  inputs.nixpkgs-master.follows = "nixpkgs-master";
+  inputs.utils.follows = "utils";
+};
+shell = {
+  url = "github:amarbel-llc/eng?dir=devenvs/shell";
+  inputs.nixpkgs.follows = "nixpkgs";
+  inputs.nixpkgs-master.follows = "nixpkgs-master";
+  inputs.utils.follows = "utils";
+};
+```
+
+### Which Inputs Need `follows`
+
+Add `follows` for any sub-input that is:
+
+- A devenv from eng (`devenvs/go`, `devenvs/shell`, `devenvs/rust`, etc.)
+- A sibling project (`batman`, `purse-first`, `sandcastle`, etc.)
+- Any external flake that declares `nixpkgs` as a named input (`rust-overlay`, `zig2nix`)
+
+Only follow inputs that the parent flake also declares. If the parent has no `nixpkgs-master`, don't try to follow it.
+
+### Leaf Devenvs
+
+Most leaf devenvs (`devenvs/shell`, `devenvs/go`, etc.) have no sub-inputs that need follows — they only declare `nixpkgs`, `nixpkgs-master`, and `utils` directly. No changes needed for these.
+
+### Verification
+
+After adding follows, run `nix flake lock` and check:
+
+```bash
+# Count nodes in flake.lock
+python3 -c "import json; d=json.load(open('flake.lock')); print(len(d['nodes']))"
+```
+
+A well-connected flake tree should have roughly `N + M` nodes where N is the number of unique flakes and M is the number of unique common inputs, not `N * M` duplicated copies.
 
 ## Flake Lock Management
 
@@ -405,7 +517,7 @@ inputs = {
   fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0.1.21.tar.gz";
 
   # GitHub URLs — for devenvs and pinned nixpkgs
-  go.url = "github:friedenberg/eng?dir=devenvs/go";
+  go.url = "github:amarbel-llc/eng?dir=devenvs/go";
   nixpkgs.url = "github:NixOS/nixpkgs/<stable-sha>";
 };
 ```
@@ -415,7 +527,7 @@ inputs = {
 | URL Type | Use For |
 |----------|---------|
 | `https://flakehub.com/f/...` | Third-party flakes on FlakeHub (`flake-utils`, `crane`, `fenix`, `fh`) |
-| `github:friedenberg/eng?dir=devenvs/...` | Devenv references |
+| `github:amarbel-llc/eng?dir=devenvs/...` | Devenv references |
 | `github:NixOS/nixpkgs/<sha>` | Pinned nixpkgs (stable and master) |
 | `github:amarbel-llc/<repo>` | Unpublished repos or repos not yet on FlakeHub |
 

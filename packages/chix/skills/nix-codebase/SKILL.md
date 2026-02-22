@@ -107,13 +107,27 @@ All flakes follow the stable-first convention — never deviate:
 - `nixpkgs-master` → master/unstable (LSPs, linters, formatters)
 - Variables: `pkgs = import nixpkgs`, `pkgs-master = import nixpkgs-master`
 
+### Cascading `follows` for Shared Inputs
+
+Every sub-input that declares `nixpkgs`, `nixpkgs-master`, or `utils` must use `follows` to share the parent's copy. Without this, flake.lock files explode with duplicated nodes. See `references/flake-conventions.md` for the full pattern.
+
+```nix
+# Every devenv and sibling project sub-input needs this:
+go = {
+  url = "github:amarbel-llc/eng?dir=devenvs/go";
+  inputs.nixpkgs.follows = "nixpkgs";
+  inputs.nixpkgs-master.follows = "nixpkgs-master";
+  inputs.utils.follows = "utils";
+};
+```
+
 ### Go Project Flake Structure
 
 Go projects use `buildGoApplication` from the gomod2nix overlay, NOT `buildGoModule`:
 
 ```nix
 inputs = {
-  go.url = "github:friedenberg/eng?dir=devenvs/go";
+  go.url = "github:amarbel-llc/eng?dir=devenvs/go";
 };
 
 # Apply overlay:

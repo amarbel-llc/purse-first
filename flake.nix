@@ -6,11 +6,31 @@
     nixpkgs-master.url = "github:NixOS/nixpkgs/5b7e21f22978c4b740b3907f3251b470f466a9a2";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
 
-    go.url = "github:amarbel-llc/eng?dir=devenvs/go";
-    shell.url = "github:amarbel-llc/eng?dir=devenvs/shell";
-    bats.url = "github:amarbel-llc/eng?dir=devenvs/bats";
+    go = {
+      url = "github:amarbel-llc/eng?dir=devenvs/go";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+      inputs.utils.follows = "utils";
+    };
+    shell = {
+      url = "github:amarbel-llc/eng?dir=devenvs/shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+      inputs.utils.follows = "utils";
+    };
+    bats = {
+      url = "github:amarbel-llc/eng?dir=devenvs/bats";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+      inputs.utils.follows = "utils";
+    };
 
-    rust.url = "github:amarbel-llc/eng?dir=devenvs/rust";
+    rust = {
+      url = "github:amarbel-llc/eng?dir=devenvs/rust";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+      inputs.utils.follows = "utils";
+    };
     crane.url = "github:ipetkov/crane";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";

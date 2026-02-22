@@ -17,7 +17,7 @@ Flakes are published as `<github-username>/<flake-name>`:
 
 | Repo | FlakeHub Name | Notes |
 |------|---------------|-------|
-| `friedenberg/eng` | `friedenberg/eng` | Monorepo, published from root |
+| `amarbel-llc/eng` | `amarbel-llc/eng` | Monorepo, published from root |
 | `amarbel-llc/dodder` | `friedenberg/dodder-go` | Subdirectory flake, suffixed |
 | `amarbel-llc/lux` | `friedenberg/lux` | Standard single-flake repo |
 
@@ -179,7 +179,7 @@ https://api.flakehub.com/f/pinned/numtide/flake-utils/0.1.102/...
 
 ### When to Use GitHub URLs
 
-- **Devenv references**: `github:friedenberg/eng?dir=devenvs/go`
+- **Devenv references**: `github:amarbel-llc/eng?dir=devenvs/go`
 - **Nixpkgs pinned SHAs**: `github:NixOS/nixpkgs/<sha>`
 - **Unpublished repos** not yet on FlakeHub
 
