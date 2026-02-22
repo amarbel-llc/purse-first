@@ -15,3 +15,5 @@ result-*
 **/target/
 .worktrees/
 /purse-first
+/packages/grit/grit
+/packages/get-hubbed/get-hubbed
