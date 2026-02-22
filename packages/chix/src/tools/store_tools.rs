@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use mcp_server::server::Context;
-use mcp_server::tools::{Tool, ToolError, ToolResult};
+use mcp_server::tools::{Tool, ToolAnnotations, ToolError, ToolResult, ToolV1};
 use serde_json::Value;
 
 pub struct StorePathInfoTool;
@@ -59,6 +59,23 @@ impl Tool for StorePathInfoTool {
     }
 }
 
+#[async_trait]
+impl ToolV1 for StorePathInfoTool {
+    fn title(&self) -> Option<&str> {
+        Some("Show Store Path Info")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(false),
+        })
+    }
+}
+
 pub struct StoreGcTool;
 
 #[async_trait]
@@ -99,6 +116,23 @@ impl Tool for StoreGcTool {
             }
             Err(e) => Ok(ToolResult::error(e)),
         }
+    }
+}
+
+#[async_trait]
+impl ToolV1 for StoreGcTool {
+    fn title(&self) -> Option<&str> {
+        Some("Garbage Collect Store")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(false),
+            destructive_hint: Some(true),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(false),
+        })
     }
 }
 
@@ -154,6 +188,23 @@ impl Tool for StoreLsTool {
     }
 }
 
+#[async_trait]
+impl ToolV1 for StoreLsTool {
+    fn title(&self) -> Option<&str> {
+        Some("List Store Path")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(false),
+        })
+    }
+}
+
 pub struct StoreCatTool;
 
 #[async_trait]
@@ -199,5 +250,22 @@ impl Tool for StoreCatTool {
             }
             Err(e) => Ok(ToolResult::error(e)),
         }
+    }
+}
+
+#[async_trait]
+impl ToolV1 for StoreCatTool {
+    fn title(&self) -> Option<&str> {
+        Some("Read Store File")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(false),
+        })
     }
 }

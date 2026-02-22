@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use mcp_server::server::Context;
-use mcp_server::tools::{Tool, ToolError, ToolResult};
+use mcp_server::tools::{Tool, ToolAnnotations, ToolError, ToolResult, ToolV1};
 use serde_json::Value;
 
 use crate::background::{get_task_info, list_tasks};
@@ -50,5 +50,22 @@ impl Tool for TaskStatusTool {
         let json = serde_json::to_string_pretty(&result)
             .map_err(|e| ToolError::Serialization(e))?;
         Ok(ToolResult::text(json))
+    }
+}
+
+#[async_trait]
+impl ToolV1 for TaskStatusTool {
+    fn title(&self) -> Option<&str> {
+        Some("Check Task Status")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(false),
+        })
     }
 }

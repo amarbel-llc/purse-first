@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use mcp_server::server::Context;
-use mcp_server::tools::{Tool, ToolError, ToolResult};
+use mcp_server::tools::{Tool, ToolAnnotations, ToolError, ToolResult, ToolV1};
 use serde_json::Value;
 
 pub struct NilDiagnosticsTool;
@@ -48,6 +48,23 @@ impl Tool for NilDiagnosticsTool {
             }
             Err(e) => Ok(ToolResult::error(e)),
         }
+    }
+}
+
+#[async_trait]
+impl ToolV1 for NilDiagnosticsTool {
+    fn title(&self) -> Option<&str> {
+        Some("Nix Diagnostics")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(false),
+        })
     }
 }
 
@@ -115,6 +132,23 @@ impl Tool for NilCompletionsTool {
     }
 }
 
+#[async_trait]
+impl ToolV1 for NilCompletionsTool {
+    fn title(&self) -> Option<&str> {
+        Some("Nix Completions")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(false),
+        })
+    }
+}
+
 pub struct NilHoverTool;
 
 #[async_trait]
@@ -163,6 +197,23 @@ impl Tool for NilHoverTool {
     }
 }
 
+#[async_trait]
+impl ToolV1 for NilHoverTool {
+    fn title(&self) -> Option<&str> {
+        Some("Nix Hover Info")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(false),
+        })
+    }
+}
+
 pub struct NilDefinitionTool;
 
 #[async_trait]
@@ -208,5 +259,22 @@ impl Tool for NilDefinitionTool {
             }
             Err(e) => Ok(ToolResult::error(e)),
         }
+    }
+}
+
+#[async_trait]
+impl ToolV1 for NilDefinitionTool {
+    fn title(&self) -> Option<&str> {
+        Some("Nix Go to Definition")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(false),
+        })
     }
 }

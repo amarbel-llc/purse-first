@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use mcp_server::server::Context;
-use mcp_server::tools::{Tool, ToolError, ToolResult};
+use mcp_server::tools::{Tool, ToolAnnotations, ToolError, ToolResult, ToolV1};
 use serde_json::Value;
 
 pub struct HashPathTool;
@@ -55,6 +55,23 @@ impl Tool for HashPathTool {
     }
 }
 
+#[async_trait]
+impl ToolV1 for HashPathTool {
+    fn title(&self) -> Option<&str> {
+        Some("Hash Path")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(false),
+        })
+    }
+}
+
 pub struct HashFileTool;
 
 #[async_trait]
@@ -104,5 +121,22 @@ impl Tool for HashFileTool {
             }
             Err(e) => Ok(ToolResult::error(e)),
         }
+    }
+}
+
+#[async_trait]
+impl ToolV1 for HashFileTool {
+    fn title(&self) -> Option<&str> {
+        Some("Hash File")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(false),
+        })
     }
 }

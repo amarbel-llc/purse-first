@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use mcp_server::server::Context;
-use mcp_server::tools::{Tool, ToolError, ToolResult};
+use mcp_server::tools::{Tool, ToolAnnotations, ToolError, ToolResult, ToolV1};
 use serde_json::Value;
 
 pub struct FlakeShowTool;
@@ -59,6 +59,23 @@ impl Tool for FlakeShowTool {
             }
             Err(e) => Ok(ToolResult::error(e)),
         }
+    }
+}
+
+#[async_trait]
+impl ToolV1 for FlakeShowTool {
+    fn title(&self) -> Option<&str> {
+        Some("Show Flake Outputs")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(false),
+        })
     }
 }
 
@@ -121,6 +138,23 @@ impl Tool for FlakeCheckTool {
     }
 }
 
+#[async_trait]
+impl ToolV1 for FlakeCheckTool {
+    fn title(&self) -> Option<&str> {
+        Some("Check Flake")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(true),
+        })
+    }
+}
+
 pub struct FlakeMetadataTool;
 
 #[async_trait]
@@ -173,6 +207,23 @@ impl Tool for FlakeMetadataTool {
             }
             Err(e) => Ok(ToolResult::error(e)),
         }
+    }
+}
+
+#[async_trait]
+impl ToolV1 for FlakeMetadataTool {
+    fn title(&self) -> Option<&str> {
+        Some("Show Flake Metadata")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(false),
+        })
     }
 }
 
@@ -233,6 +284,23 @@ impl Tool for FlakeUpdateTool {
             }
             Err(e) => Ok(ToolResult::error(e)),
         }
+    }
+}
+
+#[async_trait]
+impl ToolV1 for FlakeUpdateTool {
+    fn title(&self) -> Option<&str> {
+        Some("Update Flake Lock")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(false),
+            destructive_hint: Some(true),
+            idempotent_hint: Some(false),
+            open_world_hint: Some(true),
+        })
     }
 }
 
@@ -301,6 +369,23 @@ impl Tool for FlakeLockTool {
     }
 }
 
+#[async_trait]
+impl ToolV1 for FlakeLockTool {
+    fn title(&self) -> Option<&str> {
+        Some("Lock Flake Inputs")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(false),
+            destructive_hint: Some(true),
+            idempotent_hint: Some(false),
+            open_world_hint: Some(true),
+        })
+    }
+}
+
 pub struct FlakeInitTool;
 
 #[async_trait]
@@ -341,5 +426,22 @@ impl Tool for FlakeInitTool {
             }
             Err(e) => Ok(ToolResult::error(e)),
         }
+    }
+}
+
+#[async_trait]
+impl ToolV1 for FlakeInitTool {
+    fn title(&self) -> Option<&str> {
+        Some("Initialize Flake")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(false),
+            destructive_hint: Some(true),
+            idempotent_hint: Some(false),
+            open_world_hint: Some(false),
+        })
     }
 }

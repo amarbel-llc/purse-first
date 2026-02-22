@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use mcp_server::server::Context;
-use mcp_server::tools::{Tool, ToolError, ToolResult};
+use mcp_server::tools::{Tool, ToolAnnotations, ToolError, ToolResult, ToolV1};
 use serde_json::Value;
 
 pub struct FhSearchTool;
@@ -55,6 +55,23 @@ impl Tool for FhSearchTool {
     }
 }
 
+#[async_trait]
+impl ToolV1 for FhSearchTool {
+    fn title(&self) -> Option<&str> {
+        Some("Search FlakeHub")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(true),
+        })
+    }
+}
+
 pub struct FhAddTool;
 
 #[async_trait]
@@ -103,6 +120,23 @@ impl Tool for FhAddTool {
     }
 }
 
+#[async_trait]
+impl ToolV1 for FhAddTool {
+    fn title(&self) -> Option<&str> {
+        Some("Add FlakeHub Input")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(false),
+            destructive_hint: Some(true),
+            idempotent_hint: Some(false),
+            open_world_hint: Some(true),
+        })
+    }
+}
+
 pub struct FhListFlakesTool;
 
 #[async_trait]
@@ -143,6 +177,23 @@ impl Tool for FhListFlakesTool {
             }
             Err(e) => Ok(ToolResult::error(e)),
         }
+    }
+}
+
+#[async_trait]
+impl ToolV1 for FhListFlakesTool {
+    fn title(&self) -> Option<&str> {
+        Some("List FlakeHub Flakes")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(true),
+        })
     }
 }
 
@@ -191,6 +242,23 @@ impl Tool for FhListReleasesTool {
             }
             Err(e) => Ok(ToolResult::error(e)),
         }
+    }
+}
+
+#[async_trait]
+impl ToolV1 for FhListReleasesTool {
+    fn title(&self) -> Option<&str> {
+        Some("List Flake Releases")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(true),
+        })
     }
 }
 
@@ -246,6 +314,23 @@ impl Tool for FhListVersionsTool {
     }
 }
 
+#[async_trait]
+impl ToolV1 for FhListVersionsTool {
+    fn title(&self) -> Option<&str> {
+        Some("List Flake Versions")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(true),
+        })
+    }
+}
+
 pub struct FhResolveTool;
 
 #[async_trait]
@@ -286,6 +371,23 @@ impl Tool for FhResolveTool {
     }
 }
 
+#[async_trait]
+impl ToolV1 for FhResolveTool {
+    fn title(&self) -> Option<&str> {
+        Some("Resolve FlakeHub Ref")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(true),
+        })
+    }
+}
+
 pub struct FhStatusTool;
 
 #[async_trait]
@@ -317,6 +419,23 @@ impl Tool for FhStatusTool {
             }
             Err(e) => Ok(ToolResult::error(e)),
         }
+    }
+}
+
+#[async_trait]
+impl ToolV1 for FhStatusTool {
+    fn title(&self) -> Option<&str> {
+        Some("Check FlakeHub Status")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(true),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(true),
+        })
     }
 }
 
@@ -364,6 +483,23 @@ impl Tool for FhFetchTool {
     }
 }
 
+#[async_trait]
+impl ToolV1 for FhFetchTool {
+    fn title(&self) -> Option<&str> {
+        Some("Fetch from FlakeHub")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(false),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(true),
+        })
+    }
+}
+
 pub struct FhLoginTool;
 
 #[async_trait]
@@ -400,5 +536,22 @@ impl Tool for FhLoginTool {
             }
             Err(e) => Ok(ToolResult::error(e)),
         }
+    }
+}
+
+#[async_trait]
+impl ToolV1 for FhLoginTool {
+    fn title(&self) -> Option<&str> {
+        Some("Login to FlakeHub")
+    }
+
+    fn annotations(&self) -> Option<ToolAnnotations> {
+        Some(ToolAnnotations {
+            title: None,
+            read_only_hint: Some(false),
+            destructive_hint: Some(false),
+            idempotent_hint: Some(true),
+            open_world_hint: Some(true),
+        })
     }
 }
