@@ -300,6 +300,20 @@ func TestSubtestHasIndependentCounter(t *testing.T) {
 	}
 }
 
+func TestPlanAheadPreventsDoublePlan(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.PlanAhead(2)
+	tw.Ok("a")
+	tw.Ok("b")
+	tw.Plan()
+	out := buf.String()
+	count := strings.Count(out, "1..")
+	if count != 1 {
+		t.Errorf("expected exactly one plan line, got %d in:\n%s", count, out)
+	}
+}
+
 func TestSubtestOutputValidatesWithReader(t *testing.T) {
 	var buf bytes.Buffer
 	tw := NewWriter(&buf)

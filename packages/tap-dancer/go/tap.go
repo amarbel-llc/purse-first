@@ -8,9 +8,10 @@ import (
 )
 
 type Writer struct {
-	w     io.Writer
-	n     int
-	depth int
+	w           io.Writer
+	n           int
+	depth       int
+	planEmitted bool
 }
 
 func NewWriter(w io.Writer) *Writer {
@@ -68,9 +69,14 @@ func (tw *Writer) Todo(description, reason string) int {
 
 func (tw *Writer) PlanAhead(n int) {
 	fmt.Fprintf(tw.w, "1..%d\n", n)
+	tw.planEmitted = true
 }
 
 func (tw *Writer) Plan() {
+	if tw.planEmitted {
+		return
+	}
+	tw.planEmitted = true
 	fmt.Fprintf(tw.w, "1..%d\n", tw.n)
 }
 
