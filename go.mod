@@ -3,12 +3,12 @@ module github.com/amarbel-llc/purse-first
 go 1.25.6
 
 require (
+	github.com/amarbel-llc/tap-dancer/go v0.0.0-20260219125355-4699d88f934d
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/spf13/cobra v1.10.2
 )
 
 require (
-	github.com/amarbel-llc/tap-dancer/go v0.0.0-20260219125355-4699d88f934d // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/colorprofile v0.2.3-0.20250311203215-f60798e515dc // indirect
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect

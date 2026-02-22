@@ -4,4 +4,8 @@ use (
 	.
 	./libs/go-mcp
 	./libs/go-mcp/command/huh
+	./packages/get-hubbed
+	./packages/grit
+	./packages/lux
+	./packages/tap-dancer/go
 )
