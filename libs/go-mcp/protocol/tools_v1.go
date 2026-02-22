@@ -69,3 +69,6 @@ func ErrorResultV1(msg string) *ToolCallResultV1 {
 		IsError: true,
 	}
 }
+
+// BoolPtr returns a pointer to b, for use with ToolAnnotations hint fields.
+func BoolPtr(b bool) *bool { return &b }

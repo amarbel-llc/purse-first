@@ -3,6 +3,8 @@ package command
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 )
 
 // ParamType identifies the data type of a command parameter.
@@ -74,6 +76,12 @@ type Command struct {
 	Aliases     []string
 	Description Description
 	Hidden      bool
+
+	// Title is a human-readable display name for the MCP tool (V1).
+	Title string
+
+	// Annotations provides V1 behavior hints (readOnly, destructive, etc.).
+	Annotations *protocol.ToolAnnotations
 
 	Params    []Param
 	MapsTools []ToolMapping

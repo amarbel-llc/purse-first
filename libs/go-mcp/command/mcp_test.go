@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
 )
 
@@ -210,5 +211,58 @@ func TestAppMCPToolCall(t *testing.T) {
 	}
 	if result.Content[0].Text != "hello" {
 		t.Errorf("result = %q, want %q", result.Content[0].Text, "hello")
+	}
+}
+
+func TestRegisterMCPToolsV1Annotations(t *testing.T) {
+	app := NewApp("test", "test")
+
+	readOnly := true
+	destructive := false
+	idempotent := true
+	openWorld := false
+
+	app.AddCommand(&Command{
+		Name:        "status",
+		Title:       "Show Working Tree Status",
+		Description: Description{Short: "Show status"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    &readOnly,
+			DestructiveHint: &destructive,
+			IdempotentHint:  &idempotent,
+			OpenWorldHint:   &openWorld,
+		},
+		Params: []Param{
+			{Name: "repo_path", Type: String, Required: true},
+		},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			return TextResult("ok"), nil
+		},
+	})
+
+	registry := server.NewToolRegistryV1()
+	app.RegisterMCPToolsV1(registry)
+
+	result, err := registry.ListToolsV1(context.Background(), "")
+	if err != nil {
+		t.Fatalf("ListToolsV1: %v", err)
+	}
+
+	tool := result.Tools[0]
+
+	if tool.Title != "Show Working Tree Status" {
+		t.Errorf("title = %q, want %q", tool.Title, "Show Working Tree Status")
+	}
+
+	if tool.Annotations == nil {
+		t.Fatal("annotations is nil")
+	}
+
+	if tool.Annotations.ReadOnlyHint == nil || !*tool.Annotations.ReadOnlyHint {
+		t.Error("readOnlyHint should be true")
+	}
+
+	if tool.Annotations.DestructiveHint == nil || *tool.Annotations.DestructiveHint {
+		t.Error("destructiveHint should be false")
 	}
 }
