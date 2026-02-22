@@ -2,9 +2,19 @@ mod build_log;
 mod closure;
 mod derivation;
 
+// Resource trait implementation modules
+mod build_log_resource;
+mod closure_resource;
+mod derivation_resource;
+
 pub use build_log::read_build_log;
 pub use closure::read_closure;
 pub use derivation::read_derivation;
+
+// Resource trait implementations
+pub use build_log_resource::BuildLogResource;
+pub use closure_resource::ClosureResource;
+pub use derivation_resource::DerivationResource;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
