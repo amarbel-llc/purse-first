@@ -1,7 +1,17 @@
-{ pkgs, src, craneLib, fhPkg }:
+{ pkgs, src, craneLib, fhPkg, rustMcpSrc }:
 
 let
-  rustSrc = craneLib.cleanCargoSource src;
+  # chix Cargo.toml has: mcp-server = { path = "../../libs/rust-mcp" }
+  # Vendor rust-mcp into the chix source so the path dep resolves in the sandbox
+  chixSrc = pkgs.runCommand "chix-src" { } ''
+    cp -r ${src} $out
+    chmod -R u+w $out
+    mkdir -p $out/vendor-libs
+    cp -r ${rustMcpSrc} $out/vendor-libs/rust-mcp
+    sed -i 's|path = "../../libs/rust-mcp"|path = "vendor-libs/rust-mcp"|' $out/Cargo.toml
+  '';
+
+  rustSrc = craneLib.cleanCargoSource chixSrc;
 
   commonArgs = {
     src = rustSrc;

@@ -103,6 +103,7 @@
           chixPkg = import ./lib/packages/chix.nix {
             inherit pkgs craneLib fhPkg;
             src = ./packages/chix;
+            rustMcpSrc = ./libs/rust-mcp;
           };
 
           tapDancerPkgs = import ./lib/packages/tap-dancer.nix {

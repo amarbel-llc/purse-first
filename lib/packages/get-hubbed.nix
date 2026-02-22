@@ -16,6 +16,7 @@ let
     cp -r ${src} $out
     chmod -R u+w $out
     rm -f $out/go.work $out/go.work.sum
+    rm -rf $out/deps
     mkdir -p $out/deps
     cp -r ${purse-first-src} $out/deps/purse-first
   '';
