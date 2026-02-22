@@ -238,6 +238,7 @@
             lux = localPkgs.luxPkg;
             chix = localPkgs.chixPkg;
             robin = localPkgs.batmanPkgs.robin;
+            batman = localPkgs.batmanPkgs.default;
             tap-dancer = localPkgs.tapDancerPkgs.default;
             mcp-all = pkgs.symlinkJoin {
               name = "mcp-all";
