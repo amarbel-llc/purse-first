@@ -6,13 +6,21 @@ import (
 	"fmt"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/friedenberg/grit/internal/git"
 )
 
 func registerLogCommands(app *command.App) {
 	app.AddCommand(&command.Command{
 		Name:        "log",
+		Title:       "Show Commit History",
 		Description: command.Description{Short: "Show commit history as structured JSON"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(false),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "max_count", Type: command.Int, Description: "Maximum number of commits to show (default 10)"},
@@ -28,7 +36,14 @@ func registerLogCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "show",
+		Title:       "Show Git Object",
 		Description: command.Description{Short: "Show a commit, tag, or other git object"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(false),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "ref", Type: command.String, Description: "Ref to show (commit hash, tag, branch, etc.)", Required: true},
@@ -43,7 +58,14 @@ func registerLogCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "blame",
+		Title:       "Show Line Authorship",
 		Description: command.Description{Short: "Show line-by-line authorship of a file"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(false),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "path", Type: command.String, Description: "File path to blame (relative to repo root)", Required: true},

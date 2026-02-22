@@ -7,13 +7,21 @@ import (
 	"strings"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/friedenberg/grit/internal/git"
 )
 
 func registerRemoteCommands(app *command.App) {
 	app.AddCommand(&command.Command{
 		Name:        "fetch",
+		Title:       "Fetch from Remote",
 		Description: command.Description{Short: "Fetch from a remote repository"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(false),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "remote", Type: command.String, Description: "Remote name (default origin)"},
@@ -28,7 +36,14 @@ func registerRemoteCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "pull",
+		Title:       "Pull from Remote",
 		Description: command.Description{Short: "Pull changes from a remote repository"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(false),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(false),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "remote", Type: command.String, Description: "Remote name (default origin)"},
@@ -43,7 +58,14 @@ func registerRemoteCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "push",
+		Title:       "Push to Remote",
 		Description: command.Description{Short: "Push commits to a remote repository (force push blocked on main/master)"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(false),
+			DestructiveHint: protocol.BoolPtr(true),
+			IdempotentHint:  protocol.BoolPtr(false),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "remote", Type: command.String, Description: "Remote name (default origin)"},
@@ -59,7 +81,14 @@ func registerRemoteCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "remote_list",
+		Title:       "List Remotes",
 		Description: command.Description{Short: "List remotes with their URLs"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(false),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 		},

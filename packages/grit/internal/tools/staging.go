@@ -6,13 +6,21 @@ import (
 	"fmt"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/friedenberg/grit/internal/git"
 )
 
 func registerStagingCommands(app *command.App) {
 	app.AddCommand(&command.Command{
 		Name:        "add",
+		Title:       "Stage Files",
 		Description: command.Description{Short: "Stage files for commit"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(false),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(false),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "paths", Type: command.Array, Description: "File paths to stage (relative to repo root)", Required: true},
@@ -25,7 +33,14 @@ func registerStagingCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "reset",
+		Title:       "Unstage Files",
 		Description: command.Description{Short: "Unstage files (soft reset only, does not modify working tree)"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(false),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(false),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "paths", Type: command.Array, Description: "File paths to unstage (relative to repo root)", Required: true},

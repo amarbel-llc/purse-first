@@ -6,13 +6,21 @@ import (
 	"fmt"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/friedenberg/grit/internal/git"
 )
 
 func registerBranchCommands(app *command.App) {
 	app.AddCommand(&command.Command{
 		Name:        "branch_list",
+		Title:       "List Branches",
 		Description: command.Description{Short: "List branches"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(false),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "remote", Type: command.Bool, Description: "List remote-tracking branches"},
@@ -26,7 +34,14 @@ func registerBranchCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "branch_create",
+		Title:       "Create Branch",
 		Description: command.Description{Short: "Create a new branch"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(false),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(false),
+			OpenWorldHint:   protocol.BoolPtr(false),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "name", Type: command.String, Description: "Name for the new branch", Required: true},
@@ -37,7 +52,14 @@ func registerBranchCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "checkout",
+		Title:       "Switch Branches",
 		Description: command.Description{Short: "Switch branches or restore working tree files"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(false),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(false),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "ref", Type: command.String, Description: "Branch name or ref to check out", Required: true},

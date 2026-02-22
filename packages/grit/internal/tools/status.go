@@ -6,13 +6,21 @@ import (
 	"fmt"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/friedenberg/grit/internal/git"
 )
 
 func registerStatusCommands(app *command.App) {
 	app.AddCommand(&command.Command{
 		Name:        "status",
+		Title:       "Show Working Tree Status",
 		Description: command.Description{Short: "Show working tree status with machine-readable output"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(false),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 		},
@@ -24,7 +32,14 @@ func registerStatusCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "diff",
+		Title:       "Show Changes",
 		Description: command.Description{Short: "Show changes in the working tree or between commits"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(false),
+		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "staged", Type: command.Bool, Description: "Show staged changes (--cached)"},
