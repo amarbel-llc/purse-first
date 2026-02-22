@@ -7,7 +7,7 @@
 
 let
   goPkgs = import pkgs.path {
-    inherit (pkgs) system;
+    inherit (pkgs.stdenv.hostPlatform) system;
     overlays = [ goOverlay ];
   };
 
