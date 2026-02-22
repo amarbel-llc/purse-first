@@ -2,6 +2,7 @@ package tap
 
 import (
 	"bytes"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -379,6 +380,79 @@ func TestWriteDiagnosticsNil(t *testing.T) {
 	writeDiagnostics(&buf, nil)
 	if buf.Len() != 0 {
 		t.Errorf("expected no output for nil diagnostics, got: %q", buf.String())
+	}
+}
+
+func TestWriteAllBasicOk(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.WriteAll(slices.Values([]TestPoint{
+		{Description: "first", Ok: true},
+		{Description: "second", Ok: true},
+	}))
+	expected := "TAP version 14\n" +
+		"ok 1 - first\n" +
+		"ok 2 - second\n" +
+		"1..2\n"
+	if buf.String() != expected {
+		t.Errorf("expected:\n%s\ngot:\n%s", expected, buf.String())
+	}
+}
+
+func TestWriteAllNotOkWithDiagnostics(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.WriteAll(slices.Values([]TestPoint{
+		{Description: "failing", Ok: false, Diagnostics: &Diagnostics{
+			Message:  "broke",
+			Severity: "fail",
+		}},
+	}))
+	out := buf.String()
+	if !strings.Contains(out, "not ok 1 - failing\n") {
+		t.Errorf("expected not ok line, got:\n%s", out)
+	}
+	if !strings.Contains(out, "  message: broke\n") {
+		t.Errorf("expected message diagnostic, got:\n%s", out)
+	}
+	if !strings.HasSuffix(out, "1..1\n") {
+		t.Errorf("expected trailing plan, got:\n%s", out)
+	}
+}
+
+func TestWriteAllSkip(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.WriteAll(slices.Values([]TestPoint{
+		{Description: "skipped", Skip: "not ready"},
+	}))
+	if !strings.Contains(buf.String(), "ok 1 - skipped # SKIP not ready\n") {
+		t.Errorf("expected skip line, got:\n%s", buf.String())
+	}
+}
+
+func TestWriteAllTodo(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.WriteAll(slices.Values([]TestPoint{
+		{Description: "unfinished", Todo: "later"},
+	}))
+	if !strings.Contains(buf.String(), "not ok 1 - unfinished # TODO later\n") {
+		t.Errorf("expected todo line, got:\n%s", buf.String())
+	}
+}
+
+func TestWriteAllPlanAheadSkipsTrailingPlan(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.PlanAhead(2)
+	tw.WriteAll(slices.Values([]TestPoint{
+		{Description: "a", Ok: true},
+		{Description: "b", Ok: true},
+	}))
+	count := strings.Count(buf.String(), "1..")
+	if count != 1 {
+		t.Errorf("expected exactly one plan line, got %d in:\n%s", count, buf.String())
 	}
 }
 

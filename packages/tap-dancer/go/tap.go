@@ -3,6 +3,7 @@ package tap
 import (
 	"fmt"
 	"io"
+	"iter"
 	"sort"
 	"strings"
 )
@@ -173,4 +174,41 @@ func (tw *Writer) Subtest(name string) *Writer {
 	fmt.Fprintf(tw.w, "%s# Subtest: %s\n", prefix, name)
 	iw := &indentWriter{w: tw.w, prefix: prefix}
 	return &Writer{w: iw, depth: tw.depth + 1}
+}
+
+type TestPoint struct {
+	Description string
+	Ok          bool
+	Skip        string
+	Todo        string
+	Diagnostics *Diagnostics
+	Subtests    func(*Writer)
+}
+
+func (tw *Writer) WriteAll(tests iter.Seq[TestPoint]) {
+	for tp := range tests {
+		if tp.Subtests != nil {
+			child := tw.Subtest(tp.Description)
+			tp.Subtests(child)
+			if !child.planEmitted {
+				child.Plan()
+			}
+			tw.Ok(tp.Description)
+		} else if tp.Skip != "" {
+			tw.Skip(tp.Description, tp.Skip)
+		} else if tp.Todo != "" {
+			tw.Todo(tp.Description, tp.Todo)
+		} else if tp.Ok {
+			tw.n++
+			fmt.Fprintf(tw.w, "ok %d - %s\n", tw.n, tp.Description)
+			writeDiagnostics(tw.w, tp.Diagnostics)
+		} else {
+			tw.n++
+			fmt.Fprintf(tw.w, "not ok %d - %s\n", tw.n, tp.Description)
+			writeDiagnostics(tw.w, tp.Diagnostics)
+		}
+	}
+	if !tw.planEmitted {
+		tw.Plan()
+	}
 }
