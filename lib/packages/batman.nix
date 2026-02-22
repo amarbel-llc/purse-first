@@ -64,6 +64,7 @@ let
     text = ''
       bin_dirs=()
       sandbox=true
+      no_tempdir_cleanup=false
 
       while (( $# > 0 )); do
         case "$1" in
@@ -73,6 +74,10 @@ let
             ;;
           --no-sandbox)
             sandbox=false
+            shift
+            ;;
+          --no-tempdir-cleanup)
+            no_tempdir_cleanup=true
             shift
             ;;
           --)
@@ -133,8 +138,17 @@ let
       }
       SANDCASTLE_CONFIG
 
-            exec sandcastle --shell bash --config "$config" bats "$@"
+            sandcastle_args=()
+            if $no_tempdir_cleanup; then
+              sandcastle_args+=(--no-tempdir-cleanup)
+              set -- --no-tempdir-cleanup "$@"
+            fi
+
+            exec sandcastle "''${sandcastle_args[@]}" --shell bash --config "$config" -- bats "$@"
       else
+        if $no_tempdir_cleanup; then
+          set -- --no-tempdir-cleanup "$@"
+        fi
         exec bats "$@"
       fi
     '';

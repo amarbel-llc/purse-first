@@ -34,11 +34,15 @@ function getDefaultConfig(): SandboxRuntimeConfig {
   }
 }
 
+function shellQuote(s: string): string {
+  return "'" + s.replace(/'/g, "'\\''") + "'"
+}
+
 async function main(): Promise<void> {
   const program = new Command()
 
   program
-    .name('srt')
+    .name('sandcastle')
     .description(
       'Run commands in a sandbox with network and filesystem restrictions',
     )
@@ -49,13 +53,15 @@ async function main(): Promise<void> {
     .argument('[command...]', 'command to run in the sandbox')
     .option('-d, --debug', 'enable debug logging')
     .option(
-      '-s, --settings <path>',
+      '-s, --config <path>',
       'path to config file (default: ~/.srt-settings.json)',
     )
+    .option('--shell <shell>', 'shell to execute the command with')
     .option(
-      '-c <command>',
-      'run command string directly (like sh -c), no escaping applied',
+      '--tmpdir <path>',
+      'override the temporary directory used inside the sandbox',
     )
+    .option('--no-tempdir-cleanup', 'do not remove the temporary directory on exit')
     .option(
       '--control-fd <fd>',
       'read config updates from file descriptor (JSON lines protocol)',
@@ -67,8 +73,10 @@ async function main(): Promise<void> {
         commandArgs: string[],
         options: {
           debug?: boolean
-          settings?: string
-          c?: string
+          config?: string
+          shell?: string
+          tmpdir?: string
+          tempdirCleanup?: boolean
           controlFd?: number
         },
       ) => {
@@ -79,7 +87,7 @@ async function main(): Promise<void> {
           }
 
           // Load config from file
-          const configPath = options.settings || getDefaultConfigPath()
+          const configPath = options.config || getDefaultConfigPath()
           let runtimeConfig = loadConfig(configPath)
 
           if (!runtimeConfig) {
@@ -88,6 +96,36 @@ async function main(): Promise<void> {
             )
             runtimeConfig = getDefaultConfig()
           }
+
+          // Set up tmpdir lifecycle (before initialize — it may use tmpdir)
+          let sandboxTmpdir: string
+          let cleanupTmpdir = false
+
+          if (options.tmpdir) {
+            sandboxTmpdir = options.tmpdir
+            fs.mkdirSync(sandboxTmpdir, { recursive: true })
+          } else {
+            sandboxTmpdir = fs.mkdtempSync(
+              path.join(os.tmpdir(), 'sandcastle-'),
+            )
+            cleanupTmpdir = true
+          }
+
+          if (options.tempdirCleanup === false) {
+            cleanupTmpdir = false
+          }
+
+          SandboxManager.setTmpdir(sandboxTmpdir)
+
+          process.on('exit', () => {
+            if (cleanupTmpdir && sandboxTmpdir) {
+              try {
+                fs.rmSync(sandboxTmpdir, { recursive: true, force: true })
+              } catch {
+                // Best-effort cleanup
+              }
+            }
+          })
 
           // Initialize sandbox with config
           logForDebugging('Initializing sandbox...')
@@ -139,19 +177,19 @@ async function main(): Promise<void> {
             controlReader?.close()
           })
 
-          // Determine command string based on mode
+          // Build command string
           let command: string
-          if (options.c) {
-            // -c mode: use command string directly, no escaping
-            command = options.c
-            logForDebugging(`Command string mode (-c): ${command}`)
-          } else if (commandArgs.length > 0) {
-            // Default mode: simple join
-            command = commandArgs.join(' ')
-            logForDebugging(`Original command: ${command}`)
+          if (commandArgs.length > 0) {
+            if (options.shell) {
+              const quoted = commandArgs.map(shellQuote).join(' ')
+              command = `${options.shell} -c ${shellQuote(quoted)}`
+            } else {
+              command = commandArgs.map(shellQuote).join(' ')
+            }
+            logForDebugging(`Command: ${command}`)
           } else {
             console.error(
-              'Error: No command specified. Use -c <command> or provide command arguments.',
+              'Error: No command specified. Provide command arguments.',
             )
             process.exit(1)
           }

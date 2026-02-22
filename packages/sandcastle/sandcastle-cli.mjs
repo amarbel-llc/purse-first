@@ -47,6 +47,7 @@ async function main() {
     )
     .option('--shell <shell>', 'shell to execute the command with')
     .option('--tmpdir <path>', 'override the temporary directory used inside the sandbox')
+    .option('--no-tempdir-cleanup', 'do not remove the temporary directory on exit')
     .option(
       '--control-fd <fd>',
       'read config updates from file descriptor (JSON lines protocol)',
@@ -78,6 +79,10 @@ async function main() {
         } else {
           sandboxTmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'sandcastle-'))
           cleanupTmpdir = true
+        }
+
+        if (options.tempdirCleanup === false) {
+          cleanupTmpdir = false
         }
 
         SandboxManager.setTmpdir(sandboxTmpdir)
