@@ -268,28 +268,43 @@
           localPkgs = buildPackages system;
         in
         {
-          packages = (marketplaceOutputs.packages.${system} or { }) // {
-            grit = localPkgs.gritPkg;
-            get-hubbed = localPkgs.get-hubbed-wrapped;
-            lux = localPkgs.luxPkg;
-            chix = localPkgs.chixPkg;
-            robin = localPkgs.batmanPkgs.robin;
-            batman = localPkgs.batmanPkgs.default;
-            tap-dancer = localPkgs.tapDancerPkgs.default;
-            sandcastle = localPkgs.sandcastlePkg;
-            and-so-can-you-repo = localPkgs.andSoCanYouRepoPkg;
-            potato = localPkgs.potatoPkg;
-            spinclass = localPkgs.spinclassPkg;
-            mcp-all = pkgs.symlinkJoin {
-              name = "mcp-all";
-              paths = [
-                localPkgs.gritPkg
-                localPkgs.get-hubbed-wrapped
-                localPkgs.luxPkg
-                localPkgs.chixPkg
+          packages =
+            let
+              marketplacePkgs = marketplaceOutputs.packages.${system} or { };
+              nonPluginPkgs = [
+                localPkgs.sandcastlePkg
+                localPkgs.andSoCanYouRepoPkg
+                localPkgs.potatoPkg
+                localPkgs.spinclassPkg
               ];
+            in
+            marketplacePkgs
+            // {
+              default = pkgs.symlinkJoin {
+                name = "purse-first-all";
+                paths = [ marketplacePkgs.default ] ++ nonPluginPkgs;
+              };
+              grit = localPkgs.gritPkg;
+              get-hubbed = localPkgs.get-hubbed-wrapped;
+              lux = localPkgs.luxPkg;
+              chix = localPkgs.chixPkg;
+              robin = localPkgs.batmanPkgs.robin;
+              batman = localPkgs.batmanPkgs.default;
+              tap-dancer = localPkgs.tapDancerPkgs.default;
+              sandcastle = localPkgs.sandcastlePkg;
+              and-so-can-you-repo = localPkgs.andSoCanYouRepoPkg;
+              potato = localPkgs.potatoPkg;
+              spinclass = localPkgs.spinclassPkg;
+              mcp-all = pkgs.symlinkJoin {
+                name = "mcp-all";
+                paths = [
+                  localPkgs.gritPkg
+                  localPkgs.get-hubbed-wrapped
+                  localPkgs.luxPkg
+                  localPkgs.chixPkg
+                ];
+              };
             };
-          };
           devShells.default = marketplaceOutputs.devShells.${system}.default;
         }
       ))
