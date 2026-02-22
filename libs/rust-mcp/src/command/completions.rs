@@ -70,8 +70,30 @@ impl App {
         fs::write(bash_dir.join(&self.name), b)
     }
 
-    fn generate_zsh_completion(&self, _dir: &str) -> io::Result<()> {
-        Ok(()) // placeholder — implemented in Task 6
+    fn generate_zsh_completion(&self, dir: &str) -> io::Result<()> {
+        let zsh_dir = Path::new(dir).join("share/zsh/site-functions");
+        fs::create_dir_all(&zsh_dir)?;
+
+        let cmds = self.visible_commands();
+
+        let mut b = String::new();
+        writeln!(b, "#compdef {}", self.name).unwrap();
+        writeln!(b).unwrap();
+        writeln!(b, "_{}() {{", self.name).unwrap();
+        writeln!(b, "    local -a commands").unwrap();
+        writeln!(b, "    commands=(").unwrap();
+        for cmd in &cmds {
+            let desc = cmd.description.short.replace('\'', "'\\''");
+            writeln!(b, "        '{}:{}'", cmd.name, desc).unwrap();
+        }
+        writeln!(b, "    )").unwrap();
+        writeln!(b).unwrap();
+        writeln!(b, "    _describe 'command' commands").unwrap();
+        writeln!(b, "}}").unwrap();
+        writeln!(b).unwrap();
+        writeln!(b, "_{}", self.name).unwrap();
+
+        fs::write(zsh_dir.join(format!("_{}", self.name)), b)
     }
 
     fn generate_fish_completion(&self, _dir: &str) -> io::Result<()> {
@@ -166,5 +188,27 @@ mod tests {
 
         assert!(content.contains("-v"), "missing short flag -v");
         assert!(content.contains("--verbose"), "missing long flag --verbose");
+    }
+
+    #[test]
+    fn zsh_completion_structure() {
+        let app = test_app();
+        let dir = tempfile::tempdir().unwrap();
+        app.generate_completions(dir.path().to_str().unwrap())
+            .unwrap();
+
+        let path = dir.path().join("share/zsh/site-functions/_grit");
+        let content = std::fs::read_to_string(&path).unwrap();
+
+        assert!(content.contains("#compdef grit"), "missing #compdef header");
+        assert!(content.contains("status"), "missing status command");
+        assert!(
+            content.contains("Show status"),
+            "missing description"
+        );
+        assert!(
+            !content.contains("hidden"),
+            "should not contain hidden commands"
+        );
     }
 }
