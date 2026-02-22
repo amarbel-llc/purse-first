@@ -72,6 +72,9 @@ pub mod prompts;
 #[cfg(feature = "sampling")]
 pub mod sampling;
 
+#[cfg(feature = "completions")]
+pub mod completions;
+
 #[cfg(feature = "command-executor")]
 pub mod executor;
 
@@ -104,6 +107,9 @@ pub use prompts::{PromptMessageV1, PromptV1};
 pub use sampling::{
     CreateMessageRequest, CreateMessageResult, ModelPreferences, SamplingError, SamplingHandler,
 };
+
+#[cfg(feature = "completions")]
+pub use completions::{CompletionError, CompletionProvider, CompletionRegistry};
 
 #[cfg(feature = "command-executor")]
 pub use executor::{CommandExecutor, CommandOutput, ExecuteArgs, ExecutorError, TokioExecutor};
