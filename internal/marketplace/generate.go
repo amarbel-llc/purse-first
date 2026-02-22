@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/amarbel-llc/purse-first/purse"
@@ -159,7 +160,7 @@ func Generate(config Config, discovered []DiscoveredPlugin, opts ...GenerateOpti
 		var source any
 		switch {
 		case opt.PluginsPrefix != "":
-			source = "./" + opt.PluginsPrefix + "/" + dp.Name
+			source = "./" + path.Join(opt.PluginsPrefix, dp.Name)
 		case meta.Repo != "":
 			source = GitHubSource{Source: "github", Repo: meta.Repo}
 		case config.Repo != "":
