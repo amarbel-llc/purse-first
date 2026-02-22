@@ -32,12 +32,8 @@ function marketplace_has_required_fields { # @test
   assert_success
 }
 
-function all_plugins_have_github_source { # @test
-  run jq -e '[.plugins[] | .source.source] | all(. == "github")' "$marketplace_json"
-  assert_success
-  assert_output "true"
-
-  run jq -e '[.plugins[] | .source.repo] | all(. != null and . != "")' "$marketplace_json"
+function all_plugins_have_directory_source { # @test
+  run jq -e '[.plugins[] | .source] | all(type == "string" and startswith("./"))' "$marketplace_json"
   assert_success
   assert_output "true"
 }
