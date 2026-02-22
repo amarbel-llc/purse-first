@@ -224,7 +224,7 @@ mod tests {
             completion: CompletionValues {
                 values: vec!["foo".to_string(), "foobar".to_string()],
                 total: Some(10),
-                has_more: true,
+                has_more: Some(true),
             },
         };
 
@@ -237,7 +237,7 @@ mod tests {
         let decoded: CompletionResult = serde_json::from_str(&json).unwrap();
         assert_eq!(decoded.completion.values.len(), 2);
         assert_eq!(decoded.completion.total, Some(10));
-        assert!(decoded.completion.has_more);
+        assert_eq!(decoded.completion.has_more, Some(true));
     }
 
     #[test]
@@ -248,12 +248,12 @@ mod tests {
             completion: CompletionValues {
                 values: vec!["only".to_string()],
                 total: None,
-                has_more: false,
+                has_more: None,
             },
         };
 
         let json = serde_json::to_string(&result).unwrap();
         assert!(!json.contains("total"));
-        assert!(json.contains("\"hasMore\":false"));
+        assert!(!json.contains("hasMore"));
     }
 }

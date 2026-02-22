@@ -510,7 +510,7 @@ mod tests {
                     completion: CompletionValues {
                         values: vec![format!("completed-{}", params.argument.value)],
                         total: None,
-                        has_more: false,
+                        has_more: None,
                     },
                 })
             }

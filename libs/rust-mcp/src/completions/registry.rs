@@ -31,7 +31,7 @@ impl CompletionRegistry {
                 completion: CompletionValues {
                     values: vec![],
                     total: None,
-                    has_more: false,
+                    has_more: None,
                 },
             }),
         }
@@ -70,7 +70,7 @@ mod tests {
                 completion: CompletionValues {
                     values,
                     total: None,
-                    has_more: false,
+                    has_more: None,
                 },
             })
         }

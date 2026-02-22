@@ -36,6 +36,6 @@ pub struct CompletionValues {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub total: Option<usize>,
 
-    #[serde(rename = "hasMore")]
-    pub has_more: bool,
+    #[serde(rename = "hasMore", skip_serializing_if = "Option::is_none")]
+    pub has_more: Option<bool>,
 }
