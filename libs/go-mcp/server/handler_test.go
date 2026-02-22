@@ -112,6 +112,51 @@ func TestVersionNegotiationV1WithLoggingProvider(t *testing.T) {
 	}
 }
 
+func TestVersionNegotiationV1WithToolRegistryV1(t *testing.T) {
+	registry := NewToolRegistryV1()
+	registry.Register(protocol.ToolV1{
+		Name:        "greet",
+		Description: "Greeting tool",
+		InputSchema: json.RawMessage(`{"type":"object"}`),
+	}, func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResultV1, error) {
+		return &protocol.ToolCallResultV1{
+			Content: []protocol.ContentBlockV1{{Type: "text", Text: "hello"}},
+		}, nil
+	})
+
+	s := &Server{
+		opts: Options{
+			ServerName:    "test",
+			ServerVersion: "1.0",
+			Instructions:  "Test server instructions",
+			Tools:         registry,
+		},
+	}
+	s.handler = NewHandler(s)
+
+	// Client requests V1 and server has a V1 tool provider.
+	initMsg := makeInitialize(t, protocol.ProtocolVersionV1)
+	resp, err := s.handler.Handle(context.Background(), initMsg)
+	if err != nil {
+		t.Fatalf("Handle: %v", err)
+	}
+
+	var result protocol.InitializeResultV1
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		t.Fatalf("unmarshal V1 result: %v", err)
+	}
+
+	if result.ProtocolVersion != protocol.ProtocolVersionV1 {
+		t.Errorf("negotiated version = %q, want V1", result.ProtocolVersion)
+	}
+	if result.Instructions != "Test server instructions" {
+		t.Errorf("instructions = %q, want %q", result.Instructions, "Test server instructions")
+	}
+	if result.Capabilities.Tools == nil {
+		t.Error("tools capability should be present")
+	}
+}
+
 func TestPingHandler(t *testing.T) {
 	s := &Server{
 		opts: Options{ServerName: "test"},
