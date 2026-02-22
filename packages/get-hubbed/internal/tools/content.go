@@ -7,214 +7,111 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/amarbel-llc/go-lib-mcp/protocol"
-	"github.com/amarbel-llc/go-lib-mcp/server"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
-func registerContentTools(r *server.ToolRegistry) {
-	r.Register(
-		"content_tree",
-		"List directory contents of a repository at a given path and ref",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"ref": {
-					"type": "string",
-					"description": "Git ref (branch, tag, or SHA). Defaults to the repo's default branch"
-				},
-				"path": {
-					"type": "string",
-					"description": "Directory path within the repo (e.g. 'src/lib'). Defaults to repo root"
-				},
-				"recursive": {
-					"type": "boolean",
-					"description": "List tree recursively (all nested files/dirs)"
-				},
-				"limit": {
-					"type": "integer",
-					"description": "Maximum number of entries to return"
-				},
-				"offset": {
-					"type": "integer",
-					"description": "Number of entries to skip for pagination"
-				}
-			},
-			"required": ["repo"]
-		}`),
-		handleContentTree,
-	)
+func registerContentCommands(app *command.App) {
+	app.AddCommand(&command.Command{
+		Name:        "content_tree",
+		Description: command.Description{Short: "List directory contents of a repository at a given path and ref"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "ref", Type: command.String, Description: "Git ref (branch, tag, or SHA). Defaults to the repo's default branch"},
+			{Name: "path", Type: command.String, Description: "Directory path within the repo (e.g. 'src/lib'). Defaults to repo root"},
+			{Name: "recursive", Type: command.Bool, Description: "List tree recursively (all nested files/dirs)"},
+			{Name: "limit", Type: command.Int, Description: "Maximum number of entries to return"},
+			{Name: "offset", Type: command.Int, Description: "Number of entries to skip for pagination"},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh api"}, UseWhen: "listing repository directory contents"},
+		},
+		Run: handleContentTree,
+	})
 
-	r.Register(
-		"content_read",
-		"Read file contents from a repository at a given path and ref. Limited to files under 1 MB by the GitHub API",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"path": {
-					"type": "string",
-					"description": "File path within the repo (e.g. 'src/main.go')"
-				},
-				"ref": {
-					"type": "string",
-					"description": "Git ref (branch, tag, or SHA). Defaults to the repo's default branch"
-				},
-				"line_offset": {
-					"type": "integer",
-					"description": "Start reading from this line number (1-based). Defaults to 1"
-				},
-				"line_limit": {
-					"type": "integer",
-					"description": "Maximum number of lines to return. Defaults to all lines"
-				}
-			},
-			"required": ["repo", "path"]
-		}`),
-		handleContentRead,
-	)
+	app.AddCommand(&command.Command{
+		Name:        "content_read",
+		Description: command.Description{Short: "Read file contents from a repository at a given path and ref. Limited to files under 1 MB by the GitHub API"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "path", Type: command.String, Description: "File path within the repo (e.g. 'src/main.go')", Required: true},
+			{Name: "ref", Type: command.String, Description: "Git ref (branch, tag, or SHA). Defaults to the repo's default branch"},
+			{Name: "line_offset", Type: command.Int, Description: "Start reading from this line number (1-based). Defaults to 1"},
+			{Name: "line_limit", Type: command.Int, Description: "Maximum number of lines to return. Defaults to all lines"},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh api"}, UseWhen: "reading file contents from a repository"},
+		},
+		Run: handleContentRead,
+	})
 
-	r.Register(
-		"content_blame",
-		"Show line-by-line authorship of a file in a repository",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"path": {
-					"type": "string",
-					"description": "File path within the repo"
-				},
-				"ref": {
-					"type": "string",
-					"description": "Git ref (branch, tag, or SHA). Defaults to HEAD"
-				},
-				"start_line": {
-					"type": "integer",
-					"description": "Start line of the range to blame (1-based)"
-				},
-				"end_line": {
-					"type": "integer",
-					"description": "End line of the range to blame (1-based, inclusive)"
-				}
-			},
-			"required": ["repo", "path"]
-		}`),
-		handleContentBlame,
-	)
+	app.AddCommand(&command.Command{
+		Name:        "content_blame",
+		Description: command.Description{Short: "Show line-by-line authorship of a file in a repository"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "path", Type: command.String, Description: "File path within the repo", Required: true},
+			{Name: "ref", Type: command.String, Description: "Git ref (branch, tag, or SHA). Defaults to HEAD"},
+			{Name: "start_line", Type: command.Int, Description: "Start line of the range to blame (1-based)"},
+			{Name: "end_line", Type: command.Int, Description: "End line of the range to blame (1-based, inclusive)"},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh api graphql"}, UseWhen: "viewing file blame information"},
+		},
+		Run: handleContentBlame,
+	})
 
-	r.Register(
-		"content_commits",
-		"List commits for a specific file or directory path",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"path": {
-					"type": "string",
-					"description": "File or directory path to get commit history for"
-				},
-				"ref": {
-					"type": "string",
-					"description": "Branch or tag name to list commits from. Defaults to the repo's default branch"
-				},
-				"per_page": {
-					"type": "integer",
-					"description": "Number of commits per page (max 100, default 30)"
-				},
-				"page": {
-					"type": "integer",
-					"description": "Page number for pagination (default 1)"
-				}
-			},
-			"required": ["repo", "path"]
-		}`),
-		handleContentCommits,
-	)
+	app.AddCommand(&command.Command{
+		Name:        "content_commits",
+		Description: command.Description{Short: "List commits for a specific file or directory path"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "path", Type: command.String, Description: "File or directory path to get commit history for", Required: true},
+			{Name: "ref", Type: command.String, Description: "Branch or tag name to list commits from. Defaults to the repo's default branch"},
+			{Name: "per_page", Type: command.Int, Description: "Number of commits per page (max 100, default 30)"},
+			{Name: "page", Type: command.Int, Description: "Page number for pagination (default 1)"},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh api"}, UseWhen: "listing commits for a file or directory"},
+		},
+		Run: handleContentCommits,
+	})
 
-	r.Register(
-		"content_compare",
-		"Compare two refs (branches, tags, or commits) showing commits and file changes",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"base": {
-					"type": "string",
-					"description": "Base ref (branch, tag, or SHA)"
-				},
-				"head": {
-					"type": "string",
-					"description": "Head ref (branch, tag, or SHA)"
-				},
-				"per_page": {
-					"type": "integer",
-					"description": "Number of file entries per page (max 100, default 30)"
-				},
-				"page": {
-					"type": "integer",
-					"description": "Page number for pagination (default 1)"
-				}
-			},
-			"required": ["repo", "base", "head"]
-		}`),
-		handleContentCompare,
-	)
+	app.AddCommand(&command.Command{
+		Name:        "content_compare",
+		Description: command.Description{Short: "Compare two refs (branches, tags, or commits) showing commits and file changes"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "base", Type: command.String, Description: "Base ref (branch, tag, or SHA)", Required: true},
+			{Name: "head", Type: command.String, Description: "Head ref (branch, tag, or SHA)", Required: true},
+			{Name: "per_page", Type: command.Int, Description: "Number of file entries per page (max 100, default 30)"},
+			{Name: "page", Type: command.Int, Description: "Page number for pagination (default 1)"},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh api"}, UseWhen: "comparing two refs in a repository"},
+		},
+		Run: handleContentCompare,
+	})
 
-	r.Register(
-		"content_search",
-		"Search for code within a repository",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"query": {
-					"type": "string",
-					"description": "Search query (code to search for)"
-				},
-				"path": {
-					"type": "string",
-					"description": "Restrict search to a file path or directory prefix"
-				},
-				"extension": {
-					"type": "string",
-					"description": "Restrict search to a file extension (e.g. 'go', 'py')"
-				},
-				"per_page": {
-					"type": "integer",
-					"description": "Number of results per page (max 100, default 30)"
-				},
-				"page": {
-					"type": "integer",
-					"description": "Page number for pagination (default 1)"
-				}
-			},
-			"required": ["repo", "query"]
-		}`),
-		handleContentSearch,
-	)
+	app.AddCommand(&command.Command{
+		Name:        "content_search",
+		Description: command.Description{Short: "Search for code within a repository"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "query", Type: command.String, Description: "Search query (code to search for)", Required: true},
+			{Name: "path", Type: command.String, Description: "Restrict search to a file path or directory prefix"},
+			{Name: "extension", Type: command.String, Description: "Restrict search to a file extension (e.g. 'go', 'py')"},
+			{Name: "per_page", Type: command.Int, Description: "Number of results per page (max 100, default 30)"},
+			{Name: "page", Type: command.Int, Description: "Page number for pagination (default 1)"},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh api search/code"}, UseWhen: "searching for code in a repository"},
+		},
+		Run: handleContentSearch,
+	})
 }
 
-func handleContentTree(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleContentTree(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo      string `json:"repo"`
 		Ref       string `json:"ref"`
@@ -225,7 +122,7 @@ func handleContentTree(ctx context.Context, args json.RawMessage) (*protocol.Too
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	ref := params.Ref
@@ -252,17 +149,13 @@ func handleContentTree(ctx context.Context, args json.RawMessage) (*protocol.Too
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh api git/trees: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh api git/trees: %v", err)), nil
 	}
 
 	if params.Offset > 0 || params.Limit > 0 {
 		var entries []json.RawMessage
 		if err := json.Unmarshal([]byte(out), &entries); err != nil {
-			return &protocol.ToolCallResult{
-				Content: []protocol.ContentBlock{
-					protocol.TextContent(out),
-				},
-			}, nil
+			return command.TextResult(out), nil
 		}
 
 		total := len(entries)
@@ -290,26 +183,13 @@ func handleContentTree(ctx context.Context, args json.RawMessage) (*protocol.Too
 			Count:   len(paginated),
 		}
 
-		resultJSON, err := json.MarshalIndent(result, "", "  ")
-		if err != nil {
-			return protocol.ErrorResult(fmt.Sprintf("marshaling paginated result: %v", err)), nil
-		}
-
-		return &protocol.ToolCallResult{
-			Content: []protocol.ContentBlock{
-				protocol.TextContent(string(resultJSON)),
-			},
-		}, nil
+		return command.JSONResult(result), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }
 
-func handleContentRead(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleContentRead(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo       string `json:"repo"`
 		Path       string `json:"path"`
@@ -319,7 +199,7 @@ func handleContentRead(ctx context.Context, args json.RawMessage) (*protocol.Too
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	ghArgs := []string{
@@ -334,17 +214,13 @@ func handleContentRead(ctx context.Context, args json.RawMessage) (*protocol.Too
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh api contents: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh api contents: %v", err)), nil
 	}
 
 	// GitHub API returns an array for directories, detect this before unmarshaling
 	trimmed := strings.TrimSpace(out)
 	if len(trimmed) > 0 && trimmed[0] == '[' {
-		return &protocol.ToolCallResult{
-			Content: []protocol.ContentBlock{
-				protocol.TextContent(fmt.Sprintf("Path '%s' is a directory. Use content_tree to list its contents.", params.Path)),
-			},
-		}, nil
+		return command.TextResult(fmt.Sprintf("Path '%s' is a directory. Use content_tree to list its contents.", params.Path)), nil
 	}
 
 	var contentResp struct {
@@ -358,26 +234,22 @@ func handleContentRead(ctx context.Context, args json.RawMessage) (*protocol.Too
 	}
 
 	if err := json.Unmarshal([]byte(out), &contentResp); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("parsing content response: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("parsing content response: %v", err)), nil
 	}
 
 	if contentResp.Type == "dir" {
-		return &protocol.ToolCallResult{
-			Content: []protocol.ContentBlock{
-				protocol.TextContent(fmt.Sprintf("Path '%s' is a directory. Use content_tree to list its contents.", params.Path)),
-			},
-		}, nil
+		return command.TextResult(fmt.Sprintf("Path '%s' is a directory. Use content_tree to list its contents.", params.Path)), nil
 	}
 
 	if contentResp.Encoding != "base64" {
-		return protocol.ErrorResult(fmt.Sprintf("unexpected encoding: %s", contentResp.Encoding)), nil
+		return command.TextErrorResult(fmt.Sprintf("unexpected encoding: %s", contentResp.Encoding)), nil
 	}
 
 	decoded, err := base64.StdEncoding.DecodeString(
 		strings.ReplaceAll(contentResp.Content, "\n", ""),
 	)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("decoding base64 content: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("decoding base64 content: %v", err)), nil
 	}
 
 	text := string(decoded)
@@ -412,14 +284,10 @@ func handleContentRead(ctx context.Context, args json.RawMessage) (*protocol.Too
 		header += fmt.Sprintf("Showing lines %d-%d of %d\n", startLine, endLine, totalLines)
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(header + "\n" + strings.Join(selectedLines, "\n")),
-		},
-	}, nil
+	return command.TextResult(header + "\n" + strings.Join(selectedLines, "\n")), nil
 }
 
-func handleContentBlame(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleContentBlame(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo      string `json:"repo"`
 		Path      string `json:"path"`
@@ -429,7 +297,7 @@ func handleContentBlame(ctx context.Context, args json.RawMessage) (*protocol.To
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	parts := strings.SplitN(params.Repo, "/", 2)
@@ -467,7 +335,7 @@ func handleContentBlame(ctx context.Context, args json.RawMessage) (*protocol.To
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh api graphql blame: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh api graphql blame: %v", err)), nil
 	}
 
 	if params.StartLine > 0 || params.EndLine > 0 {
@@ -484,11 +352,7 @@ func handleContentBlame(ctx context.Context, args json.RawMessage) (*protocol.To
 		}
 
 		if err := json.Unmarshal([]byte(out), &result); err != nil {
-			return &protocol.ToolCallResult{
-				Content: []protocol.ContentBlock{
-					protocol.TextContent(out),
-				},
-			}, nil
+			return command.TextResult(out), nil
 		}
 
 		var filtered []json.RawMessage
@@ -519,24 +383,16 @@ func handleContentBlame(ctx context.Context, args json.RawMessage) (*protocol.To
 
 		filteredJSON, err := json.MarshalIndent(filtered, "", "  ")
 		if err != nil {
-			return protocol.ErrorResult(fmt.Sprintf("marshaling filtered blame: %v", err)), nil
+			return command.TextErrorResult(fmt.Sprintf("marshaling filtered blame: %v", err)), nil
 		}
 
-		return &protocol.ToolCallResult{
-			Content: []protocol.ContentBlock{
-				protocol.TextContent(string(filteredJSON)),
-			},
-		}, nil
+		return command.TextResult(string(filteredJSON)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }
 
-func handleContentCommits(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleContentCommits(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo    string `json:"repo"`
 		Path    string `json:"path"`
@@ -546,7 +402,7 @@ func handleContentCommits(ctx context.Context, args json.RawMessage) (*protocol.
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	endpoint := fmt.Sprintf("repos/%s/commits", params.Repo)
@@ -571,17 +427,13 @@ func handleContentCommits(ctx context.Context, args json.RawMessage) (*protocol.
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh api commits: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh api commits: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }
 
-func handleContentCompare(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleContentCompare(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo    string `json:"repo"`
 		Base    string `json:"base"`
@@ -591,7 +443,7 @@ func handleContentCompare(ctx context.Context, args json.RawMessage) (*protocol.
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	endpoint := fmt.Sprintf("repos/%s/compare/%s...%s", params.Repo, params.Base, params.Head)
@@ -612,17 +464,13 @@ func handleContentCompare(ctx context.Context, args json.RawMessage) (*protocol.
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh api compare: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh api compare: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }
 
-func handleContentSearch(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleContentSearch(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo      string `json:"repo"`
 		Query     string `json:"query"`
@@ -633,7 +481,7 @@ func handleContentSearch(ctx context.Context, args json.RawMessage) (*protocol.T
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	q := fmt.Sprintf("%s repo:%s", params.Query, params.Repo)
@@ -667,12 +515,8 @@ func handleContentSearch(ctx context.Context, args json.RawMessage) (*protocol.T
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh api search/code: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh api search/code: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }

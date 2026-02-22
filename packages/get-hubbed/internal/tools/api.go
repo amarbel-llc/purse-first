@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amarbel-llc/go-lib-mcp/protocol"
-	"github.com/amarbel-llc/go-lib-mcp/server"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 

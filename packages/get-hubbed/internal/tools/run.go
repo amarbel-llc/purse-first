@@ -5,106 +5,60 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amarbel-llc/go-lib-mcp/protocol"
-	"github.com/amarbel-llc/go-lib-mcp/server"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
-func registerRunTools(r *server.ToolRegistry) {
-	r.Register(
-		"run_list",
-		"List recent workflow runs",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"branch": {
-					"type": "string",
-					"description": "Filter runs by branch"
-				},
-				"status": {
-					"type": "string",
-					"description": "Filter runs by status: queued, completed, in_progress, requested, waiting, pending, action_required, cancelled, failure, neutral, skipped, stale, startup_failure, success, timed_out"
-				},
-				"workflow": {
-					"type": "string",
-					"description": "Filter runs by workflow name or filename"
-				},
-				"event": {
-					"type": "string",
-					"description": "Filter runs by triggering event (e.g. push, pull_request)"
-				},
-				"commit": {
-					"type": "string",
-					"description": "Filter runs by commit SHA"
-				},
-				"user": {
-					"type": "string",
-					"description": "Filter runs by user who triggered the run"
-				},
-				"limit": {
-					"type": "integer",
-					"description": "Maximum number of runs to fetch (default 20)"
-				}
-			},
-			"required": ["repo"]
-		}`),
-		handleRunList,
-	)
+func registerRunCommands(app *command.App) {
+	app.AddCommand(&command.Command{
+		Name:        "run_list",
+		Description: command.Description{Short: "List recent workflow runs"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "branch", Type: command.String, Description: "Filter runs by branch"},
+			{Name: "status", Type: command.String, Description: "Filter runs by status: queued, completed, in_progress, requested, waiting, pending, action_required, cancelled, failure, neutral, skipped, stale, startup_failure, success, timed_out"},
+			{Name: "workflow", Type: command.String, Description: "Filter runs by workflow name or filename"},
+			{Name: "event", Type: command.String, Description: "Filter runs by triggering event (e.g. push, pull_request)"},
+			{Name: "commit", Type: command.String, Description: "Filter runs by commit SHA"},
+			{Name: "user", Type: command.String, Description: "Filter runs by user who triggered the run"},
+			{Name: "limit", Type: command.Int, Description: "Maximum number of runs to fetch (default 20)"},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh run list"}, UseWhen: "listing workflow runs"},
+		},
+		Run: handleRunList,
+	})
 
-	r.Register(
-		"run_view",
-		"View a workflow run with jobs and steps",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"run_id": {
-					"type": "integer",
-					"description": "Workflow run ID"
-				},
-				"attempt": {
-					"type": "integer",
-					"description": "The attempt number of the workflow run"
-				}
-			},
-			"required": ["repo", "run_id"]
-		}`),
-		handleRunView,
-	)
+	app.AddCommand(&command.Command{
+		Name:        "run_view",
+		Description: command.Description{Short: "View a workflow run with jobs and steps"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "run_id", Type: command.Int, Description: "Workflow run ID", Required: true},
+			{Name: "attempt", Type: command.Int, Description: "The attempt number of the workflow run"},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh run view"}, UseWhen: "viewing workflow run details"},
+		},
+		Run: handleRunView,
+	})
 
-	r.Register(
-		"run_log",
-		"Get logs for failed steps in a workflow run or specific job",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"run_id": {
-					"type": "integer",
-					"description": "Workflow run ID"
-				},
-				"job_id": {
-					"type": "integer",
-					"description": "Specific job ID to get logs for (if omitted, shows all failed step logs)"
-				}
-			},
-			"required": ["repo", "run_id"]
-		}`),
-		handleRunLog,
-	)
+	app.AddCommand(&command.Command{
+		Name:        "run_log",
+		Description: command.Description{Short: "Get logs for failed steps in a workflow run or specific job"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "run_id", Type: command.Int, Description: "Workflow run ID", Required: true},
+			{Name: "job_id", Type: command.Int, Description: "Specific job ID to get logs for (if omitted, shows all failed step logs)"},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh run view"}, UseWhen: "viewing workflow run logs"},
+		},
+		Run: handleRunLog,
+	})
 }
 
-func handleRunList(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleRunList(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo     string `json:"repo"`
 		Branch   string `json:"branch"`
@@ -117,7 +71,7 @@ func handleRunList(ctx context.Context, args json.RawMessage) (*protocol.ToolCal
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	ghArgs := []string{
@@ -156,17 +110,13 @@ func handleRunList(ctx context.Context, args json.RawMessage) (*protocol.ToolCal
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh run list: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh run list: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }
 
-func handleRunView(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleRunView(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo    string `json:"repo"`
 		RunID   int64  `json:"run_id"`
@@ -174,7 +124,7 @@ func handleRunView(ctx context.Context, args json.RawMessage) (*protocol.ToolCal
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	ghArgs := []string{
@@ -189,17 +139,13 @@ func handleRunView(ctx context.Context, args json.RawMessage) (*protocol.ToolCal
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh run view: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh run view: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }
 
-func handleRunLog(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleRunLog(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo  string `json:"repo"`
 		RunID int64  `json:"run_id"`
@@ -207,7 +153,7 @@ func handleRunLog(ctx context.Context, args json.RawMessage) (*protocol.ToolCall
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	ghArgs := []string{
@@ -222,20 +168,12 @@ func handleRunLog(ctx context.Context, args json.RawMessage) (*protocol.ToolCall
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh run view log: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh run view log: %v", err)), nil
 	}
 
 	if out == "" {
-		return &protocol.ToolCallResult{
-			Content: []protocol.ContentBlock{
-				protocol.TextContent("No failed step logs found for this run."),
-			},
-		}, nil
+		return command.TextResult("No failed step logs found for this run."), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }

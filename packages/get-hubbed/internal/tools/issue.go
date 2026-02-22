@@ -5,93 +5,56 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amarbel-llc/go-lib-mcp/protocol"
-	"github.com/amarbel-llc/go-lib-mcp/server"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
-func registerIssueTools(r *server.ToolRegistry) {
-	r.Register(
-		"issue_list",
-		"List issues in a repository",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"state": {
-					"type": "string",
-					"description": "Filter by state: open, closed, all (default open)",
-					"enum": ["open", "closed", "all"]
-				},
-				"limit": {
-					"type": "integer",
-					"description": "Maximum number of issues to list (default 30)"
-				},
-				"labels": {
-					"type": "array",
-					"items": {"type": "string"},
-					"description": "Filter by labels"
-				}
-			},
-			"required": ["repo"]
-		}`),
-		handleIssueList,
-	)
+func registerIssueCommands(app *command.App) {
+	app.AddCommand(&command.Command{
+		Name:        "issue_list",
+		Description: command.Description{Short: "List issues in a repository"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "state", Type: command.String, Description: "Filter by state: open, closed, all (default open)"},
+			{Name: "limit", Type: command.Int, Description: "Maximum number of issues to list (default 30)"},
+			{Name: "labels", Type: command.Array, Description: "Filter by labels"},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh issue list"}, UseWhen: "listing issues"},
+		},
+		Run: handleIssueList,
+	})
 
-	r.Register(
-		"issue_view",
-		"View issue details",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"number": {
-					"type": "integer",
-					"description": "Issue number"
-				}
-			},
-			"required": ["repo", "number"]
-		}`),
-		handleIssueView,
-	)
+	app.AddCommand(&command.Command{
+		Name:        "issue_view",
+		Description: command.Description{Short: "View issue details"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "number", Type: command.Int, Description: "Issue number", Required: true},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh issue view"}, UseWhen: "viewing issue details"},
+		},
+		Run: handleIssueView,
+	})
 
-	r.Register(
-		"issue_create",
-		"Create a new issue",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"title": {
-					"type": "string",
-					"description": "Issue title"
-				},
-				"body": {
-					"type": "string",
-					"description": "Issue body"
-				},
-				"labels": {
-					"type": "array",
-					"items": {"type": "string"},
-					"description": "Labels to add"
-				}
-			},
-			"required": ["repo", "title"]
-		}`),
-		handleIssueCreate,
-	)
+	app.AddCommand(&command.Command{
+		Name:        "issue_create",
+		Description: command.Description{Short: "Create a new issue"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "title", Type: command.String, Description: "Issue title", Required: true},
+			{Name: "body", Type: command.String, Description: "Issue body"},
+			{Name: "labels", Type: command.Array, Description: "Labels to add"},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh issue create"}, UseWhen: "creating issues"},
+		},
+		Run: handleIssueCreate,
+	})
 }
 
-func handleIssueList(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleIssueList(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo   string   `json:"repo"`
 		State  string   `json:"state"`
@@ -100,7 +63,7 @@ func handleIssueList(ctx context.Context, args json.RawMessage) (*protocol.ToolC
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	ghArgs := []string{
@@ -123,24 +86,20 @@ func handleIssueList(ctx context.Context, args json.RawMessage) (*protocol.ToolC
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh issue list: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh issue list: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }
 
-func handleIssueView(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleIssueView(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo   string `json:"repo"`
 		Number int    `json:"number"`
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	out, err := gh.Run(ctx,
@@ -149,17 +108,13 @@ func handleIssueView(ctx context.Context, args json.RawMessage) (*protocol.ToolC
 		"--json", "number,title,state,body,author,labels,assignees,comments,createdAt,updatedAt,url",
 	)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh issue view: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh issue view: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }
 
-func handleIssueCreate(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleIssueCreate(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo   string   `json:"repo"`
 		Title  string   `json:"title"`
@@ -168,7 +123,7 @@ func handleIssueCreate(ctx context.Context, args json.RawMessage) (*protocol.Too
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	ghArgs := []string{
@@ -187,12 +142,8 @@ func handleIssueCreate(ctx context.Context, args json.RawMessage) (*protocol.Too
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh issue create: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh issue create: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }

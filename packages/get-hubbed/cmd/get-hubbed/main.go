@@ -7,23 +7,18 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/amarbel-llc/go-lib-mcp/server"
-	"github.com/amarbel-llc/go-lib-mcp/transport"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
 	"github.com/friedenberg/get-hubbed/internal/tools"
-	"github.com/amarbel-llc/purse-first/purse"
 )
 
 func main() {
-	if len(os.Args) >= 3 && os.Args[1] == "generate-plugin" {
-		p := purse.NewPluginBuilder("get-hubbed").
-			Command("get-hubbed").
-			StdioTransport().
-			Build()
+	app := tools.RegisterAll()
 
-		if err := purse.WritePlugin(os.Args[2], p); err != nil {
+	if len(os.Args) >= 3 && os.Args[1] == "generate-plugin" {
+		if err := app.GenerateAll(os.Args[2]); err != nil {
 			log.Fatalf("generating plugin: %v", err)
 		}
-
 		return
 	}
 
@@ -43,10 +38,14 @@ func main() {
 
 	t := transport.NewStdio(os.Stdin, os.Stdout)
 
+	registry := server.NewToolRegistry()
+	app.RegisterMCPTools(registry)
+	tools.RegisterAPITools(registry)
+
 	srv, err := server.New(t, server.Options{
-		ServerName:    "get-hubbed",
-		ServerVersion: "0.1.0",
-		Tools:         tools.RegisterAll(),
+		ServerName:    app.Name,
+		ServerVersion: app.Version,
+		Tools:         registry,
 	})
 	if err != nil {
 		log.Fatalf("creating server: %v", err)

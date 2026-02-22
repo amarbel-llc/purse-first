@@ -5,56 +5,44 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amarbel-llc/go-lib-mcp/protocol"
-	"github.com/amarbel-llc/go-lib-mcp/server"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
-func registerRepoTools(r *server.ToolRegistry) {
-	r.Register(
-		"repo_view",
-		"View repository details",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				}
-			},
-			"required": ["repo"]
-		}`),
-		handleRepoView,
-	)
+func registerRepoCommands(app *command.App) {
+	app.AddCommand(&command.Command{
+		Name:        "repo_view",
+		Description: command.Description{Short: "View repository details"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh repo view"}, UseWhen: "viewing repository details"},
+		},
+		Run: handleRepoView,
+	})
 
-	r.Register(
-		"repo_list",
-		"List repositories for an owner",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"owner": {
-					"type": "string",
-					"description": "GitHub user or organization"
-				},
-				"limit": {
-					"type": "integer",
-					"description": "Maximum number of repositories to list (default 30)"
-				}
-			},
-			"required": ["owner"]
-		}`),
-		handleRepoList,
-	)
+	app.AddCommand(&command.Command{
+		Name:        "repo_list",
+		Description: command.Description{Short: "List repositories for an owner"},
+		Params: []command.Param{
+			{Name: "owner", Type: command.String, Description: "GitHub user or organization", Required: true},
+			{Name: "limit", Type: command.Int, Description: "Maximum number of repositories to list (default 30)"},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh repo list"}, UseWhen: "listing repositories"},
+		},
+		Run: handleRepoList,
+	})
 }
 
-func handleRepoView(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleRepoView(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo string `json:"repo"`
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	out, err := gh.Run(ctx,
@@ -62,24 +50,20 @@ func handleRepoView(ctx context.Context, args json.RawMessage) (*protocol.ToolCa
 		"--json", "name,owner,description,url,defaultBranchRef,stargazerCount,forkCount,isPrivate,createdAt,updatedAt",
 	)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh repo view: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh repo view: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }
 
-func handleRepoList(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleRepoList(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Owner string `json:"owner"`
 		Limit int    `json:"limit"`
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	ghArgs := []string{
@@ -93,12 +77,8 @@ func handleRepoList(ctx context.Context, args json.RawMessage) (*protocol.ToolCa
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh repo list: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh repo list: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }

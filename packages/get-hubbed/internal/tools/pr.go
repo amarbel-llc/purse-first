@@ -5,59 +5,40 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amarbel-llc/go-lib-mcp/protocol"
-	"github.com/amarbel-llc/go-lib-mcp/server"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
-func registerPRTools(r *server.ToolRegistry) {
-	r.Register(
-		"pr_list",
-		"List pull requests in a repository",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"state": {
-					"type": "string",
-					"description": "Filter by state: open, closed, merged, all (default open)",
-					"enum": ["open", "closed", "merged", "all"]
-				},
-				"limit": {
-					"type": "integer",
-					"description": "Maximum number of pull requests to list (default 30)"
-				}
-			},
-			"required": ["repo"]
-		}`),
-		handlePRList,
-	)
+func registerPRCommands(app *command.App) {
+	app.AddCommand(&command.Command{
+		Name:        "pr_list",
+		Description: command.Description{Short: "List pull requests in a repository"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "state", Type: command.String, Description: "Filter by state: open, closed, merged, all (default open)"},
+			{Name: "limit", Type: command.Int, Description: "Maximum number of pull requests to list (default 30)"},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh pr list"}, UseWhen: "listing pull requests"},
+		},
+		Run: handlePRList,
+	})
 
-	r.Register(
-		"pr_view",
-		"View pull request details",
-		json.RawMessage(`{
-			"type": "object",
-			"properties": {
-				"repo": {
-					"type": "string",
-					"description": "Repository in OWNER/REPO format"
-				},
-				"number": {
-					"type": "integer",
-					"description": "Pull request number"
-				}
-			},
-			"required": ["repo", "number"]
-		}`),
-		handlePRView,
-	)
+	app.AddCommand(&command.Command{
+		Name:        "pr_view",
+		Description: command.Description{Short: "View pull request details"},
+		Params: []command.Param{
+			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
+			{Name: "number", Type: command.Int, Description: "Pull request number", Required: true},
+		},
+		MapsTools: []command.ToolMapping{
+			{Replaces: "Bash", CommandPrefixes: []string{"gh pr view"}, UseWhen: "viewing pull request details"},
+		},
+		Run: handlePRView,
+	})
 }
 
-func handlePRList(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handlePRList(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo  string `json:"repo"`
 		State string `json:"state"`
@@ -65,7 +46,7 @@ func handlePRList(ctx context.Context, args json.RawMessage) (*protocol.ToolCall
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	ghArgs := []string{
@@ -84,24 +65,20 @@ func handlePRList(ctx context.Context, args json.RawMessage) (*protocol.ToolCall
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh pr list: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh pr list: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }
 
-func handlePRView(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handlePRView(ctx context.Context, args json.RawMessage, _ command.Prompter) (*command.Result, error) {
 	var params struct {
 		Repo   string `json:"repo"`
 		Number int    `json:"number"`
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	out, err := gh.Run(ctx,
@@ -110,12 +87,8 @@ func handlePRView(ctx context.Context, args json.RawMessage) (*protocol.ToolCall
 		"--json", "number,title,state,body,author,baseRefName,headRefName,labels,reviewDecision,commits,comments,createdAt,updatedAt,url",
 	)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh pr view: %v", err)), nil
+		return command.TextErrorResult(fmt.Sprintf("gh pr view: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
-		},
-	}, nil
+	return command.TextResult(out), nil
 }
