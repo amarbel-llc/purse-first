@@ -27,6 +27,13 @@ just update-plugins     # Update flake inputs for packages
 | `libs/rust-mcp/` | Rust MCP server library |
 | `purse/` | Go package for building package manifests (plugin.json) |
 | `skills/` | Skill documents (plugin-mcp, context-saving, go-cli-framework) |
+| `packages/grit/` | Git MCP server (Go) |
+| `packages/get-hubbed/` | GitHub MCP server (Go) |
+| `packages/lux/` | LSP multiplexer MCP server (Go) |
+| `packages/chix/` | Nix MCP+Skill server (Rust) |
+| `packages/batman/` | BATS testing skill + libraries (Shell/Nix) |
+| `packages/tap-dancer/` | TAP-14 libraries + skill (Go/Rust/Bash) |
+| `lib/packages/` | Per-package Nix build expressions |
 | `docs/` | Protocol spec and design docs |
 | `zz-tests_bats/` | BATS integration tests |
 | `.claude-plugin/` | Claude Code plugin manifest for bob |
@@ -42,6 +49,10 @@ just update-plugins     # Update flake inputs for packages
   - **MCP + Skill package** — Both (chix)
 - **Marketplace** — aggregated JSON output listing all available packages
 - **bob** — purse-first's own skill package for working with purse-first codebases
+
+## Monorepo Structure
+
+All packages are co-located in this repo under `packages/`. Go modules use a `go.work` workspace for local resolution. Rust packages use path dependencies to `libs/rust-mcp`. The top-level `flake.nix` builds everything from local sources via per-package expressions in `lib/packages/`.
 
 ## Key Conventions
 
