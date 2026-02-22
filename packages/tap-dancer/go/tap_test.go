@@ -314,6 +314,74 @@ func TestPlanAheadPreventsDoublePlan(t *testing.T) {
 	}
 }
 
+func TestWriteDiagnosticsNamedFields(t *testing.T) {
+	var buf bytes.Buffer
+	writeDiagnostics(&buf, &Diagnostics{
+		Message:  "something broke",
+		Severity: "fail",
+		File:     "main.go",
+		Line:     42,
+	})
+	out := buf.String()
+	expected := "  ---\n  file: main.go\n  line: 42\n  message: something broke\n  severity: fail\n  ...\n"
+	if out != expected {
+		t.Errorf("expected:\n%s\ngot:\n%s", expected, out)
+	}
+}
+
+func TestWriteDiagnosticsOmitsZeroValues(t *testing.T) {
+	var buf bytes.Buffer
+	writeDiagnostics(&buf, &Diagnostics{
+		Message: "only message",
+	})
+	out := buf.String()
+	if strings.Contains(out, "severity:") || strings.Contains(out, "file:") || strings.Contains(out, "line:") {
+		t.Errorf("expected zero-value fields omitted, got:\n%s", out)
+	}
+	if !strings.Contains(out, "message: only message") {
+		t.Errorf("expected message field, got:\n%s", out)
+	}
+}
+
+func TestWriteDiagnosticsExtras(t *testing.T) {
+	var buf bytes.Buffer
+	writeDiagnostics(&buf, &Diagnostics{
+		Message: "error",
+		Extras: map[string]any{
+			"exitcode": 1,
+			"context":  "test run",
+		},
+	})
+	out := buf.String()
+	if !strings.Contains(out, "  context: test run\n") {
+		t.Errorf("expected context extra, got:\n%s", out)
+	}
+	if !strings.Contains(out, "  exitcode: 1\n") {
+		t.Errorf("expected exitcode extra, got:\n%s", out)
+	}
+}
+
+func TestWriteDiagnosticsMultilineExtra(t *testing.T) {
+	var buf bytes.Buffer
+	writeDiagnostics(&buf, &Diagnostics{
+		Extras: map[string]any{
+			"output": "line one\nline two",
+		},
+	})
+	out := buf.String()
+	if !strings.Contains(out, "  output: |\n    line one\n    line two\n") {
+		t.Errorf("expected block scalar for multiline extra, got:\n%s", out)
+	}
+}
+
+func TestWriteDiagnosticsNil(t *testing.T) {
+	var buf bytes.Buffer
+	writeDiagnostics(&buf, nil)
+	if buf.Len() != 0 {
+		t.Errorf("expected no output for nil diagnostics, got: %q", buf.String())
+	}
+}
+
 func TestSubtestOutputValidatesWithReader(t *testing.T) {
 	var buf bytes.Buffer
 	tw := NewWriter(&buf)

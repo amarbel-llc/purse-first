@@ -88,6 +88,67 @@ func (tw *Writer) Comment(text string) {
 	fmt.Fprintf(tw.w, "# %s\n", text)
 }
 
+type Diagnostics struct {
+	Message  string
+	Severity string
+	File     string
+	Line     int
+	Extras   map[string]any
+}
+
+func writeDiagnostics(w io.Writer, d *Diagnostics) {
+	if d == nil {
+		return
+	}
+
+	entries := make([]struct{ k, v string }, 0, 8)
+
+	if d.File != "" {
+		entries = append(entries, struct{ k, v string }{"file", d.File})
+	}
+	if d.Line != 0 {
+		entries = append(entries, struct{ k, v string }{"line", fmt.Sprintf("%d", d.Line)})
+	}
+	if d.Message != "" {
+		entries = append(entries, struct{ k, v string }{"message", d.Message})
+	}
+	if d.Severity != "" {
+		entries = append(entries, struct{ k, v string }{"severity", d.Severity})
+	}
+
+	if len(d.Extras) > 0 {
+		keys := make([]string, 0, len(d.Extras))
+		for k := range d.Extras {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			entries = append(entries, struct{ k, v string }{k, fmt.Sprintf("%v", d.Extras[k])})
+		}
+	}
+
+	if len(entries) == 0 {
+		return
+	}
+
+	fmt.Fprintln(w, "  ---")
+	for _, e := range entries {
+		if strings.Contains(e.v, "\n") {
+			fmt.Fprintf(w, "  %s: |\n", e.k)
+			lines := strings.Split(e.v, "\n")
+			for len(lines) > 0 && lines[len(lines)-1] == "" {
+				lines = lines[:len(lines)-1]
+			}
+			for _, line := range lines {
+				fmt.Fprintf(w, "    %s\n", line)
+			}
+		} else {
+			fmt.Fprintf(w, "  %s: %s\n", e.k, e.v)
+		}
+	}
+	fmt.Fprintln(w, "  ...")
+}
+
 type indentWriter struct {
 	w      io.Writer
 	prefix string
