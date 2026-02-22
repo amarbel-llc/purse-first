@@ -18,7 +18,7 @@ goPkgs.buildGoApplication {
   subPackages = [ "cmd/get-hubbed" ];
 
   postInstall = ''
-    $out/bin/get-hubbed generate-plugin $out/share/purse-first
+    $out/bin/get-hubbed generate-plugin $out
   '';
 
   meta = with pkgs.lib; {
