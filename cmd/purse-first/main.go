@@ -97,8 +97,19 @@ func main() {
 				return fmt.Errorf("discovering packages: %w", err)
 			}
 
+			// Compute the relative path from the marketplace root to the
+			// plugins directory. The marketplace root is the parent of
+			// .claude-plugin/ (which contains the output file).
+			outputDir := filepath.Dir(outputPath)
+			marketplaceRoot := filepath.Dir(outputDir)
+			pluginsPrefix, err := filepath.Rel(marketplaceRoot, pluginsDir)
+			if err != nil {
+				return fmt.Errorf("computing plugins prefix: %w", err)
+			}
+
 			m := marketplace.Generate(config, discovered, marketplace.GenerateOptions{
-				StripHooks: genNoHooks,
+				StripHooks:    genNoHooks,
+				PluginsPrefix: pluginsPrefix,
 			})
 
 			if err := marketplace.Write(m, outputPath); err != nil {
