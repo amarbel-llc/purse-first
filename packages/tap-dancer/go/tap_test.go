@@ -575,3 +575,23 @@ func TestSubtestOutputValidatesWithReader(t *testing.T) {
 		t.Fatalf("writer output did not validate as TAP-14:\n%s", buf.String())
 	}
 }
+
+func TestWriteAllOkWithDiagnostics(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.WriteAll(slices.Values([]TestPoint{
+		{Description: "pass with info", Ok: true, Diagnostics: &Diagnostics{
+			Message: "inserted id=42",
+		}},
+	}))
+	out := buf.String()
+	if !strings.Contains(out, "ok 1 - pass with info\n") {
+		t.Errorf("expected ok line, got:\n%s", out)
+	}
+	if !strings.Contains(out, "  ---\n") {
+		t.Errorf("expected YAML block after ok, got:\n%s", out)
+	}
+	if !strings.Contains(out, "  message: inserted id=42\n") {
+		t.Errorf("expected message diagnostic, got:\n%s", out)
+	}
+}
