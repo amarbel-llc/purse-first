@@ -11,6 +11,22 @@ mod run;
 mod search;
 mod store;
 
+// Tool trait implementation modules
+mod build_tool;
+mod cachix_tools;
+mod copy_tool;
+mod derivation_tool;
+mod eval_tool;
+mod flake_tools;
+mod flakehub_tools;
+mod hash_tools;
+mod log_tool;
+mod lsp_tools;
+mod run_tools;
+mod search_tool;
+mod store_tools;
+mod task_tool;
+
 pub use build::nix_build;
 pub use cachix::{cachix_push, cachix_status, cachix_use};
 pub use derivation::nix_derivation_show;
@@ -29,6 +45,28 @@ pub use lsp::{nil_completions, nil_definition, nil_diagnostics, nil_hover};
 pub use run::{nix_develop_run, nix_run, CommandResult, NixDevelopRunResult};
 pub use search::nix_search;
 pub use store::{nix_copy, nix_store_cat, nix_store_gc, nix_store_ls, nix_store_path_info};
+
+// Tool trait implementations
+pub use build_tool::BuildTool;
+pub use cachix_tools::{CachixPushTool, CachixStatusTool, CachixUseTool};
+pub use copy_tool::CopyTool;
+pub use derivation_tool::DerivationShowTool;
+pub use eval_tool::EvalTool;
+pub use flake_tools::{
+    FlakeCheckTool, FlakeInitTool, FlakeLockTool, FlakeMetadataTool, FlakeShowTool,
+    FlakeUpdateTool,
+};
+pub use flakehub_tools::{
+    FhAddTool, FhFetchTool, FhListFlakesTool, FhListReleasesTool, FhListVersionsTool,
+    FhLoginTool, FhResolveTool, FhSearchTool, FhStatusTool,
+};
+pub use hash_tools::{HashFileTool, HashPathTool};
+pub use log_tool::LogTool;
+pub use lsp_tools::{NilCompletionsTool, NilDefinitionTool, NilDiagnosticsTool, NilHoverTool};
+pub use run_tools::{DevelopRunTool, RunTool};
+pub use search_tool::SearchTool;
+pub use store_tools::{StoreCatTool, StoreGcTool, StoreLsTool, StorePathInfoTool};
+pub use task_tool::TaskStatusTool;
 
 use serde::{Deserialize, Serialize};
 
