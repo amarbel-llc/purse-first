@@ -21,6 +21,9 @@ build-chix:
 build-purse-first:
     nix build .#purse-first
 
+build-robin:
+    nix build .#robin
+
 build-gomod2nix:
     nix develop --command gomod2nix
 
@@ -47,6 +50,26 @@ update: update-nix
 
 update-nix:
     nix flake update
+
+# Test individual Go packages
+test-grit:
+    nix develop --command go test ./packages/grit/...
+
+test-get-hubbed:
+    nix develop --command go test ./packages/get-hubbed/...
+
+test-lux:
+    nix develop --command go test ./packages/lux/...
+
+test-tap-dancer-go:
+    nix develop --command go test ./packages/tap-dancer/go/...
+
+# Test Rust packages
+test-chix:
+    cd packages/chix && nix develop ../../ --command cargo test
+
+test-tap-dancer-rust:
+    cd packages/tap-dancer/rust && nix develop ../../../ --command cargo test
 
 # Run tests
 test:
@@ -106,8 +129,8 @@ test-brew:
     nix build .#homebrew-tap
     nix develop --command bats --tap zz-tests_bats/homebrew_tap.bats
 
-# Run all tests (unit + integration + libs + framework)
-test-all: test test-go-mcp test-rust-mcp test-integration test-hooks test-lifecycle test-template
+# Run all tests (unit + integration + libs + framework + packages)
+test-all: test test-go-mcp test-rust-mcp test-grit test-get-hubbed test-lux test-tap-dancer-go test-chix test-tap-dancer-rust test-integration test-hooks test-lifecycle test-template
 
 # Build go-lib-mcp
 build-go-mcp:
