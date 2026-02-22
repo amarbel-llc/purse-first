@@ -27,6 +27,9 @@ use crate::prompts::PromptRegistry;
 #[cfg(feature = "sampling")]
 use crate::sampling::SamplingHandler;
 
+#[cfg(feature = "completions")]
+use crate::completions::CompletionRegistry;
+
 /// Builder for MCP server
 pub struct McpServerBuilder {
     name: String,
@@ -46,6 +49,9 @@ pub struct McpServerBuilder {
 
     #[cfg(feature = "sampling")]
     sampling_handler: Option<Arc<dyn SamplingHandler>>,
+
+    #[cfg(feature = "completions")]
+    completion_registry: CompletionRegistry,
 }
 
 impl McpServerBuilder {
@@ -68,6 +74,9 @@ impl McpServerBuilder {
 
             #[cfg(feature = "sampling")]
             sampling_handler: None,
+
+            #[cfg(feature = "completions")]
+            completion_registry: CompletionRegistry::new(),
         }
     }
 
@@ -131,6 +140,16 @@ impl McpServerBuilder {
         self
     }
 
+    #[cfg(feature = "completions")]
+    pub fn with_completion_provider<P: crate::completions::CompletionProvider + 'static>(
+        mut self,
+        provider: P,
+    ) -> Self {
+        self.completion_registry.register(provider);
+        self.enable_v1 = true;
+        self
+    }
+
     pub fn build(self) -> McpServer {
         let mut capabilities = Capabilities::new();
 
@@ -157,6 +176,12 @@ impl McpServerBuilder {
 
         #[cfg(not(feature = "sampling"))]
         let has_sampling = false;
+
+        #[cfg(feature = "completions")]
+        let has_completions = self.completion_registry.has_provider();
+
+        #[cfg(not(feature = "completions"))]
+        let has_completions = false;
 
         if has_tools {
             #[cfg(feature = "tools")]
@@ -201,6 +226,9 @@ impl McpServerBuilder {
             if has_sampling {
                 caps = caps.with_sampling();
             }
+            if has_completions {
+                caps = caps.with_completions();
+            }
             Some(caps)
         } else {
             None
@@ -227,6 +255,9 @@ impl McpServerBuilder {
 
             #[cfg(feature = "sampling")]
             sampling_handler: self.sampling_handler,
+
+            #[cfg(feature = "completions")]
+            completion_registry: self.completion_registry,
         }
     }
 }

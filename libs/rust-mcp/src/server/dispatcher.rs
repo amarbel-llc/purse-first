@@ -19,6 +19,9 @@ use crate::prompts::PromptRegistry;
 #[cfg(feature = "sampling")]
 use crate::sampling::SamplingHandler;
 
+#[cfg(feature = "completions")]
+use crate::completions::CompletionRegistry;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -45,6 +48,9 @@ pub struct McpServer {
 
     #[cfg(feature = "sampling")]
     pub(crate) sampling_handler: Option<Arc<dyn SamplingHandler>>,
+
+    #[cfg(feature = "completions")]
+    pub(crate) completion_registry: CompletionRegistry,
 }
 
 impl McpServer {
@@ -107,6 +113,9 @@ impl McpServer {
             "prompts/list" => self.handle_prompts_list(ctx).await,
             #[cfg(feature = "prompts")]
             "prompts/get" => self.handle_prompts_get(req.params, ctx).await,
+
+            #[cfg(feature = "completions")]
+            "completion/complete" => self.handle_completion_complete(req.params, ctx).await,
 
             // V1 notifications (no response)
             "notifications/progress"
@@ -340,6 +349,33 @@ impl McpServer {
 
         serde_json::to_value(result).map_err(|e| JsonRpcError::internal_error(e.to_string()))
     }
+
+    #[cfg(feature = "completions")]
+    async fn handle_completion_complete(
+        &self,
+        params: Option<Value>,
+        ctx: &Context,
+    ) -> Result<Value, JsonRpcError> {
+        if !self.completion_registry.has_provider() {
+            return Err(JsonRpcError::method_not_found(
+                "completion/complete".to_string(),
+            ));
+        }
+
+        let params = params.ok_or_else(|| JsonRpcError::invalid_params("Missing params"))?;
+
+        let complete_params: crate::protocol::completions::CompletionCompleteParams =
+            serde_json::from_value(params)
+                .map_err(|e| JsonRpcError::invalid_params(format!("Invalid params: {}", e)))?;
+
+        let result = self
+            .completion_registry
+            .complete(complete_params, ctx)
+            .await
+            .map_err(|e| JsonRpcError::internal_error(e.to_string()))?;
+
+        serde_json::to_value(result).map_err(|e| JsonRpcError::internal_error(e.to_string()))
+    }
 }
 
 // Request/Response parameter structures
@@ -444,4 +480,75 @@ struct PromptGetResult {
 #[derive(Debug, Serialize)]
 struct PromptGetResultV1 {
     messages: Vec<crate::prompts::PromptMessageV1>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::server::McpServerBuilder;
+
+    fn init_v1(_server: &McpServer) -> Context {
+        Context::new("test", "0.1.0", Default::default())
+    }
+
+    #[cfg(feature = "completions")]
+    mod completion_tests {
+        use super::*;
+        use crate::completions::CompletionProvider;
+        use crate::protocol::completions::*;
+
+        struct TestCompleter;
+
+        #[async_trait::async_trait]
+        impl CompletionProvider for TestCompleter {
+            async fn complete(
+                &self,
+                params: CompletionCompleteParams,
+                _ctx: &Context,
+            ) -> Result<CompletionResult, crate::completions::CompletionError> {
+                Ok(CompletionResult {
+                    completion: CompletionValues {
+                        values: vec![format!("completed-{}", params.argument.value)],
+                        total: None,
+                        has_more: false,
+                    },
+                })
+            }
+        }
+
+        #[tokio::test]
+        async fn completion_complete_dispatches() {
+            let server = McpServerBuilder::new("test", "0.1.0")
+                .with_completion_provider(TestCompleter)
+                .build();
+
+            let mut ctx = init_v1(&server);
+            ctx.negotiated_version = PROTOCOL_VERSION_V1.to_string();
+
+            let request = r#"{"jsonrpc":"2.0","id":1,"method":"completion/complete","params":{"ref":{"type":"ref/prompt","name":"p"},"argument":{"name":"a","value":"hello"}}}"#;
+            let response = server.handle_request(request, &mut ctx).await;
+
+            let result = response.get("result").expect("should have result");
+            let values = result["completion"]["values"]
+                .as_array()
+                .expect("should have values");
+            assert_eq!(values[0].as_str().unwrap(), "completed-hello");
+        }
+
+        #[tokio::test]
+        async fn completion_complete_without_provider_returns_error() {
+            let server = McpServerBuilder::new("test", "0.1.0")
+                .instructions("test")
+                .build();
+
+            let mut ctx = init_v1(&server);
+            ctx.negotiated_version = PROTOCOL_VERSION_V1.to_string();
+
+            let request = r#"{"jsonrpc":"2.0","id":1,"method":"completion/complete","params":{"ref":{"type":"ref/prompt","name":"p"},"argument":{"name":"a","value":"x"}}}"#;
+            let response = server.handle_request(request, &mut ctx).await;
+
+            let error = response.get("error");
+            assert!(error.is_some(), "should return method_not_found without completions registered");
+        }
+    }
 }
