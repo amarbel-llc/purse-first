@@ -59,6 +59,7 @@ fn install_claude() -> anyhow::Result<()> {
 
 async fn run_server() -> anyhow::Result<()> {
     let server = McpServerBuilder::new("chix", "0.1.0")
+        .instructions("Nix MCP server providing tools for building, evaluating, and managing Nix flakes, packages, and store paths. Includes FlakeHub and Cachix integration, Nix language diagnostics via nil LSP, and background task management.")
         // Tools
         .with_tool(tools::BuildTool)
         .with_tool(tools::FlakeShowTool)
