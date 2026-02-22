@@ -6,13 +6,21 @@ import (
 	"fmt"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
 func registerPRCommands(app *command.App) {
 	app.AddCommand(&command.Command{
 		Name:        "pr_list",
+		Title:       "List Pull Requests",
 		Description: command.Description{Short: "List pull requests in a repository"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "state", Type: command.String, Description: "Filter by state: open, closed, merged, all (default open)"},
@@ -26,7 +34,14 @@ func registerPRCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "pr_view",
+		Title:       "View Pull Request",
 		Description: command.Description{Short: "View pull request details"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "number", Type: command.Int, Description: "Pull request number", Required: true},

@@ -6,13 +6,21 @@ import (
 	"fmt"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
 func registerRunCommands(app *command.App) {
 	app.AddCommand(&command.Command{
 		Name:        "run_list",
+		Title:       "List Workflow Runs",
 		Description: command.Description{Short: "List recent workflow runs"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "branch", Type: command.String, Description: "Filter runs by branch"},
@@ -31,7 +39,14 @@ func registerRunCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "run_view",
+		Title:       "View Workflow Run",
 		Description: command.Description{Short: "View a workflow run with jobs and steps"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "run_id", Type: command.Int, Description: "Workflow run ID", Required: true},
@@ -45,7 +60,14 @@ func registerRunCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "run_log",
+		Title:       "View Run Logs",
 		Description: command.Description{Short: "Get logs for failed steps in a workflow run or specific job"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "run_id", Type: command.Int, Description: "Workflow run ID", Required: true},

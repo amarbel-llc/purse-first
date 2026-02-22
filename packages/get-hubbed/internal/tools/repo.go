@@ -6,13 +6,21 @@ import (
 	"fmt"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
 func registerRepoCommands(app *command.App) {
 	app.AddCommand(&command.Command{
 		Name:        "repo_view",
+		Title:       "View Repository",
 		Description: command.Description{Short: "View repository details"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 		},
@@ -24,7 +32,14 @@ func registerRepoCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "repo_list",
+		Title:       "List Repositories",
 		Description: command.Description{Short: "List repositories for an owner"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "owner", Type: command.String, Description: "GitHub user or organization", Required: true},
 			{Name: "limit", Type: command.Int, Description: "Maximum number of repositories to list (default 30)"},

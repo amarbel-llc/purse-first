@@ -8,13 +8,21 @@ import (
 	"strings"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
 func registerContentCommands(app *command.App) {
 	app.AddCommand(&command.Command{
 		Name:        "content_tree",
+		Title:       "List Directory Contents",
 		Description: command.Description{Short: "List directory contents of a repository at a given path and ref"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "ref", Type: command.String, Description: "Git ref (branch, tag, or SHA). Defaults to the repo's default branch"},
@@ -31,7 +39,14 @@ func registerContentCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "content_read",
+		Title:       "Read File Contents",
 		Description: command.Description{Short: "Read file contents from a repository at a given path and ref. Limited to files under 1 MB by the GitHub API"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "path", Type: command.String, Description: "File path within the repo (e.g. 'src/main.go')", Required: true},
@@ -47,7 +62,14 @@ func registerContentCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "content_blame",
+		Title:       "Show File Blame",
 		Description: command.Description{Short: "Show line-by-line authorship of a file in a repository"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "path", Type: command.String, Description: "File path within the repo", Required: true},
@@ -63,7 +85,14 @@ func registerContentCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "content_commits",
+		Title:       "List File Commits",
 		Description: command.Description{Short: "List commits for a specific file or directory path"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "path", Type: command.String, Description: "File or directory path to get commit history for", Required: true},
@@ -79,7 +108,14 @@ func registerContentCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "content_compare",
+		Title:       "Compare Refs",
 		Description: command.Description{Short: "Compare two refs (branches, tags, or commits) showing commits and file changes"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "base", Type: command.String, Description: "Base ref (branch, tag, or SHA)", Required: true},
@@ -95,7 +131,14 @@ func registerContentCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "content_search",
+		Title:       "Search Code",
 		Description: command.Description{Short: "Search for code within a repository"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "query", Type: command.String, Description: "Search query (code to search for)", Required: true},

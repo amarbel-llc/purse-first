@@ -6,13 +6,21 @@ import (
 	"fmt"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
 func registerIssueCommands(app *command.App) {
 	app.AddCommand(&command.Command{
 		Name:        "issue_list",
+		Title:       "List Issues",
 		Description: command.Description{Short: "List issues in a repository"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "state", Type: command.String, Description: "Filter by state: open, closed, all (default open)"},
@@ -27,7 +35,14 @@ func registerIssueCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "issue_view",
+		Title:       "View Issue",
 		Description: command.Description{Short: "View issue details"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(true),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(true),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "number", Type: command.Int, Description: "Issue number", Required: true},
@@ -40,7 +55,14 @@ func registerIssueCommands(app *command.App) {
 
 	app.AddCommand(&command.Command{
 		Name:        "issue_create",
+		Title:       "Create Issue",
 		Description: command.Description{Short: "Create a new issue"},
+		Annotations: &protocol.ToolAnnotations{
+			ReadOnlyHint:    protocol.BoolPtr(false),
+			DestructiveHint: protocol.BoolPtr(false),
+			IdempotentHint:  protocol.BoolPtr(false),
+			OpenWorldHint:   protocol.BoolPtr(true),
+		},
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "title", Type: command.String, Description: "Issue title", Required: true},

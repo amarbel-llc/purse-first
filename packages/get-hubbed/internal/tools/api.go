@@ -14,6 +14,7 @@ func registerAPITools(r *server.ToolRegistryV1) {
 	r.Register(
 		protocol.ToolV1{
 			Name:        "api_get",
+			Title:       "GitHub API GET",
 			Description: "Make an authenticated GET request to the GitHub REST API",
 			InputSchema: json.RawMessage(`{
 			"type": "object",
@@ -39,6 +40,12 @@ func registerAPITools(r *server.ToolRegistryV1) {
 			},
 			"required": ["endpoint"]
 		}`),
+			Annotations: &protocol.ToolAnnotations{
+				ReadOnlyHint:    protocol.BoolPtr(true),
+				DestructiveHint: protocol.BoolPtr(false),
+				IdempotentHint:  protocol.BoolPtr(true),
+				OpenWorldHint:   protocol.BoolPtr(true),
+			},
 		},
 		handleAPIGet,
 	)
@@ -46,6 +53,7 @@ func registerAPITools(r *server.ToolRegistryV1) {
 	r.Register(
 		protocol.ToolV1{
 			Name:        "graphql_query",
+			Title:       "GitHub GraphQL Query",
 			Description: "Execute a read-only GraphQL query against the GitHub API",
 			InputSchema: json.RawMessage(`{
 			"type": "object",
@@ -66,6 +74,12 @@ func registerAPITools(r *server.ToolRegistryV1) {
 			},
 			"required": ["query"]
 		}`),
+			Annotations: &protocol.ToolAnnotations{
+				ReadOnlyHint:    protocol.BoolPtr(true),
+				DestructiveHint: protocol.BoolPtr(false),
+				IdempotentHint:  protocol.BoolPtr(true),
+				OpenWorldHint:   protocol.BoolPtr(true),
+			},
 		},
 		handleGraphQLQuery,
 	)
@@ -73,6 +87,7 @@ func registerAPITools(r *server.ToolRegistryV1) {
 	r.Register(
 		protocol.ToolV1{
 			Name:        "graphql_mutation",
+			Title:       "GitHub GraphQL Mutation",
 			Description: "Execute a GraphQL mutation against the GitHub API",
 			InputSchema: json.RawMessage(`{
 			"type": "object",
@@ -89,6 +104,12 @@ func registerAPITools(r *server.ToolRegistryV1) {
 			},
 			"required": ["query"]
 		}`),
+			Annotations: &protocol.ToolAnnotations{
+				ReadOnlyHint:    protocol.BoolPtr(false),
+				DestructiveHint: protocol.BoolPtr(true),
+				IdempotentHint:  protocol.BoolPtr(false),
+				OpenWorldHint:   protocol.BoolPtr(true),
+			},
 		},
 		handleGraphQLMutation,
 	)
