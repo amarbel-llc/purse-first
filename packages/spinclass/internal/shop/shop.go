@@ -26,7 +26,8 @@ func Create(rp worktree.ResolvedPath, verbose bool) error {
 		}
 	}
 
-	return os.Chdir(rp.AbsPath)
+	fmt.Println(rp.AbsPath)
+	return nil
 }
 
 func logSweatfileResult(result sweatfile.LoadResult) {

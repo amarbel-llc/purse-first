@@ -69,8 +69,8 @@ func TestApplyClaudeSettings(t *testing.T) {
 	editRule, _ := allowRaw[3].(string)
 	writeRule, _ := allowRaw[4].(string)
 
-	wantEdit := "Edit(//" + dir + "/**)"
-	wantWrite := "Write(//" + dir + "/**)"
+	wantEdit := "Edit(" + dir + "/*)"
+	wantWrite := "Write(" + dir + "/*)"
 	if editRule != wantEdit {
 		t.Errorf("edit rule: got %q, want %q", editRule, wantEdit)
 	}

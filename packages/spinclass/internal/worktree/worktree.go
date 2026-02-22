@@ -76,9 +76,6 @@ func DetectRepo(dir string) (string, error) {
 
 // Create creates a new git worktree and applies sweatfile configuration.
 func Create(repoPath, worktreePath string) (sweatfile.LoadResult, error) {
-	if err := os.MkdirAll(worktreePath, 0o755); err != nil {
-		return sweatfile.LoadResult{}, fmt.Errorf("creating worktree directory: %w", err)
-	}
 	if err := git.RunPassthrough(repoPath, "worktree", "add", worktreePath); err != nil {
 		return sweatfile.LoadResult{}, fmt.Errorf("git worktree add: %w", err)
 	}

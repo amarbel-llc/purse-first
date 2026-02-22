@@ -116,6 +116,13 @@ func BranchDelete(repoPath, branch string) error {
 }
 
 func DefaultBranch(repoPath string) (string, error) {
+	out, err := Run(repoPath, "symbolic-ref", "refs/remotes/origin/HEAD")
+	if err == nil {
+		branch := strings.TrimPrefix(out, "refs/remotes/origin/")
+		if branch != "" {
+			return branch, nil
+		}
+	}
 	return BranchCurrent(repoPath)
 }
 
