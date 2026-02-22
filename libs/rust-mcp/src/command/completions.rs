@@ -96,8 +96,45 @@ impl App {
         fs::write(zsh_dir.join(format!("_{}", self.name)), b)
     }
 
-    fn generate_fish_completion(&self, _dir: &str) -> io::Result<()> {
-        Ok(()) // placeholder — implemented in Task 7
+    fn generate_fish_completion(&self, dir: &str) -> io::Result<()> {
+        let fish_dir = Path::new(dir).join("share/fish/vendor_completions.d");
+        fs::create_dir_all(&fish_dir)?;
+
+        let cmds = self.visible_commands();
+
+        let mut b = String::new();
+        writeln!(b, "# fish completion for {}", self.name).unwrap();
+        writeln!(b).unwrap();
+        writeln!(b, "complete -c {} -f", self.name).unwrap();
+        writeln!(b).unwrap();
+
+        for cmd in &cmds {
+            let desc = cmd.description.short.replace('\'', "\\'");
+            writeln!(
+                b,
+                "complete -c {} -n '__fish_use_subcommand' -a {} -d '{}'",
+                self.name, cmd.name, desc
+            )
+            .unwrap();
+        }
+
+        for cmd in &cmds {
+            for p in &cmd.params {
+                let desc = p.description.replace('\'', "\\'");
+                let short_opt = match p.short {
+                    Some(c) => format!(" -s {}", c),
+                    None => String::new(),
+                };
+                writeln!(
+                    b,
+                    "complete -c {} -n '__fish_seen_subcommand_from {}' -l {}{} -d '{}'",
+                    self.name, cmd.name, p.name, short_opt, desc
+                )
+                .unwrap();
+            }
+        }
+
+        fs::write(fish_dir.join(format!("{}.fish", self.name)), b)
     }
 }
 
@@ -210,5 +247,58 @@ mod tests {
             !content.contains("hidden"),
             "should not contain hidden commands"
         );
+    }
+
+    #[test]
+    fn fish_completion_structure() {
+        let app = test_app();
+        let dir = tempfile::tempdir().unwrap();
+        app.generate_completions(dir.path().to_str().unwrap())
+            .unwrap();
+
+        let path = dir
+            .path()
+            .join("share/fish/vendor_completions.d/grit.fish");
+        let content = std::fs::read_to_string(&path).unwrap();
+
+        assert!(
+            content.contains("complete -c grit"),
+            "missing complete -c header"
+        );
+        assert!(content.contains("status"), "missing status command");
+        assert!(
+            !content.contains("hidden"),
+            "should not contain hidden commands"
+        );
+    }
+
+    #[test]
+    fn fish_completion_short_flags() {
+        let mut app = App::new("grit", "Git operations");
+        app.add_command(Command {
+            name: "status".to_string(),
+            description: Description::short("Show status"),
+            params: vec![Param {
+                name: "verbose".to_string(),
+                short: Some('v'),
+                param_type: ParamType::Bool,
+                description: "Verbose output".to_string(),
+                required: false,
+                default: None,
+            }],
+            hidden: false,
+            aliases: vec![],
+        });
+
+        let dir = tempfile::tempdir().unwrap();
+        app.generate_completions(dir.path().to_str().unwrap())
+            .unwrap();
+
+        let path = dir
+            .path()
+            .join("share/fish/vendor_completions.d/grit.fish");
+        let content = std::fs::read_to_string(&path).unwrap();
+
+        assert!(content.contains("-s v"), "missing short flag -s v");
     }
 }
