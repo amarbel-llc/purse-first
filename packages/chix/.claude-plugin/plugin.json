@@ -1,0 +1,27 @@
+{
+  "name": "chix",
+  "description": "Nix MCP server and skills for Claude Code",
+  "author": {
+    "name": "friedenberg"
+  },
+  "mcpServers": {
+    "chix": {
+      "type": "stdio",
+      "command": "chix"
+    }
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/format-nix",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

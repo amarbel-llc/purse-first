@@ -1,0 +1,6 @@
+{
+  "name": "lux",
+  "mcpServers": {
+    "lux": { "type": "stdio", "command": "lux", "args": ["mcp", "stdio"] }
+  }
+}

@@ -1,0 +1,7 @@
+[package]
+name = "tap-dancer"
+version = "0.1.0"
+edition = "2021"
+description = "TAP-14 writer library"
+
+[dependencies]

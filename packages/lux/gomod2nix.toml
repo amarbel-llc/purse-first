@@ -1,0 +1,14 @@
+schema = 3
+
+[mod]
+  [mod.'github.com/BurntSushi/toml']
+    version = 'v1.3.2'
+    hash = 'sha256-FIwyH67KryRWI9Bk4R8s1zFP0IgKR4L66wNQJYQZLeg='
+
+  [mod.'github.com/amarbel-llc/purse-first/libs/go-mcp']
+    version = 'v0.0.3-0.20260220172048-482890a2cabe'
+    hash = 'sha256-fSmkBqBrT2oDIS4fyDVXkYB4g1mQbphhZSEDD2xc/nM='
+
+  [mod.'github.com/gobwas/glob']
+    version = 'v0.2.3'
+    hash = 'sha256-hYHMUdwxVkMOjSKjR7UWO0D0juHdI4wL8JEy5plu/Jc='
