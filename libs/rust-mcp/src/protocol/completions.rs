@@ -1,0 +1,41 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CompletionReference {
+    #[serde(rename = "type")]
+    pub ref_type: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CompletionArgument {
+    pub name: String,
+    pub value: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CompletionCompleteParams {
+    pub r#ref: CompletionReference,
+    pub argument: CompletionArgument,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CompletionResult {
+    pub completion: CompletionValues,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CompletionValues {
+    pub values: Vec<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total: Option<usize>,
+
+    #[serde(rename = "hasMore")]
+    pub has_more: bool,
+}

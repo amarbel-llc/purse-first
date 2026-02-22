@@ -15,6 +15,7 @@ pub mod content_v1;
 pub mod icons;
 pub mod initialize_v1;
 pub mod methods;
+pub mod completions;
 pub mod pagination;
 
 // Re-export V0 types as the default types for backward compatibility.
@@ -34,6 +35,10 @@ pub use icons::Icon;
 pub use initialize_v1::{InitializeResultV1, ServerInfoV1};
 pub use methods::*;
 pub use pagination::{PaginatedResult, PaginationParams};
+pub use completions::{
+    CompletionArgument, CompletionCompleteParams, CompletionReference, CompletionResult,
+    CompletionValues,
+};
 
 #[cfg(test)]
 mod tests {
@@ -183,5 +188,72 @@ mod tests {
 
         let decoded: PaginationParams = serde_json::from_str(&json).unwrap();
         assert_eq!(decoded.cursor.unwrap(), "cursor123");
+    }
+
+    #[test]
+    fn completion_params_serialization() {
+        use completions::*;
+
+        let params = CompletionCompleteParams {
+            r#ref: CompletionReference {
+                ref_type: "ref/prompt".to_string(),
+                name: Some("my-prompt".to_string()),
+                uri: None,
+            },
+            argument: CompletionArgument {
+                name: "arg1".to_string(),
+                value: "partial".to_string(),
+            },
+        };
+
+        let json = serde_json::to_string(&params).unwrap();
+        assert!(json.contains("ref/prompt"));
+        assert!(json.contains("my-prompt"));
+        assert!(json.contains("partial"));
+
+        let decoded: CompletionCompleteParams = serde_json::from_str(&json).unwrap();
+        assert_eq!(decoded.r#ref.ref_type, "ref/prompt");
+        assert_eq!(decoded.argument.name, "arg1");
+    }
+
+    #[test]
+    fn completion_result_serialization() {
+        use completions::*;
+
+        let result = CompletionResult {
+            completion: CompletionValues {
+                values: vec!["foo".to_string(), "foobar".to_string()],
+                total: Some(10),
+                has_more: true,
+            },
+        };
+
+        let json = serde_json::to_string(&result).unwrap();
+        assert!(json.contains("foo"));
+        assert!(json.contains("foobar"));
+        assert!(json.contains("\"total\":10"));
+        assert!(json.contains("\"hasMore\":true"));
+
+        let decoded: CompletionResult = serde_json::from_str(&json).unwrap();
+        assert_eq!(decoded.completion.values.len(), 2);
+        assert_eq!(decoded.completion.total, Some(10));
+        assert!(decoded.completion.has_more);
+    }
+
+    #[test]
+    fn completion_result_minimal() {
+        use completions::*;
+
+        let result = CompletionResult {
+            completion: CompletionValues {
+                values: vec!["only".to_string()],
+                total: None,
+                has_more: false,
+            },
+        };
+
+        let json = serde_json::to_string(&result).unwrap();
+        assert!(!json.contains("total"));
+        assert!(json.contains("\"hasMore\":false"));
     }
 }

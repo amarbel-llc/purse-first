@@ -75,6 +75,9 @@ pub mod sampling;
 #[cfg(feature = "command-executor")]
 pub mod executor;
 
+#[cfg(feature = "command")]
+pub mod command;
+
 pub mod validation;
 
 // Re-export main types
@@ -104,3 +107,6 @@ pub use sampling::{
 
 #[cfg(feature = "command-executor")]
 pub use executor::{CommandExecutor, CommandOutput, ExecuteArgs, ExecutorError, TokioExecutor};
+
+#[cfg(feature = "command")]
+pub use command::{App, Command as CliCommand, Description, Param, ParamType};
