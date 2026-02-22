@@ -11,7 +11,6 @@
       "description": "Git operations via MCP — stage, commit, push, log, blame, and more",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/purse-first",
-      "repo": "amarbel-llc/purse-first",
       "category": "development",
       "tags": ["git", "version-control", "mcp"]
     },
@@ -19,7 +18,6 @@
       "description": "GitHub CLI wrapper via MCP — issues, pull requests, and repos",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/purse-first",
-      "repo": "amarbel-llc/purse-first",
       "category": "development",
       "tags": ["github", "issues", "pull-requests", "mcp"]
     },
@@ -27,7 +25,6 @@
       "description": "LSP multiplexer via MCP — hover, definitions, references, and symbols",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/purse-first",
-      "repo": "amarbel-llc/purse-first",
       "category": "development",
       "tags": ["lsp", "code-intelligence", "mcp"]
     },
@@ -35,7 +32,6 @@
       "description": "Nix MCP server and skills for Claude Code — build, evaluate, search, and manage flakes",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/purse-first",
-      "repo": "amarbel-llc/purse-first",
       "category": "development",
       "tags": ["nix", "package-manager", "mcp", "skills"]
     },
@@ -43,7 +39,6 @@
       "description": "Package integration skills — guides conversion of MCP servers into purse-first packages",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/purse-first",
-      "repo": "amarbel-llc/purse-first",
       "category": "development",
       "tags": ["mcp", "plugins", "skills", "integration"]
     },
@@ -51,7 +46,6 @@
       "description": "BATS integration testing skill with bundled assertion libraries, sandcastle isolation, and justfile patterns",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/purse-first",
-      "repo": "amarbel-llc/purse-first",
       "category": "testing",
       "tags": ["bats", "testing", "integration", "shell", "nix"]
     },
@@ -59,7 +53,6 @@
       "description": "TAP-14 writer libraries (Go + Rust) and skill for producing spec-compliant TAP output",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/purse-first",
-      "repo": "amarbel-llc/purse-first",
       "category": "testing",
       "tags": ["tap", "tap-14", "testing", "output-format"]
     },
@@ -67,7 +60,6 @@
       "description": "Sandbox runtime for wrapping security boundaries around arbitrary processes",
       "version": "0.0.37",
       "homepage": "https://github.com/amarbel-llc/purse-first",
-      "repo": "amarbel-llc/purse-first",
       "category": "security",
       "tags": ["sandbox", "security", "isolation", "testing"]
     },
@@ -75,7 +67,6 @@
       "description": "Interactive scaffold for creating new Nix-flake-backed repositories",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/purse-first",
-      "repo": "amarbel-llc/purse-first",
       "category": "development",
       "tags": ["scaffold", "nix", "templates", "cli"]
     },
@@ -83,7 +74,6 @@
       "description": "Pomodoro timer that detaches from terminal sessions",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/purse-first",
-      "repo": "amarbel-llc/purse-first",
       "category": "productivity",
       "tags": ["pomodoro", "timer", "tui", "cli"]
     },
@@ -91,7 +81,6 @@
       "description": "Shell-agnostic git worktree session manager",
       "version": "0.1.0",
       "homepage": "https://github.com/amarbel-llc/purse-first",
-      "repo": "amarbel-llc/purse-first",
       "category": "development",
       "tags": ["git", "worktrees", "sessions", "cli"]
     }
