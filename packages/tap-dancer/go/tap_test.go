@@ -456,6 +456,104 @@ func TestWriteAllPlanAheadSkipsTrailingPlan(t *testing.T) {
 	}
 }
 
+func TestWriteAllSubtest(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.WriteAll(slices.Values([]TestPoint{
+		{Description: "nested", Subtests: func(sub *Writer) {
+			sub.Ok("inner pass")
+		}},
+	}))
+	expected := "TAP version 14\n" +
+		"    # Subtest: nested\n" +
+		"    ok 1 - inner pass\n" +
+		"    1..1\n" +
+		"ok 1 - nested\n" +
+		"1..1\n"
+	if buf.String() != expected {
+		t.Errorf("expected:\n%s\ngot:\n%s", expected, buf.String())
+	}
+}
+
+func TestWriteAllNestedWriteAll(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.WriteAll(slices.Values([]TestPoint{
+		{Description: "outer", Subtests: func(sub *Writer) {
+			sub.WriteAll(slices.Values([]TestPoint{
+				{Description: "inner-a", Ok: true},
+				{Description: "inner-b", Ok: false, Diagnostics: &Diagnostics{
+					Message: "broke",
+				}},
+			}))
+		}},
+	}))
+	out := buf.String()
+	if !strings.Contains(out, "    ok 1 - inner-a\n") {
+		t.Errorf("expected inner-a, got:\n%s", out)
+	}
+	if !strings.Contains(out, "    not ok 2 - inner-b\n") {
+		t.Errorf("expected inner-b, got:\n%s", out)
+	}
+	if !strings.Contains(out, "    1..2\n") {
+		t.Errorf("expected subtest plan, got:\n%s", out)
+	}
+	if !strings.Contains(out, "ok 1 - outer\n") {
+		t.Errorf("expected parent ok, got:\n%s", out)
+	}
+}
+
+func TestWriteAllMixedImperativeAndIterator(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.WriteAll(slices.Values([]TestPoint{
+		{Description: "mixed", Subtests: func(sub *Writer) {
+			sub.Ok("imperative")
+			sub.WriteAll(slices.Values([]TestPoint{
+				{Description: "from-iter", Ok: true},
+			}))
+		}},
+	}))
+	out := buf.String()
+	if !strings.Contains(out, "    ok 1 - imperative\n") {
+		t.Errorf("expected imperative test, got:\n%s", out)
+	}
+	if !strings.Contains(out, "    ok 2 - from-iter\n") {
+		t.Errorf("expected iterator test, got:\n%s", out)
+	}
+	if !strings.Contains(out, "    1..2\n") {
+		t.Errorf("expected combined plan 1..2, got:\n%s", out)
+	}
+}
+
+func TestWriteAllOutputValidatesWithReader(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.WriteAll(slices.Values([]TestPoint{
+		{Description: "pass", Ok: true},
+		{Description: "fail", Ok: false, Diagnostics: &Diagnostics{
+			Message: "broke",
+		}},
+		{Description: "skipped", Skip: "not ready"},
+		{Description: "todo", Todo: "later"},
+		{Description: "nested", Subtests: func(sub *Writer) {
+			sub.WriteAll(slices.Values([]TestPoint{
+				{Description: "inner", Ok: true},
+			}))
+		}},
+	}))
+
+	reader := NewReader(strings.NewReader(buf.String()))
+	summary := reader.Summary()
+	if !summary.Valid {
+		diags := reader.Diagnostics()
+		for _, d := range diags {
+			t.Errorf("diagnostic: line %d: %s: %s", d.Line, d.Severity, d.Message)
+		}
+		t.Fatalf("WriteAll output did not validate as TAP-14:\n%s", buf.String())
+	}
+}
+
 func TestSubtestOutputValidatesWithReader(t *testing.T) {
 	var buf bytes.Buffer
 	tw := NewWriter(&buf)
