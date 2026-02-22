@@ -107,7 +107,7 @@
           };
 
           get-hubbed-unwrapped = import ./lib/packages/get-hubbed.nix {
-            inherit pkgs goOverlay purse-first-src;
+            inherit pkgs goOverlay;
             src = ./packages/get-hubbed;
           };
 
