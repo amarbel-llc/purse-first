@@ -10,32 +10,32 @@
     "grit": {
       "description": "Git operations via MCP — stage, commit, push, log, blame, and more",
       "version": "0.1.0",
-      "homepage": "https://github.com/amarbel-llc/grit",
-      "repo": "amarbel-llc/grit",
+      "homepage": "https://github.com/amarbel-llc/purse-first",
+      "repo": "amarbel-llc/purse-first",
       "category": "development",
       "tags": ["git", "version-control", "mcp"]
     },
     "get-hubbed": {
       "description": "GitHub CLI wrapper via MCP — issues, pull requests, and repos",
       "version": "0.1.0",
-      "homepage": "https://github.com/amarbel-llc/get-hubbed",
-      "repo": "amarbel-llc/get-hubbed",
+      "homepage": "https://github.com/amarbel-llc/purse-first",
+      "repo": "amarbel-llc/purse-first",
       "category": "development",
       "tags": ["github", "issues", "pull-requests", "mcp"]
     },
     "lux": {
       "description": "LSP multiplexer via MCP — hover, definitions, references, and symbols",
       "version": "0.1.0",
-      "homepage": "https://github.com/friedenberg/lux",
-      "repo": "friedenberg/lux",
+      "homepage": "https://github.com/amarbel-llc/purse-first",
+      "repo": "amarbel-llc/purse-first",
       "category": "development",
       "tags": ["lsp", "code-intelligence", "mcp"]
     },
     "chix": {
       "description": "Nix MCP server and skills for Claude Code — build, evaluate, search, and manage flakes",
       "version": "0.1.0",
-      "homepage": "https://github.com/amarbel-llc/chix",
-      "repo": "amarbel-llc/chix",
+      "homepage": "https://github.com/amarbel-llc/purse-first",
+      "repo": "amarbel-llc/purse-first",
       "category": "development",
       "tags": ["nix", "package-manager", "mcp", "skills"]
     },
@@ -50,16 +50,16 @@
     "robin": {
       "description": "BATS integration testing skill with bundled assertion libraries, sandcastle isolation, and justfile patterns",
       "version": "0.1.0",
-      "homepage": "https://github.com/amarbel-llc/batman",
-      "repo": "amarbel-llc/batman",
+      "homepage": "https://github.com/amarbel-llc/purse-first",
+      "repo": "amarbel-llc/purse-first",
       "category": "testing",
       "tags": ["bats", "testing", "integration", "shell", "nix"]
     },
     "tap-dancer": {
       "description": "TAP-14 writer libraries (Go + Rust) and skill for producing spec-compliant TAP output",
       "version": "0.1.0",
-      "homepage": "https://github.com/amarbel-llc/tap-dancer",
-      "repo": "amarbel-llc/tap-dancer",
+      "homepage": "https://github.com/amarbel-llc/purse-first",
+      "repo": "amarbel-llc/purse-first",
       "category": "testing",
       "tags": ["tap", "tap-14", "testing", "output-format"]
     }
