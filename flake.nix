@@ -209,6 +209,7 @@
           go.devShells.${system}.default
           shell.devShells.${system}.default
           bats.devShells.${system}.default
+          rust.devShells.${system}.default
         ];
         devShellHook = ''
           echo "purse-first - dev environment"

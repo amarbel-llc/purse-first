@@ -12,5 +12,6 @@ profile.cov
 result
 result-*
 .direnv/
+**/target/
 .worktrees/
 /purse-first
