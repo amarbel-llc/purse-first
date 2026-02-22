@@ -10,11 +10,12 @@ import (
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
-func registerAPITools(r *server.ToolRegistry) {
+func registerAPITools(r *server.ToolRegistryV1) {
 	r.Register(
-		"api_get",
-		"Make an authenticated GET request to the GitHub REST API",
-		json.RawMessage(`{
+		protocol.ToolV1{
+			Name:        "api_get",
+			Description: "Make an authenticated GET request to the GitHub REST API",
+			InputSchema: json.RawMessage(`{
 			"type": "object",
 			"properties": {
 				"endpoint": {
@@ -38,13 +39,15 @@ func registerAPITools(r *server.ToolRegistry) {
 			},
 			"required": ["endpoint"]
 		}`),
+		},
 		handleAPIGet,
 	)
 
 	r.Register(
-		"graphql_query",
-		"Execute a read-only GraphQL query against the GitHub API",
-		json.RawMessage(`{
+		protocol.ToolV1{
+			Name:        "graphql_query",
+			Description: "Execute a read-only GraphQL query against the GitHub API",
+			InputSchema: json.RawMessage(`{
 			"type": "object",
 			"properties": {
 				"query": {
@@ -63,13 +66,15 @@ func registerAPITools(r *server.ToolRegistry) {
 			},
 			"required": ["query"]
 		}`),
+		},
 		handleGraphQLQuery,
 	)
 
 	r.Register(
-		"graphql_mutation",
-		"Execute a GraphQL mutation against the GitHub API",
-		json.RawMessage(`{
+		protocol.ToolV1{
+			Name:        "graphql_mutation",
+			Description: "Execute a GraphQL mutation against the GitHub API",
+			InputSchema: json.RawMessage(`{
 			"type": "object",
 			"properties": {
 				"query": {
@@ -84,11 +89,12 @@ func registerAPITools(r *server.ToolRegistry) {
 			},
 			"required": ["query"]
 		}`),
+		},
 		handleGraphQLMutation,
 	)
 }
 
-func handleAPIGet(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleAPIGet(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResultV1, error) {
 	var params struct {
 		Endpoint string            `json:"endpoint"`
 		Params   map[string]string `json:"params"`
@@ -97,7 +103,7 @@ func handleAPIGet(ctx context.Context, args json.RawMessage) (*protocol.ToolCall
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return protocol.ErrorResultV1(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	ghArgs := []string{"api", params.Endpoint, "--method", "GET"}
@@ -116,17 +122,17 @@ func handleAPIGet(ctx context.Context, args json.RawMessage) (*protocol.ToolCall
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh api: %v", err)), nil
+		return protocol.ErrorResultV1(fmt.Sprintf("gh api: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
+	return &protocol.ToolCallResultV1{
+		Content: []protocol.ContentBlockV1{
+			protocol.TextContentV1(out),
 		},
 	}, nil
 }
 
-func handleGraphQLQuery(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleGraphQLQuery(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResultV1, error) {
 	var params struct {
 		Query     string                 `json:"query"`
 		Variables map[string]interface{} `json:"variables"`
@@ -134,7 +140,7 @@ func handleGraphQLQuery(ctx context.Context, args json.RawMessage) (*protocol.To
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return protocol.ErrorResultV1(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	ghArgs := []string{"api", "graphql", "-f", fmt.Sprintf("query=%s", params.Query)}
@@ -149,24 +155,24 @@ func handleGraphQLQuery(ctx context.Context, args json.RawMessage) (*protocol.To
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh api graphql: %v", err)), nil
+		return protocol.ErrorResultV1(fmt.Sprintf("gh api graphql: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
+	return &protocol.ToolCallResultV1{
+		Content: []protocol.ContentBlockV1{
+			protocol.TextContentV1(out),
 		},
 	}, nil
 }
 
-func handleGraphQLMutation(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error) {
+func handleGraphQLMutation(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResultV1, error) {
 	var params struct {
 		Query     string                 `json:"query"`
 		Variables map[string]interface{} `json:"variables"`
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+		return protocol.ErrorResultV1(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
 	ghArgs := []string{"api", "graphql", "-f", fmt.Sprintf("query=%s", params.Query)}
@@ -177,12 +183,12 @@ func handleGraphQLMutation(ctx context.Context, args json.RawMessage) (*protocol
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
-		return protocol.ErrorResult(fmt.Sprintf("gh api graphql mutation: %v", err)), nil
+		return protocol.ErrorResultV1(fmt.Sprintf("gh api graphql mutation: %v", err)), nil
 	}
 
-	return &protocol.ToolCallResult{
-		Content: []protocol.ContentBlock{
-			protocol.TextContent(out),
+	return &protocol.ToolCallResultV1{
+		Content: []protocol.ContentBlockV1{
+			protocol.TextContentV1(out),
 		},
 	}, nil
 }

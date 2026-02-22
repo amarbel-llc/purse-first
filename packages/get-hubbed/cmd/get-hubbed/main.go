@@ -38,13 +38,14 @@ func main() {
 
 	t := transport.NewStdio(os.Stdin, os.Stdout)
 
-	registry := server.NewToolRegistry()
-	app.RegisterMCPTools(registry)
+	registry := server.NewToolRegistryV1()
+	app.RegisterMCPToolsV1(registry)
 	tools.RegisterAPITools(registry)
 
 	srv, err := server.New(t, server.Options{
 		ServerName:    app.Name,
 		ServerVersion: app.Version,
+		Instructions:  "GitHub MCP server wrapping the gh CLI. Provides tools for repositories, issues, pull requests, workflow runs, file content, and the GitHub API.",
 		Tools:         registry,
 	})
 	if err != nil {

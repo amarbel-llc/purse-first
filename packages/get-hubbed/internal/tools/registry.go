@@ -18,6 +18,6 @@ func RegisterAll() *command.App {
 	return app
 }
 
-func RegisterAPITools(r *server.ToolRegistry) {
+func RegisterAPITools(r *server.ToolRegistryV1) {
 	registerAPITools(r)
 }
