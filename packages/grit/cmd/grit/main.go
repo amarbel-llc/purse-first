@@ -65,12 +65,13 @@ func main() {
 		t = transport.NewStdio(os.Stdin, os.Stdout)
 	}
 
-	registry := server.NewToolRegistry()
-	app.RegisterMCPTools(registry)
+	registry := server.NewToolRegistryV1()
+	app.RegisterMCPToolsV1(registry)
 
 	srv, err := server.New(t, server.Options{
 		ServerName:    app.Name,
 		ServerVersion: app.Version,
+		Instructions:  "Git MCP server exposing repository operations. Provides tools for status, diff, log, show, blame, staging, commits, branches, remotes, fetch, pull, push, and rebase. Force push is blocked on main/master.",
 		Tools:         registry,
 	})
 	if err != nil {
