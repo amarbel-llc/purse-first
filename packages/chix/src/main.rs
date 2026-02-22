@@ -4,14 +4,12 @@ mod lsp_client;
 mod nix_runner;
 mod output;
 mod resources;
-mod server;
 mod tools;
 mod validators;
 
 use clap::{Parser, Subcommand};
-use server::Server;
+use mcp_server::server::{McpServerBuilder, run_stdio_server};
 use std::process::Command;
-use tokio::io::{stdin, stdout, AsyncBufReadExt, AsyncWriteExt, BufReader};
 
 #[derive(Parser)]
 #[command(name = "chix")]
@@ -60,22 +58,51 @@ fn install_claude() -> anyhow::Result<()> {
 }
 
 async fn run_server() -> anyhow::Result<()> {
-    let server = Server::new();
-    let stdin = BufReader::new(stdin());
-    let mut stdout = stdout();
-    let mut lines = stdin.lines();
+    let server = McpServerBuilder::new("chix", "0.1.0")
+        // Tools
+        .with_tool(tools::BuildTool)
+        .with_tool(tools::FlakeShowTool)
+        .with_tool(tools::FlakeCheckTool)
+        .with_tool(tools::FlakeMetadataTool)
+        .with_tool(tools::FlakeUpdateTool)
+        .with_tool(tools::FlakeLockTool)
+        .with_tool(tools::FlakeInitTool)
+        .with_tool(tools::RunTool)
+        .with_tool(tools::DevelopRunTool)
+        .with_tool(tools::LogTool)
+        .with_tool(tools::SearchTool)
+        .with_tool(tools::StorePathInfoTool)
+        .with_tool(tools::StoreGcTool)
+        .with_tool(tools::StoreLsTool)
+        .with_tool(tools::StoreCatTool)
+        .with_tool(tools::DerivationShowTool)
+        .with_tool(tools::HashPathTool)
+        .with_tool(tools::HashFileTool)
+        .with_tool(tools::CopyTool)
+        .with_tool(tools::EvalTool)
+        .with_tool(tools::FhSearchTool)
+        .with_tool(tools::FhAddTool)
+        .with_tool(tools::FhListFlakesTool)
+        .with_tool(tools::FhListReleasesTool)
+        .with_tool(tools::FhListVersionsTool)
+        .with_tool(tools::FhResolveTool)
+        .with_tool(tools::CachixPushTool)
+        .with_tool(tools::CachixUseTool)
+        .with_tool(tools::CachixStatusTool)
+        .with_tool(tools::FhStatusTool)
+        .with_tool(tools::FhFetchTool)
+        .with_tool(tools::FhLoginTool)
+        .with_tool(tools::TaskStatusTool)
+        .with_tool(tools::NilDiagnosticsTool)
+        .with_tool(tools::NilCompletionsTool)
+        .with_tool(tools::NilHoverTool)
+        .with_tool(tools::NilDefinitionTool)
+        // Resources
+        .with_resource(resources::BuildLogResource)
+        .with_resource(resources::DerivationResource)
+        .with_resource(resources::ClosureResource)
+        .build();
 
-    while let Some(line) = lines.next_line().await? {
-        if line.is_empty() {
-            continue;
-        }
-
-        let response = server.handle_request(&line).await;
-        let response_json = serde_json::to_string(&response)?;
-        stdout.write_all(response_json.as_bytes()).await?;
-        stdout.write_all(b"\n").await?;
-        stdout.flush().await?;
-    }
-
+    run_stdio_server(server).await?;
     Ok(())
 }
