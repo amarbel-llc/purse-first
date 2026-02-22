@@ -33,6 +33,46 @@ func (a *App) RegisterMCPTools(registry *server.ToolRegistry) {
 	}
 }
 
+// RegisterMCPToolsV1 registers all non-hidden commands as V1 MCP tools
+// in the given ToolRegistryV1.
+func (a *App) RegisterMCPToolsV1(registry *server.ToolRegistryV1) {
+	for name, cmd := range a.AllCommands() {
+		if cmd.Hidden || cmd.Run == nil {
+			continue
+		}
+
+		run := cmd.Run // capture for closure
+		registry.Register(
+			protocol.ToolV1{
+				Name:        name,
+				Description: cmd.Description.Short,
+				InputSchema: cmd.InputSchema(),
+			},
+			func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResultV1, error) {
+				result, err := run(ctx, args, StubPrompter{})
+				if err != nil {
+					return nil, err
+				}
+				return resultToMCPV1(result), nil
+			},
+		)
+	}
+}
+
+func resultToMCPV1(r *Result) *protocol.ToolCallResultV1 {
+	var text string
+	if r.JSON != nil {
+		data, _ := json.Marshal(r.JSON)
+		text = string(data)
+	} else {
+		text = r.Text
+	}
+	return &protocol.ToolCallResultV1{
+		Content: []protocol.ContentBlockV1{protocol.TextContentV1(text)},
+		IsError: r.IsErr,
+	}
+}
+
 func resultToMCP(r *Result) *protocol.ToolCallResult {
 	var text string
 	if r.JSON != nil {
