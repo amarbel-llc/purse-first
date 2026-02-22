@@ -489,7 +489,6 @@ dependencies = [
 [[package]]
 name = "mcp-server"
 version = "0.1.0"
-source = "git+https://github.com/amarbel-llc/rust-lib-mcp#c8af0c27061896812c65f4f557becdd8fe6de9f4"
 dependencies = [
  "async-trait",
  "serde",

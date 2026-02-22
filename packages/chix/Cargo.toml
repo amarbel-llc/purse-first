@@ -5,7 +5,7 @@ edition = "2021"
 description = "Nix MCP server and skills for Claude Code"
 
 [dependencies]
-mcp-server = { git = "https://github.com/amarbel-llc/rust-lib-mcp", features = ["tools", "resources"] }
+mcp-server = { path = "../../libs/rust-mcp", features = ["tools", "resources"] }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
