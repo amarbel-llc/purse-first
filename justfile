@@ -1,8 +1,8 @@
 
-default: && update build-all test-all
+default: && update build test
 
 # Build all packages (default = marketplace bundle)
-build-all:
+build:
     nix build
 
 # Build individual packages
@@ -72,7 +72,7 @@ test-tap-dancer-rust:
     cd packages/tap-dancer/rust && nix develop ../../../ --command cargo test
 
 # Run tests
-test:
+test-go:
     nix develop --command go test ./...
 
 # Run tests with verbose output
@@ -129,8 +129,20 @@ test-brew:
     nix build .#homebrew-tap
     nix develop --command bats --tap zz-tests_bats/homebrew_tap.bats
 
-# Run all tests (unit + integration + libs + framework + packages)
-test-all: test test-go-mcp test-rust-mcp test-grit test-get-hubbed test-lux test-tap-dancer-go test-chix test-tap-dancer-rust test-integration test-hooks test-lifecycle test-template
+test: \
+    test-chix \
+    test-get-hubbed \
+    test-go \
+    test-go-mcp \
+    test-grit \
+    test-hooks \
+    test-integration \
+    test-lifecycle \
+    test-lux \
+    test-rust-mcp \
+    test-tap-dancer-go \
+    test-tap-dancer-rust \
+    test-template
 
 # Build go-lib-mcp
 build-go-mcp:
