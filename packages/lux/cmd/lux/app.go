@@ -29,7 +29,7 @@ func buildApp() *command.App {
 	app := command.NewApp("lux", "Lux: LSP Multiplexer")
 	app.Description.Long = "Lux multiplexes LSP requests to multiple language servers based on file type."
 	app.Version = version
-	app.MCPArgs = []string{"mcp", "stdio"}
+	app.MCPArgs = []string{"mcp-stdio"}
 
 	addCLICommands(app)
 
@@ -62,10 +62,12 @@ func buildApp() *command.App {
 		},
 		Params: []command.Param{
 			{Name: "dir", Type: command.String, Description: "Output directory", Required: true},
+			{Name: "skills-dir", Type: command.String, Description: "Skills source directory"},
 		},
 		RunCLI: func(ctx context.Context, args json.RawMessage) error {
 			var p struct {
-				Dir string `json:"dir"`
+				Dir       string `json:"dir"`
+				SkillsDir string `json:"skills-dir"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return fmt.Errorf("invalid arguments: %w", err)
@@ -74,7 +76,7 @@ func buildApp() *command.App {
 			// Register MCP tools onto the app so GenerateAll includes them
 			tools.RegisterAll(app, nil)
 
-			return app.GenerateAll(p.Dir)
+			return app.GenerateAllWithSkills(p.Dir, p.SkillsDir)
 		},
 	})
 
