@@ -1,4 +1,4 @@
-{ pkgs, src, goOverlay, craneLib }:
+{ pkgs, src, goOverlay, craneLib, purse-first-cli }:
 
 let
   goPkgs = import pkgs.path {
@@ -35,11 +35,14 @@ let
     strictDeps = true;
   };
 
-  tap-dancer-skill = pkgs.runCommand "tap-dancer-skill" { } ''
-    mkdir -p $out/share/purse-first/tap-dancer/skills
-    cp -r ${src}/skills/* $out/share/purse-first/tap-dancer/skills/
-    cp ${src}/.claude-plugin/plugin.json $out/share/purse-first/tap-dancer/plugin.json
-  '';
+  tap-dancer-skill = pkgs.runCommand "tap-dancer-skill"
+    { nativeBuildInputs = [ purse-first-cli ]; }
+    ''
+      ${purse-first-cli}/bin/purse-first generate-plugin \
+        --root ${src} \
+        --output $out \
+        --skills-dir ${src}/skills
+    '';
 
   tap-dancer-bash = pkgs.stdenvNoCC.mkDerivation {
     pname = "tap-dancer-bash";

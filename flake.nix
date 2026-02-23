@@ -133,13 +133,13 @@
           };
 
           chixPkg = import ./lib/packages/chix.nix {
-            inherit pkgs craneLib fhPkg;
+            inherit pkgs craneLib fhPkg purse-first-cli;
             src = ./packages/chix;
             rustMcpSrc = ./libs/rust-mcp;
           };
 
           tapDancerPkgs = import ./lib/packages/tap-dancer.nix {
-            inherit pkgs goOverlay craneLib;
+            inherit pkgs goOverlay craneLib purse-first-cli;
             src = ./packages/tap-dancer;
           };
 

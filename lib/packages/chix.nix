@@ -1,4 +1,4 @@
-{ pkgs, src, craneLib, fhPkg, rustMcpSrc }:
+{ pkgs, src, craneLib, fhPkg, rustMcpSrc, purse-first-cli }:
 
 let
   # chix Cargo.toml has: mcp-server = { path = "../../libs/rust-mcp" }
@@ -48,7 +48,11 @@ pkgs.runCommand "chix"
         ]
       }
 
+    ${purse-first-cli}/bin/purse-first generate-plugin \
+      --root ${src} \
+      --output $out \
+      --skills-dir ${src}/skills
+
     mkdir -p $out/share/purse-first/chix/hooks
-    cp ${src}/.claude-plugin/plugin.json $out/share/purse-first/chix/plugin.json
     install -m 755 ${formatNixHook} $out/share/purse-first/chix/hooks/format-nix
   ''

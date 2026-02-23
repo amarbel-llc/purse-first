@@ -161,15 +161,10 @@ let
     dontBuild = true;
     nativeBuildInputs = [ purse-first-cli ];
     installPhase = ''
-      mkdir -p $out/share/purse-first/robin/skills
-      cp -r skills/* $out/share/purse-first/robin/skills/
-      staging=$(mktemp -d)
-      ln -s $out/share/purse-first/robin/skills $staging/skills
-      mkdir -p $staging/.claude-plugin
-      cp .claude-plugin/plugin.json $staging/.claude-plugin/plugin.json
-      chmod u+w $staging/.claude-plugin/plugin.json
-      purse-first generate-local-plugin --root $staging
-      cp $staging/.claude-plugin/plugin.json $out/share/purse-first/robin/plugin.json
+      purse-first generate-plugin \
+        --root $src \
+        --output $out \
+        --skills-dir $src/skills
     '';
   };
 in
