@@ -6,6 +6,8 @@ import (
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/operation"
 )
 
+var _ operation.Writer = (*OperationWriter)(nil)
+
 type opLevel struct {
 	writer      *Writer
 	description string

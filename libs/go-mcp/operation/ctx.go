@@ -27,7 +27,7 @@ func (c *ctx) child(description string, annotations []Annotation) *ctx {
 	return &ctx{
 		writer:  c.writer,
 		depth:   c.depth + 1,
-		helpers: c.helpers,
+		helpers: c.helpers, // shared with parent — concurrent child operations not supported
 		event: OperationEvent{
 			Description: description,
 			Annotations: annotations,
@@ -48,7 +48,13 @@ func (c *ctx) Run(
 			if child.diagnostic == nil {
 				child.diagnostic = &Diagnostic{}
 			}
-			child.diagnostic.Extras = child.extras
+			if child.diagnostic.Extras == nil {
+				child.diagnostic.Extras = child.extras
+			} else {
+				for k, v := range child.extras {
+					child.diagnostic.Extras[k] = v
+				}
+			}
 		}
 		child.runMust()
 		child.runAfter()
@@ -87,7 +93,7 @@ func (c *ctx) Run(
 			Message:  retErr.Error(),
 			Severity: "error",
 		}
-	} else if child.outcome == 0 {
+	} else if child.outcome == Success {
 		child.outcome = Success
 	}
 
