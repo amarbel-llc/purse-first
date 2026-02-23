@@ -12,9 +12,16 @@ type pluginMcpServer struct {
 	Args    []string `json:"args,omitempty"`
 }
 
+type pluginAuthor struct {
+	Name string `json:"name"`
+}
+
 type pluginManifest struct {
-	Name       string                     `json:"name"`
-	McpServers map[string]pluginMcpServer `json:"mcpServers"`
+	Name        string                     `json:"name"`
+	Description string                     `json:"description,omitempty"`
+	Author      *pluginAuthor              `json:"author,omitempty"`
+	McpServers  map[string]pluginMcpServer `json:"mcpServers,omitempty"`
+	Skills      []string                   `json:"skills,omitempty"`
 }
 
 // GeneratePlugin writes a plugin.json manifest to {dir}/{app.Name}/plugin.json.
@@ -25,7 +32,8 @@ func (a *App) GeneratePlugin(dir string) error {
 	}
 
 	manifest := pluginManifest{
-		Name: a.Name,
+		Name:        a.Name,
+		Description: a.PluginDescription,
 		McpServers: map[string]pluginMcpServer{
 			a.Name: {
 				Type:    "stdio",
@@ -33,6 +41,10 @@ func (a *App) GeneratePlugin(dir string) error {
 				Args:    a.MCPArgs,
 			},
 		},
+	}
+
+	if a.PluginAuthor != "" {
+		manifest.Author = &pluginAuthor{Name: a.PluginAuthor}
 	}
 
 	pluginDir := filepath.Join(dir, a.Name)

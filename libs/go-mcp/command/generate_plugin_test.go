@@ -105,3 +105,47 @@ func TestGeneratePluginDefaultsMCPBinaryToName(t *testing.T) {
 		t.Errorf("command = %v, want grit (default)", srv["command"])
 	}
 }
+
+func TestGeneratePluginWithDescriptionAndAuthor(t *testing.T) {
+	app := NewApp("chix", "Nix MCP server")
+	app.PluginDescription = "Nix MCP server and skills for Claude Code"
+	app.PluginAuthor = "friedenberg"
+
+	dir := t.TempDir()
+	if err := app.GeneratePlugin(dir); err != nil {
+		t.Fatalf("GeneratePlugin: %v", err)
+	}
+
+	data, _ := os.ReadFile(filepath.Join(dir, "chix", "plugin.json"))
+	var plugin map[string]any
+	json.Unmarshal(data, &plugin)
+
+	if plugin["description"] != "Nix MCP server and skills for Claude Code" {
+		t.Errorf("description = %v, want 'Nix MCP server and skills for Claude Code'", plugin["description"])
+	}
+
+	author := plugin["author"].(map[string]any)
+	if author["name"] != "friedenberg" {
+		t.Errorf("author.name = %v, want friedenberg", author["name"])
+	}
+}
+
+func TestGeneratePluginOmitsEmptyDescriptionAndAuthor(t *testing.T) {
+	app := NewApp("grit", "Git operations")
+
+	dir := t.TempDir()
+	if err := app.GeneratePlugin(dir); err != nil {
+		t.Fatalf("GeneratePlugin: %v", err)
+	}
+
+	data, _ := os.ReadFile(filepath.Join(dir, "grit", "plugin.json"))
+	var plugin map[string]any
+	json.Unmarshal(data, &plugin)
+
+	if _, ok := plugin["description"]; ok {
+		t.Errorf("description should be omitted when empty")
+	}
+	if _, ok := plugin["author"]; ok {
+		t.Errorf("author should be omitted when empty")
+	}
+}

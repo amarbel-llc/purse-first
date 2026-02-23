@@ -4,15 +4,17 @@ import "fmt"
 
 // App holds the command registry and top-level metadata for a CLI/MCP application.
 type App struct {
-	Name        string
-	Description Description
-	Version     string
-	MCPArgs     []string // extra args passed to the binary in plugin manifests
-	MCPBinary   string   // binary name for plugin.json command; defaults to Name
-	Params      []Param  // global flags
-	Examples    []Example // app-level workflow examples
-	commands       map[string]*Command
-	canonicalNames map[*Command]string
+	Name              string
+	Description       Description
+	Version           string
+	MCPArgs           []string  // extra args passed to the binary in plugin manifests
+	MCPBinary         string    // binary name for plugin.json command; defaults to Name
+	PluginDescription string    // "description" in plugin.json; omitted if empty
+	PluginAuthor      string    // "author.name" in plugin.json; omitted if empty
+	Params            []Param   // global flags
+	Examples          []Example // app-level workflow examples
+	commands          map[string]*Command
+	canonicalNames    map[*Command]string
 }
 
 // NewApp creates a new App with the given name and short description.
