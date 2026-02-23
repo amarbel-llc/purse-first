@@ -1,0 +1,13 @@
+name = "chix"
+description = "Nix MCP server and skills for Claude Code"
+
+[author]
+name = "friedenberg"
+
+[mcp.chix]
+command = "chix"
+
+[[hooks.PostToolUse]]
+matcher = "Edit|Write"
+command = "${CLAUDE_PLUGIN_ROOT}/hooks/format-nix"
+timeout = 30
