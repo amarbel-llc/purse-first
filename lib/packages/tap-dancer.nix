@@ -1,18 +1,30 @@
-{ pkgs, src, goOverlay, craneLib, purse-first-cli }:
+{ pkgs, src, craneLib, purse-first-cli, go-mcp-src }:
 
 let
-  goPkgs = import pkgs.path {
-    inherit (pkgs.stdenv.hostPlatform) system;
-    overlays = [ goOverlay ];
-  };
-
   version = "0.1.0";
 
-  tap-dancer-cli = goPkgs.buildGoApplication {
+  # Assemble source tree matching the replace directive in go.mod:
+  #   replace github.com/amarbel-llc/purse-first/libs/go-mcp => ../../../libs/go-mcp
+  # In workspace mode (local dev), go.work resolves go-mcp via `use` and this replace is
+  # a no-op because workspace replacements take precedence over go.mod replacements.
+  combinedSrc = pkgs.runCommand "tap-dancer-go-src" {
+    nativeBuildInputs = [ pkgs.go ];
+  } ''
+    mkdir -p $out/packages/tap-dancer $out/libs
+    cp -r ${src}/go $out/packages/tap-dancer/go
+    cp -r ${go-mcp-src} $out/libs/go-mcp
+    chmod -R u+w $out
+    cd $out/packages/tap-dancer/go
+    export GOWORK=off HOME=$TMPDIR
+    go mod vendor
+  '';
+
+  tap-dancer-cli = pkgs.buildGoModule {
     pname = "tap-dancer";
     inherit version;
-    src = "${src}/go";
-    modules = "${src}/go/gomod2nix.toml";
+    src = combinedSrc;
+    sourceRoot = "tap-dancer-go-src/packages/tap-dancer/go";
+    vendorHash = null;
     subPackages = [ "cmd/tap-dancer" ];
     meta = with pkgs.lib; {
       description = "TAP-14 validator and writer toolkit";

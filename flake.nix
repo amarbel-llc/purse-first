@@ -139,8 +139,9 @@
           };
 
           tapDancerPkgs = import ./lib/packages/tap-dancer.nix {
-            inherit pkgs goOverlay craneLib purse-first-cli;
+            inherit pkgs craneLib purse-first-cli;
             src = ./packages/tap-dancer;
+            go-mcp-src = ./libs/go-mcp;
           };
 
           # batman needs the purse-first CLI to build robin's plugin.json.

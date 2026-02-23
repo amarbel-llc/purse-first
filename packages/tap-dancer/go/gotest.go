@@ -47,8 +47,9 @@ func parseFileLine(output string) (file string, line string) {
 
 // ConvertGoTest reads go test -json events from r and writes TAP-14 to w.
 // If verbose is true, passing tests include output diagnostics.
+// If skipEmpty is true, packages with no tests emit a SKIP directive instead of not ok.
 // Returns an exit code: 0 for all pass, 1 for any failure, 2 for build errors.
-func ConvertGoTest(r io.Reader, w io.Writer, verbose bool) int {
+func ConvertGoTest(r io.Reader, w io.Writer, verbose bool, skipEmpty bool) int {
 	scanner := bufio.NewScanner(r)
 
 	packages := make(map[string]*packageResult)
@@ -86,12 +87,25 @@ func ConvertGoTest(r io.Reader, w io.Writer, verbose bool) int {
 				pkg.output.WriteString(ev.Output)
 			case "pass":
 				pkg.elapsed = ev.Elapsed
-				emitPackage(tw, pkg, verbose)
+				if len(pkg.tests) == 0 {
+					emitEmptyPackage(tw, pkg, skipEmpty)
+					if !skipEmpty && exitCode < 1 {
+						exitCode = 1
+					}
+				} else {
+					emitPackage(tw, pkg, verbose)
+				}
 			case "fail":
 				pkg.failed = true
 				pkg.elapsed = ev.Elapsed
 				emitPackage(tw, pkg, verbose)
 				if exitCode < 1 {
+					exitCode = 1
+				}
+			case "skip":
+				pkg.elapsed = ev.Elapsed
+				emitEmptyPackage(tw, pkg, skipEmpty)
+				if !skipEmpty && exitCode < 1 {
 					exitCode = 1
 				}
 			}
@@ -123,6 +137,25 @@ func ConvertGoTest(r io.Reader, w io.Writer, verbose bool) int {
 
 	tw.Plan()
 	return exitCode
+}
+
+func emitEmptyPackage(tw *Writer, pkg *packageResult, skipEmpty bool) {
+	if skipEmpty {
+		reason := emptyPackageReason(pkg.output.String())
+		tw.Skip(pkg.name, reason)
+	} else {
+		tw.NotOk(pkg.name, nil)
+	}
+}
+
+func emptyPackageReason(output string) string {
+	if strings.Contains(output, "[no test files]") {
+		return "no test files"
+	}
+	if strings.Contains(output, "no tests to run") {
+		return "no tests to run"
+	}
+	return "no tests"
 }
 
 func emitPackage(tw *Writer, pkg *packageResult, verbose bool) {

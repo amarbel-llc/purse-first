@@ -95,6 +95,7 @@ func registerCommands() *command.App {
 		Description: command.Description{Short: "Run go test and convert output to TAP-14"},
 		Params: []command.Param{
 			{Name: "verbose", Type: command.Bool, Description: "Pass -v to go test and include output for passing tests", Required: false},
+			{Name: "skip-empty", Type: command.Bool, Description: "Emit SKIP directive instead of not ok for packages with no tests", Required: false},
 		},
 		RunCLI: handleGoTest,
 	})
@@ -104,7 +105,8 @@ func registerCommands() *command.App {
 
 func handleGoTest(ctx context.Context, args json.RawMessage) error {
 	var params struct {
-		Verbose bool `json:"verbose"`
+		Verbose   bool `json:"verbose"`
+		SkipEmpty bool `json:"skip-empty"`
 	}
 	if err := json.Unmarshal(args, &params); err != nil {
 		return fmt.Errorf("invalid arguments: %w", err)
@@ -119,10 +121,11 @@ func handleGoTest(ctx context.Context, args json.RawMessage) error {
 	// Find remaining args from os.Args after "go-test"
 	for i, arg := range os.Args {
 		if arg == "go-test" {
-			// Skip flags we handle (-v/--verbose) and collect the rest
+			// Skip flags we handle and collect the rest
 			rest := os.Args[i+1:]
 			for _, a := range rest {
-				if a == "-v" || a == "--verbose" {
+				if a == "-v" || a == "--verbose" ||
+					a == "-skip-empty" || a == "--skip-empty" {
 					continue
 				}
 				goTestArgs = append(goTestArgs, a)
@@ -146,7 +149,7 @@ func handleGoTest(ctx context.Context, args json.RawMessage) error {
 		return err
 	}
 
-	exitCode := tap.ConvertGoTest(stdout, os.Stdout, params.Verbose)
+	exitCode := tap.ConvertGoTest(stdout, os.Stdout, params.Verbose, params.SkipEmpty)
 
 	// Wait for command to finish (ignore error — we use our own exit code)
 	cmd.Wait()
