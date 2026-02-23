@@ -215,7 +215,7 @@
             pkgs.tapDancerPkgs.default
           ];
         skills = ./skills;
-        pluginBaseJson = ./.claude-plugin/plugin.json;
+        packageToml = ./package.toml;
         pluginConfig = builtins.fromJSON (builtins.readFile ./marketplace-config.json);
         brewConfig = {
           releaseRepo = "amarbel-llc/purse-first";

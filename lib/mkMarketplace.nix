@@ -31,7 +31,7 @@
   # Optional — customization
   pluginConfig ? null,
   skills ? null,
-  pluginBaseJson ? null,
+  packageToml ? null,
 
   # Optional — Homebrew tap generation.
   # When set, produces a packages.homebrew-tap output.
@@ -95,29 +95,27 @@ utils.lib.eachDefaultSystem (
             nativeBuildInputs = [ cli ];
           }
           ''
-            mkdir -p $out/share/purse-first/${name}/skills
-            cp -r ${skills}/* $out/share/purse-first/${name}/skills/
-
             staging=$(mktemp -d)
-            ln -s $out/share/purse-first/${name}/skills $staging/skills
-            mkdir -p $staging/.claude-plugin
+
             ${
-              if pluginBaseJson != null then
-                "cp ${pluginBaseJson} $staging/.claude-plugin/plugin.json"
+              if packageToml != null then
+                "cp ${packageToml} $staging/package.toml"
               else
                 ''
-                  cat > $staging/.claude-plugin/plugin.json <<'PLUGIN_EOF'
-{
-  "name": "${name}",
-  "author": { "name": "${owner.name}" },
-  "description": "${description}"
-}
-PLUGIN_EOF
+                  cat > $staging/package.toml <<'TOML_EOF'
+                  name = "${name}"
+                  description = "${description}"
+
+                  [author]
+                  name = "${owner.name}"
+                  TOML_EOF
                 ''
             }
-            chmod u+w $staging/.claude-plugin/plugin.json
-            purse-first generate-local-plugin --root $staging
-            cp $staging/.claude-plugin/plugin.json $out/share/purse-first/${name}/plugin.json
+
+            purse-first generate-plugin \
+              --root "$staging" \
+              --output "$out" \
+              --skills-dir ${skills}
           ''
       else
         null;

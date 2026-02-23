@@ -62,12 +62,10 @@ func buildApp() *command.App {
 		},
 		Params: []command.Param{
 			{Name: "dir", Type: command.String, Description: "Output directory", Required: true},
-			{Name: "skills-dir", Type: command.String, Description: "Skills source directory"},
 		},
 		RunCLI: func(ctx context.Context, args json.RawMessage) error {
 			var p struct {
-				Dir       string `json:"dir"`
-				SkillsDir string `json:"skills-dir"`
+				Dir string `json:"dir"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return fmt.Errorf("invalid arguments: %w", err)
@@ -76,7 +74,7 @@ func buildApp() *command.App {
 			// Register MCP tools onto the app so GenerateAll includes them
 			tools.RegisterAll(app, nil)
 
-			return app.GenerateAllWithSkills(p.Dir, p.SkillsDir)
+			return app.GenerateAll(p.Dir)
 		},
 	})
 

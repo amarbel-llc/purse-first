@@ -3,3 +3,6 @@ description = "TAP-14 writer libraries (Go + Rust) and skill for producing spec-
 
 [author]
 name = "friedenberg"
+
+[mcp.tap-dancer]
+command = "tap-dancer"

@@ -35,12 +35,8 @@ func main() {
 
 	app := tools.RegisterAll()
 
-	if flag.NArg() >= 2 && flag.Arg(0) == "generate-plugin" {
-		skillsDir := ""
-		if flag.NArg() >= 3 {
-			skillsDir = flag.Arg(2)
-		}
-		if err := app.GenerateAllWithSkills(flag.Arg(1), skillsDir); err != nil {
+	if flag.NArg() == 2 && flag.Arg(0) == "generate-plugin" {
+		if err := app.GenerateAll(flag.Arg(1)); err != nil {
 			log.Fatalf("generating plugin: %v", err)
 		}
 		return
