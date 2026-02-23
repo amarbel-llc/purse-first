@@ -26,8 +26,8 @@ function claude_validates_chix { # @test
   assert_success
 }
 
-function claude_validates_purse_first { # @test
-  run claude plugin validate "$(plugin_share_dir purse-first)/plugin.json"
+function claude_validates_bob { # @test
+  run claude plugin validate "$(plugin_share_dir bob)/plugin.json"
   assert_success
 }
 
@@ -61,8 +61,8 @@ function purse_first_validates_chix { # @test
   assert_success
 }
 
-function purse_first_validates_purse_first { # @test
-  run "$purse_first" validate "$(plugin_share_dir purse-first)"
+function purse_first_validates_bob { # @test
+  run "$purse_first" validate "$(plugin_share_dir bob)"
   assert_success
 }
 
