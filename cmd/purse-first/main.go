@@ -8,7 +8,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/amarbel-llc/purse-first/internal/hook"
 	"github.com/amarbel-llc/purse-first/internal/install"
 	"github.com/amarbel-llc/purse-first/internal/localplugin"
 	"github.com/amarbel-llc/purse-first/internal/marketplace"
@@ -22,56 +21,13 @@ func main() {
 		Short: "Package framework for Claude Code",
 	}
 
-	hookCmd := &cobra.Command{
-		Use:   "hook",
-		Short: "PreToolUse hook handler (reads JSON from stdin)",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cwd, _ := os.Getwd()
-			return hook.HandlePreToolUse(os.Stdin, os.Stdout, cwd)
-		},
-		SilenceUsage:  true,
-		SilenceErrors: true,
-	}
-
-	postHookCmd := &cobra.Command{
-		Use:   "post-hook",
-		Short: "PostToolUse hook handler (fires package notifications)",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return hook.HandlePostToolUse(os.Stdin, os.Stdout)
-		},
-		SilenceUsage:  true,
-		SilenceErrors: true,
-	}
-
-	sessionEndCmd := &cobra.Command{
-		Use:   "session-end",
-		Short: "SessionEnd hook handler (fires package stop notifications)",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return hook.HandleSessionEnd(os.Stdin, os.Stdout)
-		},
-		SilenceUsage:  true,
-		SilenceErrors: true,
-	}
-
-	uninstallHooksCmd := &cobra.Command{
-		Use:   "uninstall-hooks",
-		Short: "Remove purse-first hook entries from Claude Code settings",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return hook.Uninstall(false)
-		},
-	}
-
-	var installHooks bool
-
 	installCmd := &cobra.Command{
 		Use:   "install",
 		Short: "Install purse-first marketplace and packages into Claude Code",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return install.Run(os.Stderr, install.Options{NoHooks: !installHooks})
+			return install.Run(os.Stderr)
 		},
 	}
-
-	installCmd.Flags().BoolVar(&installHooks, "hooks", false, "install purse-first hooks into settings (default: hooks are removed)")
 
 	var (
 		pluginsDir    string
@@ -135,7 +91,7 @@ func main() {
 
 	installLocalCmd := &cobra.Command{
 		Use:   "install-local",
-		Short: "Set up local dev environment: skills, MCP servers, and hooks",
+		Short: "Set up local dev environment: skills and MCP servers",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if installLocalRoot == "" {
 				cwd, err := os.Getwd()
@@ -246,7 +202,7 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 	validateCmd.Flags().StringVar(&validateType, "type", "", "document type: plugin, mapping, marketplace")
 	validateCmd.Flags().BoolVar(&validateStrict, "strict", false, "promote warnings to errors")
 
-	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, uninstallHooksCmd, genMarketplaceCmd, installLocalCmd, genPluginCmd, validateCmd)
+	root.AddCommand(installCmd, genMarketplaceCmd, installLocalCmd, genPluginCmd, validateCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)

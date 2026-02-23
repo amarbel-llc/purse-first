@@ -38,13 +38,9 @@ build-brew:
 build-no-hooks:
     nix build .#marketplace-no-hooks
 
-# Install MCP servers and purse-first hook
+# Install MCP servers and packages
 install:
     nix run .#install
-
-# Remove purse-first hooks from Claude Code settings
-uninstall-hooks:
-    nix run -- .#default -- uninstall-hooks
 
 update: update-nix
 
@@ -109,12 +105,6 @@ test-validate:
     nix build
     nix develop --command bats --tap zz-tests_bats/validate_documents.bats
 
-# Run hook unit tests + BATS hook I/O tests
-test-hooks:
-    nix develop --command go test -v ./internal/hook/...
-    nix build
-    nix develop --command bats --tap zz-tests_bats/hook_io.bats
-
 # Run lifecycle tests
 test-lifecycle:
     nix build
@@ -135,7 +125,6 @@ test: \
     test-go \
     test-go-mcp \
     test-grit \
-    test-hooks \
     test-integration \
     test-lifecycle \
     test-lux \

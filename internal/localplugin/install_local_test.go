@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestInstallLocalSkillsAndHooks(t *testing.T) {
+func TestInstallLocalSkillsAndMCP(t *testing.T) {
 	root := t.TempDir()
 
 	// Create a skill
@@ -35,7 +35,7 @@ func TestInstallLocalSkillsAndHooks(t *testing.T) {
 	if !strings.Contains(output, "TAP version 14") {
 		t.Error("missing TAP version header")
 	}
-	if !strings.Contains(output, "1..3") {
+	if !strings.Contains(output, "1..2") {
 		t.Error("missing test plan")
 	}
 	if !strings.Contains(output, "ok 1") {
@@ -47,9 +47,6 @@ func TestInstallLocalSkillsAndHooks(t *testing.T) {
 	}
 	if !strings.Contains(output, "# SKIP") {
 		t.Error("MCP step should be SKIP when no servers declared")
-	}
-	if !strings.Contains(output, "ok 3") {
-		t.Error("missing ok 3 for hooks")
 	}
 
 	// Verify plugin.json was updated with skills

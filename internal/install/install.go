@@ -12,13 +12,7 @@ import (
 	"path/filepath"
 
 	"github.com/charmbracelet/lipgloss"
-
-	"github.com/amarbel-llc/purse-first/internal/hook"
 )
-
-type Options struct {
-	NoHooks bool
-}
 
 var styleCode = lipgloss.NewStyle().
 	Foreground(lipgloss.Color("#E88388")).
@@ -85,12 +79,7 @@ func readMarketplace(root string) (*marketplaceJSON, error) {
 	return &m, nil
 }
 
-func Run(w io.Writer, opts ...Options) error {
-	var opt Options
-	if len(opts) > 0 {
-		opt = opts[0]
-	}
-
+func Run(w io.Writer) error {
 	root, err := resolveMarketplaceRoot()
 	if err != nil {
 		return fmt.Errorf("resolving marketplace: %w", err)
@@ -101,11 +90,8 @@ func Run(w io.Writer, opts ...Options) error {
 		return err
 	}
 
-	// TAP header: 4 fixed steps + one per package + optional hook uninstall
+	// TAP header: 4 fixed steps + one per package
 	total := 4 + len(m.Plugins)
-	if opt.NoHooks {
-		total++
-	}
 	fmt.Fprintf(w, "TAP version 14\n")
 	fmt.Fprintf(w, "1..%d\n", total)
 
@@ -143,15 +129,6 @@ func Run(w io.Writer, opts ...Options) error {
 			return fmt.Errorf("installing package %q: %w", plugin.Name, err)
 		}
 		fmt.Fprintf(w, "ok %d - install package %s\n", n, styleCode.Render(plugin.Name))
-		n++
-	}
-
-	if opt.NoHooks {
-		if err := hook.Uninstall(false); err != nil {
-			fmt.Fprintf(w, "not ok %d - uninstall hooks\n", n)
-			return fmt.Errorf("uninstalling hooks: %w", err)
-		}
-		fmt.Fprintf(w, "ok %d - uninstall hooks from settings\n", n)
 		n++
 	}
 

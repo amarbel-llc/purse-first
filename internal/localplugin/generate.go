@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/amarbel-llc/purse-first/internal/hook"
 	tap "github.com/amarbel-llc/tap-dancer/go"
 )
 
@@ -66,15 +65,14 @@ type InstallLocalOptions struct {
 }
 
 // InstallLocal sets up the local development environment: optionally generates
-// plugin.json via _generate, discovers skills, installs MCP servers, and
-// registers hooks in project-scoped settings.
+// plugin.json via _generate, discovers skills, and installs MCP servers.
 func InstallLocal(w io.Writer, root string, opts InstallLocalOptions) error {
 	tw := tap.NewWriter(w)
 
 	pluginPath := filepath.Join(root, ".claude-plugin", "plugin.json")
 
 	if opts.Binary != "" {
-		tw.PlanAhead(4)
+		tw.PlanAhead(3)
 
 		generatedPath, err := runGenerate(root)
 		if err != nil {
@@ -86,7 +84,7 @@ func InstallLocal(w io.Writer, root string, opts InstallLocalOptions) error {
 		tw.Ok(fmt.Sprintf("generate plugin.json via _generate (%s)", opts.Binary))
 		pluginPath = generatedPath
 	} else {
-		tw.PlanAhead(3)
+		tw.PlanAhead(2)
 	}
 
 	// Discover and update skills
@@ -112,22 +110,6 @@ func InstallLocal(w io.Writer, root string, opts InstallLocalOptions) error {
 	} else {
 		tw.Ok(fmt.Sprintf("install MCP servers to .claude/settings.json (%d server%s)", count, plural(count)))
 	}
-
-	// Install hooks using the running binary's path
-	binaryPath, err := os.Executable()
-	if err != nil {
-		tw.NotOk("resolve binary path for hooks", map[string]string{
-			"error": err.Error(),
-		})
-		return err
-	}
-	if err := hook.Install(binaryPath, true); err != nil {
-		tw.NotOk("install hooks to .claude/settings.json", map[string]string{
-			"error": err.Error(),
-		})
-		return err
-	}
-	tw.Ok("install hooks to .claude/settings.json")
 
 	return nil
 }
