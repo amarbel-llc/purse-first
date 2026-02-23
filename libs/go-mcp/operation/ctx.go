@@ -50,10 +50,10 @@ func (c *ctx) Run(
 			}
 			child.diagnostic.Extras = child.extras
 		}
-		child.event.Outcome = child.outcome
-		child.event.Diagnostic = child.diagnostic
 		child.runMust()
 		child.runAfter()
+		child.event.Outcome = child.outcome
+		child.event.Diagnostic = child.diagnostic
 		c.writer.EndOperation(child.depth, &child.event)
 	}()
 

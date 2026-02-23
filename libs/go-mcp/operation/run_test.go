@@ -170,6 +170,21 @@ func TestRunMustAndAfterExecute(t *testing.T) {
 	}
 }
 
+func TestRunMustFailureFlipsEventOutcome(t *testing.T) {
+	w := &recordingWriter{}
+	ctx := New(w)
+	ctx.Run("step", func(ctx Context) error {
+		ctx.Must(func() error { return errors.New("flush failed") })
+		return nil
+	})
+	if w.ends[0].event.Outcome != Failure {
+		t.Errorf("expected Failure from Must error, got %d", w.ends[0].event.Outcome)
+	}
+	if len(w.ends[0].event.MustErrors) != 1 {
+		t.Fatalf("expected 1 MustError in event, got %d", len(w.ends[0].event.MustErrors))
+	}
+}
+
 func TestRunMustAndAfterRunEvenOnPanic(t *testing.T) {
 	w := &recordingWriter{}
 	ctx := New(w)
