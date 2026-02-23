@@ -5,13 +5,15 @@ import (
 	"path/filepath"
 )
 
-// GenerateAll writes all artifacts (plugin manifest, mappings, manpages,
+// GenerateAll writes all artifacts (plugin manifest, mappings, hooks, manpages,
 // and shell completions) to standard paths under dir.
 //
 // Output layout:
 //
 //	{dir}/share/purse-first/{name}/plugin.json
 //	{dir}/share/purse-first/{name}/mappings.json (if any commands have MapsTools)
+//	{dir}/share/purse-first/{name}/hooks/hooks.json (if any commands have MapsTools)
+//	{dir}/share/purse-first/{name}/hooks/pre-tool-use (if any commands have MapsTools)
 //	{dir}/share/man/man1/{name}.1
 //	{dir}/share/man/man1/{name}-{cmd}.1 (per visible command)
 //	{dir}/share/bash-completion/completions/{name}
@@ -47,6 +49,10 @@ func (a *App) GenerateAllWithSkills(dir, skillsDir string) error {
 	}
 
 	if err := a.GenerateMappings(purseDir); err != nil {
+		return err
+	}
+
+	if err := a.GenerateHooks(purseDir); err != nil {
 		return err
 	}
 
