@@ -42,6 +42,13 @@ func main() {
 		return
 	}
 
+	if flag.NArg() >= 1 && flag.Arg(0) == "hook" {
+		if err := app.HandleHook(os.Stdin, os.Stdout); err != nil {
+			log.Fatalf("handling hook: %v", err)
+		}
+		return
+	}
+
 	if flag.NArg() > 0 {
 		fmt.Fprintf(os.Stderr, "grit: unexpected arguments: %v\n", flag.Args())
 		flag.Usage()

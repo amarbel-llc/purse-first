@@ -22,6 +22,13 @@ func main() {
 		return
 	}
 
+	if len(os.Args) >= 2 && os.Args[1] == "hook" {
+		if err := app.HandleHook(os.Stdin, os.Stdout); err != nil {
+			log.Fatalf("handling hook: %v", err)
+		}
+		return
+	}
+
 	for _, arg := range os.Args[1:] {
 		if arg == "-h" || arg == "--help" {
 			fmt.Println("get-hubbed - a GitHub MCP server wrapping the gh CLI")

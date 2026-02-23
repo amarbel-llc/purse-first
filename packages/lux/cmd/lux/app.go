@@ -53,6 +53,20 @@ func buildApp() *command.App {
 		},
 	})
 
+	// Hidden hook command for PreToolUse interception
+	app.AddCommand(&command.Command{
+		Name:   "hook",
+		Hidden: true,
+		Description: command.Description{
+			Short: "Handle PreToolUse hook",
+		},
+		RunCLI: func(ctx context.Context, args json.RawMessage) error {
+			// Register MCP tools so tool mappings are available
+			tools.RegisterAll(app, nil)
+			return app.HandleHook(os.Stdin, os.Stdout)
+		},
+	})
+
 	// Hidden command for artifact generation during nix build
 	app.AddCommand(&command.Command{
 		Name:   "_generate",
