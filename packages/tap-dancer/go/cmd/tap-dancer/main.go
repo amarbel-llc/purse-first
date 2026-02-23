@@ -25,7 +25,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  tap-dancer [command] [flags]\n\n")
 		fmt.Fprintf(os.Stderr, "Commands:\n")
 		fmt.Fprintf(os.Stderr, "  validate              Validate TAP-14 input\n")
-		fmt.Fprintf(os.Stderr, "  go-test [args...]    Run go test and convert output to TAP-14\n")
+		fmt.Fprintf(os.Stderr, "  go-test [args...]     Run go test and convert output to TAP-14\n")
+		fmt.Fprintf(os.Stderr, "  cargo-test [args...]  Run cargo test and convert output to TAP-14\n")
 		fmt.Fprintf(os.Stderr, "  generate-plugin DIR   Generate MCP plugin (for Nix postInstall)\n")
 		fmt.Fprintf(os.Stderr, "\nWhen run with no args and no TTY, starts MCP server mode\n")
 	}
@@ -100,6 +101,16 @@ func registerCommands() *command.App {
 		RunCLI: handleGoTest,
 	})
 
+	app.AddCommand(&command.Command{
+		Name:        "cargo-test",
+		Description: command.Description{Short: "Run cargo test and convert output to TAP-14"},
+		Params: []command.Param{
+			{Name: "verbose", Type: command.Bool, Description: "Include output for passing tests", Required: false},
+			{Name: "skip-empty", Type: command.Bool, Description: "Emit SKIP directive instead of not ok for suites with no tests", Required: false},
+		},
+		RunCLI: handleCargoTest,
+	})
+
 	return app
 }
 
@@ -152,6 +163,63 @@ func handleGoTest(ctx context.Context, args json.RawMessage) error {
 	exitCode := tap.ConvertGoTest(stdout, os.Stdout, params.Verbose, params.SkipEmpty)
 
 	// Wait for command to finish (ignore error — we use our own exit code)
+	cmd.Wait()
+
+	if exitCode != 0 {
+		os.Exit(exitCode)
+	}
+
+	return nil
+}
+
+func handleCargoTest(ctx context.Context, args json.RawMessage) error {
+	var params struct {
+		Verbose   bool `json:"verbose"`
+		SkipEmpty bool `json:"skip-empty"`
+	}
+	if err := json.Unmarshal(args, &params); err != nil {
+		return fmt.Errorf("invalid arguments: %w", err)
+	}
+
+	cargoArgs := []string{"test"}
+	if params.Verbose {
+		cargoArgs = append(cargoArgs, "-v")
+	}
+
+	// Collect extra args from CLI (after "cargo-test", excluding our flags)
+	for i, arg := range os.Args {
+		if arg == "cargo-test" {
+			rest := os.Args[i+1:]
+			for _, a := range rest {
+				if a == "-v" || a == "--verbose" ||
+					a == "-skip-empty" || a == "--skip-empty" {
+					continue
+				}
+				cargoArgs = append(cargoArgs, a)
+			}
+			break
+		}
+	}
+
+	// Append --format json after the -- separator
+	cargoArgs = append(cargoArgs, "--", "--format", "json")
+
+	cmd := exec.CommandContext(ctx, "cargo", cargoArgs...)
+	cmd.Stderr = os.Stderr
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("creating stdout pipe: %w", err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		tw := tap.NewWriter(os.Stdout)
+		tw.BailOut(fmt.Sprintf("failed to start cargo test: %v", err))
+		return err
+	}
+
+	exitCode := tap.ConvertCargoTest(stdout, os.Stdout, params.Verbose, params.SkipEmpty)
+
 	cmd.Wait()
 
 	if exitCode != 0 {
