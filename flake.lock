@@ -14,11 +14,11 @@
       },
       "locked": {
         "dir": "devenvs/bats",
-        "lastModified": 1771793052,
-        "narHash": "sha256-xCFw8WaT3nmCXVq00tD/uviOEjJL0Z1cpnHYjm7/7dA=",
+        "lastModified": 1771853504,
+        "narHash": "sha256-3vUT2dcdbYFD8bTMNIciNZaDuR7LN3QxuZITrQGJmw4=",
         "owner": "amarbel-llc",
         "repo": "eng",
-        "rev": "58610a744260d9473acd21d0219bf99852857de4",
+        "rev": "e15da2a6b789603c91e9995441e53784d296eed3",
         "type": "github"
       },
       "original": {
@@ -30,11 +30,11 @@
     },
     "crane": {
       "locked": {
-        "lastModified": 1771438068,
-        "narHash": "sha256-nGBbXvEZVe/egCPVPFcu89RFtd8Rf6J+4RFoVCFec0A=",
+        "lastModified": 1771796463,
+        "narHash": "sha256-9bCDuUzpwJXcHMQYMS1yNuzYMmKO/CCwCexpjWOl62I=",
         "owner": "ipetkov",
         "repo": "crane",
-        "rev": "b5090e53e9d68c523a4bb9ad42b4737ee6747597",
+        "rev": "3d3de3313e263e04894f284ac18177bd26169bad",
         "type": "github"
       },
       "original": {
@@ -130,11 +130,11 @@
       },
       "locked": {
         "dir": "devenvs/go",
-        "lastModified": 1771793052,
-        "narHash": "sha256-xCFw8WaT3nmCXVq00tD/uviOEjJL0Z1cpnHYjm7/7dA=",
+        "lastModified": 1771853504,
+        "narHash": "sha256-3vUT2dcdbYFD8bTMNIciNZaDuR7LN3QxuZITrQGJmw4=",
         "owner": "amarbel-llc",
         "repo": "eng",
-        "rev": "58610a744260d9473acd21d0219bf99852857de4",
+        "rev": "e15da2a6b789603c91e9995441e53784d296eed3",
         "type": "github"
       },
       "original": {
@@ -241,11 +241,11 @@
       },
       "locked": {
         "dir": "devenvs/rust",
-        "lastModified": 1771793052,
-        "narHash": "sha256-xCFw8WaT3nmCXVq00tD/uviOEjJL0Z1cpnHYjm7/7dA=",
+        "lastModified": 1771853504,
+        "narHash": "sha256-3vUT2dcdbYFD8bTMNIciNZaDuR7LN3QxuZITrQGJmw4=",
         "owner": "amarbel-llc",
         "repo": "eng",
-        "rev": "58610a744260d9473acd21d0219bf99852857de4",
+        "rev": "e15da2a6b789603c91e9995441e53784d296eed3",
         "type": "github"
       },
       "original": {
@@ -280,11 +280,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1771729765,
-        "narHash": "sha256-HNsDSR5bhLSrIpi9bTb2uTK1qnPo1xFSBxs6YmFyprk=",
+        "lastModified": 1771816254,
+        "narHash": "sha256-vkp3iTF6QmHMvL+34DI93IiMPjS2lqcMlA1fl7nXVsQ=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "be926cb1a76e8450ab2b92121b2e88d09fa4d41c",
+        "rev": "085bdbf5dde5477538e4c87d1684b6c6df56c0ad",
         "type": "github"
       },
       "original": {
@@ -300,11 +300,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1771729765,
-        "narHash": "sha256-HNsDSR5bhLSrIpi9bTb2uTK1qnPo1xFSBxs6YmFyprk=",
+        "lastModified": 1771816254,
+        "narHash": "sha256-vkp3iTF6QmHMvL+34DI93IiMPjS2lqcMlA1fl7nXVsQ=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "be926cb1a76e8450ab2b92121b2e88d09fa4d41c",
+        "rev": "085bdbf5dde5477538e4c87d1684b6c6df56c0ad",
         "type": "github"
       },
       "original": {
@@ -327,11 +327,11 @@
       },
       "locked": {
         "dir": "devenvs/shell",
-        "lastModified": 1771793052,
-        "narHash": "sha256-xCFw8WaT3nmCXVq00tD/uviOEjJL0Z1cpnHYjm7/7dA=",
+        "lastModified": 1771853504,
+        "narHash": "sha256-3vUT2dcdbYFD8bTMNIciNZaDuR7LN3QxuZITrQGJmw4=",
         "owner": "amarbel-llc",
         "repo": "eng",
-        "rev": "58610a744260d9473acd21d0219bf99852857de4",
+        "rev": "e15da2a6b789603c91e9995441e53784d296eed3",
         "type": "github"
       },
       "original": {
