@@ -680,6 +680,87 @@ func TestRunCLIShortFloatFlag(t *testing.T) {
 	}
 }
 
+func TestRunCLISingleDashLongBoolFlag(t *testing.T) {
+	var got bool
+	app := NewApp("test", "test app")
+	app.AddCommand(&Command{
+		Name: "cmd",
+		Params: []Param{
+			{Name: "skip-empty", Type: Bool, Description: "Skip empty"},
+		},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			var params struct {
+				SkipEmpty bool `json:"skip-empty"`
+			}
+			json.Unmarshal(args, &params)
+			got = params.SkipEmpty
+			return TextResult(""), nil
+		},
+	})
+
+	err := app.RunCLI(context.Background(), []string{"cmd", "-skip-empty"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if !got {
+		t.Error("skip-empty should be true when using -skip-empty")
+	}
+}
+
+func TestRunCLISingleDashLongStringFlag(t *testing.T) {
+	var got string
+	app := NewApp("test", "test app")
+	app.AddCommand(&Command{
+		Name: "cmd",
+		Params: []Param{
+			{Name: "output-dir", Type: String, Description: "Output directory"},
+		},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			var params struct {
+				OutputDir string `json:"output-dir"`
+			}
+			json.Unmarshal(args, &params)
+			got = params.OutputDir
+			return TextResult(""), nil
+		},
+	})
+
+	err := app.RunCLI(context.Background(), []string{"cmd", "-output-dir", "/tmp/out"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if got != "/tmp/out" {
+		t.Errorf("output-dir = %q, want %q", got, "/tmp/out")
+	}
+}
+
+func TestRunCLISingleDashLongEqualsFlag(t *testing.T) {
+	var got string
+	app := NewApp("test", "test app")
+	app.AddCommand(&Command{
+		Name: "cmd",
+		Params: []Param{
+			{Name: "output-dir", Type: String, Description: "Output directory"},
+		},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			var params struct {
+				OutputDir string `json:"output-dir"`
+			}
+			json.Unmarshal(args, &params)
+			got = params.OutputDir
+			return TextResult(""), nil
+		},
+	})
+
+	err := app.RunCLI(context.Background(), []string{"cmd", "-output-dir=/tmp/out"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if got != "/tmp/out" {
+		t.Errorf("output-dir = %q, want %q", got, "/tmp/out")
+	}
+}
+
 func TestShortFlagNotInJSONSchema(t *testing.T) {
 	cmd := &Command{
 		Name: "status",

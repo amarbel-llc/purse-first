@@ -168,7 +168,7 @@ func parseFlags(args []string, params []Param, vals map[string]any) ([]string, e
 			p, found = paramMap[key]
 
 		case strings.HasPrefix(arg, "-") && len(arg) >= 2:
-			// Parse -x or -x=value; resolve short to param name.
+			// Parse -x or -x=value or -long-flag; resolve short or long name.
 			rest := arg[1:]
 			if idx := strings.IndexByte(rest, '='); idx >= 0 {
 				value = rest[idx+1:]
@@ -181,6 +181,10 @@ func parseFlags(args []string, params []Param, vals map[string]any) ([]string, e
 				if found {
 					key = p.Name
 				}
+			} else {
+				// Multi-char single-dash: treat as long flag name (Go convention)
+				key = rest
+				p, found = paramMap[key]
 			}
 
 		default:
