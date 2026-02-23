@@ -15,6 +15,7 @@ type App struct {
 	Examples          []Example // app-level workflow examples
 	commands          map[string]*Command
 	canonicalNames    map[*Command]string
+	pluginSkills      []string // discovered skill paths for plugin.json
 }
 
 // NewApp creates a new App with the given name and short description.

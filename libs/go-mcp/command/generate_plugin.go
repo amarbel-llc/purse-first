@@ -2,8 +2,12 @@ package command
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 )
 
 type pluginMcpServer struct {
@@ -41,6 +45,7 @@ func (a *App) GeneratePlugin(dir string) error {
 				Args:    a.MCPArgs,
 			},
 		},
+		Skills: a.pluginSkills,
 	}
 
 	if a.PluginAuthor != "" {
@@ -59,4 +64,73 @@ func (a *App) GeneratePlugin(dir string) error {
 	data = append(data, '\n')
 
 	return os.WriteFile(filepath.Join(pluginDir, "plugin.json"), data, 0o644)
+}
+
+// discoverSkills globs {skillsDir}/*/SKILL.md and returns sorted "./skills/{name}" entries.
+func discoverSkills(skillsDir string) ([]string, error) {
+	pattern := filepath.Join(skillsDir, "*", "SKILL.md")
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil, fmt.Errorf("globbing skills: %w", err)
+	}
+
+	var skills []string
+	for _, match := range matches {
+		// Extract the skill directory name from the match path
+		skillDir := filepath.Dir(match)
+		name := filepath.Base(skillDir)
+		skills = append(skills, "./skills/"+name)
+	}
+
+	sort.Strings(skills)
+
+	return skills, nil
+}
+
+// copyDir recursively copies a directory tree from src to dst.
+func copyDir(src, dst string) error {
+	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		rel, err := filepath.Rel(src, path)
+		if err != nil {
+			return fmt.Errorf("computing relative path: %w", err)
+		}
+
+		target := filepath.Join(dst, rel)
+
+		if d.IsDir() {
+			return os.MkdirAll(target, 0o755)
+		}
+
+		return copyFile(path, target)
+	})
+}
+
+// copyFile copies a single file from src to dst, preserving permissions.
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("opening %s: %w", src, err)
+	}
+	defer in.Close()
+
+	info, err := in.Stat()
+	if err != nil {
+		return fmt.Errorf("stat %s: %w", src, err)
+	}
+
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode())
+	if err != nil {
+		return fmt.Errorf("creating %s: %w", dst, err)
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, in); err != nil {
+		return fmt.Errorf("copying %s to %s: %w", src, dst, err)
+	}
+
+	return nil
 }
