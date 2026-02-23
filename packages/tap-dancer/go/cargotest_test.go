@@ -144,3 +144,101 @@ func TestCargoConvertMultipleSuites(t *testing.T) {
 		t.Fatalf("output is not valid TAP-14:\n%s", out)
 	}
 }
+
+func TestCargoConvertEmptySuiteDefault(t *testing.T) {
+	jsonEvents := strings.Join([]string{
+		`Running unittests src/lib.rs (target/debug/deps/my_crate-abc123)`,
+		`{ "type": "suite", "event": "started", "test_count": 0 }`,
+		`{ "type": "suite", "event": "ok", "passed": 0, "failed": 0, "ignored": 0, "measured": 0, "filtered_out": 0, "exec_time": 0.0 }`,
+	}, "\n") + "\n"
+
+	var buf bytes.Buffer
+	exitCode := ConvertCargoTest(strings.NewReader(jsonEvents), &buf, false, false)
+
+	if exitCode != 1 {
+		t.Errorf("expected exit code 1, got %d", exitCode)
+	}
+
+	out := buf.String()
+	if !strings.Contains(out, "not ok") {
+		t.Errorf("expected not ok for empty suite:\n%s", out)
+	}
+
+	reader := NewReader(strings.NewReader(out))
+	if !reader.Summary().Valid {
+		for _, d := range reader.Diagnostics() {
+			t.Errorf("diagnostic: line %d: %s: %s", d.Line, d.Severity, d.Message)
+		}
+		t.Fatalf("output is not valid TAP-14:\n%s", out)
+	}
+}
+
+func TestCargoConvertEmptySuiteSkipEmpty(t *testing.T) {
+	jsonEvents := strings.Join([]string{
+		`Running unittests src/lib.rs (target/debug/deps/my_crate-abc123)`,
+		`{ "type": "suite", "event": "started", "test_count": 0 }`,
+		`{ "type": "suite", "event": "ok", "passed": 0, "failed": 0, "ignored": 0, "measured": 0, "filtered_out": 0, "exec_time": 0.0 }`,
+	}, "\n") + "\n"
+
+	var buf bytes.Buffer
+	exitCode := ConvertCargoTest(strings.NewReader(jsonEvents), &buf, false, true)
+
+	if exitCode != 0 {
+		t.Errorf("expected exit code 0, got %d", exitCode)
+	}
+
+	out := buf.String()
+	if !strings.Contains(out, "# SKIP") {
+		t.Errorf("expected SKIP directive:\n%s", out)
+	}
+	if strings.Contains(out, "not ok") {
+		t.Errorf("expected no 'not ok' with skip-empty:\n%s", out)
+	}
+
+	reader := NewReader(strings.NewReader(out))
+	if !reader.Summary().Valid {
+		for _, d := range reader.Diagnostics() {
+			t.Errorf("diagnostic: line %d: %s: %s", d.Line, d.Severity, d.Message)
+		}
+		t.Fatalf("output is not valid TAP-14:\n%s", out)
+	}
+}
+
+func TestCargoConvertMixedEmptyAndRealSuites(t *testing.T) {
+	jsonEvents := strings.Join([]string{
+		`Running unittests src/lib.rs (target/debug/deps/my_crate-abc123)`,
+		`{ "type": "suite", "event": "started", "test_count": 1 }`,
+		`{ "type": "test", "event": "started", "name": "tests::test_real" }`,
+		`{ "type": "test", "name": "tests::test_real", "event": "ok", "exec_time": 0.001, "stdout": "" }`,
+		`{ "type": "suite", "event": "ok", "passed": 1, "failed": 0, "ignored": 0, "measured": 0, "filtered_out": 0, "exec_time": 0.003 }`,
+		`Running unittests src/main.rs (target/debug/deps/my_crate-def456)`,
+		`{ "type": "suite", "event": "started", "test_count": 0 }`,
+		`{ "type": "suite", "event": "ok", "passed": 0, "failed": 0, "ignored": 0, "measured": 0, "filtered_out": 0, "exec_time": 0.0 }`,
+	}, "\n") + "\n"
+
+	var buf bytes.Buffer
+	exitCode := ConvertCargoTest(strings.NewReader(jsonEvents), &buf, false, true)
+
+	if exitCode != 0 {
+		t.Errorf("expected exit code 0, got %d", exitCode)
+	}
+
+	out := buf.String()
+	if !strings.Contains(out, "# Subtest: unittests src/lib.rs") {
+		t.Errorf("expected real suite subtest:\n%s", out)
+	}
+	if !strings.Contains(out, "# SKIP") {
+		t.Errorf("expected SKIP for empty suite:\n%s", out)
+	}
+	if !strings.Contains(out, "1..2") {
+		t.Errorf("expected plan 1..2:\n%s", out)
+	}
+
+	reader := NewReader(strings.NewReader(out))
+	if !reader.Summary().Valid {
+		for _, d := range reader.Diagnostics() {
+			t.Errorf("diagnostic: line %d: %s: %s", d.Line, d.Severity, d.Message)
+		}
+		t.Fatalf("output is not valid TAP-14:\n%s", out)
+	}
+}
