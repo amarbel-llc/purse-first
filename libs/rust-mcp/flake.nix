@@ -10,12 +10,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     crane.url = "github:ipetkov/crane";
-    rust = {
-      url = "path:../../devenvs/rust";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-master.follows = "nixpkgs-master";
-      inputs.utils.follows = "utils";
-    };
   };
 
   outputs =
@@ -26,7 +20,6 @@
       utils,
       rust-overlay,
       crane,
-      rust,
     }:
     utils.lib.eachDefaultSystem (
       system:
@@ -55,6 +48,10 @@
             inherit cargoArtifacts;
           }
         );
+        rustDevenv = import ../../devenvs/rust/default.nix {
+          inherit pkgs rust-overlay;
+          pkgs-master = import nixpkgs-master { inherit system; };
+        };
       in
       {
         packages = {
@@ -62,7 +59,7 @@
           mcp-server = mcp-server-crate;
         };
 
-        devShells.default = rust.devShells.${system}.default;
+        devShells.default = rustDevenv.devShell;
       }
     );
 }
