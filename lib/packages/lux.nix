@@ -1,20 +1,26 @@
 {
   pkgs,
   src,
-  goOverlay,
+  go-mcp-src,
 }:
 
 let
-  goPkgs = import pkgs.path {
-    inherit (pkgs.stdenv.hostPlatform) system;
-    overlays = [ goOverlay ];
-  };
+  # Assemble source tree matching the replace directive in go.mod:
+  #   replace github.com/amarbel-llc/purse-first/libs/go-mcp => ../../libs/go-mcp
+  # In workspace mode (local dev), go.work resolves go-mcp via `use` and this replace is
+  # a no-op because workspace replacements take precedence over go.mod replacements.
+  combinedSrc = pkgs.runCommand "lux-src" { } ''
+    mkdir -p $out/packages $out/libs
+    cp -r ${src} $out/packages/lux
+    cp -r ${go-mcp-src} $out/libs/go-mcp
+  '';
 in
-goPkgs.buildGoApplication {
+pkgs.buildGoModule {
   pname = "lux";
   version = "0.1.0";
-  inherit src;
-  modules = "${src}/gomod2nix.toml";
+  src = combinedSrc;
+  sourceRoot = "lux-src/packages/lux";
+  vendorHash = "sha256-1g9cXhHsMsQqTJpNveMw0y50RMFY6THlOs8PUEEkT7s=";
   subPackages = [ "cmd/lux" ];
 
   nativeBuildInputs = [ pkgs.scdoc ];

@@ -128,8 +128,9 @@
               '';
 
           luxPkg = import ./lib/packages/lux.nix {
-            inherit pkgs goOverlay;
+            inherit pkgs;
             src = ./packages/lux;
+            go-mcp-src = ./libs/go-mcp;
           };
 
           chixPkg = import ./lib/packages/chix.nix {
