@@ -5,8 +5,8 @@
     nixpkgs-master.url = "github:NixOS/nixpkgs/b28c4999ed71543e71552ccfd0d7e68c581ba7e9";
     nixpkgs.url = "github:NixOS/nixpkgs/23d72dabcb3b12469f57b37170fcbc1789bd7457";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
-    go.url = "github:amarbel-llc/eng?dir=devenvs/go";
-    shell.url = "github:amarbel-llc/eng?dir=devenvs/shell";
+    go.url = "path:../../devenvs/go";
+    shell.url = "path:../../devenvs/shell";
   };
 
   outputs =

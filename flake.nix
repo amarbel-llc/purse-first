@@ -7,26 +7,26 @@
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
 
     go = {
-      url = "github:amarbel-llc/eng?dir=devenvs/go";
+      url = "path:./devenvs/go";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";
     };
     shell = {
-      url = "github:amarbel-llc/eng?dir=devenvs/shell";
+      url = "path:./devenvs/shell";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";
     };
     bats = {
-      url = "github:amarbel-llc/eng?dir=devenvs/bats";
+      url = "path:./devenvs/bats";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";
     };
 
     rust = {
-      url = "github:amarbel-llc/eng?dir=devenvs/rust";
+      url = "path:./devenvs/rust";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";

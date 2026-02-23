@@ -10,7 +10,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     crane.url = "github:ipetkov/crane";
-    rust.url = "github:amarbel-llc/eng?dir=devenvs/rust";
+    rust.url = "path:../../devenvs/rust";
   };
 
   outputs =
