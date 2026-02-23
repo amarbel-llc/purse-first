@@ -97,20 +97,14 @@
         "utils": "utils"
       },
       "locked": {
-        "dir": "devenvs/rust",
-        "lastModified": 1771727692,
-        "narHash": "sha256-Lx9UFpKxxAtiYHp3h+sl4AmcRuP9WqQD4ytDlCPArqo=",
-        "owner": "amarbel-llc",
-        "repo": "eng",
-        "rev": "fb0d07534cae4674474d53fd6660aa0102e771ea",
-        "type": "github"
+        "path": "../../devenvs/rust",
+        "type": "path"
       },
       "original": {
-        "dir": "devenvs/rust",
-        "owner": "amarbel-llc",
-        "repo": "eng",
-        "type": "github"
-      }
+        "path": "../../devenvs/rust",
+        "type": "path"
+      },
+      "parent": []
     },
     "rust-overlay": {
       "inputs": {
@@ -120,11 +114,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1771729765,
-        "narHash": "sha256-HNsDSR5bhLSrIpi9bTb2uTK1qnPo1xFSBxs6YmFyprk=",
+        "lastModified": 1771816254,
+        "narHash": "sha256-vkp3iTF6QmHMvL+34DI93IiMPjS2lqcMlA1fl7nXVsQ=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "be926cb1a76e8450ab2b92121b2e88d09fa4d41c",
+        "rev": "085bdbf5dde5477538e4c87d1684b6c6df56c0ad",
         "type": "github"
       },
       "original": {
