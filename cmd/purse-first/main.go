@@ -12,6 +12,7 @@ import (
 	"github.com/amarbel-llc/purse-first/internal/install"
 	"github.com/amarbel-llc/purse-first/internal/localplugin"
 	"github.com/amarbel-llc/purse-first/internal/marketplace"
+	"github.com/amarbel-llc/purse-first/internal/packagetoml"
 	"github.com/amarbel-llc/purse-first/internal/validate"
 )
 
@@ -175,6 +176,51 @@ func main() {
 	genLocalPluginCmd.Flags().StringVar(&installLocalRoot, "root", "", "repository root (defaults to cwd)")
 
 	var (
+		genPluginRoot      string
+		genPluginOutput    string
+		genPluginSkillsDir string
+	)
+
+	genPluginCmd := &cobra.Command{
+		Use:           "generate-plugin",
+		Short:         "Generate plugin.json from package.toml",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			root := genPluginRoot
+			if root == "" {
+				cwd, err := os.Getwd()
+				if err != nil {
+					return fmt.Errorf("getting working directory: %w", err)
+				}
+				root = cwd
+			}
+
+			pkg, err := packagetoml.ParseFile(filepath.Join(root, "package.toml"))
+			if err != nil {
+				return fmt.Errorf("parsing package.toml: %w", err)
+			}
+
+			output := genPluginOutput
+			if output == "" {
+				output = root
+			}
+
+			if err := packagetoml.GeneratePluginJSON(pkg, output, genPluginSkillsDir); err != nil {
+				return fmt.Errorf("generating plugin.json: %w", err)
+			}
+
+			pluginPath := filepath.Join(output, "share", "purse-first", pkg.Name, "plugin.json")
+			fmt.Fprintf(os.Stderr, "generated %s\n", pluginPath)
+			return nil
+		},
+	}
+
+	genPluginCmd.Flags().StringVar(&genPluginRoot, "root", "", "package root containing package.toml (defaults to cwd)")
+	genPluginCmd.Flags().StringVar(&genPluginOutput, "output", "", "output directory (defaults to root)")
+	genPluginCmd.Flags().StringVar(&genPluginSkillsDir, "skills-dir", "", "directory containing skills to discover and copy")
+
+	var (
 		validateType   string
 		validateStrict bool
 	)
@@ -221,7 +267,7 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 	validateCmd.Flags().StringVar(&validateType, "type", "", "document type: plugin, mapping, marketplace")
 	validateCmd.Flags().BoolVar(&validateStrict, "strict", false, "promote warnings to errors")
 
-	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, uninstallHooksCmd, genMarketplaceCmd, installLocalCmd, genLocalPluginCmd, validateCmd)
+	root.AddCommand(hookCmd, postHookCmd, sessionEndCmd, installCmd, uninstallHooksCmd, genMarketplaceCmd, installLocalCmd, genLocalPluginCmd, genPluginCmd, validateCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
