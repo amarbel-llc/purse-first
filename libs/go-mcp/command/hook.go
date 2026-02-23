@@ -59,26 +59,15 @@ func (a *App) HandleHook(r io.Reader, w io.Writer) error {
 
 	cms := a.allToolMappings()
 
-	// Build a flat slice of ToolMappings and find the match.
-	mappings := make([]ToolMapping, len(cms))
-	for i, cm := range cms {
-		mappings[i] = cm.mapping
-	}
-
-	matched := FindToolMatch(mappings, hi.ToolName, filePath, command)
-	if matched == nil {
-		return nil
-	}
-
-	// Identify which commandMapping produced the match by comparing pointer
-	// identity of the Replaces+UseWhen fields (the returned *ToolMapping
-	// points into our mappings slice).
-	var matchedCM commandMapping
-	for i := range mappings {
-		if &mappings[i] == matched {
-			matchedCM = cms[i]
+	var matchedCM *commandMapping
+	for i := range cms {
+		if FindToolMatch([]ToolMapping{cms[i].mapping}, hi.ToolName, filePath, command) != nil {
+			matchedCM = &cms[i]
 			break
 		}
+	}
+	if matchedCM == nil {
+		return nil
 	}
 
 	toolName := fmt.Sprintf("mcp__plugin_%s_%s__%s",
