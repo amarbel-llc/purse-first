@@ -65,6 +65,36 @@ export interface LinuxSandboxParams {
 const DEFAULT_MANDATORY_DENY_SEARCH_DEPTH = 3
 
 /**
+ * Detect if we're already running inside a bwrap sandbox by walking the
+ * process tree via /proc/<pid>/status PPid chain looking for a bwrap ancestor.
+ *
+ * Returns true if any ancestor process is bwrap, indicating we're nested.
+ * This is used to avoid double-applying network/pid/seccomp isolation
+ * (which fails) while still allowing additional filesystem restrictions.
+ */
+function isInsideBwrap(): boolean {
+  try {
+    let pid = process.pid
+    while (pid > 1) {
+      const comm = fs.readFileSync(`/proc/${pid}/comm`, 'utf-8').trim()
+      if (comm === 'bwrap') {
+        logForDebugging('[Sandbox Linux] Detected bwrap ancestor — running nested')
+        return true
+      }
+      const statusContent = fs.readFileSync(`/proc/${pid}/status`, 'utf-8')
+      const ppidMatch = statusContent.match(/^PPid:\s*(\d+)$/m)
+      if (!ppidMatch) break
+      const ppid = parseInt(ppidMatch[1], 10)
+      if (ppid === pid) break // guard against loops
+      pid = ppid
+    }
+  } catch {
+    // If /proc is unavailable or restricted, assume not nested
+  }
+  return false
+}
+
+/**
  * Find if any component of the path is a symlink within the allowed write paths.
  * Returns the symlink path if found, or null if no symlinks.
  *
@@ -938,6 +968,47 @@ export async function wrapCommandWithSandboxLinux(
     !hasWriteRestrictions
   ) {
     return command
+  }
+
+  // ========== NESTED SANDBOX DETECTION ==========
+  // When already inside bwrap, we can only add filesystem restrictions.
+  // Network namespace, PID namespace, and seccomp cannot be nested.
+  const nested = isInsideBwrap()
+
+  if (nested && !hasReadRestrictions && !hasWriteRestrictions) {
+    // Nested with no filesystem restrictions to add — nothing to do
+    return command
+  }
+
+  if (nested) {
+    const bwrapArgs: string[] = ['--new-session', '--die-with-parent']
+
+    const fsArgs = await generateFilesystemArgs(
+      readConfig,
+      writeConfig,
+      ripgrepConfig,
+      mandatoryDenySearchDepth,
+      allowGitConfig,
+      abortSignal,
+    )
+    bwrapArgs.push(...fsArgs)
+
+    bwrapArgs.push('--dev', '/dev')
+
+    const shellName = binShell || 'bash'
+    const shell = whichSync(shellName)
+    if (!shell) {
+      throw new Error(`Shell '${shellName}' not found in PATH`)
+    }
+    bwrapArgs.push('--', shell, '-c', command)
+
+    const wrappedCommand = shellquote.quote(['bwrap', ...bwrapArgs])
+
+    logForDebugging(
+      '[Sandbox Linux] Wrapped command with nested bwrap (filesystem restrictions only)',
+    )
+
+    return wrappedCommand
   }
 
   const bwrapArgs: string[] = ['--new-session', '--die-with-parent']
