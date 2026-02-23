@@ -3,6 +3,7 @@ module github.com/amarbel-llc/purse-first
 go 1.25.6
 
 require (
+	github.com/BurntSushi/toml v1.6.0
 	github.com/amarbel-llc/tap-dancer/go v0.0.0-20260219125355-4699d88f934d
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/spf13/cobra v1.10.2
