@@ -1,6 +1,0 @@
-{
-  "name": "grit",
-  "mcpServers": {
-    "grit": { "type": "stdio", "command": "grit" }
-  }
-}

@@ -48,7 +48,7 @@ func TestGeneratePlugin(t *testing.T) {
 
 func TestGeneratePluginWithArgs(t *testing.T) {
 	app := NewApp("lux", "LSP multiplexer")
-	app.MCPArgs = []string{"mcp", "stdio"}
+	app.MCPArgs = []string{"mcp-stdio"}
 
 	dir := t.TempDir()
 	if err := app.GeneratePlugin(dir); err != nil {
@@ -62,8 +62,8 @@ func TestGeneratePluginWithArgs(t *testing.T) {
 	servers := plugin["mcpServers"].(map[string]any)
 	srv := servers["lux"].(map[string]any)
 	args := srv["args"].([]any)
-	if len(args) != 2 || args[0] != "mcp" || args[1] != "stdio" {
-		t.Errorf("args = %v, want [mcp stdio]", args)
+	if len(args) != 1 || args[0] != "mcp-stdio" {
+		t.Errorf("args = %v, want [mcp-stdio]", args)
 	}
 }
 

@@ -1,6 +1,0 @@
-{
-  "name": "get-hubbed",
-  "mcpServers": {
-    "get-hubbed": { "type": "stdio", "command": "get-hubbed" }
-  }
-}
