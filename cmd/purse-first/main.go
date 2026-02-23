@@ -128,7 +128,10 @@ func main() {
 	genMarketplaceCmd.Flags().BoolVar(&genNoHooks, "no-hooks", false, "strip hooks from generated marketplace packages")
 	genMarketplaceCmd.MarkFlagRequired("plugins-dir")
 
-	var installLocalRoot string
+	var (
+		installLocalRoot   string
+		installLocalBinary string
+	)
 
 	installLocalCmd := &cobra.Command{
 		Use:   "install-local",
@@ -142,11 +145,14 @@ func main() {
 				installLocalRoot = cwd
 			}
 
-			return localplugin.InstallLocal(os.Stderr, installLocalRoot)
+			return localplugin.InstallLocal(os.Stderr, installLocalRoot, localplugin.InstallLocalOptions{
+				Binary: installLocalBinary,
+			})
 		},
 	}
 
 	installLocalCmd.Flags().StringVar(&installLocalRoot, "root", "", "repository root (defaults to cwd)")
+	installLocalCmd.Flags().StringVar(&installLocalBinary, "binary", "", "Go binary name under cmd/ to run _generate")
 
 	var (
 		genPluginRoot      string

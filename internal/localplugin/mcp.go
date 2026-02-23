@@ -10,8 +10,7 @@ import (
 // installMCPServers reads mcpServers from plugin.json and writes them to
 // settingsPath (.claude/settings.json) with commands rewritten to use
 // "go run ./cmd/<name>".
-func installMCPServers(root, settingsPath string) (int, error) {
-	pluginPath := filepath.Join(root, ".claude-plugin", "plugin.json")
+func installMCPServers(pluginPath, settingsPath string) (int, error) {
 	data, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return 0, fmt.Errorf("reading plugin.json: %w", err)

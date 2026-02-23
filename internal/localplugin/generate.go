@@ -60,14 +60,36 @@ func Generate(root, pluginPath string) error {
 	return os.WriteFile(pluginPath, out, 0o644)
 }
 
-// InstallLocal sets up the local development environment: discovers skills,
-// installs MCP servers, and registers hooks in project-scoped settings.
-func InstallLocal(w io.Writer, root string) error {
-	tw := tap.NewWriter(w)
-	tw.PlanAhead(3)
+// InstallLocalOptions configures the install-local command.
+type InstallLocalOptions struct {
+	Binary string // Go binary name under cmd/, triggers _generate
+}
 
-	// 1. Discover and update skills
+// InstallLocal sets up the local development environment: optionally generates
+// plugin.json via _generate, discovers skills, installs MCP servers, and
+// registers hooks in project-scoped settings.
+func InstallLocal(w io.Writer, root string, opts InstallLocalOptions) error {
+	tw := tap.NewWriter(w)
+
 	pluginPath := filepath.Join(root, ".claude-plugin", "plugin.json")
+
+	if opts.Binary != "" {
+		tw.PlanAhead(4)
+
+		generatedPath, err := runGenerate(root, opts.Binary)
+		if err != nil {
+			tw.NotOk(fmt.Sprintf("generate plugin.json via _generate (%s)", opts.Binary), map[string]string{
+				"error": err.Error(),
+			})
+			return err
+		}
+		tw.Ok(fmt.Sprintf("generate plugin.json via _generate (%s)", opts.Binary))
+		pluginPath = generatedPath
+	} else {
+		tw.PlanAhead(3)
+	}
+
+	// Discover and update skills
 	if err := Generate(root, pluginPath); err != nil {
 		tw.NotOk("discover and update skills in plugin.json", map[string]string{
 			"error": err.Error(),
@@ -76,9 +98,9 @@ func InstallLocal(w io.Writer, root string) error {
 	}
 	tw.Ok("discover and update skills in plugin.json")
 
-	// 2. Install MCP servers
+	// Install MCP servers
 	settingsPath := filepath.Join(root, ".claude", "settings.json")
-	count, err := installMCPServers(root, settingsPath)
+	count, err := installMCPServers(pluginPath, settingsPath)
 	if err != nil {
 		tw.NotOk("install MCP servers to .claude/settings.json", map[string]string{
 			"error": err.Error(),
@@ -91,7 +113,7 @@ func InstallLocal(w io.Writer, root string) error {
 		tw.Ok(fmt.Sprintf("install MCP servers to .claude/settings.json (%d server%s)", count, plural(count)))
 	}
 
-	// 3. Install hooks
+	// Install hooks
 	binaryPath := "go run ./cmd/purse-first"
 	if err := hook.Install(binaryPath, true); err != nil {
 		tw.NotOk("install hooks to .claude/settings.json", map[string]string{

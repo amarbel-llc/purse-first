@@ -25,7 +25,7 @@ func TestInstallLocalSkillsAndHooks(t *testing.T) {
 	os.WriteFile(filepath.Join(pluginDir, "plugin.json"), data, 0o644)
 
 	var buf bytes.Buffer
-	err := InstallLocal(&buf, root)
+	err := InstallLocal(&buf, root, InstallLocalOptions{})
 	if err != nil {
 		t.Fatalf("InstallLocal: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestInstallLocalWithMCPServers(t *testing.T) {
 	os.WriteFile(filepath.Join(pluginDir, "plugin.json"), data, 0o644)
 
 	var buf bytes.Buffer
-	err := InstallLocal(&buf, root)
+	err := InstallLocal(&buf, root, InstallLocalOptions{})
 	if err != nil {
 		t.Fatalf("InstallLocal: %v", err)
 	}
@@ -113,5 +113,56 @@ func TestInstallLocalWithMCPServers(t *testing.T) {
 
 	if _, ok := mcpServers["my-mcp"]; !ok {
 		t.Error("my-mcp not found in settings.json mcpServers")
+	}
+}
+
+func TestInstallLocalWithBinaryPreCreated(t *testing.T) {
+	root := t.TempDir()
+
+	// Pre-create the _generate output structure (simulating what _generate produces)
+	pluginDir := filepath.Join(root, ".claude-plugin", "share", "purse-first", "test-mcp")
+	os.MkdirAll(pluginDir, 0o755)
+	plugin := map[string]any{
+		"name": "test-mcp",
+		"mcpServers": map[string]any{
+			"test-mcp": map[string]any{
+				"type":    "stdio",
+				"command": "test-mcp",
+				"args":    []any{"mcp", "stdio"},
+			},
+		},
+	}
+	data, _ := json.MarshalIndent(plugin, "", "  ")
+	os.WriteFile(filepath.Join(pluginDir, "plugin.json"), data, 0o644)
+
+	// Test that findGeneratedPlugin discovers the right path
+	generatedPath, err := findGeneratedPlugin(filepath.Join(root, ".claude-plugin"))
+	if err != nil {
+		t.Fatalf("findGeneratedPlugin: %v", err)
+	}
+
+	if filepath.Base(filepath.Dir(generatedPath)) != "test-mcp" {
+		t.Errorf("expected test-mcp dir, got %s", filepath.Dir(generatedPath))
+	}
+
+	// Test that installMCPServers works with the generated path
+	settingsPath := filepath.Join(root, ".claude", "settings.json")
+	count, err := installMCPServers(generatedPath, settingsPath)
+	if err != nil {
+		t.Fatalf("installMCPServers: %v", err)
+	}
+
+	if count != 1 {
+		t.Errorf("expected 1 server, got %d", count)
+	}
+
+	// Verify settings.json
+	settingsData, _ := os.ReadFile(settingsPath)
+	var settings map[string]any
+	json.Unmarshal(settingsData, &settings)
+
+	mcpServers, _ := settings["mcpServers"].(map[string]any)
+	if _, ok := mcpServers["test-mcp"]; !ok {
+		t.Error("test-mcp not found in settings.json")
 	}
 }

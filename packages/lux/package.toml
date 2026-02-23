@@ -1,0 +1,9 @@
+name = "lux"
+description = "LSP Multiplexer that routes requests to language servers based on file type"
+
+[author]
+name = "friedenberg"
+
+[mcp.lux]
+command = "lux"
+args = ["mcp-stdio"]

@@ -32,7 +32,8 @@ func TestInstallMCPServersWritesToSettings(t *testing.T) {
 	os.MkdirAll(settingsDir, 0o755)
 	settingsPath := filepath.Join(settingsDir, "settings.json")
 
-	count, err := installMCPServers(root, settingsPath)
+	pluginPath := filepath.Join(pluginDir, "plugin.json")
+	count, err := installMCPServers(pluginPath, settingsPath)
 	if err != nil {
 		t.Fatalf("installMCPServers: %v", err)
 	}
@@ -83,7 +84,8 @@ func TestInstallMCPServersNoServers(t *testing.T) {
 
 	settingsPath := filepath.Join(root, ".claude", "settings.json")
 
-	count, err := installMCPServers(root, settingsPath)
+	pluginPath := filepath.Join(pluginDir, "plugin.json")
+	count, err := installMCPServers(pluginPath, settingsPath)
 	if err != nil {
 		t.Fatalf("installMCPServers: %v", err)
 	}
@@ -129,7 +131,8 @@ func TestInstallMCPServersPreservesExistingSettings(t *testing.T) {
 	existingData, _ := json.MarshalIndent(existing, "", "  ")
 	os.WriteFile(settingsPath, existingData, 0o644)
 
-	count, err := installMCPServers(root, settingsPath)
+	pluginPath := filepath.Join(pluginDir, "plugin.json")
+	count, err := installMCPServers(pluginPath, settingsPath)
 	if err != nil {
 		t.Fatalf("installMCPServers: %v", err)
 	}
