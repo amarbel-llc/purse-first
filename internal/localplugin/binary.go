@@ -2,13 +2,14 @@ package localplugin
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 )
 
-// runGenerate execs "go run ./cmd/<binary> _generate <outDir>" and returns the
+// runGenerate execs the current binary with "_generate <outDir>" and returns the
 // path to the generated plugin.json found via glob.
-func runGenerate(root, binary string) (string, error) {
+func runGenerate(root string) (string, error) {
 	absRoot, err := filepath.Abs(root)
 	if err != nil {
 		return "", fmt.Errorf("resolving root: %w", err)
@@ -16,7 +17,12 @@ func runGenerate(root, binary string) (string, error) {
 
 	outDir := filepath.Join(absRoot, ".claude-plugin")
 
-	cmd := exec.Command("go", "run", "./cmd/"+binary, "_generate", outDir)
+	self, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("resolving executable path: %w", err)
+	}
+
+	cmd := exec.Command(self, "_generate", outDir)
 	cmd.Dir = absRoot
 
 	output, err := cmd.CombinedOutput()

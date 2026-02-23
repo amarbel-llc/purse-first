@@ -76,7 +76,7 @@ func InstallLocal(w io.Writer, root string, opts InstallLocalOptions) error {
 	if opts.Binary != "" {
 		tw.PlanAhead(4)
 
-		generatedPath, err := runGenerate(root, opts.Binary)
+		generatedPath, err := runGenerate(root)
 		if err != nil {
 			tw.NotOk(fmt.Sprintf("generate plugin.json via _generate (%s)", opts.Binary), map[string]string{
 				"error": err.Error(),
@@ -113,8 +113,14 @@ func InstallLocal(w io.Writer, root string, opts InstallLocalOptions) error {
 		tw.Ok(fmt.Sprintf("install MCP servers to .claude/settings.json (%d server%s)", count, plural(count)))
 	}
 
-	// Install hooks
-	binaryPath := "go run ./cmd/purse-first"
+	// Install hooks using the running binary's path
+	binaryPath, err := os.Executable()
+	if err != nil {
+		tw.NotOk("resolve binary path for hooks", map[string]string{
+			"error": err.Error(),
+		})
+		return err
+	}
 	if err := hook.Install(binaryPath, true); err != nil {
 		tw.NotOk("install hooks to .claude/settings.json", map[string]string{
 			"error": err.Error(),

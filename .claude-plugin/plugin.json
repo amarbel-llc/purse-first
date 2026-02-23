@@ -5,12 +5,12 @@
   "description": "Package framework for bundling CLIs, MCP servers, and skills into composable, Nix-built packages for humans and agents like Claude Code",
   "name": "bob",
   "skills": [
-    "./skills/overview",
-    "./skills/creating-packages",
-    "./skills/using-packages",
     "./skills/context-saving",
+    "./skills/creating-packages",
+    "./skills/design_patterns-just",
     "./skills/go-cli-framework",
-    "./skills/voldemort",
-    "./skills/design_patterns-just"
+    "./skills/overview",
+    "./skills/using-packages",
+    "./skills/voldemort"
   ]
 }
