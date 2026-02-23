@@ -72,6 +72,8 @@ func parseStatusEntry(line string) (StatusEntry, bool) {
 		return parseUntrackedEntry(line)
 	case "!":
 		return parseIgnoredEntry(line)
+	case "u":
+		return parseUnmergedEntry(line)
 	}
 
 	return StatusEntry{}, false
@@ -148,6 +150,20 @@ func parseIgnoredEntry(line string) (StatusEntry, bool) {
 	return StatusEntry{
 		State: "!",
 		Path:  line[2:],
+	}, true
+}
+
+func parseUnmergedEntry(line string) (StatusEntry, bool) {
+	// Porcelain v2 unmerged format:
+	// u <xy> <sub> <m1> <m2> <m3> <mW> <h1> <h2> <h3> <path>
+	fields := strings.Fields(line)
+	if len(fields) < 11 {
+		return StatusEntry{}, false
+	}
+
+	return StatusEntry{
+		State: fields[1],
+		Path:  fields[10],
 	}, true
 }
 

@@ -98,6 +98,41 @@ func TestParseStatusRename(t *testing.T) {
 	}
 }
 
+func TestParseStatusUnmerged(t *testing.T) {
+	tests := []struct {
+		name  string
+		state string
+	}{
+		{"both modified", "UU"},
+		{"both added", "AA"},
+		{"added by us", "AU"},
+		{"added by them", "UA"},
+		{"deleted by us", "DU"},
+		{"deleted by them", "UD"},
+		{"both deleted", "DD"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			input := "# branch.oid abc123\n# branch.head main\nu " + tt.state + " N... 100644 100644 100644 100644 abc123 def456 789abc conflict.go\n"
+
+			result := ParseStatus(input)
+
+			if len(result.Entries) != 1 {
+				t.Fatalf("entries count = %d, want 1", len(result.Entries))
+			}
+
+			if result.Entries[0].State != tt.state {
+				t.Errorf("entry state = %q, want %q", result.Entries[0].State, tt.state)
+			}
+
+			if result.Entries[0].Path != "conflict.go" {
+				t.Errorf("entry path = %q, want %q", result.Entries[0].Path, "conflict.go")
+			}
+		})
+	}
+}
+
 func TestParseDiffNumstat(t *testing.T) {
 	input := `10	5	file.go
 0	3	deleted.go
