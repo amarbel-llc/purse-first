@@ -6,30 +6,9 @@
     nixpkgs-master.url = "github:NixOS/nixpkgs/5b7e21f22978c4b740b3907f3251b470f466a9a2";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
 
-    go = {
-      url = "path:./devenvs/go";
+    gomod2nix = {
+      url = "github:nix-community/gomod2nix";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-master.follows = "nixpkgs-master";
-      inputs.utils.follows = "utils";
-    };
-    shell = {
-      url = "path:./devenvs/shell";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-master.follows = "nixpkgs-master";
-      inputs.utils.follows = "utils";
-    };
-    bats = {
-      url = "path:./devenvs/bats";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-master.follows = "nixpkgs-master";
-      inputs.utils.follows = "utils";
-    };
-
-    rust = {
-      url = "path:./devenvs/rust";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-master.follows = "nixpkgs-master";
-      inputs.utils.follows = "utils";
     };
     crane.url = "github:ipetkov/crane";
     rust-overlay = {
@@ -45,10 +24,7 @@
       nixpkgs,
       nixpkgs-master,
       utils,
-      go,
-      shell,
-      bats,
-      rust,
+      gomod2nix,
       crane,
       rust-overlay,
       fh,
@@ -69,16 +45,31 @@
           && !nixpkgs.lib.hasPrefix (toString ./packages) path;
       };
 
+      buildDevenvs =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          pkgs-master = import nixpkgs-master { inherit system; };
+        in
+        {
+          go = import ./devenvs/go { inherit pkgs pkgs-master gomod2nix; };
+          shell = import ./devenvs/shell { inherit pkgs; };
+          bats = import ./devenvs/bats { inherit pkgs; };
+          rust = import ./devenvs/rust { inherit pkgs pkgs-master rust-overlay; };
+        };
+
       buildPackages =
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+          pkgs-master = import nixpkgs-master { inherit system; };
           pkgs-overlay = import nixpkgs {
             inherit system;
             overlays = [ (import rust-overlay) ];
           };
           craneLib = (crane.mkLib pkgs).overrideToolchain (pkgs-overlay.rust-bin.stable.latest.default);
-          goOverlay = go.overlays.default;
+          goDevenv = import ./devenvs/go { inherit pkgs pkgs-master gomod2nix; };
+          goOverlay = goDevenv.overlay;
           fhPkg = fh.packages.${system}.default;
 
           sandcastlePkg = import ./lib/packages/sandcastle.nix {
@@ -134,7 +125,12 @@
           };
 
           chixPkg = import ./lib/packages/chix.nix {
-            inherit pkgs craneLib fhPkg purse-first-cli;
+            inherit
+              pkgs
+              craneLib
+              fhPkg
+              purse-first-cli
+              ;
             src = ./packages/chix;
             rustMcpSrc = ./libs/rust-mcp;
           };
@@ -201,7 +197,7 @@
           src = purse-first-src;
           modules = ./gomod2nix.toml;
           version = "0.1.0";
-          overlays = [ go.overlays.default ];
+          overlays = [ gomod2nix.overlays.default ];
         };
         plugins =
           system:
@@ -243,12 +239,17 @@
             pkgs-master.claude-code
             localPkgs.batmanPkgs.default
           ];
-        devShellInputsFrom = system: [
-          go.devShells.${system}.default
-          shell.devShells.${system}.default
-          bats.devShells.${system}.default
-          rust.devShells.${system}.default
-        ];
+        devShellInputsFrom =
+          system:
+          let
+            devenvs = buildDevenvs system;
+          in
+          [
+            devenvs.go.devShell
+            devenvs.shell.devShell
+            devenvs.bats.devShell
+            devenvs.rust.devShell
+          ];
         devShellHook = ''
           echo "purse-first - dev environment"
         '';
@@ -268,6 +269,7 @@
         let
           pkgs = import nixpkgs { inherit system; };
           localPkgs = buildPackages system;
+          devenvs = buildDevenvs system;
         in
         {
           packages =
@@ -307,7 +309,16 @@
                 ];
               };
             };
-          devShells.default = marketplaceOutputs.devShells.${system}.default;
+          devShells = {
+            default = marketplaceOutputs.devShells.${system}.default;
+            go = devenvs.go.devShell;
+            shell = devenvs.shell.devShell;
+            bats = devenvs.bats.devShell;
+            rust = devenvs.rust.devShell;
+          };
+          overlays = {
+            go = devenvs.go.overlay;
+          };
         }
       ))
     );

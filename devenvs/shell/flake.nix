@@ -17,21 +17,11 @@
     (utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs {
-          inherit system;
-        };
-
+        pkgs = import nixpkgs { inherit system; };
+        result = import ./default.nix { inherit pkgs; };
       in
-
       {
-        devShells.default = pkgs.mkShell {
-          packages = with pkgs; [
-            bats
-            nodePackages.bash-language-server
-            shellcheck
-            shfmt
-          ];
-        };
+        inherit (result) devShell;
       }
     ));
 }

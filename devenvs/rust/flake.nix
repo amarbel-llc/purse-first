@@ -20,48 +20,12 @@
     (utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs {
-          inherit system;
-        };
-
-        pkgs-master = import nixpkgs-master {
-          inherit system;
-          overlays = [
-            rust-overlay.overlays.default
-            (final: prev: {
-              rustToolchain =
-                let
-                  rust = prev.rust-bin;
-                in
-                if builtins.pathExists ./rust-toolchain.toml then
-                  rust.fromRustupToolchainFile ./rust-toolchain.toml
-                else if builtins.pathExists ./rust-toolchain then
-                  rust.fromRustupToolchainFile ./rust-toolchain
-                else
-                  rust.stable.latest.default.override {
-                    extensions = [
-                      "rust-src"
-                      "rustfmt"
-                    ];
-                  };
-            })
-          ];
-        };
-
+        pkgs = import nixpkgs { inherit system; };
+        pkgs-master = import nixpkgs-master { inherit system; };
+        result = import ./default.nix { inherit pkgs pkgs-master rust-overlay; };
       in
-
-      rec {
-        devShells.default = pkgs-master.mkShell {
-          packages = [
-            pkgs-master.rustToolchain
-            pkgs.openssl
-            pkgs.pkg-config
-            pkgs-master.cargo-deny
-            pkgs-master.cargo-edit
-            pkgs-master.cargo-watch
-            pkgs-master.rust-analyzer
-          ];
-        };
+      {
+        inherit (result) devShell;
       }
     ));
 }

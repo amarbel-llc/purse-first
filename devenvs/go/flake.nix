@@ -24,47 +24,13 @@
     // (utils.lib.eachDefaultSystem (
       system:
       let
-
-        pkgs = import nixpkgs {
-          inherit system;
-        };
-
-        pkgs-master = import nixpkgs-master {
-          inherit system;
-        };
-
-        packages = {
-          inherit (pkgs-master)
-            delve
-            gofumpt
-            golangci-lint
-            golines
-            gopls
-            gotools
-            govulncheck
-            parallel
-            ;
-
-          inherit (pkgs)
-            go
-            ;
-
-          # gopls = gopls.packages.${system}.default;
-          gomod2nix = gomod2nix.packages.${system}.default;
-        };
-
+        pkgs = import nixpkgs { inherit system; };
+        pkgs-master = import nixpkgs-master { inherit system; };
+        result = import ./default.nix { inherit pkgs pkgs-master gomod2nix; };
       in
-
       {
-        inherit packages;
-
-        devShells.default = pkgs-master.mkShell {
-          packages = builtins.attrValues packages;
-
-          env = {
-            GOPATH = "$HOME/.cache/go";
-          };
-        };
+        inherit (result) packages;
+        devShells.default = result.devShell;
       }
     ));
 }

@@ -1,27 +1,5 @@
 {
   "nodes": {
-    "bats": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "nixpkgs-master": [
-          "nixpkgs-master"
-        ],
-        "utils": [
-          "utils"
-        ]
-      },
-      "locked": {
-        "path": "./devenvs/bats",
-        "type": "path"
-      },
-      "original": {
-        "path": "./devenvs/bats",
-        "type": "path"
-      },
-      "parent": []
-    },
     "crane": {
       "locked": {
         "lastModified": 1771796463,
@@ -109,34 +87,10 @@
         "type": "github"
       }
     },
-    "go": {
-      "inputs": {
-        "gomod2nix": "gomod2nix",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "nixpkgs-master": [
-          "nixpkgs-master"
-        ],
-        "utils": [
-          "utils"
-        ]
-      },
-      "locked": {
-        "path": "./devenvs/go",
-        "type": "path"
-      },
-      "original": {
-        "path": "./devenvs/go",
-        "type": "path"
-      },
-      "parent": []
-    },
     "gomod2nix": {
       "inputs": {
         "flake-utils": "flake-utils",
         "nixpkgs": [
-          "go",
           "nixpkgs"
         ]
       },
@@ -202,40 +156,14 @@
     },
     "root": {
       "inputs": {
-        "bats": "bats",
         "crane": "crane",
         "fh": "fh",
-        "go": "go",
+        "gomod2nix": "gomod2nix",
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-master": "nixpkgs-master",
-        "rust": "rust",
-        "rust-overlay": "rust-overlay_2",
-        "shell": "shell",
+        "rust-overlay": "rust-overlay",
         "utils": "utils"
       }
-    },
-    "rust": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "nixpkgs-master": [
-          "nixpkgs-master"
-        ],
-        "rust-overlay": "rust-overlay",
-        "utils": [
-          "utils"
-        ]
-      },
-      "locked": {
-        "path": "./devenvs/rust",
-        "type": "path"
-      },
-      "original": {
-        "path": "./devenvs/rust",
-        "type": "path"
-      },
-      "parent": []
     },
     "rust-analyzer-src": {
       "flake": false,
@@ -257,27 +185,6 @@
     "rust-overlay": {
       "inputs": {
         "nixpkgs": [
-          "rust",
-          "nixpkgs-master"
-        ]
-      },
-      "locked": {
-        "lastModified": 1771816254,
-        "narHash": "sha256-vkp3iTF6QmHMvL+34DI93IiMPjS2lqcMlA1fl7nXVsQ=",
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "rev": "085bdbf5dde5477538e4c87d1684b6c6df56c0ad",
-        "type": "github"
-      },
-      "original": {
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "type": "github"
-      }
-    },
-    "rust-overlay_2": {
-      "inputs": {
-        "nixpkgs": [
           "nixpkgs"
         ]
       },
@@ -294,28 +201,6 @@
         "repo": "rust-overlay",
         "type": "github"
       }
-    },
-    "shell": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "nixpkgs-master": [
-          "nixpkgs-master"
-        ],
-        "utils": [
-          "utils"
-        ]
-      },
-      "locked": {
-        "path": "./devenvs/shell",
-        "type": "path"
-      },
-      "original": {
-        "path": "./devenvs/shell",
-        "type": "path"
-      },
-      "parent": []
     },
     "systems": {
       "locked": {
