@@ -21,6 +21,7 @@ import (
 
 var outputFormat string
 var createVerbose bool
+var attachNoMerge bool
 
 var rootCmd = &cobra.Command{
 	Use:   "spinclass",
@@ -92,7 +93,7 @@ var attachCmd = &cobra.Command{
 			return err
 		}
 
-		return shop.Attach(exec, rp, format, claudeArgs, false)
+		return shop.Attach(exec, rp, format, claudeArgs, attachNoMerge)
 	},
 }
 
@@ -206,6 +207,7 @@ var completionsCmd = &cobra.Command{
 func init() {
 	rootCmd.PersistentFlags().StringVar(&outputFormat, "format", "", "output format: tap or table")
 	createCmd.Flags().BoolVarP(&createVerbose, "verbose", "v", false, "print sweatfile loading details")
+	attachCmd.Flags().BoolVar(&attachNoMerge, "no-merge", false, "skip auto-merge on session close")
 	cleanCmd.Flags().BoolVarP(&cleanInteractive, "interactive", "i", false, "interactively discard changes in dirty merged worktrees")
 	rootCmd.AddCommand(createCmd)
 	rootCmd.AddCommand(attachCmd)
