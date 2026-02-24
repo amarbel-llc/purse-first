@@ -17,7 +17,7 @@ _spinclass_complete() {
   fi
 
   case "$subcommand" in
-    open|attach|create)
+    open|attach|create|merge)
       if [[ "$cur" == -* ]]; then
         case "$subcommand" in
           create)

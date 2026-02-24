@@ -127,16 +127,22 @@ var statusCmd = &cobra.Command{
 }
 
 var mergeCmd = &cobra.Command{
-	Use:   "merge",
-	Short: "Merge current worktree into main",
-	Long:  `Run from inside a worktree. Merges the worktree branch into the main repo with --ff-only and removes the worktree.`,
+	Use:   "merge [target]",
+	Short: "Merge a worktree into main",
+	Long:  `Merge a worktree branch into the main repo with --ff-only and remove the worktree. When run from inside a worktree, merges that worktree. When run from the main repo, specify a target or choose interactively.`,
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		format := outputFormat
 		if format == "" {
 			format = "tap"
 		}
 
-		return merge.Run(executor.ShellExecutor{}, format)
+		var target string
+		if len(args) == 1 {
+			target = args[0]
+		}
+
+		return merge.Run(executor.ShellExecutor{}, format, target)
 	},
 }
 
