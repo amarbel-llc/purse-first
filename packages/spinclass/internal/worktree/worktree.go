@@ -209,3 +209,16 @@ func ListWorktrees(repoPath string) []string {
 	}
 	return worktrees
 }
+
+// ForkName returns a collision-free branch name for forking sourceBranch.
+// It tries <sourceBranch>-1, <sourceBranch>-2, etc., checking for existing
+// directories in <repoPath>/.worktrees/.
+func ForkName(repoPath, sourceBranch string) string {
+	wtDir := filepath.Join(repoPath, WorktreesDir)
+	for n := 1; ; n++ {
+		candidate := fmt.Sprintf("%s-%d", sourceBranch, n)
+		if _, err := os.Stat(filepath.Join(wtDir, candidate)); os.IsNotExist(err) {
+			return candidate
+		}
+	}
+}

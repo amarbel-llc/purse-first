@@ -351,3 +351,35 @@ func TestExcludeWorktreesDirCreatesInfoDir(t *testing.T) {
 		t.Errorf("expected '.worktrees\\n', got %q", string(data))
 	}
 }
+
+func TestForkName(t *testing.T) {
+	dir := t.TempDir()
+	wtDir := filepath.Join(dir, ".worktrees")
+	if err := os.MkdirAll(wtDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	// No collisions: first fork is <branch>-1
+	got := ForkName(dir, "my-feature")
+	if got != "my-feature-1" {
+		t.Errorf("ForkName() = %q, want %q", got, "my-feature-1")
+	}
+
+	// Create my-feature-1 dir, next should be my-feature-2
+	if err := os.Mkdir(filepath.Join(wtDir, "my-feature-1"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	got = ForkName(dir, "my-feature")
+	if got != "my-feature-2" {
+		t.Errorf("ForkName() = %q, want %q", got, "my-feature-2")
+	}
+
+	// Create my-feature-2 as well, next should be my-feature-3
+	if err := os.Mkdir(filepath.Join(wtDir, "my-feature-2"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	got = ForkName(dir, "my-feature")
+	if got != "my-feature-3" {
+		t.Errorf("ForkName() = %q, want %q", got, "my-feature-3")
+	}
+}
