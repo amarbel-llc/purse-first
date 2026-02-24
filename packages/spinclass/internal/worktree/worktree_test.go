@@ -2,6 +2,7 @@ package worktree
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 )
@@ -381,5 +382,46 @@ func TestForkName(t *testing.T) {
 	got = ForkName(dir, "my-feature")
 	if got != "my-feature-3" {
 		t.Errorf("ForkName() = %q, want %q", got, "my-feature-3")
+	}
+}
+
+func TestCreateFrom(t *testing.T) {
+	parentDir := t.TempDir()
+	repoDir := filepath.Join(parentDir, "repo")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	runGit := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	runGit(repoDir, "init")
+	runGit(repoDir, "config", "user.email", "test@test.com")
+	runGit(repoDir, "config", "user.name", "Test")
+	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
+
+	// Create a source worktree to fork from
+	srcPath := filepath.Join(parentDir, "src-wt")
+	runGit(repoDir, "worktree", "add", "-b", "source-branch", srcPath)
+
+	newPath := filepath.Join(parentDir, "fork-wt")
+	_, err := CreateFrom(repoDir, srcPath, newPath, "fork-branch")
+	if err != nil {
+		t.Fatalf("CreateFrom() error: %v", err)
+	}
+
+	// New worktree directory should exist
+	if _, err := os.Stat(newPath); os.IsNotExist(err) {
+		t.Errorf("expected worktree at %s, not found", newPath)
+	}
+
+	// Should be a worktree (has .git file, not dir)
+	if !IsWorktree(newPath) {
+		t.Errorf("expected %s to be a worktree", newPath)
 	}
 }

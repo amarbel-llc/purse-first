@@ -79,6 +79,22 @@ func Create(repoPath, worktreePath string) (sweatfile.LoadResult, error) {
 	if err := git.RunPassthrough(repoPath, "worktree", "add", worktreePath); err != nil {
 		return sweatfile.LoadResult{}, fmt.Errorf("git worktree add: %w", err)
 	}
+	return applyWorktreeConfig(repoPath, worktreePath)
+}
+
+// CreateFrom creates a new worktree branched from fromPath's current HEAD.
+// It runs git worktree add -b from fromPath, then applies sweatfile and
+// trusts the workspace, same as Create.
+func CreateFrom(repoPath, fromPath, newPath, newBranch string) (sweatfile.LoadResult, error) {
+	if err := git.WorktreeAddFrom(fromPath, newBranch, newPath); err != nil {
+		return sweatfile.LoadResult{}, fmt.Errorf("git worktree add: %w", err)
+	}
+	return applyWorktreeConfig(repoPath, newPath)
+}
+
+// applyWorktreeConfig excludes .worktrees from git, loads and applies sweatfile,
+// and trusts worktreePath in Claude.
+func applyWorktreeConfig(repoPath, worktreePath string) (sweatfile.LoadResult, error) {
 	if err := excludeWorktreesDir(repoPath); err != nil {
 		return sweatfile.LoadResult{}, fmt.Errorf("excluding .worktrees from git: %w", err)
 	}
@@ -93,7 +109,7 @@ func Create(repoPath, worktreePath string) (sweatfile.LoadResult, error) {
 		return sweatfile.LoadResult{}, fmt.Errorf("loading sweatfile: %w", err)
 	}
 	if err := sweatfile.Apply(worktreePath, result.Merged); err != nil {
-		return sweatfile.LoadResult{}, err
+		return sweatfile.LoadResult{}, fmt.Errorf("applying sweatfile: %w", err)
 	}
 
 	claudeJSONPath := filepath.Join(home, ".claude.json")
