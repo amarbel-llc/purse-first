@@ -15,7 +15,7 @@ import (
 	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
 
-func Create(rp worktree.ResolvedPath, verbose bool) error {
+func createWorktree(rp worktree.ResolvedPath, verbose bool) error {
 	if _, err := os.Stat(rp.AbsPath); os.IsNotExist(err) {
 		result, err := worktree.Create(rp.RepoPath, rp.AbsPath)
 		if err != nil {
@@ -26,7 +26,22 @@ func Create(rp worktree.ResolvedPath, verbose bool) error {
 		}
 	}
 
-	fmt.Println(rp.AbsPath)
+	return nil
+}
+
+func Create(rp worktree.ResolvedPath, verbose bool, format string) error {
+	if err := createWorktree(rp, verbose); err != nil {
+		return err
+	}
+
+	if format == "tap" {
+		tw := tap.NewWriter(os.Stdout)
+		tw.PlanAhead(1)
+		tw.Ok("create " + rp.Branch)
+	} else {
+		fmt.Println(rp.AbsPath)
+	}
+
 	return nil
 }
 
@@ -52,8 +67,12 @@ func logSweatfileResult(result sweatfile.LoadResult) {
 }
 
 func Attach(exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string) error {
-	if err := Create(rp, false); err != nil {
+	if err := createWorktree(rp, false); err != nil {
 		return err
+	}
+
+	if format != "tap" {
+		fmt.Println(rp.AbsPath)
 	}
 
 	var command []string
@@ -73,10 +92,10 @@ func Attach(exec executor.Executor, rp worktree.ResolvedPath, format string, cla
 		return fmt.Errorf("attach failed: %w", err)
 	}
 
-	return CloseShop(rp, format)
+	return closeShop(rp, format)
 }
 
-func CloseShop(rp worktree.ResolvedPath, format string) error {
+func closeShop(rp worktree.ResolvedPath, format string) error {
 	if rp.Branch == "" {
 		if err := rp.FillBranchFromGit(); err != nil {
 			log.Warn("could not determine current branch")
@@ -97,8 +116,9 @@ func CloseShop(rp worktree.ResolvedPath, format string) error {
 
 	if format == "tap" {
 		tw := tap.NewWriter(os.Stdout)
-		tw.PlanAhead(1)
+		tw.Ok("create " + rp.Branch)
 		tw.Ok("close " + rp.Branch + " # " + desc)
+		tw.Plan()
 	} else {
 		log.Info(desc, "worktree", rp.SessionKey)
 	}

@@ -24,11 +24,18 @@ func Run(repoPath string, args ...string) (string, error) {
 }
 
 func RunPassthrough(repoPath string, args ...string) error {
+	return RunPassthroughEnv(repoPath, nil, args...)
+}
+
+func RunPassthroughEnv(repoPath string, env []string, args ...string) error {
 	cmdArgs := append([]string{"-C", repoPath}, args...)
 	cmd := exec.Command("git", cmdArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
+	if len(env) > 0 {
+		cmd.Env = append(os.Environ(), env...)
+	}
 	return cmd.Run()
 }
 

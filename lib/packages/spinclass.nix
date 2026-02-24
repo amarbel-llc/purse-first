@@ -20,6 +20,10 @@ let
       $out/share/bash-completion/completions/spinclass
     install -Dm644 ${src}/completions/spinclass.fish \
       $out/share/fish/vendor_completions.d/spinclass.fish
+    install -Dm644 ${src}/completions/sc.bash-completion \
+      $out/share/bash-completion/completions/sc
+    install -Dm644 ${src}/completions/sc.fish \
+      $out/share/fish/vendor_completions.d/sc.fish
   '';
 in
 pkgs.symlinkJoin {
@@ -28,4 +32,7 @@ pkgs.symlinkJoin {
     spinclass
     shellCompletions
   ];
+  postBuild = ''
+    ln -s spinclass $out/bin/sc
+  '';
 }

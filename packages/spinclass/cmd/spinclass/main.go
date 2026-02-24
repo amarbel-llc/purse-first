@@ -34,6 +34,11 @@ var createCmd = &cobra.Command{
 	Long:  `Create a new worktree and apply sweatfile settings. Does not start a session. Target is a branch name or path, resolved relative to the current git repository.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		format := outputFormat
+		if format == "" {
+			format = "tap"
+		}
+
 		cwd, err := os.Getwd()
 		if err != nil {
 			return err
@@ -49,7 +54,7 @@ var createCmd = &cobra.Command{
 			return err
 		}
 
-		return shop.Create(rp, createVerbose)
+		return shop.Create(rp, createVerbose, format)
 	},
 }
 
@@ -122,11 +127,22 @@ var statusCmd = &cobra.Command{
 }
 
 var mergeCmd = &cobra.Command{
-	Use:   "merge",
-	Short: "Merge current worktree into main",
-	Long:  `Run from inside a worktree. Merges the worktree branch into the main repo with --ff-only and removes the worktree.`,
+	Use:   "merge [target]",
+	Short: "Merge a worktree into main",
+	Long:  `Merge a worktree branch into the main repo with --ff-only and remove the worktree. When run from inside a worktree, merges that worktree. When run from the main repo, specify a target or choose interactively.`,
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return merge.Run(executor.ShellExecutor{})
+		format := outputFormat
+		if format == "" {
+			format = "tap"
+		}
+
+		var target string
+		if len(args) == 1 {
+			target = args[0]
+		}
+
+		return merge.Run(executor.ShellExecutor{}, format, target)
 	},
 }
 
@@ -139,11 +155,16 @@ var pullCmd = &cobra.Command{
 	Short: "Pull repos and rebase worktrees",
 	Long:  `Pull all clean repos, then rebase all clean worktrees onto their repo's default branch. Use -d to include dirty repos and worktrees.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		format := outputFormat
+		if format == "" {
+			format = "tap"
+		}
+
 		cwd, err := os.Getwd()
 		if err != nil {
 			return err
 		}
-		return pull.Run(cwd, pullDirty)
+		return pull.Run(cwd, pullDirty, format)
 	},
 }
 

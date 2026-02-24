@@ -69,7 +69,7 @@ complete \
   --command spinclass \
   --no-files \
   --keep-order \
-  --condition "__fish_seen_subcommand_from open attach create" \
+  --condition "__fish_seen_subcommand_from open attach create merge" \
   --arguments "(spinclass completions)"
 
 # create flags
