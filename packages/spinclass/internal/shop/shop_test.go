@@ -1,6 +1,14 @@
 package shop
 
-import "testing"
+import (
+	"bytes"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/amarbel-llc/spinclass/internal/tap"
+	"github.com/amarbel-llc/spinclass/internal/worktree"
+)
 
 func TestStatusDescription(t *testing.T) {
 	tests := []struct {
@@ -54,5 +62,41 @@ func TestStatusDescription(t *testing.T) {
 				t.Errorf("statusDescription() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestCreateTapNewWorktree(t *testing.T) {
+	dir := t.TempDir()
+	worktreePath := filepath.Join(dir, "new-worktree")
+
+	rp := worktree.ResolvedPath{
+		AbsPath:  worktreePath,
+		RepoPath: dir,
+		Branch:   "feature-x",
+	}
+
+	var buf bytes.Buffer
+	tw := tap.NewWriter(&buf)
+	tw.PlanAhead(1)
+	tw.Ok("create feature-x " + worktreePath)
+
+	got := buf.String()
+	if !strings.Contains(got, "ok 1 - create feature-x") {
+		t.Errorf("expected ok line, got: %q", got)
+	}
+	_ = rp
+}
+
+func TestCreateTapSkipExisting(t *testing.T) {
+	dir := t.TempDir()
+
+	var buf bytes.Buffer
+	tw := tap.NewWriter(&buf)
+	tw.PlanAhead(1)
+	tw.Skip("create feature-x", "already exists "+dir)
+
+	got := buf.String()
+	if !strings.Contains(got, "# SKIP already exists") {
+		t.Errorf("expected SKIP line, got: %q", got)
 	}
 }

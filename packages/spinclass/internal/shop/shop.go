@@ -16,33 +16,41 @@ import (
 	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
 
-func createWorktree(rp worktree.ResolvedPath, verbose bool) error {
+func createWorktree(rp worktree.ResolvedPath, verbose bool) (bool, error) {
+	existed := true
+
 	if _, err := os.Stat(rp.AbsPath); os.IsNotExist(err) {
+		existed = false
 		result, err := worktree.Create(rp.RepoPath, rp.AbsPath)
 		if err != nil {
-			return err
+			return false, err
 		}
 		if verbose {
 			logSweatfileResult(result)
 		}
 	}
 
-	return nil
+	return existed, nil
 }
 
 func Create(rp worktree.ResolvedPath, verbose bool, format string) error {
-	if err := createWorktree(rp, verbose); err != nil {
+	existed, err := createWorktree(rp, verbose)
+	if err != nil {
 		return err
 	}
 
 	if format == "tap" {
 		tw := tap.NewWriter(os.Stdout)
 		tw.PlanAhead(1)
-		tw.Ok("create " + rp.Branch)
-	} else {
-		fmt.Println(rp.AbsPath)
+		if existed {
+			tw.Skip("create "+rp.Branch, "already exists "+rp.AbsPath)
+		} else {
+			tw.Ok("create " + rp.Branch + " " + rp.AbsPath)
+		}
+		return nil
 	}
 
+	fmt.Println(rp.AbsPath)
 	return nil
 }
 
@@ -68,7 +76,7 @@ func logSweatfileResult(result sweatfile.LoadResult) {
 }
 
 func Attach(exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, noMerge bool) error {
-	if err := createWorktree(rp, false); err != nil {
+	if _, err := createWorktree(rp, false); err != nil {
 		return err
 	}
 
