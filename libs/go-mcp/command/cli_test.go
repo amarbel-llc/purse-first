@@ -761,6 +761,105 @@ func TestRunCLISingleDashLongEqualsFlag(t *testing.T) {
 	}
 }
 
+func TestRunCLIHelpFlag(t *testing.T) {
+	app := NewApp("myapp", "My application")
+	app.Description.Long = "A longer description of my application."
+	app.AddCommand(&Command{
+		Name:        "serve",
+		Description: Description{Short: "Start the server"},
+		RunCLI: func(ctx context.Context, args json.RawMessage) error {
+			t.Error("serve handler should not be called when -h is passed at app level")
+			return nil
+		},
+	})
+
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{"dash h", []string{"-h"}},
+		{"double dash help", []string{"--help"}},
+		{"help command", []string{"help"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := app.RunCLI(context.Background(), tt.args, StubPrompter{})
+			if err != nil {
+				t.Errorf("RunCLI(%v): %v", tt.args, err)
+			}
+		})
+	}
+}
+
+func TestRunCLICommandHelpFlag(t *testing.T) {
+	app := NewApp("myapp", "My application")
+	app.AddCommand(&Command{
+		Name: "serve",
+		Description: Description{
+			Short: "Start the server",
+			Long:  "Start the server and listen on stdin/stdout.",
+		},
+		Params: []Param{
+			{Name: "port", Type: Int, Description: "Port to listen on", Short: 'p'},
+			{Name: "verbose", Type: Bool, Description: "Verbose output"},
+		},
+		RunCLI: func(ctx context.Context, args json.RawMessage) error {
+			t.Error("serve handler should not be called when -h is passed")
+			return nil
+		},
+	})
+
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{"command dash h", []string{"serve", "-h"}},
+		{"command double dash help", []string{"serve", "--help"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := app.RunCLI(context.Background(), tt.args, StubPrompter{})
+			if err != nil {
+				t.Errorf("RunCLI(%v): %v", tt.args, err)
+			}
+		})
+	}
+}
+
+func TestRunCLIPrefixSubcommandHelpFlag(t *testing.T) {
+	app := NewApp("myapp", "My application")
+
+	sub := NewApp("mcp", "MCP server")
+	sub.AddCommand(&Command{
+		Name:        "stdio",
+		Description: Description{Short: "MCP over stdio"},
+		RunCLI: func(ctx context.Context, args json.RawMessage) error {
+			t.Error("mcp stdio handler should not be called when -h is passed")
+			return nil
+		},
+	})
+	app.MergeWithPrefix(sub, "mcp")
+
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{"prefix command dash h", []string{"mcp", "stdio", "-h"}},
+		{"prefix command double dash help", []string{"mcp", "stdio", "--help"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := app.RunCLI(context.Background(), tt.args, StubPrompter{})
+			if err != nil {
+				t.Errorf("RunCLI(%v): %v", tt.args, err)
+			}
+		})
+	}
+}
+
 func TestShortFlagNotInJSONSchema(t *testing.T) {
 	cmd := &Command{
 		Name: "status",

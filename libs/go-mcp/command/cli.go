@@ -13,6 +13,9 @@ import (
 // the subcommand name; command params and global params are both accepted
 // after. Prefix subcommands joined by hyphens are resolved from
 // space-separated args (e.g. "perms check" → "perms-check").
+//
+// The flags -h, --help, and the bare word "help" print usage and return
+// without invoking any handler.
 func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 	globalVals := make(map[string]any)
 	remaining, err := parseFlags(args, a.Params, globalVals)
@@ -21,6 +24,11 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 	}
 
 	if len(remaining) == 0 {
+		a.printUsage()
+		return nil
+	}
+
+	if isHelpArg(remaining[0]) {
 		a.printUsage()
 		return nil
 	}
@@ -42,6 +50,11 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 		if !ok {
 			return fmt.Errorf("unknown command: %s", remaining[0])
 		}
+	}
+
+	if hasHelpFlag(cmdArgs) {
+		a.printCommandUsage(name, cmd)
+		return nil
 	}
 
 	cmdVals := make(map[string]any)
@@ -106,6 +119,36 @@ func printResult(r *Result) {
 		fmt.Println(string(data))
 	} else if r.Text != "" {
 		fmt.Println(r.Text)
+	}
+}
+
+func isHelpArg(s string) bool {
+	return s == "-h" || s == "--help" || s == "help"
+}
+
+func hasHelpFlag(args []string) bool {
+	for _, a := range args {
+		if a == "-h" || a == "--help" {
+			return true
+		}
+	}
+	return false
+}
+
+func (a *App) printCommandUsage(name string, cmd *Command) {
+	fmt.Printf("%s %s — %s\n\n", a.Name, name, cmd.Description.Short)
+	if cmd.Description.Long != "" {
+		fmt.Printf("%s\n\n", cmd.Description.Long)
+	}
+	if len(cmd.Params) > 0 {
+		fmt.Println("Options:")
+		for _, p := range cmd.Params {
+			flag := fmt.Sprintf("--%s", p.Name)
+			if p.Short != 0 {
+				flag = fmt.Sprintf("-%c, --%s", p.Short, p.Name)
+			}
+			fmt.Printf("  %-24s %s\n", flag, p.Description)
+		}
 	}
 }
 
