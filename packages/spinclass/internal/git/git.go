@@ -178,5 +178,6 @@ func Rebase(repoPath, onto string) (string, error) {
 // WorktreeAddFrom runs `git -C fromPath worktree add -b newBranch newPath`
 // so the new worktree branches from fromPath's current HEAD.
 func WorktreeAddFrom(fromPath, newBranch, newPath string) error {
-	return RunPassthrough(fromPath, "worktree", "add", "-b", newBranch, newPath)
+	_, err := Run(fromPath, "worktree", "add", "-b", newBranch, newPath)
+	return err
 }

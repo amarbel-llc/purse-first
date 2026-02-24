@@ -234,7 +234,7 @@ func ForkName(repoPath, sourceBranch string) string {
 	for n := 1; ; n++ {
 		candidate := fmt.Sprintf("%s-%d", sourceBranch, n)
 		_, err := os.Stat(filepath.Join(wtDir, candidate))
-		if err != nil {
+		if os.IsNotExist(err) {
 			return candidate
 		}
 	}

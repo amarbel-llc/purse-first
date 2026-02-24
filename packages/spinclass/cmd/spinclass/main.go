@@ -236,6 +236,10 @@ var forkCmd = &cobra.Command{
 
 		currentPath := filepath.Join(repoPath, worktree.WorktreesDir, currentBranch)
 
+		if _, err := os.Stat(currentPath); os.IsNotExist(err) {
+			return fmt.Errorf("current worktree path %s does not exist; fork requires a standard .worktrees layout", currentPath)
+		}
+
 		rp := worktree.ResolvedPath{
 			AbsPath:    currentPath,
 			RepoPath:   repoPath,
