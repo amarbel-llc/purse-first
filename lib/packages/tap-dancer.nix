@@ -3,26 +3,13 @@
 let
   version = "0.1.0";
 
-  # Workspace build: uses the full Go monorepo source with `go work vendor`.
-  # The vendorHash only covers external dependencies — workspace modules
-  # (go-mcp, etc.) stay in-tree, so local code changes never invalidate it.
-  tap-dancer-cli = pkgs.buildGoModule {
+  mkGoModule = import ../mkGoWorkspaceModule.nix {
+    inherit pkgs goWorkspaceSrc goVendorHash;
+  };
+
+  tap-dancer-cli = mkGoModule {
     pname = "tap-dancer";
     inherit version;
-    src = goWorkspaceSrc;
-    vendorHash = goVendorHash;
-
-    GOWORK = "";
-
-    overrideModAttrs = _: _: {
-      GOWORK = "";
-      buildPhase = ''
-        runHook preBuild
-        go work vendor -e
-        runHook postBuild
-      '';
-    };
-
     subPackages = [ "packages/tap-dancer/go/cmd/tap-dancer" ];
     meta = with pkgs.lib; {
       description = "TAP-14 validator and writer toolkit";

@@ -32,19 +32,6 @@
     let
       mkMarketplace = import ./lib/mkMarketplace.nix;
 
-      purse-first-src = nixpkgs.lib.cleanSourceWith {
-        src = ./.;
-        filter =
-          path: type:
-          let
-            baseName = builtins.baseNameOf path;
-          in
-          baseName != "go.work"
-          && baseName != "go.work.sum"
-          && !nixpkgs.lib.hasPrefix (toString ./libs) path
-          && !nixpkgs.lib.hasPrefix (toString ./packages) path;
-      };
-
       # Go workspace source: includes all Go modules for `go work vendor`.
       # Used by workspace-built packages (grit, lux, get-hubbed, tap-dancer).
       goWorkspaceSrc = nixpkgs.lib.cleanSourceWith {
@@ -156,22 +143,14 @@
             src = ./packages/tap-dancer;
           };
 
+          mkGoModule = import ./lib/mkGoWorkspaceModule.nix {
+            inherit pkgs goWorkspaceSrc goVendorHash;
+          };
+
           # batman needs the purse-first CLI to build robin's plugin.json.
           # We resolve it the same way mkMarketplace does for self-builds.
-          purse-first-cli = pkgs.buildGoModule {
+          purse-first-cli = mkGoModule {
             pname = "purse-first";
-            version = "0.1.0";
-            src = goWorkspaceSrc;
-            vendorHash = goVendorHash;
-            GOWORK = "";
-            overrideModAttrs = _: _: {
-              GOWORK = "";
-              buildPhase = ''
-                runHook preBuild
-                go work vendor -e
-                runHook postBuild
-              '';
-            };
             subPackages = [ "cmd/purse-first" ];
             ldflags = [
               "-s"
@@ -272,7 +251,6 @@
     nixpkgs.lib.recursiveUpdate marketplaceOutputs (
       {
         lib.mkMarketplace = mkMarketplace;
-        lib.goSrc = purse-first-src;
         templates.marketplace = {
           path = ./templates/marketplace;
           description = "Scaffold a new Claude plugin marketplace with Nix";
@@ -329,9 +307,6 @@
             shell = devenvs.shell.devShell;
             bats = devenvs.bats.devShell;
             rust = devenvs.rust.devShell;
-          };
-          overlays = {
-            go = devenvs.go.overlay;
           };
         }
       ))

@@ -1,9 +1,9 @@
 {
-  description = "Go project with gomod2nix";
+  description = "Go project with buildGoModule";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/23d72dabcb3b12469f57b37170fcbc1789bd7457";
-    nixpkgs-master.url = "github:NixOS/nixpkgs/b28c4999ed71543e71552ccfd0d7e68c581ba7e9";
+    nixpkgs.url = "github:NixOS/nixpkgs/<stable-sha>";
+    nixpkgs-master.url = "github:NixOS/nixpkgs/<master-sha>";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
     go.url = "github:amarbel-llc/eng?dir=devenvs/go";
     shell.url = "github:amarbel-llc/eng?dir=devenvs/shell";
@@ -21,18 +21,15 @@
     utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ go.overlays.default ];
-        };
+        pkgs = import nixpkgs { inherit system; };
 
         version = "0.1.0";
 
-        myApp = pkgs.buildGoApplication {
+        myApp = pkgs.buildGoModule {
           pname = "my-app";
           inherit version;
           src = ./.;
-          modules = ./gomod2nix.toml;
+          vendorHash = "<sha256-hash>";
           subPackages = [ "cmd/my-app" ];
 
           ldflags = [

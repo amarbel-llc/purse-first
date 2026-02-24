@@ -59,20 +59,15 @@ utils.lib.eachDefaultSystem (
       if purse-first-cli != null then
         purse-first-cli.packages.${system}.purse-first
       else if purse-first-build != null then
-        pkgs.buildGoModule {
+        let
+          mkGoModule = import ./mkGoWorkspaceModule.nix {
+            inherit pkgs;
+            inherit (purse-first-build) goWorkspaceSrc goVendorHash;
+          };
+        in
+        mkGoModule {
           pname = "purse-first";
           version = purse-first-build.version or "0.0.0";
-          src = purse-first-build.goWorkspaceSrc;
-          vendorHash = purse-first-build.goVendorHash;
-          GOWORK = "";
-          overrideModAttrs = _: _: {
-            GOWORK = "";
-            buildPhase = ''
-              runHook preBuild
-              go work vendor -e
-              runHook postBuild
-            '';
-          };
           subPackages = [ "cmd/purse-first" ];
           ldflags = [
             "-s"

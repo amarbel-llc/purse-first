@@ -265,16 +265,14 @@ devShellInputsFrom = system:
     devenvs.bats.devShell
     devenvs.rust.devShell
   ];
-
-# Go overlay (was: go.overlays.default)
-goDevenv = import ./devenvs/go { inherit pkgs pkgs-master gomod2nix; };
-goOverlay = goDevenv.overlay;
-
-# Marketplace build overlay (was: go.overlays.default)
-overlays = [ gomod2nix.overlays.default ];
 ```
 
-**New outputs:** Exposed devShells and overlays for consumers:
+Note: The `goOverlay` (gomod2nix overlay for `buildGoApplication`) was later
+removed entirely when Go packages migrated to the workspace build pattern
+(`buildGoModule` + `go work vendor`). See `design_patterns-go_nix_monorepo`
+for that pattern.
+
+**New outputs:** Exposed devShells for consumers:
 
 ```nix
 devShells = {
@@ -283,9 +281,6 @@ devShells = {
   shell = devenvs.shell.devShell;
   bats = devenvs.bats.devShell;
   rust = devenvs.rust.devShell;
-};
-overlays = {
-  go = devenvs.go.overlay;
 };
 ```
 
@@ -304,22 +299,19 @@ Running `nix flake lock` removed all `"type": "path"` entries and added the
 | Transitive `nix flake update` | Broken | Works |
 | Standalone `nix develop ./devenvs/go` | Works | Works |
 | Named devShell outputs | None | 4 (`go`, `shell`, `bats`, `rust`) |
-| Named overlay outputs | None | 1 (`go`) |
 
 ## Consumer Migration Path
 
-Existing consumers migrate from `?dir=` sub-flake inputs to named outputs:
+Existing consumers migrate from `?dir=` sub-flake inputs to named devShell outputs:
 
 ```nix
 # Before
 devenv-go.url = "github:amarbel-llc/purse-first?dir=devenvs/go";
 inputsFrom = [ devenv-go.devShells.${system}.default ];
-goOverlay = devenv-go.overlays.default;
 
 # After
 purse-first.url = "github:amarbel-llc/purse-first";
 inputsFrom = [ purse-first.devShells.${system}.go ];
-goOverlay = purse-first.overlays.${system}.go;
 ```
 
 Benefits: fewer inputs per consumer, single flake.lock entry for purse-first,
