@@ -53,6 +53,10 @@ func Run(execr executor.Executor, format string, target string) error {
 		}
 	}
 
+	return Resolved(execr, format, repoPath, wtPath, branch)
+}
+
+func Resolved(execr executor.Executor, format, repoPath, wtPath, branch string) error {
 	if info, err := os.Stat(repoPath); err != nil || !info.IsDir() {
 		return fmt.Errorf("repository not found: %s", repoPath)
 	}
