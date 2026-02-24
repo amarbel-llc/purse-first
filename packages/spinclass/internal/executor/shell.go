@@ -14,6 +14,7 @@ func (s ShellExecutor) Attach(dir string, key string, command []string) error {
 
 	cmd := exec.Command(command[0], command[1:]...)
 	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "SPINCLASS_SESSION="+key)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin

@@ -12,6 +12,7 @@ func (z ZmxExecutor) Attach(dir string, key string, command []string) error {
 	args = append(args, command...)
 
 	cmd := exec.Command("zmx", args...)
+	cmd.Env = append(os.Environ(), "SPINCLASS_SESSION="+key)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
