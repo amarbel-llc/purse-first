@@ -8,7 +8,7 @@ import (
 type ZmxExecutor struct{}
 
 func (z ZmxExecutor) Attach(dir string, key string, command []string) error {
-	args := []string{"attach", key}
+	args := []string{"-g", "spinclass", "attach", key}
 	args = append(args, command...)
 
 	cmd := exec.Command("zmx", args...)
@@ -19,7 +19,7 @@ func (z ZmxExecutor) Attach(dir string, key string, command []string) error {
 }
 
 func (z ZmxExecutor) Detach() error {
-	cmd := exec.Command("zmx", "detach")
+	cmd := exec.Command("zmx", "-g", "spinclass", "detach")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
