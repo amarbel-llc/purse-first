@@ -69,6 +69,13 @@ Every flake uses this pattern — do not deviate:
 - `utils` → `flake-utils` from FlakeHub
 - Variables: `pkgs = import nixpkgs`, `pkgs-master = import nixpkgs-master`
 
+### Build Artifacts
+
+Nix builds output to `result`/`result-*` symlinks (managed by nix, already
+gitignored). All other toolchain builds (go, cargo, etc.) must output to the
+`build/` directory. Never place binaries in the repo root or source directories.
+Prefer `just build` or `nix build` which handle output paths automatically.
+
 ### Code Style & Tooling
 
 - **Nix**: Format with `nix fmt` (nixfmt-rfc-style)
