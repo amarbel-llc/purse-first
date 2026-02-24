@@ -146,3 +146,53 @@ func TestCreateTapNewWorktree(t *testing.T) {
 		t.Errorf("expected plan line 1..1, got: %q", got)
 	}
 }
+
+func TestForkAutoName(t *testing.T) {
+	parentDir := t.TempDir()
+	repoDir := filepath.Join(parentDir, "repo")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	runGit := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	runGit(repoDir, "init")
+	runGit(repoDir, "config", "user.email", "test@test.com")
+	runGit(repoDir, "config", "user.name", "Test")
+	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
+
+	// Create the source worktree inside .worktrees/
+	wtDir := filepath.Join(repoDir, ".worktrees")
+	srcPath := filepath.Join(wtDir, "source-branch")
+	runGit(repoDir, "worktree", "add", "-b", "source-branch", srcPath)
+
+	rp := worktree.ResolvedPath{
+		AbsPath:  srcPath,
+		RepoPath: repoDir,
+		Branch:   "source-branch",
+	}
+
+	var buf bytes.Buffer
+	err := Fork(&buf, rp, "", "tap")
+
+	if err != nil {
+		t.Fatalf("Fork() error: %v", err)
+	}
+
+	got := buf.String()
+	if !strings.Contains(got, "ok 1 - fork source-branch-1") {
+		t.Errorf("expected ok line with fork name, got: %q", got)
+	}
+
+	// Forked worktree should exist
+	forkedPath := filepath.Join(wtDir, "source-branch-1")
+	if _, err := os.Stat(forkedPath); os.IsNotExist(err) {
+		t.Errorf("expected forked worktree at %s", forkedPath)
+	}
+}

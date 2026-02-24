@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -161,4 +162,29 @@ func statusDescription(defaultBranch string, commitsAhead int, porcelain string)
 	}
 
 	return strings.Join(parts, ", ")
+}
+
+// Fork creates a new worktree branched from rp's current HEAD.
+// If newBranch is empty, a name is auto-generated as <rp.Branch>-N.
+// Does not attach to the new session.
+func Fork(w io.Writer, rp worktree.ResolvedPath, newBranch string, format string) error {
+	if newBranch == "" {
+		newBranch = worktree.ForkName(rp.RepoPath, rp.Branch)
+	}
+
+	newPath := filepath.Join(rp.RepoPath, worktree.WorktreesDir, newBranch)
+
+	if _, err := worktree.CreateFrom(rp.RepoPath, rp.AbsPath, newPath, newBranch); err != nil {
+		return err
+	}
+
+	if format == "tap" {
+		tw := tap.NewWriter(w)
+		tw.PlanAhead(1)
+		tw.Ok("fork " + newBranch + " " + newPath)
+		return nil
+	}
+
+	fmt.Fprintln(w, newPath)
+	return nil
 }
