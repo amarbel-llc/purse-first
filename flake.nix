@@ -45,6 +45,29 @@
           && !nixpkgs.lib.hasPrefix (toString ./packages) path;
       };
 
+      # Go workspace source: includes all Go modules for `go work vendor`.
+      # Used by workspace-built packages (grit, lux, get-hubbed, tap-dancer).
+      goWorkspaceSrc = nixpkgs.lib.cleanSourceWith {
+        src = ./.;
+        filter =
+          path: type:
+          let
+            baseName = builtins.baseNameOf path;
+          in
+          type == "directory"
+          || nixpkgs.lib.hasSuffix ".go" baseName
+          || baseName == "go.mod"
+          || baseName == "go.sum"
+          || baseName == "go.work"
+          || baseName == "go.work.sum"
+          # Lux man pages
+          || nixpkgs.lib.hasSuffix ".scd" baseName;
+      };
+
+      # Single vendor hash for the entire Go workspace.
+      # Only covers external deps — workspace module changes don't affect it.
+      goVendorHash = "sha256-sjmgbpHFlLbyNWyC9pmetNDs+n0xO03+jy/xVFO/Sl4=";
+
       buildDevenvs =
         system:
         let
@@ -93,13 +116,11 @@
           };
 
           gritPkg = import ./lib/packages/grit.nix {
-            inherit pkgs goOverlay;
-            src = ./packages/grit;
+            inherit pkgs goWorkspaceSrc goVendorHash;
           };
 
           get-hubbed-unwrapped = import ./lib/packages/get-hubbed.nix {
-            inherit pkgs goOverlay;
-            src = ./packages/get-hubbed;
+            inherit pkgs goWorkspaceSrc goVendorHash;
           };
 
           get-hubbed-wrapped =
@@ -119,9 +140,7 @@
               '';
 
           luxPkg = import ./lib/packages/lux.nix {
-            inherit pkgs;
-            src = ./packages/lux;
-            go-mcp-src = ./libs/go-mcp;
+            inherit pkgs goWorkspaceSrc goVendorHash;
           };
 
           chixPkg = import ./lib/packages/chix.nix {
@@ -136,9 +155,8 @@
           };
 
           tapDancerPkgs = import ./lib/packages/tap-dancer.nix {
-            inherit pkgs craneLib purse-first-cli;
+            inherit pkgs craneLib purse-first-cli goWorkspaceSrc goVendorHash;
             src = ./packages/tap-dancer;
-            go-mcp-src = ./libs/go-mcp;
           };
 
           # batman needs the purse-first CLI to build robin's plugin.json.

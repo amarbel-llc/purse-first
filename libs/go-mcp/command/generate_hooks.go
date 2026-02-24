@@ -82,7 +82,11 @@ func (a *App) GenerateHooks(dir string) error {
 		return fmt.Errorf("writing hooks.json: %w", err)
 	}
 
-	script := fmt.Sprintf("#!/bin/sh\nexec \"$(dirname \"$0\")/../../bin/%s\" hook\n", a.Name)
+	self, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("resolving executable path: %w", err)
+	}
+	script := fmt.Sprintf("#!/bin/sh\nexec '%s' hook\n", self)
 	if err := os.WriteFile(filepath.Join(hooksDir, "pre-tool-use"), []byte(script), 0o755); err != nil {
 		return fmt.Errorf("writing pre-tool-use: %w", err)
 	}

@@ -1,31 +1,29 @@
-{ pkgs, src, craneLib, purse-first-cli, go-mcp-src }:
+{ pkgs, src, craneLib, purse-first-cli, goWorkspaceSrc, goVendorHash }:
 
 let
   version = "0.1.0";
 
-  # Assemble source tree matching the replace directive in go.mod:
-  #   replace github.com/amarbel-llc/purse-first/libs/go-mcp => ../../../libs/go-mcp
-  # In workspace mode (local dev), go.work resolves go-mcp via `use` and this replace is
-  # a no-op because workspace replacements take precedence over go.mod replacements.
-  combinedSrc = pkgs.runCommand "tap-dancer-go-src" {
-    nativeBuildInputs = [ pkgs.go ];
-  } ''
-    mkdir -p $out/packages/tap-dancer $out/libs
-    cp -r ${src}/go $out/packages/tap-dancer/go
-    cp -r ${go-mcp-src} $out/libs/go-mcp
-    chmod -R u+w $out
-    cd $out/packages/tap-dancer/go
-    export GOWORK=off HOME=$TMPDIR
-    go mod vendor
-  '';
-
+  # Workspace build: uses the full Go monorepo source with `go work vendor`.
+  # The vendorHash only covers external dependencies — workspace modules
+  # (go-mcp, etc.) stay in-tree, so local code changes never invalidate it.
   tap-dancer-cli = pkgs.buildGoModule {
     pname = "tap-dancer";
     inherit version;
-    src = combinedSrc;
-    sourceRoot = "tap-dancer-go-src/packages/tap-dancer/go";
-    vendorHash = null;
-    subPackages = [ "cmd/tap-dancer" ];
+    src = goWorkspaceSrc;
+    vendorHash = goVendorHash;
+
+    GOWORK = "";
+
+    overrideModAttrs = _: _: {
+      GOWORK = "";
+      buildPhase = ''
+        runHook preBuild
+        go work vendor -e
+        runHook postBuild
+      '';
+    };
+
+    subPackages = [ "packages/tap-dancer/go/cmd/tap-dancer" ];
     meta = with pkgs.lib; {
       description = "TAP-14 validator and writer toolkit";
       homepage = "https://github.com/amarbel-llc/tap-dancer";

@@ -7,6 +7,8 @@ require (
 	github.com/charmbracelet/huh v0.8.0
 )
 
+replace github.com/amarbel-llc/purse-first/libs/go-mcp => ../..
+
 require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
@@ -37,5 +39,3 @@ require (
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 )
-
-replace github.com/amarbel-llc/purse-first/libs/go-mcp => ../..
