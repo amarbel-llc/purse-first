@@ -92,7 +92,7 @@ var attachCmd = &cobra.Command{
 			return err
 		}
 
-		return shop.Attach(exec, rp, format, claudeArgs)
+		return shop.Attach(exec, rp, format, claudeArgs, false)
 	},
 }
 

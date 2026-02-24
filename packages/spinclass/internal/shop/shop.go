@@ -10,6 +10,7 @@ import (
 	"github.com/amarbel-llc/spinclass/internal/executor"
 	"github.com/amarbel-llc/spinclass/internal/flake"
 	"github.com/amarbel-llc/spinclass/internal/git"
+	"github.com/amarbel-llc/spinclass/internal/merge"
 	"github.com/amarbel-llc/spinclass/internal/sweatfile"
 	"github.com/amarbel-llc/spinclass/internal/tap"
 	"github.com/amarbel-llc/spinclass/internal/worktree"
@@ -66,7 +67,7 @@ func logSweatfileResult(result sweatfile.LoadResult) {
 	)
 }
 
-func Attach(exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string) error {
+func Attach(exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, noMerge bool) error {
 	if err := createWorktree(rp, false); err != nil {
 		return err
 	}
@@ -92,10 +93,10 @@ func Attach(exec executor.Executor, rp worktree.ResolvedPath, format string, cla
 		return fmt.Errorf("attach failed: %w", err)
 	}
 
-	return closeShop(rp, format)
+	return closeShop(exec, rp, format, noMerge)
 }
 
-func closeShop(rp worktree.ResolvedPath, format string) error {
+func closeShop(exec executor.Executor, rp worktree.ResolvedPath, format string, noMerge bool) error {
 	if rp.Branch == "" {
 		if err := rp.FillBranchFromGit(); err != nil {
 			log.Warn("could not determine current branch")
@@ -109,9 +110,14 @@ func closeShop(rp worktree.ResolvedPath, format string) error {
 		return nil
 	}
 
-	commitsAhead := git.CommitsAhead(rp.AbsPath, defaultBranch, rp.Branch)
 	worktreeStatus := git.StatusPorcelain(rp.AbsPath)
+	isClean := worktreeStatus == ""
 
+	if isClean && !noMerge {
+		return merge.Resolved(exec, format, rp.RepoPath, rp.AbsPath, rp.Branch)
+	}
+
+	commitsAhead := git.CommitsAhead(rp.AbsPath, defaultBranch, rp.Branch)
 	desc := statusDescription(defaultBranch, commitsAhead, worktreeStatus)
 
 	if format == "tap" {
