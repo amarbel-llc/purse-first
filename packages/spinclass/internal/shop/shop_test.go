@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/amarbel-llc/spinclass/internal/tap"
 	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
 
@@ -77,7 +78,7 @@ func TestCreateTapNewWorktreeErrorPath(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := Create(&buf, rp, false, "tap")
+	err := Create(&buf, rp, false, "tap", nil)
 	if err == nil {
 		t.Error("expected error when creating worktree in non-git dir, got nil")
 	}
@@ -93,7 +94,7 @@ func TestCreateTapSkipExisting(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := Create(&buf, rp, false, "tap"); err != nil {
+	if err := Create(&buf, rp, false, "tap", nil); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
 
@@ -134,7 +135,7 @@ func TestCreateTapNewWorktree(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := Create(&buf, rp, false, "tap"); err != nil {
+	if err := Create(&buf, rp, false, "tap", nil); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
 
@@ -144,6 +145,34 @@ func TestCreateTapNewWorktree(t *testing.T) {
 	}
 	if !strings.Contains(got, "1..1") {
 		t.Errorf("expected plan line 1..1, got: %q", got)
+	}
+}
+
+func TestCreateSharedWriter(t *testing.T) {
+	dir := t.TempDir()
+
+	rp := worktree.ResolvedPath{
+		AbsPath:  dir,
+		RepoPath: dir,
+		Branch:   "feature-x",
+	}
+
+	var buf bytes.Buffer
+	tw := tap.NewWriter(&buf)
+	tw.PlanAhead(2)
+
+	if err := Create(&buf, rp, false, "tap", tw); err != nil {
+		t.Fatalf("Create returned error: %v", err)
+	}
+
+	got := buf.String()
+	// Should use the shared writer's counter (test point 1)
+	if !strings.Contains(got, "ok 1 - create feature-x # SKIP") {
+		t.Errorf("expected ok 1 with SKIP, got: %q", got)
+	}
+	// Should NOT contain a second "TAP version 14" line
+	if strings.Count(got, "TAP version 14") != 1 {
+		t.Errorf("expected exactly one TAP version line, got: %q", got)
 	}
 }
 

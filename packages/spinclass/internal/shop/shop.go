@@ -34,15 +34,17 @@ func createWorktree(rp worktree.ResolvedPath, verbose bool) (bool, error) {
 	return existed, nil
 }
 
-func Create(w io.Writer, rp worktree.ResolvedPath, verbose bool, format string) error {
+func Create(w io.Writer, rp worktree.ResolvedPath, verbose bool, format string, tw *tap.Writer) error {
 	existed, err := createWorktree(rp, verbose)
 	if err != nil {
 		return err
 	}
 
 	if format == "tap" {
-		tw := tap.NewWriter(w)
-		tw.PlanAhead(1)
+		if tw == nil {
+			tw = tap.NewWriter(w)
+			tw.PlanAhead(1)
+		}
 		if existed {
 			tw.Skip("create "+rp.Branch, "already exists "+rp.AbsPath)
 		} else {
