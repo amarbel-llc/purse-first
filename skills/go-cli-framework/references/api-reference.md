@@ -115,17 +115,24 @@ Command management:
 MCP integration:
 - `RegisterMCPTools(registry *server.ToolRegistry)` — Registers all non-hidden commands that have a `RunMCP` handler as MCP tools, using each command's description and auto-generated JSON schema.
 
+Hook handling:
+- `HandleHook(r io.Reader, w io.Writer) error` — Reads a PreToolUse hook input from `r`, matches against all registered `ToolMapping` declarations, and writes a deny response to `w` when a match is found. Silent allow (no output) when nothing matches. The deny response includes the full MCP tool name (`mcp__plugin_{name}_{name}__{command}`) and the mapping's `UseWhen` text.
+
 Artifact generation:
 - `GenerateAll(dir string) error` — Writes all artifacts to standard paths under `dir`:
   - `{dir}/share/purse-first/{name}/plugin.json`
   - `{dir}/share/purse-first/{name}/mappings.json` (if any commands have MapsTools)
+  - `{dir}/share/purse-first/{name}/hooks/hooks.json` (if any commands have MapsTools)
+  - `{dir}/share/purse-first/{name}/hooks/pre-tool-use` (if any commands have MapsTools)
   - `{dir}/share/man/man1/{name}.1`
   - `{dir}/share/man/man1/{name}-{cmd}.1` (per visible command)
   - `{dir}/share/bash-completion/completions/{name}`
   - `{dir}/share/zsh/site-functions/_{name}`
   - `{dir}/share/fish/vendor_completions.d/{name}.fish`
+- `GenerateAllWithSkills(dir, skillsDir string) error` — Like `GenerateAll`, plus discovers skills by globbing `{skillsDir}/*/SKILL.md`, copies skill directories into the output, and includes them in plugin.json.
 - `GeneratePlugin(dir string) error` — Writes only `{dir}/{name}/plugin.json`.
 - `GenerateMappings(dir string) error` — Writes only `{dir}/{name}/mappings.json`. Skips if no commands have tool mappings.
+- `GenerateHooks(dir string) error` — Writes `{dir}/{name}/hooks/hooks.json` and `{dir}/{name}/hooks/pre-tool-use`. The hooks.json matcher is built from the unique set of `Replaces` values. The pre-tool-use script calls the package binary's `hook` subcommand using `os.Executable()` for an absolute Nix store path. Skips if no commands have tool mappings.
 - `GenerateManpages(dir string) error` — Writes roff manpages to `{dir}/share/man/man1/`.
 - `GenerateCompletions(dir string) error` — Writes bash, zsh, and fish completion scripts.
 

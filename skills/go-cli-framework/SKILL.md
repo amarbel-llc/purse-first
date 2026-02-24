@@ -82,7 +82,7 @@ app.RegisterMCPTools(registry)
 app.GenerateAll(outputDir)
 ```
 
-Key methods on `App`: `AddCommand`, `GetCommand`, `AllCommands`, `VisibleCommands`, `MergeWithPrefix`, `RegisterMCPTools`, `GenerateAll`, `GeneratePlugin`, `GenerateMappings`, `GenerateManpages`, `GenerateCompletions`.
+Key methods on `App`: `AddCommand`, `GetCommand`, `AllCommands`, `VisibleCommands`, `MergeWithPrefix`, `RegisterMCPTools`, `HandleHook`, `GenerateAll`, `GenerateAllWithSkills`, `GeneratePlugin`, `GenerateMappings`, `GenerateHooks`, `GenerateManpages`, `GenerateCompletions`.
 
 ## Layer 2: Raw Server
 
@@ -153,9 +153,89 @@ result := output.LimitArray(items, limits)
 
 For detailed context-saving patterns, see the **bob:context-saving** skill.
 
+## Per-Package PreToolUse Hooks
+
+Packages that declare `MapsTools` on their commands automatically get per-package PreToolUse hooks. The hooks intercept built-in Claude Code tools (Bash, Read, Grep, etc.) and deny them when a matching MCP tool exists, suggesting the MCP tool instead.
+
+### How It Works
+
+`GenerateAll` (and `GenerateAllWithSkills`) calls `GenerateHooks`, which:
+
+1. Collects the unique set of `Replaces` values from all `ToolMapping` declarations across commands
+2. Builds an alphabetically-sorted matcher string (e.g., `"Bash|Grep|Read"`)
+3. Writes `hooks/hooks.json` with a PreToolUse entry pointing to an executable wrapper
+4. Writes `hooks/pre-tool-use` — a shell script that calls `<binary> hook`
+
+The `hooks/hooks.json` uses `${CLAUDE_PLUGIN_ROOT}` for portable path resolution:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Wiring the Hook Subcommand
+
+Each package binary needs a `hook` subcommand that calls `app.HandleHook`. The `pre-tool-use` wrapper script delegates to this subcommand.
+
+**Flag-based CLI** (grit, get-hubbed):
+
+```go
+if flag.NArg() >= 1 && flag.Arg(0) == "hook" {
+    if err := app.HandleHook(os.Stdin, os.Stdout); err != nil {
+        log.Fatalf("handling hook: %v", err)
+    }
+    return
+}
+```
+
+**command.App CLI** (lux):
+
+```go
+app.AddCommand(&command.Command{
+    Name:   "hook",
+    Hidden: true,
+    Description: command.Description{Short: "Handle PreToolUse hook"},
+    RunCLI: func(ctx context.Context, args json.RawMessage) error {
+        tools.RegisterAll(app, nil) // ensure tool mappings are loaded
+        return app.HandleHook(os.Stdin, os.Stdout)
+    },
+})
+```
+
+### HandleHook Behavior
+
+`HandleHook` reads hook input JSON from stdin, matches against all registered `ToolMapping` declarations, and:
+
+- **Match found**: writes a deny response with the MCP tool name (e.g., `mcp__plugin_grit_grit__status`)
+- **No match**: writes nothing (implicit allow)
+
+The MCP tool name follows the pattern `mcp__plugin_{name}_{name}__{command}`.
+
+### No Central Hook Infrastructure
+
+Hooks are entirely per-package. There is no central `purse-first hook` command or shared hook handler. Each package binary handles its own PreToolUse invocations independently. This means:
+
+- Adding a new package with mappings automatically gets hooks (via `GenerateAll`)
+- Removing a package removes its hooks
+- No coordination needed between packages
+
 ## Plugin Integration
 
-To ship a `command.App`-based tool as a purse-first plugin, use `app.GenerateAll(outputDir)` in a `postInstall` step or hidden `generate-plugin` subcommand. For full plugin integration guidance, see the **bob:creating-packages** skill.
+To ship a `command.App`-based tool as a purse-first plugin, use `app.GenerateAll(outputDir)` in a `postInstall` step or hidden `generate-plugin` subcommand. `GenerateAll` writes plugin.json, mappings.json, hooks, manpages, and completions. For full plugin integration guidance, see the **bob:creating-packages** skill.
 
 ## Reference Files
 

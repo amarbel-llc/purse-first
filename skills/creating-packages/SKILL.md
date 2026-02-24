@@ -40,8 +40,6 @@ For MCP-containing packages, there are two patterns depending on language:
 go get github.com/amarbel-llc/purse-first/purse
 ```
 
-Then run `gomod2nix` to regenerate `gomod2nix.toml`.
-
 ### Step 2: Add the generate-plugin subcommand
 
 Add a hidden `generate-plugin` subcommand that writes the package manifest. The subcommand takes a single argument: the output directory.
@@ -153,7 +151,7 @@ my-mcp = pkgs.runCommand "my-mcp"
 
 ## Adding Tool Mappings (Bash Command Interception)
 
-Use mappings to redirect Bash commands to MCP tools. The purse-first PreToolUse hook denies matching commands and suggests the corresponding MCP tool instead (e.g., `git status` redirects to the `git-mcp status` tool).
+Use mappings to redirect Bash commands to MCP tools. Per-package PreToolUse hooks deny matching commands and suggest the corresponding MCP tool instead (e.g., `git status` redirects to the `grit status` tool).
 
 Key rules:
 - Declare one mapping per subcommand for focused denial messages
@@ -174,6 +172,55 @@ b := purse.NewPluginBuilder("my-mcp").
 ```
 
 For the full MappingBuilder API, detailed examples, and the `BuildMappings`/`WriteMappings` workflow, see **`references/mapping-api.md`**.
+
+## Per-Package Hooks (Tool Routing)
+
+Packages that declare tool mappings automatically get per-package PreToolUse hooks via `GenerateAll` / `GenerateHooks`. There is no central hook infrastructure — each package handles its own tool routing independently.
+
+### How It Works
+
+When a package has `MapsTools` declarations on any command, `GenerateAll` produces:
+
+```
+$out/share/purse-first/<name>/hooks/
+├── hooks.json      # PreToolUse matcher pointing to the wrapper script
+└── pre-tool-use    # Shell script that calls `<binary> hook`
+```
+
+At runtime, Claude Code fires the PreToolUse hook, which calls the package binary's `hook` subcommand. The binary reads the hook input from stdin, matches against its registered `ToolMapping` declarations, and denies the built-in tool when an MCP tool should be used instead.
+
+### Wiring the Hook Subcommand
+
+Each package binary needs a `hook` subcommand. For Go packages using `command.App`, add:
+
+**Flag-based CLI** (grit, get-hubbed pattern):
+
+```go
+if flag.NArg() >= 1 && flag.Arg(0) == "hook" {
+    if err := app.HandleHook(os.Stdin, os.Stdout); err != nil {
+        log.Fatalf("handling hook: %v", err)
+    }
+    return
+}
+```
+
+**command.App CLI** (lux pattern):
+
+```go
+app.AddCommand(&command.Command{
+    Name:   "hook",
+    Hidden: true,
+    Description: command.Description{Short: "Handle PreToolUse hook"},
+    RunCLI: func(ctx context.Context, args json.RawMessage) error {
+        tools.RegisterAll(app, nil)
+        return app.HandleHook(os.Stdin, os.Stdout)
+    },
+})
+```
+
+The hook subcommand should be hidden — it's called by the generated wrapper script, not by users.
+
+For full API details on `HandleHook` and `GenerateHooks`, see the **bob:go-cli-framework** skill.
 
 ## Both Patterns: Repo-Level .claude-plugin/plugin.json
 
@@ -403,8 +450,9 @@ When adding purse-first support:
 1. Create `.claude-plugin/plugin.json` in the repo
 2. Add package manifest generation (Go: `generate-plugin` command, other: static file)
 3. Add tool mappings if the package replaces CLI commands (use targeted per-subcommand mappings with a catch-all)
-4. Update `flake.nix` to output `$out/share/purse-first/<name>/plugin.json` (and `mappings.json` if applicable)
-5. Build and verify: `nix build && ls ./result/share/purse-first/`
+4. Wire the `hook` subcommand if using tool mappings (calls `app.HandleHook`)
+5. Update `flake.nix` to output `$out/share/purse-first/<name>/plugin.json` (and `mappings.json`, `hooks/` if applicable)
+6. Build and verify: `nix build && ls ./result/share/purse-first/`
 
 ### Skills (if applicable)
 6. Create `skills/<skill-name>/SKILL.md` with YAML frontmatter

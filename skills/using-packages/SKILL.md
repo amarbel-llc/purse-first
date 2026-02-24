@@ -15,69 +15,45 @@ For framework orientation, see the **bob:overview** skill.
 
 ## How Tool Routing Works
 
-When Claude Code invokes a built-in tool (Bash, Read, Grep, etc.), purse-first's PreToolUse hook fires:
+Each package with tool mappings ships its own PreToolUse hook. There is no central purse-first hook — each package binary handles tool routing independently.
 
-1. Hook receives: tool name, tool input (command, file path, etc.), working directory
-2. Loads mappings from three sources (lowest to highest priority):
-   - **Package-shipped:** `share/purse-first/<name>/mappings.json`
-   - **Global user:** `$XDG_STATE_HOME/purse-first/*.json` (default: `~/.local/state/purse-first/`)
-   - **Project-local:** `.purse-first/*.json` in the working directory
-3. Matches the tool invocation against mapping rules:
-   - For Bash: matches `command_prefixes` against the command string
-   - For file tools (Read, Grep, Glob): matches `extensions` against the file path
+When Claude Code invokes a built-in tool (Bash, Read, Grep, etc.), per-package PreToolUse hooks fire in parallel:
+
+1. Claude Code calls the package's `hooks/pre-tool-use` wrapper script
+2. The wrapper delegates to `<binary> hook`, which reads hook input from stdin
+3. The binary matches the tool invocation against its registered `ToolMapping` declarations:
+   - For Bash: matches `CommandPrefixes` against the command string
+   - For file tools (Read, Grep, Glob): matches `Extensions` against the file path
    - Catch-all mappings (no prefixes or extensions) match unconditionally
-4. If a match is found: denies the built-in tool and suggests MCP alternatives
-5. If no match: allows the tool to proceed
+4. If a match is found: writes a deny response with the MCP tool name (e.g., `mcp__plugin_grit_grit__status`)
+5. If no match: writes nothing (implicit allow)
 
-## Mapping Precedence
+Multiple packages can each have their own hooks — they run in parallel and each only knows about its own tool mappings.
 
-Higher-priority sources override lower-priority ones for the same `(replaces, server)` pair:
+## Package Hook Architecture
+
+Each package that declares tool mappings ships a `hooks/` directory:
 
 ```
-Package-shipped (lowest)  →  Global user  →  Project-local (highest)
+share/purse-first/<name>/hooks/
+├── hooks.json      # PreToolUse matcher (auto-generated)
+└── pre-tool-use    # Wrapper script calling `<binary> hook`
 ```
 
-This means you can always override or disable a package's mappings without modifying the package itself.
+The `hooks.json` uses `${CLAUDE_PLUGIN_ROOT}` for portable path resolution. The `pre-tool-use` script uses an absolute Nix store path to the package binary (resolved at build time via `os.Executable()`).
 
-## Customizing Mappings
-
-### Project-Local Overrides
-
-Create `.purse-first/<name>.json` in your project root to override mappings for that project:
-
-```json
-{
-  "server": "git-mcp",
-  "mappings": [
-    {
-      "replaces": "Bash",
-      "command_prefixes": ["git log"],
-      "tools": [
-        {"name": "log", "use_when": "viewing commit history"}
-      ],
-      "reason": "Use git-mcp log for structured commit data"
-    }
-  ]
-}
-```
-
-### Global User Overrides
-
-Place mapping files in `$XDG_STATE_HOME/purse-first/` (typically `~/.local/state/purse-first/`) to apply overrides across all projects.
-
-### Disabling a Mapping
-
-To disable a specific package mapping, create an override with an empty `tools` array for the same `replaces`/`server` pair. The higher-priority source will take precedence.
+Hooks are registered with Claude Code automatically when the package is installed — no manual `purse-first install --hooks` step is needed.
 
 ## Troubleshooting
 
 ### "Why is my tool being denied?"
 
-When a tool is denied, purse-first prints the mapping's `reason` field and lists suggested MCP tools. To investigate:
+When a tool is denied, the package's hook prints the MCP tool name and usage hint. To investigate:
 
-1. Check which mappings are loaded: look at `share/purse-first/*/mappings.json` in the marketplace
-2. Check for project-local overrides: `ls .purse-first/`
-3. Check for user overrides: `ls $XDG_STATE_HOME/purse-first/`
+1. Check which packages have hooks: `ls share/purse-first/*/hooks/hooks.json`
+2. Check the matcher in each hooks.json to see which tools are intercepted
+3. Check the package's mappings: `cat share/purse-first/<name>/mappings.json`
+4. The deny message includes the full MCP tool name (e.g., `mcp__plugin_grit_grit__status`)
 
 ### "Package not discovered"
 
@@ -108,25 +84,22 @@ head -5 $PURSE_FIRST_PLUGINS_DIR/<package-name>/skills/<skill>/SKILL.md
 
 ### "Hook not firing"
 
-Verify hooks are installed in Claude Code settings:
+Per-package hooks are registered automatically via the package's `hooks/hooks.json`. Check:
 
-```bash
-purse-first install --hooks
-```
-
-This registers the `purse-first hook` command as a PreToolUse handler in Claude Code's settings.
+1. The package has `hooks/hooks.json`: `ls share/purse-first/<name>/hooks/`
+2. The `pre-tool-use` script is executable: `ls -la share/purse-first/<name>/hooks/pre-tool-use`
+3. The binary responds to `hook` subcommand: `echo '{"tool_name":"Bash","tool_input":{"command":"git status"}}' | <binary> hook`
+4. Claude Code loaded the hooks (restart Claude Code to pick up new hooks)
 
 ## Key Commands
 
 | Command | Purpose |
 |---------|---------|
-| `purse-first install` | Install marketplace and register hooks |
-| `purse-first install --hooks` | Only register hook handlers |
-| `purse-first uninstall-hooks` | Remove hook handlers |
-| `purse-first hook` | PreToolUse handler (called by Claude Code, not manually) |
+| `purse-first install` | Install marketplace |
 | `purse-first validate` | Validate plugin/mapping/marketplace documents |
 | `purse-first generate-marketplace` | Build marketplace.json from discovered packages |
 | `purse-first generate-local-plugin` | Discover skills and update plugin.json |
+| `<package> hook` | Per-package PreToolUse handler (called by hooks/pre-tool-use, not manually) |
 
 ## Environment Variables
 

@@ -220,13 +220,53 @@ skills/<skill-name>/
     └── existing-integrations.md
 ```
 
-### 3.3. Future Extension Points
+### 3.3. `hooks/` — Per-Package Hooks
+
+```
+$out/share/purse-first/<package-name>/hooks/hooks.json
+$out/share/purse-first/<package-name>/hooks/pre-tool-use
+```
+
+Packages that declare tool mappings ship per-package PreToolUse hooks.
+The `hooks/hooks.json` follows the Claude Code hook format with a
+`${CLAUDE_PLUGIN_ROOT}` reference for portable path resolution. The
+`pre-tool-use` script is an executable wrapper that delegates to the
+package binary's `hook` subcommand.
+
+**hooks.json example:**
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The matcher is built from the unique set of tool names replaced by the
+package's mappings (e.g., `"Bash"`, `"Bash|Grep|Read"`). Hooks are
+generated at build time by the package binary's `GenerateHooks` method.
+
+There is no central hook infrastructure. Each package handles its own
+tool routing independently.
+
+### 3.4. Future Extension Points
 
 The following paths are reserved for future use:
 
 | Path | Purpose |
 |------|---------|
-| `hooks/` | Pre/post tool-use hook definitions. |
 | `commands/` | Custom slash-command definitions. |
 | `agents/` | Subagent type definitions. |
 | `output-styles/` | Output formatting rules. |
@@ -282,21 +322,25 @@ Where `<package-root>` is the `share/purse-first/` directory. This means the
 aggregated derivation's `bin/` directory (populated by `symlinkJoin`) is the
 lookup path.
 
-## 5. Mapping Precedence
+## 5. Tool Routing
 
-Tool-routing mappings are loaded from three sources in increasing priority:
+### 5.1. Per-Package Hooks
 
-| Priority | Source | Path Pattern |
-|----------|--------|-------------|
-| 1 (lowest) | Package-shipped | `$out/share/purse-first/<name>/mappings.json` |
-| 2 | Global user | `$XDG_STATE_HOME/purse-first/*.json` |
-| 3 (highest) | Project-local | `.purse-first/*.json` |
+Each package that declares tool mappings ships its own PreToolUse hook.
+The hook is self-contained: the package binary reads hook input from
+stdin, matches against its own `ToolMapping` declarations, and writes a
+deny response when a match is found.
 
-Higher-priority sources override lower-priority ones for the same
-`(replaces, server)` pair. Users can override or disable package-shipped
-mappings without modifying the derivation.
+There is no central hook handler. Multiple packages can each have their
+own hooks — they run in parallel via Claude Code's hook system.
 
-**XDG fallback:** `$XDG_STATE_HOME` defaults to `$HOME/.local/state`.
+### 5.2. Mapping Declarations
+
+Tool mappings are declared in the package source code (via `ToolMapping`
+structs on `Command` definitions) and serialized to `mappings.json` at
+build time. The `mappings.json` serves as documentation and for external
+tooling — the actual matching is performed by the package binary at
+runtime via its `hook` subcommand.
 
 ## 6. Marketplace Generation
 
@@ -406,6 +450,9 @@ $out/
         └── <package-name>/                   # MUST match plugin.name
             ├── plugin.json                   # REQUIRED — package manifest
             ├── mappings.json                 # OPTIONAL — tool routing
+            ├── hooks/                        # OPTIONAL — per-package hooks
+            │   ├── hooks.json                # PreToolUse matcher config
+            │   └── pre-tool-use              # executable wrapper script
             └── skills/                       # OPTIONAL — skill documents
                 └── <skill-name>/
                     ├── SKILL.md              # REQUIRED per skill
