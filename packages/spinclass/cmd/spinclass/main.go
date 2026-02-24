@@ -34,6 +34,11 @@ var createCmd = &cobra.Command{
 	Long:  `Create a new worktree and apply sweatfile settings. Does not start a session. Target is a branch name or path, resolved relative to the current git repository.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		format := outputFormat
+		if format == "" {
+			format = "tap"
+		}
+
 		cwd, err := os.Getwd()
 		if err != nil {
 			return err
@@ -49,7 +54,7 @@ var createCmd = &cobra.Command{
 			return err
 		}
 
-		return shop.Create(rp, createVerbose)
+		return shop.Create(rp, createVerbose, format)
 	},
 }
 
