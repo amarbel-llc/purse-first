@@ -2,11 +2,12 @@ package shop
 
 import (
 	"bytes"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/amarbel-llc/spinclass/internal/tap"
 	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
 
@@ -65,7 +66,7 @@ func TestStatusDescription(t *testing.T) {
 	}
 }
 
-func TestCreateTapNewWorktree(t *testing.T) {
+func TestCreateTapNewWorktreeErrorPath(t *testing.T) {
 	dir := t.TempDir()
 	worktreePath := filepath.Join(dir, "new-worktree")
 
@@ -75,25 +76,42 @@ func TestCreateTapNewWorktree(t *testing.T) {
 		Branch:   "feature-x",
 	}
 
-	var buf bytes.Buffer
-	tw := tap.NewWriter(&buf)
-	tw.PlanAhead(1)
-	tw.Ok("create feature-x " + worktreePath)
-
-	got := buf.String()
-	if !strings.Contains(got, "ok 1 - create feature-x") {
-		t.Errorf("expected ok line, got: %q", got)
+	err := Create(rp, false, "tap")
+	if err == nil {
+		t.Error("expected error when creating worktree in non-git dir, got nil")
 	}
-	_ = rp
 }
 
 func TestCreateTapSkipExisting(t *testing.T) {
 	dir := t.TempDir()
 
+	rp := worktree.ResolvedPath{
+		AbsPath:  dir,
+		RepoPath: dir,
+		Branch:   "feature-x",
+	}
+
+	// Capture stdout
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = w
+
+	createErr := Create(rp, false, "tap")
+
+	w.Close()
+	os.Stdout = oldStdout
+
 	var buf bytes.Buffer
-	tw := tap.NewWriter(&buf)
-	tw.PlanAhead(1)
-	tw.Skip("create feature-x", "already exists "+dir)
+	if _, err := io.Copy(&buf, r); err != nil {
+		t.Fatal(err)
+	}
+
+	if createErr != nil {
+		t.Fatalf("Create returned error: %v", createErr)
+	}
 
 	got := buf.String()
 	if !strings.Contains(got, "# SKIP already exists") {
