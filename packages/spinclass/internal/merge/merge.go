@@ -31,16 +31,42 @@ func Run(exec executor.Executor, format string) error {
 		return fmt.Errorf("repository not found: %s", repoPath)
 	}
 
+	defaultBranch, err := git.DefaultBranch(repoPath)
+	if err != nil {
+		return fmt.Errorf("could not determine default branch: %w", err)
+	}
+
 	var tw *tap.Writer
 	if format == "tap" {
 		tw = tap.NewWriter(os.Stdout)
 	}
 
 	if tw == nil {
+		log.Info("rebasing onto "+defaultBranch, "worktree", branch)
+	}
+
+	if err := git.RunPassthroughEnv(cwd, []string{"GIT_SEQUENCE_EDITOR=true"}, "rebase", defaultBranch, "-i"); err != nil {
+		if tw != nil {
+			tw.NotOk("rebase "+branch, map[string]string{
+				"message":  err.Error(),
+				"severity": "fail",
+			})
+			tw.Plan()
+		} else {
+			log.Error("rebase failed, not merging")
+		}
+		return err
+	}
+
+	if tw != nil {
+		tw.Ok("rebase " + branch)
+	}
+
+	if tw == nil {
 		log.Info("merging worktree", "worktree", branch)
 	}
 
-	if err := git.RunPassthrough(repoPath, "merge", "--no-ff", branch, "-m", "Merge worktree: "+branch); err != nil {
+	if err := git.RunPassthrough(repoPath, "merge", "--ff-only", branch); err != nil {
 		if tw != nil {
 			tw.NotOk("merge "+branch, map[string]string{
 				"message":  err.Error(),
