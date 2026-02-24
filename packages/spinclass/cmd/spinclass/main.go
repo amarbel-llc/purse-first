@@ -55,7 +55,7 @@ var createCmd = &cobra.Command{
 			return err
 		}
 
-		return shop.Create(rp, createVerbose, format)
+		return shop.Create(os.Stdout, rp, createVerbose, format)
 	},
 }
 

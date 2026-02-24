@@ -2,7 +2,6 @@ package shop
 
 import (
 	"bytes"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -77,7 +76,8 @@ func TestCreateTapNewWorktreeErrorPath(t *testing.T) {
 		Branch:   "feature-x",
 	}
 
-	err := Create(rp, false, "tap")
+	var buf bytes.Buffer
+	err := Create(&buf, rp, false, "tap")
 	if err == nil {
 		t.Error("expected error when creating worktree in non-git dir, got nil")
 	}
@@ -92,26 +92,9 @@ func TestCreateTapSkipExisting(t *testing.T) {
 		Branch:   "feature-x",
 	}
 
-	// Capture stdout
-	oldStdout := os.Stdout
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatal(err)
-	}
-	os.Stdout = w
-
-	createErr := Create(rp, false, "tap")
-
-	w.Close()
-	os.Stdout = oldStdout
-
 	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, r); err != nil {
-		t.Fatal(err)
-	}
-
-	if createErr != nil {
-		t.Fatalf("Create returned error: %v", createErr)
+	if err := Create(&buf, rp, false, "tap"); err != nil {
+		t.Fatalf("Create returned error: %v", err)
 	}
 
 	got := buf.String()
@@ -121,12 +104,12 @@ func TestCreateTapSkipExisting(t *testing.T) {
 }
 
 func TestCreateTapNewWorktree(t *testing.T) {
-	// Set up a real git repo in a temp dir
 	parentDir := t.TempDir()
 	repoDir := filepath.Join(parentDir, "repo")
 	if err := os.MkdirAll(repoDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
+
 	runGit := func(args ...string) {
 		t.Helper()
 		cmd := exec.Command("git", args...)
@@ -150,26 +133,9 @@ func TestCreateTapNewWorktree(t *testing.T) {
 		Branch:   "feature-wt",
 	}
 
-	// Capture stdout
-	oldStdout := os.Stdout
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatal(err)
-	}
-	os.Stdout = w
-
-	createErr := Create(rp, false, "tap")
-
-	w.Close()
-	os.Stdout = oldStdout
-
 	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, r); err != nil {
-		t.Fatal(err)
-	}
-
-	if createErr != nil {
-		t.Fatalf("Create returned error: %v", createErr)
+	if err := Create(&buf, rp, false, "tap"); err != nil {
+		t.Fatalf("Create returned error: %v", err)
 	}
 
 	got := buf.String()

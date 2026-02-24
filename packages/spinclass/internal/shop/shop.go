@@ -2,6 +2,7 @@ package shop
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -33,14 +34,14 @@ func createWorktree(rp worktree.ResolvedPath, verbose bool) (bool, error) {
 	return existed, nil
 }
 
-func Create(rp worktree.ResolvedPath, verbose bool, format string) error {
+func Create(w io.Writer, rp worktree.ResolvedPath, verbose bool, format string) error {
 	existed, err := createWorktree(rp, verbose)
 	if err != nil {
 		return err
 	}
 
 	if format == "tap" {
-		tw := tap.NewWriter(os.Stdout)
+		tw := tap.NewWriter(w)
 		tw.PlanAhead(1)
 		if existed {
 			tw.Skip("create "+rp.Branch, "already exists "+rp.AbsPath)
@@ -50,7 +51,7 @@ func Create(rp worktree.ResolvedPath, verbose bool, format string) error {
 		return nil
 	}
 
-	fmt.Println(rp.AbsPath)
+	fmt.Fprintln(w, rp.AbsPath)
 	return nil
 }
 
@@ -101,10 +102,10 @@ func Attach(exec executor.Executor, rp worktree.ResolvedPath, format string, cla
 		return fmt.Errorf("attach failed: %w", err)
 	}
 
-	return closeShop(exec, rp, format, noMerge)
+	return closeShop(os.Stdout, exec, rp, format, noMerge)
 }
 
-func closeShop(exec executor.Executor, rp worktree.ResolvedPath, format string, noMerge bool) error {
+func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, noMerge bool) error {
 	if rp.Branch == "" {
 		if err := rp.FillBranchFromGit(); err != nil {
 			log.Warn("could not determine current branch")
@@ -129,7 +130,7 @@ func closeShop(exec executor.Executor, rp worktree.ResolvedPath, format string, 
 	desc := statusDescription(defaultBranch, commitsAhead, worktreeStatus)
 
 	if format == "tap" {
-		tw := tap.NewWriter(os.Stdout)
+		tw := tap.NewWriter(w)
 		tw.Ok("create " + rp.Branch)
 		tw.Ok("close " + rp.Branch + " # " + desc)
 		tw.Plan()
