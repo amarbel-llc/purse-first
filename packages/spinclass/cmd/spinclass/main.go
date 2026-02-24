@@ -70,7 +70,7 @@ var attachCmd = &cobra.Command{
 			format = "tap"
 		}
 
-		exec := executor.ShellExecutor{}
+		exec := executor.ZmxExecutor{}
 
 		var claudeArgs []string
 		if len(args) >= 2 {
