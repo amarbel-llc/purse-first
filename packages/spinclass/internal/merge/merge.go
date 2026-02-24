@@ -8,9 +8,10 @@ import (
 
 	"github.com/amarbel-llc/spinclass/internal/executor"
 	"github.com/amarbel-llc/spinclass/internal/git"
+	"github.com/amarbel-llc/spinclass/internal/tap"
 )
 
-func Run(exec executor.Executor) error {
+func Run(exec executor.Executor, format string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -30,18 +31,53 @@ func Run(exec executor.Executor) error {
 		return fmt.Errorf("repository not found: %s", repoPath)
 	}
 
-	log.Info("merging worktree", "worktree", branch)
+	var tw *tap.Writer
+	if format == "tap" {
+		tw = tap.NewWriter(os.Stdout)
+	}
+
+	if tw == nil {
+		log.Info("merging worktree", "worktree", branch)
+	}
 
 	if err := git.RunPassthrough(repoPath, "merge", "--no-ff", branch, "-m", "Merge worktree: "+branch); err != nil {
-		log.Error("merge failed, not removing worktree")
+		if tw != nil {
+			tw.NotOk("merge "+branch, map[string]string{
+				"message":  err.Error(),
+				"severity": "fail",
+			})
+			tw.Plan()
+		} else {
+			log.Error("merge failed, not removing worktree")
+		}
 		return err
 	}
 
-	log.Info("removing worktree", "path", cwd)
+	if tw != nil {
+		tw.Ok("merge " + branch)
+	}
+
+	if tw == nil {
+		log.Info("removing worktree", "path", cwd)
+	}
+
 	if err := git.RunPassthrough(repoPath, "worktree", "remove", cwd); err != nil {
+		if tw != nil {
+			tw.NotOk("remove worktree "+branch, map[string]string{
+				"message":  err.Error(),
+				"severity": "fail",
+			})
+			tw.Plan()
+		}
 		return err
 	}
 
-	log.Info("detaching from session")
+	if tw != nil {
+		tw.Ok("remove worktree " + branch)
+		tw.Plan()
+	} else {
+		log.Info("detaching from session")
+	}
+
 	return exec.Detach()
 }

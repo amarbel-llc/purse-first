@@ -131,7 +131,12 @@ var mergeCmd = &cobra.Command{
 	Short: "Merge current worktree into main",
 	Long:  `Run from inside a worktree. Merges the worktree branch into the main repo with --ff-only and removes the worktree.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return merge.Run(executor.ShellExecutor{})
+		format := outputFormat
+		if format == "" {
+			format = "tap"
+		}
+
+		return merge.Run(executor.ShellExecutor{}, format)
 	},
 }
 
@@ -144,11 +149,16 @@ var pullCmd = &cobra.Command{
 	Short: "Pull repos and rebase worktrees",
 	Long:  `Pull all clean repos, then rebase all clean worktrees onto their repo's default branch. Use -d to include dirty repos and worktrees.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		format := outputFormat
+		if format == "" {
+			format = "tap"
+		}
+
 		cwd, err := os.Getwd()
 		if err != nil {
 			return err
 		}
-		return pull.Run(cwd, pullDirty)
+		return pull.Run(cwd, pullDirty, format)
 	},
 }
 

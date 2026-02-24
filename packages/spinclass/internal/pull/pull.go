@@ -84,7 +84,7 @@ func scanWorktrees(repos []repoInfo) []worktreeInfo {
 	return worktrees
 }
 
-func Run(startDir string, dirty bool) error {
+func Run(startDir string, dirty bool, format string) error {
 	tw := tap.NewWriter(os.Stdout)
 
 	repos := scanRepos(startDir)
