@@ -122,7 +122,11 @@ func TestCreateTapSkipExisting(t *testing.T) {
 
 func TestCreateTapNewWorktree(t *testing.T) {
 	// Set up a real git repo in a temp dir
-	repoDir := t.TempDir()
+	parentDir := t.TempDir()
+	repoDir := filepath.Join(parentDir, "repo")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	runGit := func(args ...string) {
 		t.Helper()
 		cmd := exec.Command("git", args...)
@@ -138,7 +142,7 @@ func TestCreateTapNewWorktree(t *testing.T) {
 	runGit("config", "user.name", "Test")
 	runGit("commit", "--allow-empty", "-m", "initial")
 
-	worktreePath := filepath.Join(repoDir, "..", "spinclass-test-wt")
+	worktreePath := filepath.Join(parentDir, "spinclass-test-wt")
 
 	rp := worktree.ResolvedPath{
 		AbsPath:  worktreePath,
@@ -171,5 +175,8 @@ func TestCreateTapNewWorktree(t *testing.T) {
 	got := buf.String()
 	if !strings.Contains(got, "ok 1 - create") {
 		t.Errorf("expected ok line, got: %q", got)
+	}
+	if !strings.Contains(got, "1..1") {
+		t.Errorf("expected plan line 1..1, got: %q", got)
 	}
 }
