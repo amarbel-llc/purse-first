@@ -10,7 +10,6 @@ import (
 	"github.com/charmbracelet/log"
 
 	"github.com/amarbel-llc/spinclass/internal/executor"
-	"github.com/amarbel-llc/spinclass/internal/flake"
 	"github.com/amarbel-llc/spinclass/internal/git"
 	"github.com/amarbel-llc/spinclass/internal/merge"
 	"github.com/amarbel-llc/spinclass/internal/sweatfile"
@@ -88,15 +87,7 @@ func Attach(exec executor.Executor, rp worktree.ResolvedPath, format string, cla
 
 	var command []string
 	if len(claudeArgs) > 0 {
-		if flake.HasDevShell(rp.AbsPath) {
-			log.Info("flake.nix detected, starting claude in nix develop")
-			command = append([]string{"nix", "develop", "--command", "claude"}, claudeArgs...)
-		} else {
-			command = append([]string{"claude"}, claudeArgs...)
-		}
-	} else if flake.HasDevShell(rp.AbsPath) {
-		log.Info("flake.nix detected, starting session in nix develop")
-		command = []string{"nix", "develop", "--command", os.Getenv("SHELL")}
+		command = append([]string{"claude"}, claudeArgs...)
 	}
 
 	if err := exec.Attach(rp.AbsPath, rp.SessionKey, command); err != nil {
