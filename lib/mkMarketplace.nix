@@ -53,25 +53,27 @@ utils.lib.eachDefaultSystem (
     };
 
     # Resolve the purse-first CLI package.
-    # Self-build: purse-first-build is an attrset with src, modules, overlays, version.
+    # Self-build: purse-first-build is an attrset with goWorkspaceSrc, goVendorHash, version.
     # Downstream: purse-first-cli is a package from the flake input.
     cli =
       if purse-first-cli != null then
         purse-first-cli.packages.${system}.purse-first
       else if purse-first-build != null then
-        let
-          pkgs-go = import nixpkgs {
-            inherit system;
-            overlays = purse-first-build.overlays or [ ];
-          };
-        in
-        pkgs-go.buildGoApplication {
+        pkgs.buildGoModule {
           pname = "purse-first";
           version = purse-first-build.version or "0.0.0";
-          src = purse-first-build.src;
-          modules = purse-first-build.modules;
+          src = purse-first-build.goWorkspaceSrc;
+          vendorHash = purse-first-build.goVendorHash;
+          GOWORK = "";
+          overrideModAttrs = _: _: {
+            GOWORK = "";
+            buildPhase = ''
+              runHook preBuild
+              go work vendor -e
+              runHook postBuild
+            '';
+          };
           subPackages = [ "cmd/purse-first" ];
-          CGO_ENABLED = "0";
           ldflags = [
             "-s"
             "-w"

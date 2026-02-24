@@ -91,8 +91,6 @@
             overlays = [ (import rust-overlay) ];
           };
           craneLib = (crane.mkLib pkgs).overrideToolchain (pkgs-overlay.rust-bin.stable.latest.default);
-          goDevenv = import ./devenvs/go { inherit pkgs pkgs-master gomod2nix; };
-          goOverlay = goDevenv.overlay;
           fhPkg = fh.packages.${system}.default;
 
           sandcastlePkg = import ./lib/packages/sandcastle.nix {
@@ -106,12 +104,11 @@
           };
 
           potatoPkg = import ./lib/packages/potato.nix {
-            inherit pkgs goOverlay;
-            src = ./packages/potato;
+            inherit pkgs goWorkspaceSrc goVendorHash;
           };
 
           spinclassPkg = import ./lib/packages/spinclass.nix {
-            inherit pkgs goOverlay;
+            inherit pkgs goWorkspaceSrc goVendorHash;
             src = ./packages/spinclass;
           };
 
@@ -161,25 +158,26 @@
 
           # batman needs the purse-first CLI to build robin's plugin.json.
           # We resolve it the same way mkMarketplace does for self-builds.
-          purse-first-cli =
-            let
-              pkgs-go = import nixpkgs {
-                inherit system;
-                overlays = [ goOverlay ];
-              };
-            in
-            pkgs-go.buildGoApplication {
-              pname = "purse-first";
-              version = "0.1.0";
-              src = purse-first-src;
-              modules = ./gomod2nix.toml;
-              subPackages = [ "cmd/purse-first" ];
-              CGO_ENABLED = "0";
-              ldflags = [
-                "-s"
-                "-w"
-              ];
+          purse-first-cli = pkgs.buildGoModule {
+            pname = "purse-first";
+            version = "0.1.0";
+            src = goWorkspaceSrc;
+            vendorHash = goVendorHash;
+            GOWORK = "";
+            overrideModAttrs = _: _: {
+              GOWORK = "";
+              buildPhase = ''
+                runHook preBuild
+                go work vendor -e
+                runHook postBuild
+              '';
             };
+            subPackages = [ "cmd/purse-first" ];
+            ldflags = [
+              "-s"
+              "-w"
+            ];
+          };
 
           batmanPkgs = import ./lib/packages/batman.nix {
             inherit pkgs purse-first-cli;
@@ -212,10 +210,8 @@
         description = "MCP servers and tool routing for Claude Code, built with Nix";
         repo = "amarbel-llc/purse-first";
         purse-first-build = {
-          src = purse-first-src;
-          modules = ./gomod2nix.toml;
+          inherit goWorkspaceSrc goVendorHash;
           version = "0.1.0";
-          overlays = [ gomod2nix.overlays.default ];
         };
         plugins =
           system:
