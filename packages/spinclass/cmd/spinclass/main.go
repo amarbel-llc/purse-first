@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
@@ -204,6 +205,58 @@ var completionsCmd = &cobra.Command{
 	},
 }
 
+
+var forkCmd = &cobra.Command{
+	Use:   "fork [<new-branch>]",
+	Short: "Fork current worktree into a new branch",
+	Long:  `Create a new worktree branched from the current worktree's HEAD. If new-branch is omitted, a name is auto-generated as <current-branch>-N. Must be run from inside a spinclass session (SPINCLASS_SESSION must be set). Does not attach to the new session.`,
+	Args:  cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		session := os.Getenv("SPINCLASS_SESSION")
+		if session == "" {
+			return fmt.Errorf("SPINCLASS_SESSION is not set: are you inside a spinclass session?")
+		}
+
+		// session is "<repo-dirname>/<branch>"; extract branch as everything after first "/"
+		slashIdx := strings.Index(session, "/")
+		if slashIdx < 0 {
+			return fmt.Errorf("invalid SPINCLASS_SESSION format: %q (expected <repo>/<branch>)", session)
+		}
+		currentBranch := session[slashIdx+1:]
+
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		repoPath, err := worktree.DetectRepo(cwd)
+		if err != nil {
+			return err
+		}
+
+		currentPath := filepath.Join(repoPath, worktree.WorktreesDir, currentBranch)
+
+		rp := worktree.ResolvedPath{
+			AbsPath:    currentPath,
+			RepoPath:   repoPath,
+			Branch:     currentBranch,
+			SessionKey: session,
+		}
+
+		var newBranch string
+		if len(args) == 1 {
+			newBranch = args[0]
+		}
+
+		format := outputFormat
+		if format == "" {
+			format = "tap"
+		}
+
+		return shop.Fork(os.Stdout, rp, newBranch, format)
+	},
+}
+
 func init() {
 	rootCmd.PersistentFlags().StringVar(&outputFormat, "format", "", "output format: tap or table")
 	createCmd.Flags().BoolVarP(&createVerbose, "verbose", "v", false, "print sweatfile loading details")
@@ -218,6 +271,7 @@ func init() {
 	pullCmd.Flags().BoolVarP(&pullDirty, "dirty", "d", false, "include dirty repos and worktrees")
 	rootCmd.AddCommand(pullCmd)
 	rootCmd.AddCommand(perms.NewPermsCmd())
+	rootCmd.AddCommand(forkCmd)
 }
 
 func main() {
