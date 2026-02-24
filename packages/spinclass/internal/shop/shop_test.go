@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -116,5 +117,59 @@ func TestCreateTapSkipExisting(t *testing.T) {
 	got := buf.String()
 	if !strings.Contains(got, "# SKIP already exists") {
 		t.Errorf("expected SKIP line, got: %q", got)
+	}
+}
+
+func TestCreateTapNewWorktree(t *testing.T) {
+	// Set up a real git repo in a temp dir
+	repoDir := t.TempDir()
+	runGit := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = repoDir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+
+	runGit("init")
+	runGit("config", "user.email", "test@test.com")
+	runGit("config", "user.name", "Test")
+	runGit("commit", "--allow-empty", "-m", "initial")
+
+	worktreePath := filepath.Join(repoDir, "..", "spinclass-test-wt")
+
+	rp := worktree.ResolvedPath{
+		AbsPath:  worktreePath,
+		RepoPath: repoDir,
+		Branch:   "feature-wt",
+	}
+
+	// Capture stdout
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = w
+
+	createErr := Create(rp, false, "tap")
+
+	w.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	if _, err := io.Copy(&buf, r); err != nil {
+		t.Fatal(err)
+	}
+
+	if createErr != nil {
+		t.Fatalf("Create returned error: %v", createErr)
+	}
+
+	got := buf.String()
+	if !strings.Contains(got, "ok 1 - create") {
+		t.Errorf("expected ok line, got: %q", got)
 	}
 }
