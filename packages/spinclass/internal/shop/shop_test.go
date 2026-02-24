@@ -176,6 +176,87 @@ func TestCreateSharedWriter(t *testing.T) {
 	}
 }
 
+type mockExecutor struct {
+	attachCalled bool
+}
+
+func (m *mockExecutor) Attach(dir string, key string, command []string) error {
+	m.attachCalled = true
+	return nil
+}
+
+func (m *mockExecutor) Detach() error {
+	return nil
+}
+
+func TestAttachTapExistingWorktree(t *testing.T) {
+	parentDir := t.TempDir()
+	repoDir := filepath.Join(parentDir, "repo")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	runGit := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+
+	runGit(repoDir, "init")
+	runGit(repoDir, "config", "user.email", "test@test.com")
+	runGit(repoDir, "config", "user.name", "Test")
+	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
+
+	// Create worktree so attach finds it existing
+	wtDir := filepath.Join(repoDir, ".worktrees")
+	wtPath := filepath.Join(wtDir, "feature-tap")
+	runGit(repoDir, "worktree", "add", "-b", "feature-tap", wtPath)
+
+	rp := worktree.ResolvedPath{
+		AbsPath:    wtPath,
+		RepoPath:   repoDir,
+		Branch:     "feature-tap",
+		SessionKey: "repo/feature-tap",
+	}
+
+	mock := &mockExecutor{}
+	var buf bytes.Buffer
+	err := Attach(&buf, mock, rp, "tap", nil)
+	if err != nil {
+		t.Fatalf("Attach returned error: %v", err)
+	}
+
+	if !mock.attachCalled {
+		t.Error("expected executor.Attach to be called")
+	}
+
+	got := buf.String()
+
+	// Single TAP version line
+	if strings.Count(got, "TAP version 14") != 1 {
+		t.Errorf("expected exactly one TAP version line, got: %q", got)
+	}
+
+	// Plan
+	if !strings.Contains(got, "1..2") {
+		t.Errorf("expected plan 1..2, got: %q", got)
+	}
+
+	// Create test point (existing worktree -> SKIP)
+	if !strings.Contains(got, "ok 1 - create feature-tap # SKIP") {
+		t.Errorf("expected create SKIP test point, got: %q", got)
+	}
+
+	// Close test point
+	if !strings.Contains(got, "ok 2 - close feature-tap") {
+		t.Errorf("expected close test point, got: %q", got)
+	}
+}
+
 func TestForkAutoName(t *testing.T) {
 	parentDir := t.TempDir()
 	repoDir := filepath.Join(parentDir, "repo")

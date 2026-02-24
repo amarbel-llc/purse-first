@@ -78,8 +78,14 @@ func logSweatfileResult(result sweatfile.LoadResult) {
 	)
 }
 
-func Attach(exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, noMerge bool) error {
-	if _, err := createWorktree(rp, false); err != nil {
+func Attach(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, noMerge bool) error {
+	var tw *tap.Writer
+	if format == "tap" {
+		tw = tap.NewWriter(w)
+		tw.PlanAhead(2)
+	}
+
+	if err := Create(w, rp, false, format, tw); err != nil {
 		return err
 	}
 
@@ -96,10 +102,10 @@ func Attach(exec executor.Executor, rp worktree.ResolvedPath, format string, cla
 		return fmt.Errorf("attach failed: %w", err)
 	}
 
-	return closeShop(os.Stdout, exec, rp, format, noMerge)
+	return closeShop(w, exec, rp, format, noMerge, tw)
 }
 
-func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, noMerge bool) error {
+func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, noMerge bool, tw *tap.Writer) error {
 	if rp.Branch == "" {
 		if err := rp.FillBranchFromGit(); err != nil {
 			log.Warn("could not determine current branch")
@@ -124,8 +130,9 @@ func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, fo
 	desc := statusDescription(defaultBranch, commitsAhead, worktreeStatus)
 
 	if format == "tap" {
-		tw := tap.NewWriter(w)
-		tw.Ok("create " + rp.Branch)
+		if tw == nil {
+			tw = tap.NewWriter(w)
+		}
 		tw.Ok("close " + rp.Branch + " # " + desc)
 		tw.Plan()
 	} else {
