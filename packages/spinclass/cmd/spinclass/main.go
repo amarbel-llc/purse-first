@@ -22,7 +22,8 @@ import (
 
 var outputFormat string
 var verbose bool
-var attachNoMerge bool
+var newNoMerge bool
+var newNoAttach bool
 
 var rootCmd = &cobra.Command{
 	Use:   "spinclass",
@@ -60,9 +61,9 @@ var createCmd = &cobra.Command{
 	},
 }
 
-var attachCmd = &cobra.Command{
-	Use:     "attach <target> [claude args...]",
-	Aliases: []string{"open"},
+var newCmd = &cobra.Command{
+	Use:     "new <target> [claude args...]",
+	Aliases: []string{"attach", "open"},
 	Short:   "Create (if needed) and attach to a worktree session",
 	Long:    `Create a worktree if it doesn't exist, then attach to a session. Target is a branch name or path, resolved relative to the current git repository. If additional arguments are provided, claude is launched with those arguments instead of a shell.`,
 	Args:    cobra.MinimumNArgs(1),
@@ -94,7 +95,7 @@ var attachCmd = &cobra.Command{
 			return err
 		}
 
-		return shop.Attach(os.Stdout, exec, rp, format, claudeArgs, attachNoMerge, verbose)
+		return shop.New(os.Stdout, exec, rp, format, claudeArgs, newNoMerge, newNoAttach, verbose)
 	},
 }
 
@@ -264,10 +265,11 @@ var forkCmd = &cobra.Command{
 func init() {
 	rootCmd.PersistentFlags().StringVar(&outputFormat, "format", "", "output format: tap or table")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "show detailed output (YAML diagnostics on passing test points)")
-	attachCmd.Flags().BoolVar(&attachNoMerge, "no-merge", false, "skip auto-merge on session close")
+	newCmd.Flags().BoolVar(&newNoMerge, "no-merge", false, "skip auto-merge on session close")
+	newCmd.Flags().BoolVar(&newNoAttach, "no-attach", false, "create worktree but skip attaching (show command that would run)")
 	cleanCmd.Flags().BoolVarP(&cleanInteractive, "interactive", "i", false, "interactively discard changes in dirty merged worktrees")
 	rootCmd.AddCommand(createCmd)
-	rootCmd.AddCommand(attachCmd)
+	rootCmd.AddCommand(newCmd)
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(mergeCmd)
 	rootCmd.AddCommand(cleanCmd)

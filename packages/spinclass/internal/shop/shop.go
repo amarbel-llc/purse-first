@@ -78,7 +78,7 @@ func logSweatfileResult(result sweatfile.LoadResult) {
 	)
 }
 
-func Attach(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, noMerge bool, verbose bool) error {
+func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, noMerge bool, noAttach bool, verbose bool) error {
 	var tw *tap.Writer
 	if format == "tap" {
 		tw = tap.NewWriter(w)
@@ -93,8 +93,21 @@ func Attach(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, forma
 		command = append([]string{"claude"}, claudeArgs...)
 	}
 
-	if err := exec.Attach(rp.AbsPath, rp.SessionKey, command); err != nil {
+	tp := tap.TestPoint{
+		Description: "attach " + rp.Branch,
+		Ok:          true,
+	}
+
+	if err := exec.Attach(rp.AbsPath, rp.SessionKey, command, noAttach, &tp); err != nil {
 		return fmt.Errorf("attach failed: %w", err)
+	}
+
+	if noAttach {
+		if tw != nil {
+			tw.SkipDiag(tp.Description, tp.Skip, tp.Diagnostics)
+			tw.Plan()
+		}
+		return nil
 	}
 
 	return closeShop(w, exec, rp, format, noMerge, verbose, tw)

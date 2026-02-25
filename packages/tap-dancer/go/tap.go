@@ -69,6 +69,13 @@ func (tw *Writer) Skip(description, reason string) int {
 	return tw.n
 }
 
+func (tw *Writer) SkipDiag(description, reason string, diagnostics *Diagnostics) int {
+	tw.n++
+	fmt.Fprintf(tw.w, "ok %d - %s # SKIP %s\n", tw.n, description, reason)
+	writeDiagnostics(tw.w, diagnostics)
+	return tw.n
+}
+
 func (tw *Writer) Todo(description, reason string) int {
 	tw.n++
 	fmt.Fprintf(tw.w, "not ok %d - %s # TODO %s\n", tw.n, description, reason)
@@ -202,7 +209,7 @@ func (tw *Writer) WriteAll(tests iter.Seq[TestPoint]) {
 			}
 			tw.Ok(tp.Description)
 		} else if tp.Skip != "" {
-			tw.Skip(tp.Description, tp.Skip)
+			tw.SkipDiag(tp.Description, tp.Skip, tp.Diagnostics)
 		} else if tp.Todo != "" {
 			tw.Todo(tp.Description, tp.Todo)
 		} else if tp.Ok {

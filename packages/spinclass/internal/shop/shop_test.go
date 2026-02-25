@@ -180,8 +180,14 @@ type mockExecutor struct {
 	attachCalled bool
 }
 
-func (m *mockExecutor) Attach(dir string, key string, command []string) error {
+func (m *mockExecutor) Attach(dir string, key string, command []string, dryRun bool, tp *tap.TestPoint) error {
 	m.attachCalled = true
+	if dryRun {
+		tp.Skip = "dry run"
+		tp.Diagnostics = &tap.Diagnostics{
+			Extras: map[string]any{"command": "mock-command"},
+		}
+	}
 	return nil
 }
 
@@ -189,7 +195,7 @@ func (m *mockExecutor) Detach() error {
 	return nil
 }
 
-func TestAttachTapExistingWorktree(t *testing.T) {
+func TestNewTapExistingWorktree(t *testing.T) {
 	parentDir := t.TempDir()
 	repoDir := filepath.Join(parentDir, "repo")
 	if err := os.MkdirAll(repoDir, 0o755); err != nil {
@@ -225,9 +231,9 @@ func TestAttachTapExistingWorktree(t *testing.T) {
 
 	mock := &mockExecutor{}
 	var buf bytes.Buffer
-	err := Attach(&buf, mock, rp, "tap", nil, true, false)
+	err := New(&buf, mock, rp, "tap", nil, true, false, false)
 	if err != nil {
-		t.Fatalf("Attach returned error: %v", err)
+		t.Fatalf("New returned error: %v", err)
 	}
 
 	if !mock.attachCalled {
@@ -254,6 +260,72 @@ func TestAttachTapExistingWorktree(t *testing.T) {
 	// Close test point
 	if !strings.Contains(got, "ok 2 - close feature-tap") {
 		t.Errorf("expected close test point, got: %q", got)
+	}
+}
+
+func TestNewNoAttach(t *testing.T) {
+	parentDir := t.TempDir()
+	repoDir := filepath.Join(parentDir, "repo")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	runGit := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+
+	runGit(repoDir, "init")
+	runGit(repoDir, "config", "user.email", "test@test.com")
+	runGit(repoDir, "config", "user.name", "Test")
+	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
+
+	wtDir := filepath.Join(repoDir, ".worktrees")
+	wtPath := filepath.Join(wtDir, "feature-dry")
+	runGit(repoDir, "worktree", "add", "-b", "feature-dry", wtPath)
+
+	rp := worktree.ResolvedPath{
+		AbsPath:    wtPath,
+		RepoPath:   repoDir,
+		Branch:     "feature-dry",
+		SessionKey: "repo/feature-dry",
+	}
+
+	mock := &mockExecutor{}
+	var buf bytes.Buffer
+	err := New(&buf, mock, rp, "tap", nil, false, true, false)
+	if err != nil {
+		t.Fatalf("New returned error: %v", err)
+	}
+
+	got := buf.String()
+
+	// Single TAP version line
+	if strings.Count(got, "TAP version 14") != 1 {
+		t.Errorf("expected exactly one TAP version line, got: %q", got)
+	}
+
+	// Create test point (existing worktree -> SKIP)
+	if !strings.Contains(got, "ok 1 - create feature-dry # SKIP") {
+		t.Errorf("expected create SKIP test point, got: %q", got)
+	}
+
+	// Attach test point (dry run -> SKIP with command diagnostic)
+	if !strings.Contains(got, "ok 2 - attach feature-dry # SKIP dry run") {
+		t.Errorf("expected attach SKIP test point, got: %q", got)
+	}
+	if !strings.Contains(got, "command: mock-command") {
+		t.Errorf("expected command diagnostic, got: %q", got)
+	}
+
+	// Trailing plan
+	if !strings.Contains(got, "1..2") {
+		t.Errorf("expected plan 1..2, got: %q", got)
 	}
 }
 
