@@ -225,6 +225,13 @@ All Go packages receive the same `goWorkspaceSrc` and `goVendorHash`.
 
 When you first write the nix expression or change external Go dependencies:
 
+Run `just vendor && just vendor-hash` --- this regenerates the local `vendor/`
+directory, then hashes it with `nix hash path` and writes the result to
+`flake.nix`. The local vendor output matches what nix's fixed-output derivation
+produces, so the hash is identical.
+
+Manually, you can also use the dummy-hash approach:
+
 1. Set `vendorHash` to a dummy value:
    ```nix
    goVendorHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
@@ -262,8 +269,8 @@ When an existing package adds a dependency on another workspace module:
 1. Add the `require` to the package's `go.mod`
 2. Add a `replace` directive pointing to the relative path of the dependency
 3. Run `just vendor` (or `go work vendor`) to regenerate the vendor directory
-4. Rebuild --- if the new dependency brings in new external transitive deps,
-   `goVendorHash` will need updating (see "Computing `vendorHash`" above)
+4. Run `just vendor-hash` to recompute `goVendorHash` if the new dependency
+   brings in new external transitive deps
 
 ## Per-Package Justfile
 
@@ -314,10 +321,23 @@ vendor:
 deps:
     nix develop --command go work sync
     nix develop --command go work vendor
+
+# Recompute goVendorHash in flake.nix from the local vendor directory
+vendor-hash:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Hash the vendor directory — matches what nix's fixed-output derivation produces
+    hash=$(nix hash path vendor/)
+    # Update goVendorHash in flake.nix
+    sed -i '' -E 's|(goVendorHash = )"sha256-[^"]+";|\1"'"$hash"'";|' flake.nix
+    echo "updated goVendorHash to $hash"
 ```
 
-`just vendor` is the quick path after adding a `replace` directive. `just deps`
-handles the full workflow when external dependencies change (sync + re-vendor).
+- `just vendor` --- quick re-vendor after adding a `replace` directive
+- `just deps` --- full sync + re-vendor when external dependencies change
+- `just vendor-hash` --- hash the local `vendor/` directory with `nix hash path`
+  and write it to `flake.nix` (the local vendor output matches what nix's
+  fixed-output derivation produces, so the hash is identical)
 
 ## Mixed-Language Packages
 

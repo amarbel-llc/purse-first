@@ -95,6 +95,16 @@ deps:
     nix develop --command go work sync
     nix develop --command go work vendor
 
+# Recompute goVendorHash in flake.nix from the local vendor directory
+vendor-hash:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Hash the vendor directory — matches what nix's fixed-output derivation produces
+    hash=$(nix hash path vendor/)
+    # Update goVendorHash in flake.nix
+    sed -i '' -E 's|(goVendorHash = )"sha256-[^"]+";|\1"'"$hash"'";|' flake.nix
+    echo "updated goVendorHash to $hash"
+
 # Run integration tests
 test-integration:
     nix build
