@@ -576,6 +576,52 @@ func TestSubtestOutputValidatesWithReader(t *testing.T) {
 	}
 }
 
+func TestHasFailuresInitiallyFalse(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	if tw.HasFailures() {
+		t.Error("expected HasFailures to be false for new writer")
+	}
+}
+
+func TestHasFailuresAfterOk(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.Ok("pass")
+	if tw.HasFailures() {
+		t.Error("expected HasFailures to be false after Ok")
+	}
+}
+
+func TestHasFailuresAfterNotOk(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.NotOk("fail", nil)
+	if !tw.HasFailures() {
+		t.Error("expected HasFailures to be true after NotOk")
+	}
+}
+
+func TestHasFailuresAfterOkThenNotOk(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.Ok("pass")
+	tw.NotOk("fail", nil)
+	if !tw.HasFailures() {
+		t.Error("expected HasFailures to be true after any NotOk")
+	}
+}
+
+func TestHasFailuresNotAffectedBySkipOrTodo(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.Skip("skipped", "reason")
+	tw.Todo("todo", "later")
+	if tw.HasFailures() {
+		t.Error("expected HasFailures to be false after only Skip and Todo")
+	}
+}
+
 func TestWriteAllOkWithDiagnostics(t *testing.T) {
 	var buf bytes.Buffer
 	tw := NewWriter(&buf)

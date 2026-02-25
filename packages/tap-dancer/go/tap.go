@@ -13,6 +13,7 @@ type Writer struct {
 	n           int
 	depth       int
 	planEmitted bool
+	failed      bool
 }
 
 func NewWriter(w io.Writer) *Writer {
@@ -33,8 +34,13 @@ func (tw *Writer) OkDiag(description string, diagnostics *Diagnostics) int {
 	return tw.n
 }
 
+func (tw *Writer) HasFailures() bool {
+	return tw.failed
+}
+
 func (tw *Writer) NotOk(description string, diagnostics map[string]string) int {
 	tw.n++
+	tw.failed = true
 	fmt.Fprintf(tw.w, "not ok %d - %s\n", tw.n, description)
 	if len(diagnostics) > 0 {
 		fmt.Fprintln(tw.w, "  ---")
