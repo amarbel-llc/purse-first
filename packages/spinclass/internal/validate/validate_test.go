@@ -31,6 +31,20 @@ func TestCheckClaudeAllowSyntaxInvalid(t *testing.T) {
 	}
 }
 
+func TestCheckClaudeAllowMCPTool(t *testing.T) {
+	sf := sweatfile.Sweatfile{
+		ClaudeAllow: []string{
+			"mcp__plugin_lux_lux__diagnostics",
+			"mcp__plugin_grit_grit__status",
+			"mcp__foo",
+		},
+	}
+	issues := CheckClaudeAllow(sf)
+	if len(issues) != 0 {
+		t.Errorf("expected no issues for MCP tool names, got %v", issues)
+	}
+}
+
 func TestCheckClaudeAllowUnknownTool(t *testing.T) {
 	sf := sweatfile.Sweatfile{
 		ClaudeAllow: []string{"FooBar", "Read"},
