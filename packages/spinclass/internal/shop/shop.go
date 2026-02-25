@@ -78,10 +78,50 @@ func logSweatfileResult(result sweatfile.LoadResult) {
 	)
 }
 
+func pullMainWorktree(rp worktree.ResolvedPath, tw *tap.Writer) error {
+	label := "pull " + filepath.Base(rp.RepoPath)
+
+	if git.Upstream(rp.RepoPath) == "" {
+		if tw != nil {
+			tw.Skip(label, "no upstream")
+		}
+		return nil
+	}
+
+	porcelain := git.StatusPorcelain(rp.RepoPath)
+	if porcelain != "" {
+		if tw != nil {
+			tw.Skip(label, "dirty")
+		}
+		return nil
+	}
+
+	_, err := git.Pull(rp.RepoPath)
+	if err != nil {
+		if tw != nil {
+			tw.NotOk(label, map[string]string{
+				"message":  err.Error(),
+				"severity": "fail",
+			})
+		}
+		return err
+	}
+
+	if tw != nil {
+		tw.Ok(label)
+	}
+
+	return nil
+}
+
 func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, noMerge bool, noAttach bool, verbose bool) error {
 	var tw *tap.Writer
 	if format == "tap" {
 		tw = tap.NewWriter(w)
+	}
+
+	if err := pullMainWorktree(rp, tw); err != nil {
+		return err
 	}
 
 	if err := Create(w, rp, verbose, format, tw); err != nil {

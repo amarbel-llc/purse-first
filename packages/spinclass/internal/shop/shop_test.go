@@ -248,17 +248,22 @@ func TestNewTapExistingWorktree(t *testing.T) {
 	}
 
 	// Plan
-	if !strings.Contains(got, "1..2") {
-		t.Errorf("expected plan 1..2, got: %q", got)
+	if !strings.Contains(got, "1..3") {
+		t.Errorf("expected plan 1..3, got: %q", got)
+	}
+
+	// Pull test point (no upstream -> SKIP)
+	if !strings.Contains(got, "ok 1 - pull repo # SKIP no upstream") {
+		t.Errorf("expected pull SKIP test point, got: %q", got)
 	}
 
 	// Create test point (existing worktree -> SKIP)
-	if !strings.Contains(got, "ok 1 - create feature-tap # SKIP") {
+	if !strings.Contains(got, "ok 2 - create feature-tap # SKIP") {
 		t.Errorf("expected create SKIP test point, got: %q", got)
 	}
 
 	// Close test point
-	if !strings.Contains(got, "ok 2 - close feature-tap") {
+	if !strings.Contains(got, "ok 3 - close feature-tap") {
 		t.Errorf("expected close test point, got: %q", got)
 	}
 }
@@ -310,13 +315,18 @@ func TestNewNoAttach(t *testing.T) {
 		t.Errorf("expected exactly one TAP version line, got: %q", got)
 	}
 
+	// Pull test point (no upstream -> SKIP)
+	if !strings.Contains(got, "ok 1 - pull repo # SKIP no upstream") {
+		t.Errorf("expected pull SKIP test point, got: %q", got)
+	}
+
 	// Create test point (existing worktree -> SKIP)
-	if !strings.Contains(got, "ok 1 - create feature-dry # SKIP") {
+	if !strings.Contains(got, "ok 2 - create feature-dry # SKIP") {
 		t.Errorf("expected create SKIP test point, got: %q", got)
 	}
 
 	// Attach test point (dry run -> SKIP with command diagnostic)
-	if !strings.Contains(got, "ok 2 - attach feature-dry # SKIP dry run") {
+	if !strings.Contains(got, "ok 3 - attach feature-dry # SKIP dry run") {
 		t.Errorf("expected attach SKIP test point, got: %q", got)
 	}
 	if !strings.Contains(got, "command: mock-command") {
@@ -324,8 +334,8 @@ func TestNewNoAttach(t *testing.T) {
 	}
 
 	// Trailing plan
-	if !strings.Contains(got, "1..2") {
-		t.Errorf("expected plan 1..2, got: %q", got)
+	if !strings.Contains(got, "1..3") {
+		t.Errorf("expected plan 1..3, got: %q", got)
 	}
 }
 
