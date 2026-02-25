@@ -7,6 +7,7 @@
   "skills": [
     "./skills/context-saving",
     "./skills/creating-packages",
+    "./skills/design_patterns-downstream_rust",
     "./skills/design_patterns-just",
     "./skills/go-cli-framework",
     "./skills/overview",
