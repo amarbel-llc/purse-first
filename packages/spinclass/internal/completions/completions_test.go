@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
 
 func TestLocalListsRepos(t *testing.T) {
@@ -29,7 +31,7 @@ func TestLocalListsExistingWorktrees(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoDir := filepath.Join(tmpDir, "myrepo")
 	os.MkdirAll(filepath.Join(repoDir, ".git"), 0o755)
-	wtDir := filepath.Join(repoDir, ".worktrees", "feature-x")
+	wtDir := filepath.Join(repoDir, worktree.WorktreesDir, "feature-x")
 	os.MkdirAll(wtDir, 0o755)
 	os.WriteFile(filepath.Join(wtDir, ".git"), []byte("gitdir: ../../.git/worktrees/feature-x\n"), 0o644)
 
@@ -37,7 +39,7 @@ func TestLocalListsExistingWorktrees(t *testing.T) {
 	Local(tmpDir, &buf)
 
 	output := buf.String()
-	if !strings.Contains(output, "myrepo/.worktrees/feature-x") {
+	if !strings.Contains(output, filepath.Join("myrepo", worktree.WorktreesDir, "feature-x")) {
 		t.Errorf("expected existing worktree, got %q", output)
 	}
 	if !strings.Contains(output, "existing worktree") {
@@ -93,7 +95,7 @@ func TestLocalFromInsideRepo(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoDir := filepath.Join(tmpDir, "myrepo")
 	os.MkdirAll(filepath.Join(repoDir, ".git"), 0o755)
-	wtDir := filepath.Join(repoDir, ".worktrees", "feat")
+	wtDir := filepath.Join(repoDir, worktree.WorktreesDir, "feat")
 	os.MkdirAll(wtDir, 0o755)
 	os.WriteFile(filepath.Join(wtDir, ".git"), []byte("gitdir: ../../.git/worktrees/feat\n"), 0o644)
 

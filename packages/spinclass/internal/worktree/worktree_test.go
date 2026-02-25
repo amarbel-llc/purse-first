@@ -16,7 +16,7 @@ func TestResolvePathBranchName(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	wantAbs := filepath.Join(repoPath, ".worktrees", "feature-x")
+	wantAbs := filepath.Join(repoPath, WorktreesDir, "feature-x")
 	if rp.AbsPath != wantAbs {
 		t.Errorf("AbsPath = %q, want %q", rp.AbsPath, wantAbs)
 	}
@@ -32,12 +32,12 @@ func TestResolvePathRelativePath(t *testing.T) {
 	home := t.TempDir()
 	repoPath := filepath.Join(home, "repos", "myrepo")
 
-	rp, err := ResolvePath(repoPath, ".worktrees/feature-x")
+	rp, err := ResolvePath(repoPath, WorktreesDir+"/feature-x")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	wantAbs := filepath.Join(repoPath, ".worktrees", "feature-x")
+	wantAbs := filepath.Join(repoPath, WorktreesDir, "feature-x")
 	if rp.AbsPath != wantAbs {
 		t.Errorf("AbsPath = %q, want %q", rp.AbsPath, wantAbs)
 	}
@@ -173,7 +173,7 @@ func TestScanReposFromRepo(t *testing.T) {
 func TestScanReposFromParent(t *testing.T) {
 	root := t.TempDir()
 
-	// Create two repos with .worktrees
+	// Create two repos with WorktreesDir
 	for _, name := range []string{"repo-a", "repo-b"} {
 		repoDir := filepath.Join(root, name)
 		if err := os.MkdirAll(filepath.Join(repoDir, ".git"), 0o755); err != nil {
@@ -184,7 +184,7 @@ func TestScanReposFromParent(t *testing.T) {
 		}
 	}
 
-	// Create a repo without .worktrees (should be excluded)
+	// Create a repo without WorktreesDir (should be excluded)
 	noWtRepo := filepath.Join(root, "repo-c")
 	if err := os.MkdirAll(filepath.Join(noWtRepo, ".git"), 0o755); err != nil {
 		t.Fatal(err)
@@ -314,8 +314,9 @@ func TestExcludeWorktreesDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(data) != ".worktrees\n" {
-		t.Errorf("expected '.worktrees\\n', got %q", string(data))
+	want := WorktreesDir + "\n"
+	if string(data) != want {
+		t.Errorf("expected %q, got %q", want, string(data))
 	}
 
 	// Second call should be idempotent
@@ -327,8 +328,8 @@ func TestExcludeWorktreesDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(data) != ".worktrees\n" {
-		t.Errorf("expected idempotent result '.worktrees\\n', got %q", string(data))
+	if string(data) != want {
+		t.Errorf("expected idempotent result %q, got %q", want, string(data))
 	}
 }
 
@@ -348,8 +349,9 @@ func TestExcludeWorktreesDirCreatesInfoDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(data) != ".worktrees\n" {
-		t.Errorf("expected '.worktrees\\n', got %q", string(data))
+	want := WorktreesDir + "\n"
+	if string(data) != want {
+		t.Errorf("expected %q, got %q", want, string(data))
 	}
 }
 

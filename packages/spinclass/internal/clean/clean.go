@@ -170,7 +170,7 @@ func Run(startDir string, interactive bool, format string) error {
 			continue
 		}
 
-		label := wt.repo + "/.worktrees/" + styleCode.Render(wt.branch)
+		label := filepath.Join(wt.repo, worktree.WorktreesDir) + "/" + styleCode.Render(wt.branch)
 
 		if !wt.dirty {
 			if err := removeWorktree(wt); err != nil {

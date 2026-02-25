@@ -119,7 +119,7 @@ func Run(startDir string, dirty bool, format string) error {
 	}
 
 	for _, wt := range worktrees {
-		label := wt.repo + "/.worktrees/" + wt.branch
+		label := filepath.Join(wt.repo, worktree.WorktreesDir, wt.branch)
 
 		if wt.dirty && !dirty {
 			tw.Skip("rebase "+label, "dirty")

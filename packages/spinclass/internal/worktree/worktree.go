@@ -12,7 +12,7 @@ import (
 	"github.com/amarbel-llc/spinclass/internal/sweatfile"
 )
 
-const WorktreesDir = ".worktrees"
+const WorktreesDir = ".spinclass"
 
 type ResolvedPath struct {
 	AbsPath    string // absolute filesystem path to the worktree
@@ -24,7 +24,7 @@ type ResolvedPath struct {
 // ResolvePath resolves a worktree target relative to a git repo.
 //
 // target interpretation:
-//   - bare branch name (no "/" or ".") -> <repoPath>/.worktrees/<branch>
+//   - bare branch name (no "/" or ".") -> <repoPath>/.spinclass/<branch>
 //   - relative path (contains "/" or ".") -> resolved relative to repoPath
 //   - absolute path -> used directly
 //
@@ -96,7 +96,7 @@ func CreateFrom(repoPath, fromPath, newPath, newBranch string) (sweatfile.LoadRe
 // and trusts worktreePath in Claude.
 func applyWorktreeConfig(repoPath, worktreePath string) (sweatfile.LoadResult, error) {
 	if err := excludeWorktreesDir(repoPath); err != nil {
-		return sweatfile.LoadResult{}, fmt.Errorf("excluding .worktrees from git: %w", err)
+		return sweatfile.LoadResult{}, fmt.Errorf("excluding %s from git: %w", WorktreesDir, err)
 	}
 
 	home, err := os.UserHomeDir()
@@ -120,7 +120,7 @@ func applyWorktreeConfig(repoPath, worktreePath string) (sweatfile.LoadResult, e
 	return result, nil
 }
 
-// excludeWorktreesDir appends .worktrees to .git/info/exclude if not already present.
+// excludeWorktreesDir appends WorktreesDir to .git/info/exclude if not already present.
 func excludeWorktreesDir(repoPath string) error {
 	excludePath := filepath.Join(repoPath, ".git", "info", "exclude")
 
@@ -167,9 +167,9 @@ func (rp *ResolvedPath) FillBranchFromGit() error {
 	return nil
 }
 
-// ScanRepos scans for repositories that have a .worktrees/ directory.
-// If startDir itself is a repo with .worktrees/, returns just that path.
-// Otherwise scans immediate children for repos with .worktrees/.
+// ScanRepos scans for repositories that have a WorktreesDir directory.
+// If startDir itself is a repo with WorktreesDir, returns just that path.
+// Otherwise scans immediate children for repos with WorktreesDir.
 func ScanRepos(startDir string) []string {
 	if isRepoWithWorktrees(startDir) {
 		return []string{startDir}
@@ -205,7 +205,7 @@ func isRepoWithWorktrees(dir string) bool {
 	return true
 }
 
-// ListWorktrees returns absolute paths of all worktree directories in <repoPath>/.worktrees/.
+// ListWorktrees returns absolute paths of all worktree directories in <repoPath>/<WorktreesDir>/.
 func ListWorktrees(repoPath string) []string {
 	wtDir := filepath.Join(repoPath, WorktreesDir)
 	entries, err := os.ReadDir(wtDir)
