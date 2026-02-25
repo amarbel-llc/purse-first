@@ -2,6 +2,7 @@ go 1.25.6
 
 use (
 	.
+	./dummies/go
 	./libs/go-mcp
 	./libs/go-mcp/command/huh
 	./packages/get-hubbed

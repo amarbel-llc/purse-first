@@ -8,4 +8,6 @@ require (
 	github.com/gobwas/glob v0.2.3
 )
 
+require mvdan.cc/sh/v3 v3.12.0 // indirect
+
 replace github.com/amarbel-llc/purse-first/libs/go-mcp => ../../libs/go-mcp
