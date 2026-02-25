@@ -91,6 +91,33 @@ func TestCommandInputSchemaArray(t *testing.T) {
 	}
 }
 
+func TestCommandInputSchemaObject(t *testing.T) {
+	cmd := Command{
+		Name: "exec",
+		Params: []Param{
+			{Name: "server", Type: String, Description: "Server name", Required: true},
+			{Name: "args", Type: Object, Description: "Arguments as JSON object"},
+		},
+	}
+
+	schema := cmd.InputSchema()
+
+	var parsed map[string]any
+	if err := json.Unmarshal(schema, &parsed); err != nil {
+		t.Fatalf("unmarshal schema: %v", err)
+	}
+
+	props := parsed["properties"].(map[string]any)
+	argsProp := props["args"].(map[string]any)
+	if argsProp["type"] != "object" {
+		t.Errorf("args.type = %v, want object", argsProp["type"])
+	}
+
+	if _, ok := argsProp["items"]; ok {
+		t.Error("object params should not have items")
+	}
+}
+
 func TestCommandInputSchemaWithDefault(t *testing.T) {
 	cmd := Command{
 		Name: "serve",
