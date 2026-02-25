@@ -1,0 +1,19 @@
+root := justfile_directory() + "/../.."
+
+build:
+    nix build {{root}}#spinclass
+
+test:
+    nix develop {{root}} --command go test ./packages/spinclass/...
+
+test-v:
+    nix develop {{root}} --command go test -v ./packages/spinclass/...
+
+fmt:
+    nix develop {{root}} --command go fmt ./packages/spinclass/...
+
+lint:
+    nix develop {{root}} --command go vet ./packages/spinclass/...
+
+clean:
+    rm -rf result

@@ -24,6 +24,9 @@ build-purse-first:
 build-robin:
     nix build .#robin
 
+build-spinclass:
+    nix build .#spinclass
+
 build-gomod2nix:
     nix develop --command gomod2nix
 
@@ -56,6 +59,9 @@ test-get-hubbed:
 
 test-lux:
     nix develop --command go test ./packages/lux/...
+
+test-spinclass:
+    nix develop --command go test ./packages/spinclass/...
 
 test-tap-dancer-go:
     nix develop --command go test ./packages/tap-dancer/go/...
@@ -129,6 +135,7 @@ test: \
     test-lifecycle \
     test-lux \
     test-rust-mcp \
+    test-spinclass \
     test-tap-dancer-go \
     test-tap-dancer-rust \
     test-template
