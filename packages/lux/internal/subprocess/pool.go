@@ -356,6 +356,7 @@ func (p *Pool) IsIdleOrFailed(name string) bool {
 	return inst.State == LSPStateIdle || inst.State == LSPStateFailed
 }
 
+// TODO: probe running LSPs with a health-check request to detect unresponsive instances
 func (p *Pool) Status() []LSPStatus {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
