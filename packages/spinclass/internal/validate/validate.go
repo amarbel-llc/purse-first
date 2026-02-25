@@ -222,10 +222,8 @@ func Run(w io.Writer, home, repoDir string) int {
 
 		if len(src.File.ClaudeAllow) > 0 {
 			if issues := CheckClaudeAllow(src.File); len(issues) > 0 {
-				hasErrors := false
 				for _, iss := range issues {
 					if iss.Severity == SeverityError {
-						hasErrors = true
 						diag := map[string]string{
 							"severity": iss.Severity,
 							"message":  iss.Message,
@@ -234,10 +232,9 @@ func Run(w io.Writer, home, repoDir string) int {
 							diag["rule"] = iss.Value
 						}
 						sub.NotOk("claude_allow valid", diag)
+					} else {
+						sub.Ok(fmt.Sprintf("claude_allow valid # warning: %s", iss.Message))
 					}
-				}
-				if !hasErrors {
-					sub.Ok("claude_allow valid")
 				}
 			} else {
 				sub.Ok("claude_allow valid")
@@ -284,7 +281,9 @@ func Run(w io.Writer, home, repoDir string) int {
 	tw.EndSubtest("merged result", sub)
 
 	applySub := tw.Subtest("apply (dry-run)")
-	allExcludes := append(result.Merged.GitExcludes, sweatfile.HardcodedExcludes...)
+	allExcludes := make([]string, 0, len(result.Merged.GitExcludes)+len(sweatfile.HardcodedExcludes))
+	allExcludes = append(allExcludes, result.Merged.GitExcludes...)
+	allExcludes = append(allExcludes, sweatfile.HardcodedExcludes...)
 	if issues := CheckGitExcludes(sweatfile.Sweatfile{GitExcludes: allExcludes}); len(issues) > 0 {
 		for _, iss := range issues {
 			applySub.NotOk("git excludes structure valid", map[string]string{
