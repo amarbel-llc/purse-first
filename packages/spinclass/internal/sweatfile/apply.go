@@ -79,6 +79,7 @@ func ApplyClaudeSettings(worktreePath string, rules []string) error {
 
 	allRules := append([]string{}, rules...)
 	allRules = append(allRules,
+		"Read("+worktreePath+"/*)",
 		"Edit("+worktreePath+"/*)",
 		"Write("+worktreePath+"/*)",
 	)

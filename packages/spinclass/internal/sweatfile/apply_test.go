@@ -53,8 +53,8 @@ func TestApplyClaudeSettings(t *testing.T) {
 	}
 
 	allowRaw, _ := permsMap["allow"].([]any)
-	if len(allowRaw) != 5 {
-		t.Fatalf("expected 5 rules (3 sweatfile + 2 scoped), got %d: %v", len(allowRaw), allowRaw)
+	if len(allowRaw) != 6 {
+		t.Fatalf("expected 6 rules (3 sweatfile + 3 scoped), got %d: %v", len(allowRaw), allowRaw)
 	}
 
 	// First 3 are from sweatfile
@@ -65,12 +65,17 @@ func TestApplyClaudeSettings(t *testing.T) {
 		}
 	}
 
-	// Last 2 are auto-injected scoped rules
-	editRule, _ := allowRaw[3].(string)
-	writeRule, _ := allowRaw[4].(string)
+	// Last 3 are auto-injected scoped rules
+	readRule, _ := allowRaw[3].(string)
+	editRule, _ := allowRaw[4].(string)
+	writeRule, _ := allowRaw[5].(string)
 
+	wantRead := "Read(" + dir + "/*)"
 	wantEdit := "Edit(" + dir + "/*)"
 	wantWrite := "Write(" + dir + "/*)"
+	if readRule != wantRead {
+		t.Errorf("read rule: got %q, want %q", readRule, wantRead)
+	}
 	if editRule != wantEdit {
 		t.Errorf("edit rule: got %q, want %q", editRule, wantEdit)
 	}
@@ -97,9 +102,9 @@ func TestApplyClaudeSettingsEmpty(t *testing.T) {
 	permsMap, _ := doc["permissions"].(map[string]any)
 	allowRaw, _ := permsMap["allow"].([]any)
 
-	// Even with no sweatfile rules, the 2 scoped rules are injected
-	if len(allowRaw) != 2 {
-		t.Fatalf("expected 2 scoped rules, got %d: %v", len(allowRaw), allowRaw)
+	// Even with no sweatfile rules, the 3 scoped rules are injected
+	if len(allowRaw) != 3 {
+		t.Fatalf("expected 3 scoped rules, got %d: %v", len(allowRaw), allowRaw)
 	}
 }
 
