@@ -75,6 +75,10 @@ flake.nix
 All Go packages share the same `src`, `vendorHash`, and `overrideModAttrs`.
 They differ only in `subPackages` and `postInstall`.
 
+The local `vendor/` directory (produced by `go work vendor` for IDE support and
+local builds) must be gitignored --- it is a build artifact, not checked-in
+source. Add `vendor/` to `.gitignore`.
+
 ## The Pattern
 
 ### 1. Go workspace and module setup
@@ -393,6 +397,10 @@ in
   the build phase too, so workspace modules resolve via `go.work` use directives.
 - **Using `vendorHash = null`** --- only valid when a checked-in `vendor/`
   directory exists. Use a real hash with workspace vendor.
+- **Checking in `vendor/`** --- the local `vendor/` directory is a build
+  artifact from `go work vendor`, not source. The nix build runs
+  `go work vendor -e` in its own sandbox via `overrideModAttrs`. Add `vendor/`
+  to `.gitignore`.
 
 ## Decision Guide
 
