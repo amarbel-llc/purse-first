@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/log"
 
 	"github.com/amarbel-llc/spinclass/internal/executor"
@@ -187,19 +186,19 @@ func chooseWorktree(repoPath string) (wtPath, branch string, err error) {
 		branches[i] = filepath.Base(p)
 	}
 
-	cmd := exec.Command("gum", "choose")
-	cmd.Args = append(cmd.Args, branches...)
-	cmd.Stdin = os.Stdin
-	cmd.Stderr = os.Stderr
-
-	out, err := cmd.Output()
-	if err != nil {
-		return "", "", fmt.Errorf("worktree selection cancelled")
+	var selected string
+	options := make([]huh.Option[string], len(branches))
+	for i, b := range branches {
+		options[i] = huh.NewOption(b, b)
 	}
 
-	selected := strings.TrimSpace(string(out))
-	if selected == "" {
-		return "", "", fmt.Errorf("no worktree selected")
+	err = huh.NewSelect[string]().
+		Title("Select worktree to merge").
+		Options(options...).
+		Value(&selected).
+		Run()
+	if err != nil {
+		return "", "", fmt.Errorf("worktree selection cancelled")
 	}
 
 	for i, b := range branches {
