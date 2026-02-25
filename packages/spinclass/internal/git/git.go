@@ -23,6 +23,19 @@ func Run(repoPath string, args ...string) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
+func RunEnv(repoPath string, env []string, args ...string) (string, error) {
+	cmdArgs := append([]string{"-C", repoPath}, args...)
+	cmd := exec.Command("git", cmdArgs...)
+	if len(env) > 0 {
+		cmd.Env = append(os.Environ(), env...)
+	}
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return strings.TrimSpace(string(out)), fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
 func RunPassthrough(repoPath string, args ...string) error {
 	return RunPassthroughEnv(repoPath, nil, args...)
 }

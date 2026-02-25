@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amarbel-llc/spinclass/internal/tap"
+	tap "github.com/amarbel-llc/tap-dancer/go"
 	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
 
@@ -225,7 +225,7 @@ func TestAttachTapExistingWorktree(t *testing.T) {
 
 	mock := &mockExecutor{}
 	var buf bytes.Buffer
-	err := Attach(&buf, mock, rp, "tap", nil)
+	err := Attach(&buf, mock, rp, "tap", nil, true)
 	if err != nil {
 		t.Fatalf("Attach returned error: %v", err)
 	}

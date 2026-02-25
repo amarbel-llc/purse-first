@@ -11,7 +11,7 @@ import (
 	"github.com/charmbracelet/lipgloss/table"
 
 	"github.com/amarbel-llc/spinclass/internal/git"
-	"github.com/amarbel-llc/spinclass/internal/tap"
+	tap "github.com/amarbel-llc/tap-dancer/go"
 	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
 

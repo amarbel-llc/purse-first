@@ -11,7 +11,7 @@ import (
 
 	"github.com/amarbel-llc/spinclass/internal/executor"
 	"github.com/amarbel-llc/spinclass/internal/git"
-	"github.com/amarbel-llc/spinclass/internal/tap"
+	tap "github.com/amarbel-llc/tap-dancer/go"
 	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
 
@@ -75,63 +75,81 @@ func Resolved(execr executor.Executor, format, repoPath, wtPath, branch string) 
 		log.Info("rebasing onto "+defaultBranch, "worktree", branch)
 	}
 
-	if err := git.RunPassthroughEnv(wtPath, []string{"GIT_SEQUENCE_EDITOR=true"}, "rebase", defaultBranch, "-i"); err != nil {
-		if tw != nil {
-			tw.NotOk("rebase "+branch, map[string]string{
-				"message":  err.Error(),
-				"severity": "fail",
-			})
-			tw.Plan()
-		} else {
-			log.Error("rebase failed, not merging")
-		}
-		return err
-	}
-
 	if tw != nil {
-		tw.Ok("rebase " + branch)
+		out, err := git.RunEnv(wtPath, []string{"GIT_SEQUENCE_EDITOR=true"}, "rebase", defaultBranch, "-i")
+		if err != nil {
+			diag := map[string]string{"severity": "fail", "message": err.Error()}
+			if out != "" {
+				diag["output"] = out
+			}
+			tw.NotOk("rebase "+branch, diag)
+			tw.Plan()
+			return err
+		}
+		if out != "" {
+			tw.OkDiag("rebase "+branch, &tap.Diagnostics{Extras: map[string]any{"output": out}})
+		} else {
+			tw.Ok("rebase " + branch)
+		}
+	} else {
+		if err := git.RunPassthroughEnv(wtPath, []string{"GIT_SEQUENCE_EDITOR=true"}, "rebase", defaultBranch, "-i"); err != nil {
+			log.Error("rebase failed, not merging")
+			return err
+		}
 	}
 
 	if tw == nil {
 		log.Info("merging worktree", "worktree", branch)
 	}
 
-	if err := git.RunPassthrough(repoPath, "merge", "--ff-only", branch); err != nil {
-		if tw != nil {
-			tw.NotOk("merge "+branch, map[string]string{
-				"message":  err.Error(),
-				"severity": "fail",
-			})
-			tw.Plan()
-		} else {
-			log.Error("merge failed, not removing worktree")
-		}
-		return err
-	}
-
 	if tw != nil {
-		tw.Ok("merge " + branch)
+		out, err := git.Run(repoPath, "merge", "--ff-only", branch)
+		if err != nil {
+			diag := map[string]string{"severity": "fail", "message": err.Error()}
+			if out != "" {
+				diag["output"] = out
+			}
+			tw.NotOk("merge "+branch, diag)
+			tw.Plan()
+			return err
+		}
+		if out != "" {
+			tw.OkDiag("merge "+branch, &tap.Diagnostics{Extras: map[string]any{"output": out}})
+		} else {
+			tw.Ok("merge " + branch)
+		}
+	} else {
+		if err := git.RunPassthrough(repoPath, "merge", "--ff-only", branch); err != nil {
+			log.Error("merge failed, not removing worktree")
+			return err
+		}
 	}
 
 	if tw == nil {
 		log.Info("removing worktree", "path", wtPath)
 	}
 
-	if err := git.RunPassthrough(repoPath, "worktree", "remove", wtPath); err != nil {
-		if tw != nil {
-			tw.NotOk("remove worktree "+branch, map[string]string{
-				"message":  err.Error(),
-				"severity": "fail",
-			})
-			tw.Plan()
-		}
-		return err
-	}
-
 	if tw != nil {
-		tw.Ok("remove worktree " + branch)
+		out, err := git.Run(repoPath, "worktree", "remove", wtPath)
+		if err != nil {
+			diag := map[string]string{"severity": "fail", "message": err.Error()}
+			if out != "" {
+				diag["output"] = out
+			}
+			tw.NotOk("remove worktree "+branch, diag)
+			tw.Plan()
+			return err
+		}
+		if out != "" {
+			tw.OkDiag("remove worktree "+branch, &tap.Diagnostics{Extras: map[string]any{"output": out}})
+		} else {
+			tw.Ok("remove worktree " + branch)
+		}
 		tw.Plan()
 	} else {
+		if err := git.RunPassthrough(repoPath, "worktree", "remove", wtPath); err != nil {
+			return err
+		}
 		log.Info("detaching from session")
 	}
 

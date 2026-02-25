@@ -26,6 +26,13 @@ func (tw *Writer) Ok(description string) int {
 	return tw.n
 }
 
+func (tw *Writer) OkDiag(description string, diagnostics *Diagnostics) int {
+	tw.n++
+	fmt.Fprintf(tw.w, "ok %d - %s\n", tw.n, description)
+	writeDiagnostics(tw.w, diagnostics)
+	return tw.n
+}
+
 func (tw *Writer) NotOk(description string, diagnostics map[string]string) int {
 	tw.n++
 	fmt.Fprintf(tw.w, "not ok %d - %s\n", tw.n, description)
