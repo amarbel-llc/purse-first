@@ -1,6 +1,6 @@
 ---
 name: Project Story Inventory
-description: Inventories a project's top user stories and tracks their completion status against the codebase. Opt-in only — invoke explicitly with /voldemort.
+description: OPT-IN ONLY — invoke ONLY when user types /voldemort. Never auto-trigger. Generates a docs/user-stories.toml tracking user story completion against the codebase. Does NOT apply to general investigation, analysis, surveying, or auditing tasks.
 version: 0.1.0
 ---
 
