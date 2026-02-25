@@ -15,6 +15,7 @@ result-*
 **/target/
 .worktrees/
 build/
+vendor/
 /purse-first
 /packages/grit/grit
 /packages/get-hubbed/get-hubbed
