@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"github.com/amarbel-llc/lux/internal/logfile"
 	"github.com/amarbel-llc/lux/internal/lsp"
 )
 
@@ -178,7 +178,7 @@ func (p *Pool) GetOrStart(ctx context.Context, name string, initParams *lsp.Init
 	}
 
 	inst.Process = proc
-	go NewStderrLogger(name, os.Stderr).Run(proc.Stderr)
+	go NewStderrLogger(name, logfile.Writer()).Run(proc.Stderr)
 	inst.Conn = jsonrpc.NewConn(proc.Stdout, proc.Stdin, p.handlerFactory(name))
 
 	go func() {
@@ -248,7 +248,7 @@ func (p *Pool) GetOrStart(ctx context.Context, name string, initParams *lsp.Init
 				"settings": settingsPayload,
 			}
 			if err := inst.Conn.Notify(lsp.MethodWorkspaceDidChangeConfiguration, params); err != nil {
-				fmt.Fprintf(os.Stderr, "warning: failed to send settings to %s: %v\n", name, err)
+				fmt.Fprintf(logfile.Writer(), "warning: failed to send settings to %s: %v\n", name, err)
 			}
 		}
 	}

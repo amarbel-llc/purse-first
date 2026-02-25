@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+
+	"github.com/amarbel-llc/lux/internal/logfile"
 )
 
 type Config struct {
@@ -153,7 +155,7 @@ func (c *Config) Validate() error {
 		if lsp.Capabilities != nil {
 			for _, name := range append(lsp.Capabilities.Disable, lsp.Capabilities.Enable...) {
 				if !isKnownCapability(name) {
-					fmt.Fprintf(os.Stderr, "warning: unknown capability %q in lsp %s\n", name, lsp.Name)
+					fmt.Fprintf(logfile.Writer(), "warning: unknown capability %q in lsp %s\n", name, lsp.Name)
 				}
 			}
 		}

@@ -13,6 +13,7 @@ import (
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 	"github.com/amarbel-llc/lux/internal/config"
+	"github.com/amarbel-llc/lux/internal/logfile"
 	"github.com/amarbel-llc/lux/internal/formatter"
 	"github.com/amarbel-llc/lux/internal/lsp"
 	"github.com/amarbel-llc/lux/internal/server"
@@ -53,7 +54,7 @@ func (b *Bridge) waitForLSPReady(ctx context.Context, inst *subprocess.LSPInstan
 		return nil
 	}
 
-	fmt.Fprintf(os.Stderr, "[lux] %s: waiting for LSP to finish indexing...\n", inst.Name)
+	fmt.Fprintf(logfile.Writer(), "[lux] %s: waiting for LSP to finish indexing...\n", inst.Name)
 
 	done := make(chan error, 1)
 	go func() {
@@ -67,7 +68,7 @@ func (b *Bridge) waitForLSPReady(ctx context.Context, inst *subprocess.LSPInstan
 		select {
 		case err := <-done:
 			if err == nil {
-				fmt.Fprintf(os.Stderr, "[lux] %s: LSP ready\n", inst.Name)
+				fmt.Fprintf(logfile.Writer(), "[lux] %s: LSP ready\n", inst.Name)
 			}
 			return err
 		case <-ticker.C:
@@ -80,7 +81,7 @@ func (b *Bridge) waitForLSPReady(ctx context.Context, inst *subprocess.LSPInstan
 				if tok.Pct != nil {
 					logMsg += fmt.Sprintf(" (%d%%)", *tok.Pct)
 				}
-				fmt.Fprintf(os.Stderr, "[lux] %s: %s\n", inst.Name, logMsg)
+				fmt.Fprintf(logfile.Writer(), "[lux] %s: %s\n", inst.Name, logMsg)
 				if b.progressReporter != nil {
 					b.progressReporter(inst.Name, logMsg)
 				}
@@ -107,7 +108,7 @@ func (b *Bridge) callWithRetry(ctx context.Context, inst *subprocess.LSPInstance
 			return result, err
 		}
 
-		fmt.Fprintf(os.Stderr, "[lux] retrying LSP call (attempt %d/%d, waiting %v): %v\n", attempt, maxAttempts, delay, err)
+		fmt.Fprintf(logfile.Writer(), "[lux] retrying LSP call (attempt %d/%d, waiting %v): %v\n", attempt, maxAttempts, delay, err)
 
 		select {
 		case <-ctx.Done():

@@ -14,6 +14,7 @@ import (
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
 	"github.com/amarbel-llc/lux/internal/capabilities"
+	"github.com/amarbel-llc/lux/internal/logfile"
 	"github.com/amarbel-llc/lux/internal/config"
 	"github.com/amarbel-llc/lux/internal/config/filetype"
 	"github.com/amarbel-llc/lux/internal/control"
@@ -525,11 +526,11 @@ func buildMCPTransportApp() *command.App {
 
 			go func() {
 				if err := t.Start(ctx); err != nil {
-					fmt.Fprintf(os.Stderr, "SSE server error: %v\n", err)
+					fmt.Fprintf(logfile.Writer(), "SSE server error: %v\n", err)
 				}
 			}()
 
-			fmt.Fprintf(os.Stderr, "MCP SSE server listening on %s\n", addr)
+			fmt.Fprintf(logfile.Writer(), "MCP SSE server listening on %s\n", addr)
 			return srv.Run(ctx)
 		},
 	})
@@ -569,11 +570,11 @@ func buildMCPTransportApp() *command.App {
 
 			go func() {
 				if err := t.Start(ctx); err != nil {
-					fmt.Fprintf(os.Stderr, "HTTP server error: %v\n", err)
+					fmt.Fprintf(logfile.Writer(), "HTTP server error: %v\n", err)
 				}
 			}()
 
-			fmt.Fprintf(os.Stderr, "MCP HTTP server listening on %s\n", addr)
+			fmt.Fprintf(logfile.Writer(), "MCP HTTP server listening on %s\n", addr)
 			return srv.Run(ctx)
 		},
 	})

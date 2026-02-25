@@ -3,10 +3,10 @@ package warmup
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/amarbel-llc/lux/internal/config"
+	"github.com/amarbel-llc/lux/internal/logfile"
 	"github.com/amarbel-llc/lux/internal/lsp"
 	"github.com/amarbel-llc/lux/internal/subprocess"
 )
@@ -18,7 +18,7 @@ func PreBuildAll(ctx context.Context, cfg *config.Config, executor subprocess.Ex
 		go func(flake, binary, name string) {
 			defer wg.Done()
 			if _, err := executor.Build(ctx, flake, binary); err != nil {
-				fmt.Fprintf(os.Stderr, "[lux] pre-build %s: %v\n", name, err)
+				fmt.Fprintf(logfile.Writer(), "[lux] pre-build %s: %v\n", name, err)
 			}
 		}(l.Flake, l.Binary, l.Name)
 	}
@@ -45,7 +45,7 @@ func StartRelevantLSPs(ctx context.Context, pool *subprocess.Pool, scanner *Scan
 		go func(n string) {
 			defer wg.Done()
 			if _, err := pool.GetOrStart(ctx, n, initParams); err != nil {
-				fmt.Fprintf(os.Stderr, "[lux] eager start %s: %v\n", n, err)
+				fmt.Fprintf(logfile.Writer(), "[lux] eager start %s: %v\n", n, err)
 			}
 		}(name)
 	}
@@ -63,7 +63,7 @@ func StartAllLSPs(ctx context.Context, pool *subprocess.Pool, cfg *config.Config
 		go func(name string) {
 			defer wg.Done()
 			if _, err := pool.GetOrStart(ctx, name, initParams); err != nil {
-				fmt.Fprintf(os.Stderr, "[lux] eager start %s: %v\n", name, err)
+				fmt.Fprintf(logfile.Writer(), "[lux] eager start %s: %v\n", name, err)
 			}
 		}(l.Name)
 	}

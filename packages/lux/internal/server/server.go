@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"github.com/amarbel-llc/lux/internal/logfile"
 	"github.com/amarbel-llc/lux/internal/config"
 	"github.com/amarbel-llc/lux/internal/config/filetype"
 	"github.com/amarbel-llc/lux/internal/control"
@@ -36,7 +37,7 @@ type Server struct {
 func New(cfg *config.Config) (*Server, error) {
 	ftConfigs, err := filetype.LoadMerged()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warning: could not load filetype config: %v\n", err)
+		fmt.Fprintf(logfile.Writer(), "warning: could not load filetype config: %v\n", err)
 		ftConfigs = []*filetype.Config{}
 	}
 
@@ -73,7 +74,7 @@ func New(cfg *config.Config) (*Server, error) {
 
 	fmtCfg, err := config.LoadMergedFormatters()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warning: could not load formatter config: %v\n", err)
+		fmt.Fprintf(logfile.Writer(), "warning: could not load formatter config: %v\n", err)
 	} else {
 		fmtMap := make(map[string]*config.Formatter)
 		for i := range fmtCfg.Formatters {
@@ -85,7 +86,7 @@ func New(cfg *config.Config) (*Server, error) {
 
 		fmtRouter, err := formatter.NewRouter(ftConfigs, fmtMap)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "warning: could not create formatter router: %v\n", err)
+			fmt.Fprintf(logfile.Writer(), "warning: could not create formatter router: %v\n", err)
 		} else {
 			s.fmtRouter = fmtRouter
 		}
@@ -105,7 +106,7 @@ func (s *Server) Run(ctx context.Context) error {
 
 	controlSrv, err := control.NewServer(s.cfg.SocketPath(), s.pool, s.cfg, s.filetypes, s.executor)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warning: could not start control socket: %v\n", err)
+		fmt.Fprintf(logfile.Writer(), "warning: could not start control socket: %v\n", err)
 	} else {
 		s.controlSrv = controlSrv
 		go s.controlSrv.Run(ctx)

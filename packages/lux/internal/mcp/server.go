@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"github.com/amarbel-llc/lux/internal/logfile"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 	mcpserver "github.com/amarbel-llc/purse-first/libs/go-mcp/server"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
@@ -31,7 +31,7 @@ type Server struct {
 func New(cfg *config.Config, t transport.Transport) (*Server, error) {
 	ftConfigs, err := filetype.LoadMerged()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warning: could not load filetype config: %v\n", err)
+		fmt.Fprintf(logfile.Writer(), "warning: could not load filetype config: %v\n", err)
 		ftConfigs = []*filetype.Config{}
 	}
 
@@ -65,7 +65,7 @@ func New(cfg *config.Config, t transport.Transport) (*Server, error) {
 	var fmtRouter *formatter.Router
 	fmtCfg, err := config.LoadMergedFormatters()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warning: could not load formatter config: %v\n", err)
+		fmt.Fprintf(logfile.Writer(), "warning: could not load formatter config: %v\n", err)
 	} else {
 		fmtMap := make(map[string]*config.Formatter)
 		for i := range fmtCfg.Formatters {
@@ -77,7 +77,7 @@ func New(cfg *config.Config, t transport.Transport) (*Server, error) {
 
 		fmtRouter, err = formatter.NewRouter(ftConfigs, fmtMap)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "warning: could not create formatter router: %v\n", err)
+			fmt.Fprintf(logfile.Writer(), "warning: could not create formatter router: %v\n", err)
 			fmtRouter = nil
 		}
 	}
@@ -171,7 +171,7 @@ func (s *Server) lspNotificationHandler(lspName string) jsonrpc.Handler {
 						if tok.Pct != nil {
 							logMsg += fmt.Sprintf(" (%d%%)", *tok.Pct)
 						}
-						fmt.Fprintf(os.Stderr, "[lux] %s: %s\n", lspName, logMsg)
+						fmt.Fprintf(logfile.Writer(), "[lux] %s: %s\n", lspName, logMsg)
 					}
 				}
 			}

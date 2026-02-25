@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"github.com/amarbel-llc/lux/internal/logfile"
 	"github.com/amarbel-llc/lux/internal/config"
 	"github.com/amarbel-llc/lux/internal/config/filetype"
 	"github.com/amarbel-llc/lux/internal/formatter"
@@ -61,7 +62,7 @@ func (h *Handler) handleInitialize(_ context.Context, msg *jsonrpc.Message) (*js
 				// Reload filetype configs with project overrides
 				ftConfigs, ftErr := filetype.LoadMerged()
 				if ftErr != nil {
-					fmt.Fprintf(os.Stderr, "warning: could not load filetype config: %v\n", ftErr)
+					fmt.Fprintf(logfile.Writer(), "warning: could not load filetype config: %v\n", ftErr)
 					ftConfigs = []*filetype.Config{}
 				}
 
