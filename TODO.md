@@ -4,3 +4,4 @@
 - [ ] migrate everything to latest MCP
 - [ ] add rust tap-dancer library
 - [ ] explore purse-first neovim plugin packaging (ftplugins, lux config fragments, auto-discovery)
+- [ ] pivot hook matching to delegation: let packages provide custom matchers (e.g. a `MatchHook` callback on `Command`) instead of the framework owning all matching logic via static `CommandPrefixes`/`Extensions`
