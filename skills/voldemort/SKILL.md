@@ -1,6 +1,7 @@
 ---
 name: Project Story Inventory
 description: OPT-IN ONLY — invoke ONLY when user types /voldemort. Never auto-trigger. Generates a docs/user-stories.toml tracking user story completion against the codebase. Does NOT apply to general investigation, analysis, surveying, or auditing tasks.
+disable-model-invocation: true
 version: 0.1.0
 ---
 

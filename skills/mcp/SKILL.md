@@ -7,6 +7,7 @@ description: >-
   understand version differences, check required methods, or look up MCP
   protocol behavior. Also applies when building or debugging MCP servers and
   needing authoritative spec details.
+disable-model-invocation: true
 ---
 
 # MCP Specification Reference

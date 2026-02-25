@@ -11,6 +11,7 @@
     "./skills/design_patterns-just",
     "./skills/go-cli-framework",
     "./skills/mcp",
+    "./skills/claude-plugins",
     "./skills/overview",
     "./skills/using-packages",
     "./skills/voldemort"
