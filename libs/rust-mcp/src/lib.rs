@@ -91,7 +91,7 @@ pub use server::{Context, McpServer, McpServerBuilder};
 #[cfg(feature = "tools")]
 pub use tools::{Tool, ToolError, ToolRegistry, ToolResult};
 #[cfg(feature = "tools")]
-pub use tools::{ToolAnnotations, ToolResultV1, ToolV1};
+pub use tools::{ToolAnnotations, ToolExecution, ToolResultV1, ToolV1};
 
 #[cfg(feature = "resources")]
 pub use resources::{Resource, ResourceContent, ResourceError, ResourceRegistry};

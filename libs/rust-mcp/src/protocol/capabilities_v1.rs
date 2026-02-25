@@ -80,7 +80,11 @@ impl CapabilitiesV1 {
     }
 
     pub fn with_tasks(mut self) -> Self {
-        self.tasks = Some(TasksCapability {});
+        self.tasks = Some(TasksCapability {
+            list: None,
+            cancel: None,
+            requests: None,
+        });
         self
     }
 }
@@ -99,9 +103,81 @@ pub struct LoggingCapability {}
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CompletionsCapability {}
 
-/// Tasks capability marker.
+/// Tasks capability indicating support for task-augmented requests.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct TasksCapability {}
+pub struct TasksCapability {
+    /// Support for the tasks/list operation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub list: Option<TasksListCapability>,
+
+    /// Support for the tasks/cancel operation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cancel: Option<TasksCancelCapability>,
+
+    /// Which request types support task augmentation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub requests: Option<TasksRequestsCapability>,
+}
+
+/// Marker for tasks/list support.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TasksListCapability {}
+
+/// Marker for tasks/cancel support.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TasksCancelCapability {}
+
+/// Which request types support task augmentation.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TasksRequestsCapability {
+    /// Tool operations that support tasks.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tools: Option<TasksToolsCapability>,
+
+    /// Sampling operations that support tasks (client-side).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sampling: Option<TasksSamplingCapability>,
+
+    /// Elicitation operations that support tasks (client-side).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub elicitation: Option<TasksElicitationCapability>,
+}
+
+/// Tool operations that support tasks.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TasksToolsCapability {
+    /// tools/call supports task augmentation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub call: Option<TasksCallCapability>,
+}
+
+/// Sampling operations that support tasks.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TasksSamplingCapability {
+    /// sampling/createMessage supports task augmentation.
+    #[serde(rename = "createMessage", skip_serializing_if = "Option::is_none")]
+    pub create_message: Option<TasksCreateMessageCapability>,
+}
+
+/// Elicitation operations that support tasks.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TasksElicitationCapability {
+    /// elicitation/create supports task augmentation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub create: Option<TasksCreateCapability>,
+}
+
+/// Marker for tools/call task support.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TasksCallCapability {}
+
+/// Marker for sampling/createMessage task support.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TasksCreateMessageCapability {}
+
+/// Marker for elicitation/create task support.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TasksCreateCapability {}
 
 /// V1 client capabilities with elicitation and tasks.
 #[derive(Debug, Deserialize, Clone, Default)]
@@ -119,6 +195,23 @@ pub struct ClientCapabilitiesV1 {
     pub tasks: Option<TasksCapability>,
 }
 
-/// Elicitation capability marker.
+/// Elicitation capability.
+/// An empty object is equivalent to form-only support for backwards compatibility.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ElicitationCapability {}
+pub struct ElicitationCapability {
+    /// Support for form-based elicitation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub form: Option<ElicitationFormCapability>,
+
+    /// Support for URL-based elicitation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<ElicitationURLCapability>,
+}
+
+/// Form-based elicitation capability marker.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ElicitationFormCapability {}
+
+/// URL-based elicitation capability marker.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ElicitationURLCapability {}

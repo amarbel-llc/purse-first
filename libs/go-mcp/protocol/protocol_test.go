@@ -205,12 +205,16 @@ func TestPaginationParamsSerialization(t *testing.T) {
 }
 
 func TestTaskSerialization(t *testing.T) {
-	progress := 50.0
+	ttl := int64(60000)
+	pollInterval := int64(5000)
 	task := Task{
-		TaskId:   "task-1",
-		Status:   TaskStatusProgress,
-		Type:     "tools/call",
-		Progress: &progress,
+		TaskId:        "task-1",
+		Status:        TaskStatusWorking,
+		StatusMessage: "Processing...",
+		CreatedAt:     "2025-11-25T10:30:00Z",
+		LastUpdatedAt: "2025-11-25T10:40:00Z",
+		TTL:           &ttl,
+		PollInterval:  &pollInterval,
 	}
 
 	data, err := json.Marshal(task)
@@ -226,10 +230,13 @@ func TestTaskSerialization(t *testing.T) {
 	if decoded.TaskId != "task-1" {
 		t.Errorf("TaskId = %q", decoded.TaskId)
 	}
-	if decoded.Status != TaskStatusProgress {
+	if decoded.Status != TaskStatusWorking {
 		t.Errorf("Status = %q", decoded.Status)
 	}
-	if decoded.Progress == nil || *decoded.Progress != 50.0 {
-		t.Error("Progress roundtrip failed")
+	if decoded.TTL == nil || *decoded.TTL != 60000 {
+		t.Error("TTL roundtrip failed")
+	}
+	if decoded.PollInterval == nil || *decoded.PollInterval != 5000 {
+		t.Error("PollInterval roundtrip failed")
 	}
 }

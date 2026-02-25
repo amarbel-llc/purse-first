@@ -9,6 +9,10 @@ use super::capabilities::Capabilities;
 pub struct ServerInfo {
     pub name: String,
     pub version: String,
+
+    /// Human-readable context about the implementation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 
 /// Initialize result

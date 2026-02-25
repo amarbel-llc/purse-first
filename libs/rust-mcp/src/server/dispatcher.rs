@@ -512,6 +512,7 @@ mod tests {
                         total: None,
                         has_more: None,
                     },
+                    meta: None,
                 })
             }
         }

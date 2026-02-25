@@ -33,6 +33,7 @@ impl CompletionRegistry {
                     total: None,
                     has_more: None,
                 },
+                meta: None,
             }),
         }
     }
@@ -72,6 +73,7 @@ mod tests {
                     total: None,
                     has_more: None,
                 },
+                meta: None,
             })
         }
     }
@@ -91,6 +93,7 @@ mod tests {
                 name: "arg".to_string(),
                 value: "fo".to_string(),
             },
+            context: None,
         };
 
         let ctx = Context::new("test-server", "0.1.0", Default::default());
@@ -112,6 +115,7 @@ mod tests {
                 name: "arg".to_string(),
                 value: "x".to_string(),
             },
+            context: None,
         };
 
         let ctx = Context::new("test-server", "0.1.0", Default::default());

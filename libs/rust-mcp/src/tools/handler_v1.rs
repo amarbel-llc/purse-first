@@ -44,6 +44,10 @@ pub struct ToolResultV1 {
     /// Whether the tool execution failed.
     #[serde(skip_serializing_if = "Option::is_none", rename = "isError")]
     pub is_error: Option<bool>,
+
+    /// Protocol-level metadata (e.g., related-task associations).
+    #[serde(rename = "_meta", skip_serializing_if = "Option::is_none")]
+    pub meta: Option<std::collections::HashMap<String, Value>>,
 }
 
 impl ToolResultV1 {
@@ -52,6 +56,7 @@ impl ToolResultV1 {
             content: vec![ContentV1::text(text)],
             structured_content: None,
             is_error: None,
+            meta: None,
         }
     }
 
@@ -60,6 +65,7 @@ impl ToolResultV1 {
             content: vec![ContentV1::text(message)],
             structured_content: None,
             is_error: Some(true),
+            meta: None,
         }
     }
 
@@ -68,8 +74,19 @@ impl ToolResultV1 {
             content: vec![ContentV1::text(content_text)],
             structured_content: Some(structured),
             is_error: None,
+            meta: None,
         }
     }
+}
+
+/// Task execution support for a tool.
+#[derive(Debug, Clone, Serialize)]
+pub struct ToolExecution {
+    /// Whether the tool supports task-augmented invocation.
+    /// Values: "required", "optional", "forbidden".
+    /// If absent, defaults to "forbidden".
+    #[serde(rename = "taskSupport", skip_serializing_if = "Option::is_none")]
+    pub task_support: Option<String>,
 }
 
 /// V1 tool information for listing.
@@ -93,6 +110,10 @@ pub struct ToolInfoV1 {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub annotations: Option<ToolAnnotations>,
+
+    /// Task execution support for this tool.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub execution: Option<ToolExecution>,
 }
 
 /// V1 Tool trait extending the base Tool trait.
@@ -119,6 +140,11 @@ pub trait ToolV1: Tool {
         None
     }
 
+    /// Task execution support for this tool.
+    fn execution(&self) -> Option<ToolExecution> {
+        None
+    }
+
     /// Execute the tool with V1 result type.
     /// Default implementation delegates to the V0 execute method.
     async fn execute_v1(
@@ -135,6 +161,7 @@ pub trait ToolV1: Tool {
                 .collect(),
             structured_content: None,
             is_error: v0_result.is_error,
+            meta: None,
         })
     }
 
@@ -148,6 +175,7 @@ pub trait ToolV1: Tool {
             input_schema: self.input_schema(),
             output_schema: self.output_schema(),
             annotations: self.annotations(),
+            execution: self.execution(),
         }
     }
 }

@@ -22,11 +22,19 @@ pub struct CompletionArgument {
 pub struct CompletionCompleteParams {
     pub r#ref: CompletionReference,
     pub argument: CompletionArgument,
+
+    /// Previously-resolved variables for contextual completions.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub context: Option<std::collections::HashMap<String, String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CompletionResult {
     pub completion: CompletionValues,
+
+    /// Protocol-level metadata.
+    #[serde(rename = "_meta", skip_serializing_if = "Option::is_none")]
+    pub meta: Option<std::collections::HashMap<String, serde_json::Value>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

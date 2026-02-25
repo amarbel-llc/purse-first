@@ -28,12 +28,18 @@ type CompletionCompleteParams struct {
 
 	// Argument identifies the argument being completed.
 	Argument CompletionArgument `json:"argument"`
+
+	// Context provides previously-resolved variables for contextual completions.
+	Context map[string]string `json:"context,omitempty"`
 }
 
 // CompletionResult contains completion suggestions.
 type CompletionResult struct {
 	// Completion contains the completion values.
 	Completion CompletionValues `json:"completion"`
+
+	// Meta contains protocol-level metadata.
+	Meta map[string]any `json:"_meta,omitempty"`
 }
 
 // CompletionValues contains the actual completion suggestions.

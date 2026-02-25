@@ -21,6 +21,7 @@ use tokio::net::TcpListener;
 use tokio::sync::Mutex;
 
 const HEADER_SESSION_ID: &str = "mcp-session-id";
+const HEADER_PROTOCOL_VERSION: &str = "mcp-protocol-version";
 
 /// Run an MCP server with Streamable HTTP transport.
 ///
@@ -29,7 +30,8 @@ const HEADER_SESSION_ID: &str = "mcp-session-id";
 pub async fn run_http_server(server: McpServer, addr: &str) -> Result<(), ServerError> {
     let listener = TcpListener::bind(addr).await?;
     let server = Arc::new(server);
-    let sessions: Arc<Mutex<HashMap<String, bool>>> = Arc::new(Mutex::new(HashMap::new()));
+    // Map session ID to negotiated protocol version.
+    let sessions: Arc<Mutex<HashMap<String, String>>> = Arc::new(Mutex::new(HashMap::new()));
 
     loop {
         let (stream, _peer_addr) = listener.accept().await?;
@@ -47,7 +49,7 @@ pub async fn run_http_server(server: McpServer, addr: &str) -> Result<(), Server
 async fn handle_connection(
     stream: tokio::net::TcpStream,
     server: &McpServer,
-    sessions: &Mutex<HashMap<String, bool>>,
+    sessions: &Mutex<HashMap<String, String>>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let (reader, mut writer) = stream.into_split();
     let mut buf_reader = BufReader::new(reader);
@@ -100,13 +102,25 @@ async fn handle_connection(
                     let is_initialize = req.method == "initialize";
                     let is_notification = req.id.is_none();
 
-                    // Validate session for non-initialize requests.
+                    // Validate session and protocol version for non-initialize requests.
                     if !is_initialize {
                         if let Some(session_id) = headers.get(HEADER_SESSION_ID) {
-                            let sessions = sessions.lock().await;
-                            if !sessions.contains_key(session_id) {
-                                write_http_response(&mut writer, 400, "Bad Request", "Invalid session").await?;
-                                return Ok(());
+                            let sessions_guard = sessions.lock().await;
+                            match sessions_guard.get(session_id) {
+                                None => {
+                                    drop(sessions_guard);
+                                    write_http_response(&mut writer, 400, "Bad Request", "Invalid session").await?;
+                                    return Ok(());
+                                }
+                                Some(session_pv) => {
+                                    if let Some(client_pv) = headers.get(HEADER_PROTOCOL_VERSION) {
+                                        if !session_pv.is_empty() && client_pv != session_pv {
+                                            drop(sessions_guard);
+                                            write_http_response(&mut writer, 400, "Bad Request", "Protocol version mismatch").await?;
+                                            return Ok(());
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -126,11 +140,18 @@ async fn handle_connection(
                     let response_value = server.handle_request(&body_str, &mut ctx).await;
                     let response_json = serde_json::to_string(&response_value)?;
 
-                    // For initialize, create a session.
+                    // For initialize, create a session with the negotiated protocol version.
                     let mut extra_headers = String::new();
                     if is_initialize {
+                        let mut pv = String::new();
+                        if let Some(result) = response_value.get("result") {
+                            if let Some(v) = result.get("protocolVersion").and_then(|v| v.as_str()) {
+                                pv = v.to_string();
+                            }
+                        }
+
                         let session_id = generate_session_id();
-                        sessions.lock().await.insert(session_id.clone(), true);
+                        sessions.lock().await.insert(session_id.clone(), pv);
                         extra_headers = format!("Mcp-Session-Id: {}\r\n", session_id);
                     }
 

@@ -20,6 +20,26 @@ type ToolAnnotations struct {
 	OpenWorldHint *bool `json:"openWorldHint,omitempty"`
 }
 
+// TaskSupport values for tool execution.
+const (
+	// TaskSupportRequired means clients must invoke the tool as a task.
+	TaskSupportRequired = "required"
+
+	// TaskSupportOptional means clients may invoke the tool as a task or normally.
+	TaskSupportOptional = "optional"
+
+	// TaskSupportForbidden means clients must not invoke the tool as a task.
+	TaskSupportForbidden = "forbidden"
+)
+
+// ToolExecution describes task execution support for a tool.
+type ToolExecution struct {
+	// TaskSupport indicates whether the tool supports task-augmented invocation.
+	// Values: "required", "optional", "forbidden".
+	// If absent, defaults to "forbidden".
+	TaskSupport string `json:"taskSupport,omitempty"`
+}
+
 // ToolV1 describes a tool with V1 (2025-11-25) extensions.
 type ToolV1 struct {
 	// Name is the unique identifier for the tool.
@@ -42,6 +62,9 @@ type ToolV1 struct {
 
 	// Annotations provides hints about tool behavior.
 	Annotations *ToolAnnotations `json:"annotations,omitempty"`
+
+	// Execution describes task execution support for this tool.
+	Execution *ToolExecution `json:"execution,omitempty"`
 }
 
 // ToolsListResultV1 is the V1 response to tools/list with pagination.
@@ -60,6 +83,9 @@ type ToolCallResultV1 struct {
 
 	// IsError indicates whether the tool execution failed.
 	IsError bool `json:"isError,omitempty"`
+
+	// Meta contains protocol-level metadata (e.g., related-task associations).
+	Meta map[string]any `json:"_meta,omitempty"`
 }
 
 // ErrorResultV1 creates a ToolCallResultV1 representing an error.

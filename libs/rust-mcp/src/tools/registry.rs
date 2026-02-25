@@ -68,6 +68,7 @@ impl ToolRegistry {
                         input_schema: tool.input_schema(),
                         output_schema: None,
                         annotations: None,
+                        execution: None,
                     }
                 }
             })
@@ -115,6 +116,7 @@ impl ToolRegistry {
                 .collect(),
             structured_content: None,
             is_error: v0_result.is_error,
+            meta: None,
         })
     }
 }

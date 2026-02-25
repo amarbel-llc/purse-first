@@ -9,6 +9,10 @@ import (
 const (
 	// HeaderMCPSessionID is the session header name.
 	HeaderMCPSessionID = "Mcp-Session-Id"
+
+	// HeaderMCPProtocolVersion is the negotiated protocol version header.
+	// Clients must include this in all requests after initialization.
+	HeaderMCPProtocolVersion = "Mcp-Protocol-Version"
 )
 
 // sessionManager tracks active sessions for a Streamable HTTP transport.
@@ -19,7 +23,8 @@ type sessionManager struct {
 
 // session tracks state for a single client session.
 type session struct {
-	id string
+	id              string
+	protocolVersion string
 }
 
 func newSessionManager() *sessionManager {
@@ -28,8 +33,8 @@ func newSessionManager() *sessionManager {
 	}
 }
 
-// create generates a new session and returns its ID.
-func (sm *sessionManager) create() (string, error) {
+// create generates a new session with the negotiated protocol version.
+func (sm *sessionManager) create(protocolVersion string) (string, error) {
 	id, err := generateSessionID()
 	if err != nil {
 		return "", err
@@ -37,8 +42,18 @@ func (sm *sessionManager) create() (string, error) {
 
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
-	sm.sessions[id] = &session{id: id}
+	sm.sessions[id] = &session{id: id, protocolVersion: protocolVersion}
 	return id, nil
+}
+
+// protocolVersion returns the negotiated protocol version for a session.
+func (sm *sessionManager) protocolVersion(id string) string {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+	if s, ok := sm.sessions[id]; ok {
+		return s.protocolVersion
+	}
+	return ""
 }
 
 // valid returns true if the session ID exists.

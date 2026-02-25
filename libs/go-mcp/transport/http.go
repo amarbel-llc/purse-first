@@ -180,12 +180,22 @@ func (t *StreamableHTTP) handlePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// For non-initialize requests, validate session ID.
+	// For non-initialize requests, validate session ID and protocol version header.
 	if msg.Method != "initialize" {
 		sessionID := r.Header.Get(HeaderMCPSessionID)
-		if sessionID != "" && !t.sessions.valid(sessionID) {
-			http.Error(w, "Invalid session", http.StatusBadRequest)
-			return
+		if sessionID != "" {
+			if !t.sessions.valid(sessionID) {
+				http.Error(w, "Invalid session", http.StatusBadRequest)
+				return
+			}
+
+			// Validate MCP-Protocol-Version header matches negotiated version.
+			clientPV := r.Header.Get(HeaderMCPProtocolVersion)
+			sessionPV := t.sessions.protocolVersion(sessionID)
+			if clientPV != "" && sessionPV != "" && clientPV != sessionPV {
+				http.Error(w, "Protocol version mismatch", http.StatusBadRequest)
+				return
+			}
 		}
 	}
 
@@ -209,9 +219,19 @@ func (t *StreamableHTTP) handlePost(w http.ResponseWriter, r *http.Request) {
 	// Wait for the response from the server loop.
 	resp := <-respCh
 
-	// For initialize responses, assign a session ID.
+	// For initialize responses, assign a session ID and extract protocol version.
 	if msg.Method == "initialize" {
-		sessionID, err := t.sessions.create()
+		var pv string
+		if len(resp.Result) > 0 {
+			var initResult struct {
+				ProtocolVersion string `json:"protocolVersion"`
+			}
+			if err := json.Unmarshal(resp.Result, &initResult); err == nil {
+				pv = initResult.ProtocolVersion
+			}
+		}
+
+		sessionID, err := t.sessions.create(pv)
 		if err == nil {
 			w.Header().Set(HeaderMCPSessionID, sessionID)
 		}

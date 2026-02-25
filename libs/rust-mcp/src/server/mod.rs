@@ -238,6 +238,7 @@ impl McpServerBuilder {
             server_info: ServerInfo {
                 name: self.name,
                 version: self.version,
+                description: None,
             },
             protocol_version: self.protocol_version,
             capabilities,

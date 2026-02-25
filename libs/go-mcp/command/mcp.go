@@ -49,6 +49,7 @@ func (a *App) RegisterMCPToolsV1(registry *server.ToolRegistryV1) {
 				Description: cmd.Description.Short,
 				InputSchema: cmd.InputSchema(),
 				Annotations: cmd.Annotations,
+				Execution:   cmd.Execution,
 			},
 			func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResultV1, error) {
 				result, err := run(ctx, args, StubPrompter{})

@@ -204,6 +204,7 @@ mod tests {
                 name: "arg1".to_string(),
                 value: "partial".to_string(),
             },
+            context: None,
         };
 
         let json = serde_json::to_string(&params).unwrap();
@@ -226,6 +227,7 @@ mod tests {
                 total: Some(10),
                 has_more: Some(true),
             },
+            meta: None,
         };
 
         let json = serde_json::to_string(&result).unwrap();
@@ -250,6 +252,7 @@ mod tests {
                 total: None,
                 has_more: None,
             },
+            meta: None,
         };
 
         let json = serde_json::to_string(&result).unwrap();

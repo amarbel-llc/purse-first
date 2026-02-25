@@ -49,8 +49,9 @@ const (
 
 // Implementation describes the server or client implementation.
 type Implementation struct {
-	Name    string `json:"name"`
-	Version string `json:"version,omitempty"`
+	Name        string `json:"name"`
+	Version     string `json:"version,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 // PingResult is the response to a ping request.

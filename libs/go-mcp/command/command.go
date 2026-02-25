@@ -83,6 +83,9 @@ type Command struct {
 	// Annotations provides V1 behavior hints (readOnly, destructive, etc.).
 	Annotations *protocol.ToolAnnotations
 
+	// Execution describes task execution support for this tool.
+	Execution *protocol.ToolExecution
+
 	Params    []Param
 	MapsTools []ToolMapping
 	Examples  []Example
