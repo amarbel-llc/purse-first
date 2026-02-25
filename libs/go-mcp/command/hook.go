@@ -59,10 +59,20 @@ func (a *App) HandleHook(r io.Reader, w io.Writer) error {
 
 	cms := a.allToolMappings()
 
+	commands := []string{command}
+	if hi.ToolName == "Bash" && command != "" {
+		commands = extractSimpleCommands(command)
+	}
+
 	var matchedCM *commandMapping
 	for i := range cms {
-		if FindToolMatch([]ToolMapping{cms[i].mapping}, hi.ToolName, filePath, command) != nil {
-			matchedCM = &cms[i]
+		for _, cmd := range commands {
+			if FindToolMatch([]ToolMapping{cms[i].mapping}, hi.ToolName, filePath, cmd) != nil {
+				matchedCM = &cms[i]
+				break
+			}
+		}
+		if matchedCM != nil {
 			break
 		}
 	}
