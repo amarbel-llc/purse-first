@@ -183,7 +183,16 @@ check-template:
 test-template:
     nix develop --command bats --tap zz-tests_bats/marketplace_template.bats
 
+# Build dummy Go MCP servers
+build-dummies-go:
+    nix develop --command go build -o build/ ./dummies/go/cmd/...
+
+# Test dummy Go MCP servers
+test-dummies-go:
+    nix develop --command go vet ./dummies/go/...
+
 # Clean build artifacts
 clean:
     rm -f purse-first
+    rm -rf build/
     rm -rf result
