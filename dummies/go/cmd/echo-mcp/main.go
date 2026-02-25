@@ -70,7 +70,9 @@ func (t *loggingTransport) Write(msg *jsonrpc.Message) error {
 }
 
 func (t *loggingTransport) Close() error {
-	t.file.Close()
+	if err := t.file.Close(); err != nil {
+		log.Printf("closing log file: %v", err)
+	}
 	return t.inner.Close()
 }
 
