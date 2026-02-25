@@ -114,7 +114,7 @@ Every sub-input that declares `nixpkgs`, `nixpkgs-master`, or `utils` must use `
 ```nix
 # Every devenv and sibling project sub-input needs this:
 go = {
-  url = "github:amarbel-llc/eng?dir=devenvs/go";
+  url = "github:amarbel-llc/purse-first?dir=devenvs/go";
   inputs.nixpkgs.follows = "nixpkgs";
   inputs.nixpkgs-master.follows = "nixpkgs-master";
   inputs.utils.follows = "utils";
@@ -127,7 +127,7 @@ Go projects use `buildGoApplication` from the gomod2nix overlay, NOT `buildGoMod
 
 ```nix
 inputs = {
-  go.url = "github:amarbel-llc/eng?dir=devenvs/go";
+  go.url = "github:amarbel-llc/purse-first?dir=devenvs/go";
 };
 
 # Apply overlay:

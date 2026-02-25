@@ -531,7 +531,7 @@ Replace the existing `devShells.default = ...;` line with this block.
 
 **Step 7: Format**
 
-Run: `nix run github:amarbel-llc/eng?dir=devenvs/nix#fmt -- flake.nix`
+Run: `nix run github:amarbel-llc/purse-first?dir=devenvs/nix#fmt -- flake.nix`
 
 **Step 8: Commit**
 
@@ -627,7 +627,7 @@ Expected: All tests pass.
 
 **Step 1: Format**
 
-Run: `nix run github:amarbel-llc/eng?dir=devenvs/nix#fmt -- devenvs/bats/default.nix devenvs/shell/default.nix devenvs/go/default.nix devenvs/rust/default.nix devenvs/bats/flake.nix devenvs/shell/flake.nix devenvs/go/flake.nix devenvs/rust/flake.nix flake.nix`
+Run: `nix run github:amarbel-llc/purse-first?dir=devenvs/nix#fmt -- devenvs/bats/default.nix devenvs/shell/default.nix devenvs/go/default.nix devenvs/rust/default.nix devenvs/bats/flake.nix devenvs/shell/flake.nix devenvs/go/flake.nix devenvs/rust/flake.nix flake.nix`
 
 **Step 2: Commit if changed**
 

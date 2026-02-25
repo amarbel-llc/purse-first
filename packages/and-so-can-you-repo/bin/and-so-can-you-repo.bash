@@ -112,8 +112,8 @@ template_flake_go() {
     nixpkgs-master.url = "github:NixOS/nixpkgs/b28c4999ed71543e71552ccfd0d7e68c581ba7e9";
     nixpkgs.url = "github:NixOS/nixpkgs/23d72dabcb3b12469f57b37170fcbc1789bd7457";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
-    go.url = "github:friedenberg/eng?dir=devenvs/go";
-    shell.url = "github:friedenberg/eng?dir=devenvs/shell";
+    go.url = "github:amarbel-llc/purse-first?dir=devenvs/go";
+    shell.url = "github:amarbel-llc/purse-first?dir=devenvs/shell";
   };
 
   outputs =
@@ -188,7 +188,7 @@ template_flake_rust() {
   description = "__DESCRIPTION__";
 
   inputs = {
-    devenv-rust.url = "github:friedenberg/eng?dir=devenvs/rust";
+    devenv-rust.url = "github:amarbel-llc/purse-first?dir=devenvs/rust";
     nixpkgs.follows = "devenv-rust/nixpkgs";
     utils.follows = "devenv-rust/utils";
   };
@@ -291,7 +291,7 @@ template_flake_shell() {
     nixpkgs.url = "github:NixOS/nixpkgs/23d72dabcb3b12469f57b37170fcbc1789bd7457";
     nixpkgs-master.url = "github:NixOS/nixpkgs/b28c4999ed71543e71552ccfd0d7e68c581ba7e9";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
-    shell.url = "github:friedenberg/eng?dir=devenvs/shell";
+    shell.url = "github:amarbel-llc/purse-first?dir=devenvs/shell";
   };
 
   outputs =

@@ -22,13 +22,13 @@ inputs = {
   nixpkgs-master.url = "github:NixOS/nixpkgs/<master-sha>";
   utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
   go = {
-    url = "github:amarbel-llc/eng?dir=devenvs/go";
+    url = "github:amarbel-llc/purse-first?dir=devenvs/go";
     inputs.nixpkgs.follows = "nixpkgs";
     inputs.nixpkgs-master.follows = "nixpkgs-master";
     inputs.utils.follows = "utils";
   };
   shell = {
-    url = "github:amarbel-llc/eng?dir=devenvs/shell";
+    url = "github:amarbel-llc/purse-first?dir=devenvs/shell";
     inputs.nixpkgs.follows = "nixpkgs";
     inputs.nixpkgs-master.follows = "nixpkgs-master";
     inputs.utils.follows = "utils";
@@ -40,7 +40,7 @@ inputs = {
 
 ```nix
 inputs = {
-  devenv-rust.url = "github:amarbel-llc/eng?dir=devenvs/rust";
+  devenv-rust.url = "github:amarbel-llc/purse-first?dir=devenvs/rust";
   nixpkgs.follows = "devenv-rust/nixpkgs";
   utils.follows = "devenv-rust/utils";
 };
@@ -59,7 +59,7 @@ inputs = {
   };
   crane.url = "github:ipetkov/crane";
   rust = {
-    url = "github:amarbel-llc/eng?dir=devenvs/rust";
+    url = "github:amarbel-llc/purse-first?dir=devenvs/rust";
     inputs.nixpkgs.follows = "nixpkgs";
     inputs.nixpkgs-master.follows = "nixpkgs-master";
     inputs.utils.follows = "utils";
@@ -75,7 +75,7 @@ inputs = {
   nixpkgs-master.url = "github:NixOS/nixpkgs/<master-sha>";
   utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
   shell = {
-    url = "github:amarbel-llc/eng?dir=devenvs/shell";
+    url = "github:amarbel-llc/purse-first?dir=devenvs/shell";
     inputs.nixpkgs.follows = "nixpkgs";
     inputs.nixpkgs-master.follows = "nixpkgs-master";
     inputs.utils.follows = "utils";
@@ -94,13 +94,13 @@ inputs = {
     nixpkgs-master.url = "github:NixOS/nixpkgs/<master-sha>";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
     go = {
-      url = "github:amarbel-llc/eng?dir=devenvs/go";
+      url = "github:amarbel-llc/purse-first?dir=devenvs/go";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";
     };
     shell = {
-      url = "github:amarbel-llc/eng?dir=devenvs/shell";
+      url = "github:amarbel-llc/purse-first?dir=devenvs/shell";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";
@@ -171,7 +171,7 @@ inputs = {
   description = "Rust project description";
 
   inputs = {
-    devenv-rust.url = "github:amarbel-llc/eng?dir=devenvs/rust";
+    devenv-rust.url = "github:amarbel-llc/purse-first?dir=devenvs/rust";
     nixpkgs.follows = "devenv-rust/nixpkgs";
     utils.follows = "devenv-rust/utils";
   };
@@ -225,7 +225,7 @@ inputs = {
     };
     crane.url = "github:ipetkov/crane";
     rust = {
-      url = "github:amarbel-llc/eng?dir=devenvs/rust";
+      url = "github:amarbel-llc/purse-first?dir=devenvs/rust";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";
@@ -292,7 +292,7 @@ devShells.default = pkgs.mkShell {
 };
 ```
 
-Available devenvs (from `github:amarbel-llc/eng?dir=devenvs/<name>`):
+Available devenvs (from `github:amarbel-llc/purse-first?dir=devenvs/<name>`):
 
 | Devenv | Provides |
 |--------|----------|
@@ -369,13 +369,13 @@ This ensures all devenv tools (including `gomod2nix`) are available when enterin
 Format all `.nix` files with `nixfmt-rfc-style`:
 
 ```bash
-nix run github:amarbel-llc/eng?dir=devenvs/nix#fmt -- path/to/flake.nix
+nix run github:amarbel-llc/purse-first?dir=devenvs/nix#fmt -- path/to/flake.nix
 ```
 
 Or from within a nix devenv:
 
 ```bash
-nix develop github:amarbel-llc/eng?dir=devenvs/nix --command nixfmt path/to/flake.nix
+nix develop github:amarbel-llc/purse-first?dir=devenvs/nix --command nixfmt path/to/flake.nix
 ```
 
 ## Cascading `follows` for Shared Inputs
@@ -406,18 +406,18 @@ Every sub-input that declares `nixpkgs`, `nixpkgs-master`, or `utils` must have 
 
 ```nix
 # WRONG — each sub-input gets its own independent copy
-go.url = "github:amarbel-llc/eng?dir=devenvs/go";
-shell.url = "github:amarbel-llc/eng?dir=devenvs/shell";
+go.url = "github:amarbel-llc/purse-first?dir=devenvs/go";
+shell.url = "github:amarbel-llc/purse-first?dir=devenvs/shell";
 
 # CORRECT — sub-inputs share the parent's common inputs
 go = {
-  url = "github:amarbel-llc/eng?dir=devenvs/go";
+  url = "github:amarbel-llc/purse-first?dir=devenvs/go";
   inputs.nixpkgs.follows = "nixpkgs";
   inputs.nixpkgs-master.follows = "nixpkgs-master";
   inputs.utils.follows = "utils";
 };
 shell = {
-  url = "github:amarbel-llc/eng?dir=devenvs/shell";
+  url = "github:amarbel-llc/purse-first?dir=devenvs/shell";
   inputs.nixpkgs.follows = "nixpkgs";
   inputs.nixpkgs-master.follows = "nixpkgs-master";
   inputs.utils.follows = "utils";
@@ -517,7 +517,7 @@ inputs = {
   fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0.1.21.tar.gz";
 
   # GitHub URLs — for devenvs and pinned nixpkgs
-  go.url = "github:amarbel-llc/eng?dir=devenvs/go";
+  go.url = "github:amarbel-llc/purse-first?dir=devenvs/go";
   nixpkgs.url = "github:NixOS/nixpkgs/<stable-sha>";
 };
 ```
@@ -527,7 +527,7 @@ inputs = {
 | URL Type | Use For |
 |----------|---------|
 | `https://flakehub.com/f/...` | Third-party flakes on FlakeHub (`flake-utils`, `crane`, `fenix`, `fh`) |
-| `github:amarbel-llc/eng?dir=devenvs/...` | Devenv references |
+| `github:amarbel-llc/purse-first?dir=devenvs/...` | Devenv references |
 | `github:NixOS/nixpkgs/<sha>` | Pinned nixpkgs (stable and master) |
 | `github:amarbel-llc/<repo>` | Unpublished repos or repos not yet on FlakeHub |
 

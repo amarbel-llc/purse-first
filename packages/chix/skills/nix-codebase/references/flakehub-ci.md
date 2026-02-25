@@ -179,7 +179,7 @@ https://api.flakehub.com/f/pinned/numtide/flake-utils/0.1.102/...
 
 ### When to Use GitHub URLs
 
-- **Devenv references**: `github:amarbel-llc/eng?dir=devenvs/go`
+- **Devenv references**: `github:amarbel-llc/purse-first?dir=devenvs/go`
 - **Nixpkgs pinned SHAs**: `github:NixOS/nixpkgs/<sha>`
 - **Unpublished repos** not yet on FlakeHub
 

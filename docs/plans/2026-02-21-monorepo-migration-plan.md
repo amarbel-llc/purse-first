@@ -612,10 +612,10 @@ Key changes from current flake.nix:
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
 
     # Dev environment inputs
-    go.url = "github:amarbel-llc/eng?dir=devenvs/go";
-    shell.url = "github:amarbel-llc/eng?dir=devenvs/shell";
-    bats.url = "github:amarbel-llc/eng?dir=devenvs/bats";
-    rust.url = "github:amarbel-llc/eng?dir=devenvs/rust";
+    go.url = "github:amarbel-llc/purse-first?dir=devenvs/go";
+    shell.url = "github:amarbel-llc/purse-first?dir=devenvs/shell";
+    bats.url = "github:amarbel-llc/purse-first?dir=devenvs/bats";
+    rust.url = "github:amarbel-llc/purse-first?dir=devenvs/rust";
 
     # Build inputs for Rust packages
     crane.url = "github:ipetkov/crane";
