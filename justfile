@@ -1,4 +1,6 @@
 
+cmd_nix_dev := "nix develop " + justfile_directory() + " --command "
+
 default: && update build test
 
 # Build all packages (default = marketplace bundle)
@@ -28,7 +30,7 @@ build-spinclass:
     nix build .#spinclass
 
 build-go:
-    nix develop --command go build -o build/purse-first ./cmd/purse-first
+    {{cmd_nix_dev}} go build -o build/purse-first ./cmd/purse-first
 
 # Build Homebrew tap formula templates
 build-brew:
@@ -49,51 +51,53 @@ update-nix:
 
 # Test individual Go packages
 test-grit:
-    nix develop --command go test ./packages/grit/...
+    {{cmd_nix_dev}} go test ./packages/grit/...
 
 test-get-hubbed:
-    nix develop --command go test ./packages/get-hubbed/...
+    {{cmd_nix_dev}} go test ./packages/get-hubbed/...
 
 test-lux:
-    nix develop --command go test ./packages/lux/...
+    {{cmd_nix_dev}} go test ./packages/lux/...
 
 test-spinclass:
-    nix develop --command go test ./packages/spinclass/...
+    {{cmd_nix_dev}} go test ./packages/spinclass/...
 
 test-tap-dancer-go:
-    nix develop --command go test ./packages/tap-dancer/go/...
+    {{cmd_nix_dev}} go test ./packages/tap-dancer/go/...
 
 # Test Rust packages
+[working-directory: 'packages/chix']
 test-chix:
-    cd packages/chix && nix develop ../../ --command cargo test
+  {{cmd_nix_dev}} cargo test
 
+[working-directory: 'packages/tap-dancer/rust']
 test-tap-dancer-rust:
-    cd packages/tap-dancer/rust && nix develop ../../../ --command cargo test
+    {{cmd_nix_dev}} cargo test
 
 # Run tests
 test-go:
-    nix develop --command go test ./...
+    {{cmd_nix_dev}} go test ./...
 
 # Run tests with verbose output
 test-v:
-    nix develop --command go test -v ./...
+    {{cmd_nix_dev}} go test -v ./...
 
 # Format code
 fmt:
-    nix develop --command go fmt ./...
+    {{cmd_nix_dev}} go fmt ./...
 
 # Lint code
 lint:
-    nix develop --command go vet ./...
+    {{cmd_nix_dev}} go vet ./...
 
 # Regenerate workspace vendor directory after dependency changes
 vendor:
-    nix develop --command go work vendor
+    {{cmd_nix_dev}} go work vendor
 
 # Update go dependencies, tidy all modules, and re-vendor
 deps:
-    nix develop --command go work sync
-    nix develop --command go work vendor
+    {{cmd_nix_dev}} go work sync
+    {{cmd_nix_dev}} go work vendor
 
 # Recompute goVendorHash in flake.nix from the local vendor directory
 vendor-hash:
@@ -108,33 +112,33 @@ vendor-hash:
 # Run integration tests
 test-integration:
     nix build
-    nix develop --command bats --tap \
+    {{cmd_nix_dev}} bats --tap \
       zz-tests_bats/validate_marketplace.bats \
       zz-tests_bats/validate_documents.bats \
       zz-tests_bats/validate_plugin_repos.bats
 
 # Validate plugin repos have correct .claude-plugin/plugin.json
 test-validate-repos:
-    nix develop --command bats --tap zz-tests_bats/validate_plugin_repos.bats
+    {{cmd_nix_dev}} bats --tap zz-tests_bats/validate_plugin_repos.bats
 
 # Run validate-specific BATS tests
 test-validate:
     nix build
-    nix develop --command bats --tap zz-tests_bats/validate_documents.bats
+    {{cmd_nix_dev}} bats --tap zz-tests_bats/validate_documents.bats
 
 # Run lifecycle tests
 test-lifecycle:
     nix build
-    nix develop --command bats --tap zz-tests_bats/hook_lifecycle.bats
+    {{cmd_nix_dev}} bats --tap zz-tests_bats/hook_lifecycle.bats
 
 # Validate own plugin manifest
 validate:
-    nix develop --command go run ./cmd/purse-first validate .claude-plugin/plugin.json
+    {{cmd_nix_dev}} go run ./cmd/purse-first validate .claude-plugin/plugin.json
 
 # Run Homebrew tap BATS tests
 test-brew:
     nix build .#homebrew-tap
-    nix develop --command bats --tap zz-tests_bats/homebrew_tap.bats
+    {{cmd_nix_dev}} bats --tap zz-tests_bats/homebrew_tap.bats
 
 test: \
     test-chix \
@@ -165,7 +169,7 @@ build-rust-mcp:
 
 # Test rust-lib-mcp
 test-rust-mcp:
-    cd libs/rust-mcp && nix develop --command cargo test
+    cd libs/rust-mcp && {{cmd_nix_dev}} cargo test
 
 # Test command package specifically
 test-command:
@@ -181,15 +185,15 @@ check-template:
 
 # Run template tests
 test-template:
-    nix develop --command bats --tap zz-tests_bats/marketplace_template.bats
+    {{cmd_nix_dev}} bats --tap zz-tests_bats/marketplace_template.bats
 
 # Build dummy Go MCP servers
 build-dummies-go:
-    nix develop --command go build -o build/ ./dummies/go/cmd/...
+    {{cmd_nix_dev}} go build -o build/ ./dummies/go/cmd/...
 
 # Test dummy Go MCP servers
 test-dummies-go:
-    nix develop --command go vet ./dummies/go/...
+    {{cmd_nix_dev}} go vet ./dummies/go/...
 
 # Clean build artifacts
 clean:
