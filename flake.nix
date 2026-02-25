@@ -53,7 +53,7 @@
 
       # Single vendor hash for the entire Go workspace.
       # Only covers external deps — workspace module changes don't affect it.
-      goVendorHash = "sha256-ThXWg4AIraQcPvD9W3XLampGBPlKogPgKeVrUcZ+vT0=";
+      goVendorHash = "sha256-029kWjAcZLb27oHj/XwSL0b4+CQCmeJrqoCzmjIsJAY=";
 
       buildDevenvs =
         system:
@@ -127,6 +127,10 @@
             inherit pkgs goWorkspaceSrc goVendorHash;
           };
 
+          mgpPkg = import ./lib/packages/mgp.nix {
+            inherit pkgs goWorkspaceSrc goVendorHash;
+          };
+
           chixPkg = import ./lib/packages/chix.nix {
             inherit
               pkgs
@@ -139,7 +143,13 @@
           };
 
           tapDancerPkgs = import ./lib/packages/tap-dancer.nix {
-            inherit pkgs craneLib purse-first-cli goWorkspaceSrc goVendorHash;
+            inherit
+              pkgs
+              craneLib
+              purse-first-cli
+              goWorkspaceSrc
+              goVendorHash
+              ;
             src = ./packages/tap-dancer;
           };
 
@@ -169,6 +179,7 @@
             gritPkg
             get-hubbed-wrapped
             luxPkg
+            mgpPkg
             chixPkg
             tapDancerPkgs
             batmanPkgs
@@ -200,6 +211,7 @@
           [
             pkgs.gritPkg
             pkgs.luxPkg
+            pkgs.mgpPkg
             pkgs.chixPkg
             pkgs.get-hubbed-wrapped
             pkgs.batmanPkgs.robin
@@ -283,6 +295,7 @@
               grit = localPkgs.gritPkg;
               get-hubbed = localPkgs.get-hubbed-wrapped;
               lux = localPkgs.luxPkg;
+              mgp = localPkgs.mgpPkg;
               chix = localPkgs.chixPkg;
               robin = localPkgs.batmanPkgs.robin;
               batman = localPkgs.batmanPkgs.default;
@@ -297,6 +310,7 @@
                   localPkgs.gritPkg
                   localPkgs.get-hubbed-wrapped
                   localPkgs.luxPkg
+                  localPkgs.mgpPkg
                   localPkgs.chixPkg
                 ];
               };

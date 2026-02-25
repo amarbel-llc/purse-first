@@ -28,6 +28,13 @@
       "category": "development",
       "tags": ["lsp", "code-intelligence", "mcp"]
     },
+    "mgp": {
+      "description": "Model graph protocol — query and execute MCP tools via GraphQL",
+      "version": "0.1.0",
+      "homepage": "https://github.com/amarbel-llc/purse-first",
+      "category": "development",
+      "tags": ["graphql", "mcp", "discovery", "multiplexer"]
+    },
     "chix": {
       "description": "Nix MCP server and skills for Claude Code — build, evaluate, search, and manage flakes",
       "version": "0.1.0",
