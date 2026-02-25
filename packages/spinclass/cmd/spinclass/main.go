@@ -12,6 +12,7 @@ import (
 	"github.com/amarbel-llc/spinclass/internal/clean"
 	"github.com/amarbel-llc/spinclass/internal/completions"
 	"github.com/amarbel-llc/spinclass/internal/executor"
+	"github.com/amarbel-llc/spinclass/internal/hooks"
 	"github.com/amarbel-llc/spinclass/internal/merge"
 	"github.com/amarbel-llc/spinclass/internal/perms"
 	"github.com/amarbel-llc/spinclass/internal/pull"
@@ -301,6 +302,7 @@ func init() {
 	pullCmd.Flags().BoolVarP(&pullDirty, "dirty", "d", false, "include dirty repos and worktrees")
 	rootCmd.AddCommand(pullCmd)
 	rootCmd.AddCommand(perms.NewPermsCmd())
+	rootCmd.AddCommand(hooks.NewHooksCmd())
 	rootCmd.AddCommand(forkCmd)
 	rootCmd.AddCommand(validateCmd)
 }
