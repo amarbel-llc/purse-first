@@ -2,11 +2,14 @@ package validate
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/amarbel-llc/spinclass/internal/sweatfile"
+	"github.com/amarbel-llc/spinclass/internal/tap"
 )
 
 const (
@@ -159,4 +162,164 @@ func CheckUnknownFields(data []byte) []Issue {
 		}
 	}
 	return issues
+}
+
+func Run(w io.Writer, home, repoDir string) int {
+	tw := tap.NewWriter(w)
+
+	result, err := sweatfile.LoadHierarchy(home, repoDir)
+	if err != nil {
+		tw.NotOk("load hierarchy", map[string]string{
+			"severity": SeverityError,
+			"message":  err.Error(),
+		})
+		tw.Plan()
+		return 1
+	}
+
+	for _, src := range result.Sources {
+		if !src.Found {
+			tw.Skip(src.Path, "not found")
+			continue
+		}
+
+		sub := tw.Subtest(src.Path)
+
+		data, readErr := os.ReadFile(src.Path)
+		if readErr != nil {
+			sub.NotOk("readable", map[string]string{
+				"severity": SeverityError,
+				"message":  readErr.Error(),
+			})
+			sub.Plan()
+			tw.EndSubtest(src.Path, sub)
+			continue
+		}
+
+		_, parseErr := sweatfile.Parse(data)
+		if parseErr != nil {
+			sub.NotOk("valid TOML", map[string]string{
+				"severity": SeverityError,
+				"message":  parseErr.Error(),
+			})
+			sub.Plan()
+			tw.EndSubtest(src.Path, sub)
+			continue
+		}
+		sub.Ok("valid TOML")
+
+		if issues := CheckUnknownFields(data); len(issues) > 0 {
+			for _, iss := range issues {
+				sub.NotOk("no unknown fields", map[string]string{
+					"severity": iss.Severity,
+					"message":  iss.Message,
+					"field":    iss.Field,
+				})
+			}
+		} else {
+			sub.Ok("no unknown fields")
+		}
+
+		if len(src.File.ClaudeAllow) > 0 {
+			if issues := CheckClaudeAllow(src.File); len(issues) > 0 {
+				hasErrors := false
+				for _, iss := range issues {
+					if iss.Severity == SeverityError {
+						hasErrors = true
+						diag := map[string]string{
+							"severity": iss.Severity,
+							"message":  iss.Message,
+						}
+						if iss.Value != "" {
+							diag["rule"] = iss.Value
+						}
+						sub.NotOk("claude_allow valid", diag)
+					}
+				}
+				if !hasErrors {
+					sub.Ok("claude_allow valid")
+				}
+			} else {
+				sub.Ok("claude_allow valid")
+			}
+		}
+
+		if len(src.File.GitExcludes) > 0 {
+			if issues := CheckGitExcludes(src.File); len(issues) > 0 {
+				for _, iss := range issues {
+					diag := map[string]string{
+						"severity": iss.Severity,
+						"message":  iss.Message,
+					}
+					if iss.Value != "" {
+						diag["value"] = iss.Value
+					}
+					sub.NotOk("git_excludes valid", diag)
+				}
+			} else {
+				sub.Ok("git_excludes valid")
+			}
+		}
+
+		sub.Plan()
+		tw.EndSubtest(src.Path, sub)
+	}
+
+	sub := tw.Subtest("merged result")
+	if issues := CheckMerged(result.Merged); len(issues) > 0 {
+		for _, iss := range issues {
+			if iss.Severity == SeverityError {
+				sub.NotOk(iss.Field+" unique", map[string]string{
+					"severity": iss.Severity,
+					"message":  iss.Message,
+				})
+			} else {
+				sub.Ok(fmt.Sprintf("%s unique # warning: %s", iss.Field, iss.Message))
+			}
+		}
+	} else {
+		sub.Ok("no duplicate entries")
+	}
+	sub.Plan()
+	tw.EndSubtest("merged result", sub)
+
+	applySub := tw.Subtest("apply (dry-run)")
+	allExcludes := append(result.Merged.GitExcludes, sweatfile.HardcodedExcludes...)
+	if issues := CheckGitExcludes(sweatfile.Sweatfile{GitExcludes: allExcludes}); len(issues) > 0 {
+		for _, iss := range issues {
+			applySub.NotOk("git excludes structure valid", map[string]string{
+				"severity": iss.Severity,
+				"message":  iss.Message,
+			})
+		}
+	} else {
+		applySub.Ok("git excludes structure valid")
+	}
+
+	if issues := CheckClaudeAllow(result.Merged); len(issues) > 0 {
+		hasErrors := false
+		for _, iss := range issues {
+			if iss.Severity == SeverityError {
+				hasErrors = true
+				applySub.NotOk("claude settings structure valid", map[string]string{
+					"severity": iss.Severity,
+					"message":  iss.Message,
+				})
+			}
+		}
+		if !hasErrors {
+			applySub.Ok("claude settings structure valid")
+		}
+	} else {
+		applySub.Ok("claude settings structure valid")
+	}
+	applySub.Plan()
+	tw.EndSubtest("apply (dry-run)", applySub)
+
+	tw.Plan()
+
+	if tw.HasFailures() {
+		return 1
+	}
+	return 0
 }
