@@ -35,7 +35,8 @@ func (e *NixExecutor) Build(ctx context.Context, flake, binarySpec string) (stri
 	}
 	e.cacheMu.RUnlock()
 
-	cmd := exec.CommandContext(ctx, "nix", "build", flake, "--no-link", "--print-out-paths")
+	cmd := exec.CommandContext(ctx, "nix", "build", flake, "--no-link", "--print-out-paths", "--impure")
+	cmd.Env = append(os.Environ(), "NIXPKGS_ALLOW_UNFREE=1")
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
