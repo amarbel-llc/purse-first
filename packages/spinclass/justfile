@@ -1,13 +1,12 @@
 root := justfile_directory() + "/../.."
 
+default: build test
+
 build:
     nix build {{root}}#spinclass
 
 test:
-    nix develop {{root}} --command go test ./packages/spinclass/...
-
-test-v:
-    nix develop {{root}} --command go test -v ./packages/spinclass/...
+    nix develop {{root}} --command go run packages/tap-dancer/ go-test ./packages/spinclass/...
 
 fmt:
     nix develop {{root}} --command go fmt ./packages/spinclass/...

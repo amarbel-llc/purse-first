@@ -21,7 +21,7 @@ import (
 )
 
 var outputFormat string
-var createVerbose bool
+var verbose bool
 var attachNoMerge bool
 
 var rootCmd = &cobra.Command{
@@ -56,7 +56,7 @@ var createCmd = &cobra.Command{
 			return err
 		}
 
-		return shop.Create(os.Stdout, rp, createVerbose, format, nil)
+		return shop.Create(os.Stdout, rp, verbose, format, nil)
 	},
 }
 
@@ -94,7 +94,7 @@ var attachCmd = &cobra.Command{
 			return err
 		}
 
-		return shop.Attach(os.Stdout, exec, rp, format, claudeArgs, attachNoMerge)
+		return shop.Attach(os.Stdout, exec, rp, format, claudeArgs, attachNoMerge, verbose)
 	},
 }
 
@@ -144,7 +144,7 @@ var mergeCmd = &cobra.Command{
 			target = args[0]
 		}
 
-		return merge.Run(executor.ShellExecutor{}, format, target)
+		return merge.Run(executor.ShellExecutor{}, format, target, verbose)
 	},
 }
 
@@ -263,7 +263,7 @@ var forkCmd = &cobra.Command{
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&outputFormat, "format", "", "output format: tap or table")
-	createCmd.Flags().BoolVarP(&createVerbose, "verbose", "v", false, "print sweatfile loading details")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "show detailed output (YAML diagnostics on passing test points)")
 	attachCmd.Flags().BoolVar(&attachNoMerge, "no-merge", false, "skip auto-merge on session close")
 	cleanCmd.Flags().BoolVarP(&cleanInteractive, "interactive", "i", false, "interactively discard changes in dirty merged worktrees")
 	rootCmd.AddCommand(createCmd)

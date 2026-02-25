@@ -78,19 +78,14 @@ func logSweatfileResult(result sweatfile.LoadResult) {
 	)
 }
 
-func Attach(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, noMerge bool) error {
+func Attach(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, noMerge bool, verbose bool) error {
 	var tw *tap.Writer
 	if format == "tap" {
 		tw = tap.NewWriter(w)
-		tw.PlanAhead(2)
 	}
 
-	if err := Create(w, rp, false, format, tw); err != nil {
+	if err := Create(w, rp, verbose, format, tw); err != nil {
 		return err
-	}
-
-	if format != "tap" {
-		fmt.Println(rp.AbsPath)
 	}
 
 	var command []string
@@ -102,10 +97,10 @@ func Attach(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, forma
 		return fmt.Errorf("attach failed: %w", err)
 	}
 
-	return closeShop(w, exec, rp, format, noMerge, tw)
+	return closeShop(w, exec, rp, format, noMerge, verbose, tw)
 }
 
-func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, noMerge bool, tw *tap.Writer) error {
+func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, noMerge bool, verbose bool, tw *tap.Writer) error {
 	if rp.Branch == "" {
 		if err := rp.FillBranchFromGit(); err != nil {
 			log.Warn("could not determine current branch")
@@ -123,16 +118,21 @@ func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, fo
 	isClean := worktreeStatus == ""
 
 	if isClean && !noMerge {
-		return merge.Resolved(exec, format, rp.RepoPath, rp.AbsPath, rp.Branch)
+		err := merge.Resolved(exec, w, tw, format, rp.RepoPath, rp.AbsPath, rp.Branch, verbose)
+		if tw != nil {
+			tw.Plan()
+		}
+		return err
 	}
 
 	commitsAhead := git.CommitsAhead(rp.AbsPath, defaultBranch, rp.Branch)
 	desc := statusDescription(defaultBranch, commitsAhead, worktreeStatus)
 
-	if format == "tap" {
-		if tw == nil {
-			tw = tap.NewWriter(w)
-		}
+	if tw != nil {
+		tw.Ok("close " + rp.Branch + " # " + desc)
+		tw.Plan()
+	} else if format == "tap" {
+		tw = tap.NewWriter(w)
 		tw.Ok("close " + rp.Branch + " # " + desc)
 		tw.Plan()
 	} else {

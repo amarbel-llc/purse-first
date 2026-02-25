@@ -2,6 +2,7 @@ package merge
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,7 +16,7 @@ import (
 	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
 
-func Run(execr executor.Executor, format string, target string) error {
+func Run(execr executor.Executor, format string, target string, verbose bool) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -53,10 +54,10 @@ func Run(execr executor.Executor, format string, target string) error {
 		}
 	}
 
-	return Resolved(execr, format, repoPath, wtPath, branch)
+	return Resolved(execr, os.Stdout, nil, format, repoPath, wtPath, branch, verbose)
 }
 
-func Resolved(execr executor.Executor, format, repoPath, wtPath, branch string) error {
+func Resolved(execr executor.Executor, w io.Writer, tw *tap.Writer, format, repoPath, wtPath, branch string, verbose bool) error {
 	if info, err := os.Stat(repoPath); err != nil || !info.IsDir() {
 		return fmt.Errorf("repository not found: %s", repoPath)
 	}
@@ -66,9 +67,10 @@ func Resolved(execr executor.Executor, format, repoPath, wtPath, branch string) 
 		return fmt.Errorf("could not determine default branch: %w", err)
 	}
 
-	var tw *tap.Writer
-	if format == "tap" {
-		tw = tap.NewWriter(os.Stdout)
+	ownWriter := false
+	if tw == nil && format == "tap" {
+		tw = tap.NewWriter(w)
+		ownWriter = true
 	}
 
 	if tw == nil {
@@ -83,10 +85,12 @@ func Resolved(execr executor.Executor, format, repoPath, wtPath, branch string) 
 				diag["output"] = out
 			}
 			tw.NotOk("rebase "+branch, diag)
-			tw.Plan()
+			if ownWriter {
+				tw.Plan()
+			}
 			return err
 		}
-		if out != "" {
+		if verbose && out != "" {
 			tw.OkDiag("rebase "+branch, &tap.Diagnostics{Extras: map[string]any{"output": out}})
 		} else {
 			tw.Ok("rebase " + branch)
@@ -110,10 +114,12 @@ func Resolved(execr executor.Executor, format, repoPath, wtPath, branch string) 
 				diag["output"] = out
 			}
 			tw.NotOk("merge "+branch, diag)
-			tw.Plan()
+			if ownWriter {
+				tw.Plan()
+			}
 			return err
 		}
-		if out != "" {
+		if verbose && out != "" {
 			tw.OkDiag("merge "+branch, &tap.Diagnostics{Extras: map[string]any{"output": out}})
 		} else {
 			tw.Ok("merge " + branch)
@@ -137,15 +143,19 @@ func Resolved(execr executor.Executor, format, repoPath, wtPath, branch string) 
 				diag["output"] = out
 			}
 			tw.NotOk("remove worktree "+branch, diag)
-			tw.Plan()
+			if ownWriter {
+				tw.Plan()
+			}
 			return err
 		}
-		if out != "" {
+		if verbose && out != "" {
 			tw.OkDiag("remove worktree "+branch, &tap.Diagnostics{Extras: map[string]any{"output": out}})
 		} else {
 			tw.Ok("remove worktree " + branch)
 		}
-		tw.Plan()
+		if ownWriter {
+			tw.Plan()
+		}
 	} else {
 		if err := git.RunPassthrough(repoPath, "worktree", "remove", wtPath); err != nil {
 			return err

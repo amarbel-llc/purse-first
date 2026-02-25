@@ -225,7 +225,7 @@ func TestAttachTapExistingWorktree(t *testing.T) {
 
 	mock := &mockExecutor{}
 	var buf bytes.Buffer
-	err := Attach(&buf, mock, rp, "tap", nil, true)
+	err := Attach(&buf, mock, rp, "tap", nil, true, false)
 	if err != nil {
 		t.Fatalf("Attach returned error: %v", err)
 	}
