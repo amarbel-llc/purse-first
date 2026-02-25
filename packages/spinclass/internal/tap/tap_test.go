@@ -130,6 +130,57 @@ func TestPlanWithZeroTests(t *testing.T) {
 	}
 }
 
+func TestSubtestEmitsIndentedStream(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	sub := tw.Subtest("my subtest")
+	sub.Ok("inner pass")
+	sub.Plan()
+	tw.EndSubtest("my subtest", sub)
+
+	out := buf.String()
+	if !strings.Contains(out, "    # Subtest: my subtest\n") {
+		t.Errorf("expected subtest header, got: %q", out)
+	}
+	if !strings.Contains(out, "    1..1\n") {
+		t.Errorf("expected indented plan, got: %q", out)
+	}
+	if !strings.Contains(out, "    ok 1 - inner pass\n") {
+		t.Errorf("expected indented ok line, got: %q", out)
+	}
+	if !strings.Contains(out, "ok 1 - my subtest\n") {
+		t.Errorf("expected parent ok line, got: %q", out)
+	}
+}
+
+func TestSubtestWithFailureEmitsNotOkParent(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	sub := tw.Subtest("failing subtest")
+	sub.Ok("pass")
+	sub.NotOk("fail", map[string]string{"message": "bad"})
+	sub.Plan()
+	tw.EndSubtest("failing subtest", sub)
+
+	out := buf.String()
+	if !strings.Contains(out, "not ok 1 - failing subtest\n") {
+		t.Errorf("expected parent not ok line, got: %q", out)
+	}
+}
+
+func TestHasFailuresTracksNotOk(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.Ok("pass")
+	if tw.HasFailures() {
+		t.Error("expected no failures after Ok")
+	}
+	tw.NotOk("fail", nil)
+	if !tw.HasFailures() {
+		t.Error("expected failures after NotOk")
+	}
+}
+
 func TestMixedOperations(t *testing.T) {
 	var buf bytes.Buffer
 	tw := NewWriter(&buf)
