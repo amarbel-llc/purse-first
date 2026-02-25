@@ -194,3 +194,13 @@ func WorktreeAddFrom(fromPath, newBranch, newPath string) error {
 	_, err := Run(fromPath, "worktree", "add", "-b", newBranch, newPath)
 	return err
 }
+
+// IsWorktree returns true if path contains a .git file (not directory),
+// indicating it is a git worktree rather than the main repository.
+func IsWorktree(path string) bool {
+	info, err := os.Lstat(filepath.Join(path, ".git"))
+	if err != nil {
+		return false
+	}
+	return !info.IsDir()
+}

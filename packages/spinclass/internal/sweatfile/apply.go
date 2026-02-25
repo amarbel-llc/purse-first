@@ -94,7 +94,7 @@ func ApplyClaudeSettings(worktreePath string, rules []string) error {
 
 	doc["permissions"] = permsMap
 
-	if isWorktree(worktreePath) {
+	if git.IsWorktree(worktreePath) {
 		doc["hooks"] = map[string]any{
 			"PreToolUse": []any{
 				map[string]any{
@@ -123,12 +123,3 @@ func ApplyClaudeSettings(worktreePath string, rules []string) error {
 	return os.WriteFile(settingsPath, append(data, '\n'), 0o644)
 }
 
-// isWorktree returns true if path contains a .git file (not directory),
-// indicating it is a git worktree rather than the main repository.
-func isWorktree(path string) bool {
-	info, err := os.Lstat(filepath.Join(path, ".git"))
-	if err != nil {
-		return false
-	}
-	return !info.IsDir()
-}

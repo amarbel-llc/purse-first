@@ -150,11 +150,7 @@ func excludeWorktreesDir(repoPath string) error {
 // IsWorktree returns true if path contains a .git file (not directory),
 // indicating it is a git worktree rather than the main repository.
 func IsWorktree(path string) bool {
-	info, err := os.Lstat(filepath.Join(path, ".git"))
-	if err != nil {
-		return false
-	}
-	return !info.IsDir()
+	return git.IsWorktree(path)
 }
 
 // FillBranchFromGit populates the Branch field from git.
