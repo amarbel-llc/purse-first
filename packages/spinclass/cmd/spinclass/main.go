@@ -17,6 +17,7 @@ import (
 	"github.com/amarbel-llc/spinclass/internal/pull"
 	"github.com/amarbel-llc/spinclass/internal/shop"
 	"github.com/amarbel-llc/spinclass/internal/status"
+	"github.com/amarbel-llc/spinclass/internal/validate"
 	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
 
@@ -262,6 +263,29 @@ var forkCmd = &cobra.Command{
 	},
 }
 
+var validateCmd = &cobra.Command{
+	Use:   "validate",
+	Short: "Validate the sweatfile hierarchy",
+	Long:  `Walk the sweatfile hierarchy from PWD and validate each file for structural and semantic correctness. Outputs TAP-14 with subtests.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return err
+		}
+
+		exitCode := validate.Run(os.Stdout, home, cwd)
+		if exitCode != 0 {
+			os.Exit(exitCode)
+		}
+		return nil
+	},
+}
+
 func init() {
 	rootCmd.PersistentFlags().StringVar(&outputFormat, "format", "", "output format: tap or table")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "show detailed output (YAML diagnostics on passing test points)")
@@ -278,6 +302,7 @@ func init() {
 	rootCmd.AddCommand(pullCmd)
 	rootCmd.AddCommand(perms.NewPermsCmd())
 	rootCmd.AddCommand(forkCmd)
+	rootCmd.AddCommand(validateCmd)
 }
 
 func main() {
