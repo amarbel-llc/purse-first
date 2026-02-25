@@ -265,6 +265,42 @@ When an existing package adds a dependency on another workspace module:
 4. Rebuild --- if the new dependency brings in new external transitive deps,
    `goVendorHash` will need updating (see "Computing `vendorHash`" above)
 
+## Per-Package Justfile
+
+Each Go package should have a `justfile` for local development. The pattern
+delegates to the root flake for builds and uses `nix develop` for Go tooling:
+
+```just
+# packages/new-pkg/justfile
+root := justfile_directory() + "/../.."
+
+default: build test
+
+build:
+    nix build {{root}}#new-pkg
+
+test:
+    nix develop {{root}} --command go test ./packages/new-pkg/...
+
+fmt:
+    nix develop {{root}} --command go fmt ./packages/new-pkg/...
+
+lint:
+    nix develop {{root}} --command go vet ./packages/new-pkg/...
+
+clean:
+    rm -rf result
+```
+
+**Key details:**
+
+- `root` resolves to the monorepo root so `nix build` and `nix develop` find
+  the flake
+- `build` uses `nix build` with the package's flake output name
+- `test`, `fmt`, `lint` use `nix develop --command` to get Go tooling from the
+  devshell without needing Go installed on the host
+- All Go commands use workspace-relative paths (`./packages/new-pkg/...`)
+
 ## Mixed-Language Packages
 
 For packages with both Go and non-Go components (e.g., tap-dancer has Go + Rust
