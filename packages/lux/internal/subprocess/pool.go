@@ -362,18 +362,25 @@ func (p *Pool) Status() []LSPStatus {
 
 	var statuses []LSPStatus
 	for name, inst := range p.instances {
-		inst.mu.RLock()
-		status := LSPStatus{
-			Name:      name,
-			Flake:     inst.Flake,
-			State:     inst.State.String(),
-			StartedAt: inst.StartedAt,
+		if inst.mu.TryRLock() {
+			status := LSPStatus{
+				Name:      name,
+				Flake:     inst.Flake,
+				State:     inst.State.String(),
+				StartedAt: inst.StartedAt,
+			}
+			if inst.Error != nil {
+				status.Error = inst.Error.Error()
+			}
+			inst.mu.RUnlock()
+			statuses = append(statuses, status)
+		} else {
+			statuses = append(statuses, LSPStatus{
+				Name:  name,
+				Flake: inst.Flake,
+				State: LSPStateStarting.String(),
+			})
 		}
-		if inst.Error != nil {
-			status.Error = inst.Error.Error()
-		}
-		inst.mu.RUnlock()
-		statuses = append(statuses, status)
 	}
 
 	return statuses

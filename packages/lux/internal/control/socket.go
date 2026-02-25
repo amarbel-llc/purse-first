@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/amarbel-llc/lux/internal/config"
 	"github.com/amarbel-llc/lux/internal/config/filetype"
@@ -208,6 +209,9 @@ func (c *Client) sendCommand(cmd string) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	c.conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	defer c.conn.SetReadDeadline(time.Time{})
 
 	reader := bufio.NewReader(c.conn)
 	line, err := reader.ReadString('\n')
