@@ -195,6 +195,16 @@ func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, fo
 	return nil
 }
 
+func discardAll(wtPath string) error {
+	if _, err := git.Run(wtPath, "checkout", "."); err != nil {
+		return fmt.Errorf("git checkout: %w", err)
+	}
+	if _, err := git.Run(wtPath, "clean", "-fd"); err != nil {
+		return fmt.Errorf("git clean: %w", err)
+	}
+	return nil
+}
+
 func statusDescription(defaultBranch string, commitsAhead int, porcelain string) string {
 	var parts []string
 

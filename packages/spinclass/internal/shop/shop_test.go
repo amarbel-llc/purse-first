@@ -8,8 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	tap "github.com/amarbel-llc/tap-dancer/go"
+	"github.com/amarbel-llc/spinclass/internal/git"
 	"github.com/amarbel-llc/spinclass/internal/worktree"
+	tap "github.com/amarbel-llc/tap-dancer/go"
 )
 
 func TestStatusDescription(t *testing.T) {
@@ -386,5 +387,57 @@ func TestForkAutoName(t *testing.T) {
 	forkedPath := filepath.Join(wtDir, "source-branch-1")
 	if _, err := os.Stat(forkedPath); os.IsNotExist(err) {
 		t.Errorf("expected forked worktree at %s", forkedPath)
+	}
+}
+
+func TestDiscardAllCleansWorktree(t *testing.T) {
+	parentDir := t.TempDir()
+	repoDir := filepath.Join(parentDir, "repo")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	runGit := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+
+	runGit(repoDir, "init")
+	runGit(repoDir, "config", "user.email", "test@test.com")
+	runGit(repoDir, "config", "user.name", "Test")
+
+	if err := os.WriteFile(filepath.Join(repoDir, "tracked.txt"), []byte("original"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	runGit(repoDir, "add", "tracked.txt")
+	runGit(repoDir, "commit", "-m", "initial")
+
+	wtDir := filepath.Join(repoDir, worktree.WorktreesDir)
+	wtPath := filepath.Join(wtDir, "dirty-test")
+	runGit(repoDir, "worktree", "add", "-b", "dirty-test", wtPath)
+
+	// Dirty it: modify tracked file + add untracked file
+	if err := os.WriteFile(filepath.Join(wtPath, "tracked.txt"), []byte("modified"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(wtPath, "untracked.txt"), []byte("junk"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if git.StatusPorcelain(wtPath) == "" {
+		t.Fatal("expected dirty worktree")
+	}
+
+	if err := discardAll(wtPath); err != nil {
+		t.Fatalf("discardAll error: %v", err)
+	}
+
+	if status := git.StatusPorcelain(wtPath); status != "" {
+		t.Errorf("expected clean worktree after discard, got: %q", status)
 	}
 }
