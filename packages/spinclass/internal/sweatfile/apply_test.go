@@ -132,3 +132,74 @@ func TestApplyClaudeSettingsPreservesExistingKeys(t *testing.T) {
 		t.Error("expected mcpServers key to be preserved")
 	}
 }
+
+func TestApplyClaudeSettingsWritesHooksForWorktree(t *testing.T) {
+	dir := t.TempDir()
+
+	// Simulate a worktree by creating .git as a file (not directory)
+	os.WriteFile(filepath.Join(dir, ".git"), []byte("gitdir: /tmp/fake"), 0o644)
+
+	err := ApplyClaudeSettings(dir, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(dir, ".claude", "settings.local.json"))
+	if err != nil {
+		t.Fatalf("reading settings: %v", err)
+	}
+
+	var doc map[string]any
+	json.Unmarshal(data, &doc)
+
+	hooksRaw, ok := doc["hooks"]
+	if !ok {
+		t.Fatal("expected hooks key in settings")
+	}
+
+	hooks := hooksRaw.(map[string]any)
+	preToolUse, ok := hooks["PreToolUse"]
+	if !ok {
+		t.Fatal("expected PreToolUse key in hooks")
+	}
+
+	entries := preToolUse.([]any)
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 PreToolUse entry, got %d", len(entries))
+	}
+
+	entry := entries[0].(map[string]any)
+	matcher := entry["matcher"].(string)
+	if matcher != "Read|Write|Edit|Glob|Grep|Bash|Task" {
+		t.Errorf("matcher: got %q", matcher)
+	}
+
+	hooksList := entry["hooks"].([]any)
+	hook := hooksList[0].(map[string]any)
+	if hook["type"] != "command" {
+		t.Errorf("hook type: got %q", hook["type"])
+	}
+	if hook["command"] != "spinclass hooks" {
+		t.Errorf("hook command: got %q", hook["command"])
+	}
+}
+
+func TestApplyClaudeSettingsNoHooksForMainRepo(t *testing.T) {
+	dir := t.TempDir()
+
+	// Simulate a main repo by creating .git as a directory
+	os.MkdirAll(filepath.Join(dir, ".git"), 0o755)
+
+	err := ApplyClaudeSettings(dir, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, _ := os.ReadFile(filepath.Join(dir, ".claude", "settings.local.json"))
+	var doc map[string]any
+	json.Unmarshal(data, &doc)
+
+	if _, ok := doc["hooks"]; ok {
+		t.Error("expected no hooks key for main repo")
+	}
+}
