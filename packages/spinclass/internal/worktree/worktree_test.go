@@ -357,7 +357,7 @@ func TestExcludeWorktreesDirCreatesInfoDir(t *testing.T) {
 
 func TestForkName(t *testing.T) {
 	dir := t.TempDir()
-	wtDir := filepath.Join(dir, ".worktrees")
+	wtDir := filepath.Join(dir, WorktreesDir)
 	if err := os.MkdirAll(wtDir, 0o755); err != nil {
 		t.Fatal(err)
 	}

@@ -218,7 +218,7 @@ func TestNewTapExistingWorktree(t *testing.T) {
 	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
 
 	// Create worktree so attach finds it existing
-	wtDir := filepath.Join(repoDir, ".worktrees")
+	wtDir := filepath.Join(repoDir, worktree.WorktreesDir)
 	wtPath := filepath.Join(wtDir, "feature-tap")
 	runGit(repoDir, "worktree", "add", "-b", "feature-tap", wtPath)
 
@@ -285,7 +285,7 @@ func TestNewNoAttach(t *testing.T) {
 	runGit(repoDir, "config", "user.name", "Test")
 	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
 
-	wtDir := filepath.Join(repoDir, ".worktrees")
+	wtDir := filepath.Join(repoDir, worktree.WorktreesDir)
 	wtPath := filepath.Join(wtDir, "feature-dry")
 	runGit(repoDir, "worktree", "add", "-b", "feature-dry", wtPath)
 
@@ -350,7 +350,7 @@ func TestForkAutoName(t *testing.T) {
 	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
 
 	// Create the source worktree inside .worktrees/
-	wtDir := filepath.Join(repoDir, ".worktrees")
+	wtDir := filepath.Join(repoDir, worktree.WorktreesDir)
 	srcPath := filepath.Join(wtDir, "source-branch")
 	runGit(repoDir, "worktree", "add", "-b", "source-branch", srcPath)
 
