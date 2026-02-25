@@ -27,11 +27,8 @@ build-robin:
 build-spinclass:
     nix build .#spinclass
 
-build-gomod2nix:
-    nix develop --command gomod2nix
-
-build-go: build-gomod2nix
-    nix develop --command go build -o purse-first ./cmd/purse-first
+build-go:
+    nix develop --command go build -o build/purse-first ./cmd/purse-first
 
 # Build Homebrew tap formula templates
 build-brew:
@@ -89,10 +86,14 @@ fmt:
 lint:
     nix develop --command go vet ./...
 
-# Update go dependencies and regenerate gomod2nix.toml
+# Regenerate workspace vendor directory after dependency changes
+vendor:
+    nix develop --command go work vendor
+
+# Update go dependencies, tidy all modules, and re-vendor
 deps:
-    nix develop --command go mod tidy
-    nix develop --command gomod2nix
+    nix develop --command go work sync
+    nix develop --command go work vendor
 
 # Run integration tests
 test-integration:

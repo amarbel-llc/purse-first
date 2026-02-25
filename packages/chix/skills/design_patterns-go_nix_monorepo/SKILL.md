@@ -261,7 +261,7 @@ When an existing package adds a dependency on another workspace module:
 
 1. Add the `require` to the package's `go.mod`
 2. Add a `replace` directive pointing to the relative path of the dependency
-3. Run `go work vendor` to regenerate the vendor directory
+3. Run `just vendor` (or `go work vendor`) to regenerate the vendor directory
 4. Rebuild --- if the new dependency brings in new external transitive deps,
    `goVendorHash` will need updating (see "Computing `vendorHash`" above)
 
@@ -300,6 +300,24 @@ clean:
 - `test`, `fmt`, `lint` use `nix develop --command` to get Go tooling from the
   devshell without needing Go installed on the host
 - All Go commands use workspace-relative paths (`./packages/new-pkg/...`)
+
+The root justfile should also have workspace-wide recipes for vendor management:
+
+```just
+# Root justfile (relevant recipes)
+
+# Regenerate workspace vendor directory after dependency changes
+vendor:
+    nix develop --command go work vendor
+
+# Update go dependencies, tidy all modules, and re-vendor
+deps:
+    nix develop --command go work sync
+    nix develop --command go work vendor
+```
+
+`just vendor` is the quick path after adding a `replace` directive. `just deps`
+handles the full workflow when external dependencies change (sync + re-vendor).
 
 ## Mixed-Language Packages
 
