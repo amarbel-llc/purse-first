@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 
 	"github.com/amarbel-llc/mgp/internal/catalog"
 	"github.com/amarbel-llc/mgp/internal/tools"
@@ -15,6 +16,9 @@ import (
 )
 
 func main() {
+	pluginsDir := flag.String("plugins-dir", "", "path to share/purse-first/ directory containing plugin.json files")
+	binDir := flag.String("bin-dir", "", "path to bin/ directory containing MCP server binaries")
+
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "mgp — model graph protocol MCP server\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
@@ -26,10 +30,10 @@ func main() {
 
 	flag.Parse()
 
-	cat := catalog.NewCatalog()
-	app := tools.RegisterAll(cat)
-
+	// generate-plugin and hook subcommands work with an empty catalog
 	if flag.NArg() == 2 && flag.Arg(0) == "generate-plugin" {
+		cat := catalog.NewCatalog()
+		app := tools.RegisterAll(cat)
 		if err := app.GenerateAll(flag.Arg(1)); err != nil {
 			log.Fatalf("generating plugin: %v", err)
 		}
@@ -37,6 +41,8 @@ func main() {
 	}
 
 	if flag.NArg() >= 1 && flag.Arg(0) == "hook" {
+		cat := catalog.NewCatalog()
+		app := tools.RegisterAll(cat)
 		if err := app.HandleHook(os.Stdin, os.Stdout); err != nil {
 			log.Fatalf("handling hook: %v", err)
 		}
@@ -51,6 +57,9 @@ func main() {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
+
+	cat := discoverCatalog(ctx, *pluginsDir, *binDir)
+	app := tools.RegisterAll(cat)
 
 	t := transport.NewStdio(os.Stdin, os.Stdout)
 
@@ -70,4 +79,32 @@ func main() {
 	if err := srv.Run(ctx); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
+}
+
+func discoverCatalog(ctx context.Context, pluginsDir, binDir string) *catalog.Catalog {
+	if pluginsDir == "" || binDir == "" {
+		exe, err := os.Executable()
+		if err != nil {
+			log.Printf("warning: resolving executable path: %v; using empty catalog", err)
+			return catalog.NewCatalog()
+		}
+
+		root := filepath.Dir(filepath.Dir(exe))
+
+		if pluginsDir == "" {
+			pluginsDir = filepath.Join(root, "share", "purse-first")
+		}
+
+		if binDir == "" {
+			binDir = filepath.Join(root, "bin")
+		}
+	}
+
+	cat, err := catalog.Discover(ctx, pluginsDir, binDir, "mgp")
+	if err != nil {
+		log.Printf("warning: catalog discovery failed: %v; using empty catalog", err)
+		return catalog.NewCatalog()
+	}
+
+	return cat
 }
