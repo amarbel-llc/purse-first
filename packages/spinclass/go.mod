@@ -2,6 +2,8 @@ module github.com/amarbel-llc/spinclass
 
 go 1.24.2
 
+replace github.com/amarbel-llc/tap-dancer/go => ../tap-dancer/go
+
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/charmbracelet/huh v0.8.0
@@ -11,6 +13,7 @@ require (
 )
 
 require (
+	github.com/amarbel-llc/tap-dancer/go v0.0.0-20260222022802-be680fd2b4ac // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/catppuccin/go v0.3.0 // indirect

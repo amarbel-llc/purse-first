@@ -7,9 +7,10 @@ description: >-
   vendorHash across packages", "fix go-mcp dependency in nix build", or
   encounters vendorHash churn from local Go library changes, stale
   gomod2nix.toml files, or Go module resolution failures in Nix monorepo builds.
-  Also applies when a Go package depends on a local library in the same monorepo
-  and the nix build can't resolve it, or when the user wants one vendor hash
-  stable across local code changes.
+  Also applies when a Go package depends on a local library or another package
+  in the same monorepo and the nix build can't resolve it, when encountering
+  "not marked as explicit in vendor/modules.txt" errors, or when the user wants
+  one vendor hash stable across local code changes.
 version: 0.2.0
 ---
 
@@ -90,10 +91,12 @@ use (
 )
 ```
 
-Each package's `go.mod` has a `replace` directive for local resolution:
+Any workspace module that depends on another workspace module needs a `replace`
+directive in its `go.mod`. This applies to **all** intra-workspace dependencies
+--- packages depending on libraries, and packages depending on other packages.
 
 ```go
-// packages/grit/go.mod
+// packages/grit/go.mod — package depending on a library
 module github.com/org/grit
 
 go 1.25.6
@@ -103,9 +106,22 @@ require github.com/org/monorepo/libs/go-mcp v0.0.3-0.20260222205500-abcdef123456
 replace github.com/org/monorepo/libs/go-mcp => ../../libs/go-mcp
 ```
 
+```go
+// packages/spinclass/go.mod — package depending on another package
+module github.com/org/spinclass
+
+go 1.25.6
+
+require github.com/org/monorepo/packages/tap-dancer/go v0.0.0-20260222022802-be680fd2b4ac
+
+replace github.com/org/monorepo/packages/tap-dancer/go => ../tap-dancer/go
+```
+
 **Why replace directives are required:** `go work vendor` uses them to resolve
 workspace modules locally without hitting the module proxy. Without them,
-Go tries to fetch unpublished pseudo-versions from the proxy and fails.
+Go tries to fetch unpublished pseudo-versions from the proxy and fails. This
+applies to every intra-workspace dependency, whether the target is under `libs/`
+or `packages/`.
 
 **External consumers never see them:** `replace` directives are module-local.
 Running `go get github.com/org/grit` resolves `go-mcp` from the module proxy
@@ -229,13 +245,25 @@ modules (go-mcp, grit, lux, etc.) never affect the hash.
 
 ## Adding a New Go Package
 
-1. Create `packages/new-pkg/` with `go.mod` including a `replace` directive
+1. Create `packages/new-pkg/` with `go.mod` including `replace` directives for
+   every workspace module it depends on (libraries under `libs/` **and** other
+   packages under `packages/`)
 2. Add `use ./packages/new-pkg` to `go.work`
 3. Create `lib/packages/new-pkg.nix` using the workspace pattern (copy grit.nix,
    change `pname`, `subPackages`, `postInstall`)
 4. Add the import to `flake.nix` passing `goWorkspaceSrc` and `goVendorHash`
 5. Build --- the existing `goVendorHash` works unless the new package adds
    external dependencies
+
+## Adding a Cross-Package Dependency
+
+When an existing package adds a dependency on another workspace module:
+
+1. Add the `require` to the package's `go.mod`
+2. Add a `replace` directive pointing to the relative path of the dependency
+3. Run `go work vendor` to regenerate the vendor directory
+4. Rebuild --- if the new dependency brings in new external transitive deps,
+   `goVendorHash` will need updating (see "Computing `vendorHash`" above)
 
 ## Mixed-Language Packages
 
@@ -284,8 +312,9 @@ in
 - **Per-package combined source trees** --- the old pattern. Assembling
   `runCommand "grit-src" ...` per package means vendorHash includes local code
   and changes with every library edit.
-- **Removing replace directives** --- `go work vendor` needs them to resolve
-  workspace modules without hitting the module proxy.
+- **Removing or omitting replace directives** --- `go work vendor` needs them
+  for every intra-workspace dependency (libraries and packages alike). Missing a
+  `replace` causes "not marked as explicit in vendor/modules.txt" build failures.
 - **Setting `GOWORK=off` in the main build** --- workspace mode is needed for
   the build phase too, so workspace modules resolve via `go.work` use directives.
 - **Using `vendorHash = null`** --- only valid when a checked-in `vendor/`
