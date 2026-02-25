@@ -11,7 +11,7 @@ import (
 
 // HardcodedExcludes are always written to .git/info/exclude regardless of sweatfile config.
 var HardcodedExcludes = []string{
-	".claude",
+	".claude/settings.local.json",
 }
 
 func Apply(worktreePath string, sf Sweatfile) error {
@@ -65,14 +65,19 @@ func ApplyClaudeSettings(worktreePath string, rules []string) error {
 	settingsPath := filepath.Join(worktreePath, ".claude", "settings.local.json")
 
 	var doc map[string]any
+
 	if data, err := os.ReadFile(settingsPath); err == nil {
-		json.Unmarshal(data, &doc)
+		if err := json.Unmarshal(data, &doc); err != nil {
+			return err
+		}
 	}
+
 	if doc == nil {
 		doc = make(map[string]any)
 	}
 
 	permsMap, _ := doc["permissions"].(map[string]any)
+
 	if permsMap == nil {
 		permsMap = make(map[string]any)
 	}
@@ -86,6 +91,7 @@ func ApplyClaudeSettings(worktreePath string, rules []string) error {
 
 	permsMap["defaultMode"] = "acceptEdits"
 	permsMap["allow"] = allRules
+
 	doc["permissions"] = permsMap
 
 	if err := os.MkdirAll(filepath.Dir(settingsPath), 0o755); err != nil {
@@ -93,6 +99,7 @@ func ApplyClaudeSettings(worktreePath string, rules []string) error {
 	}
 
 	data, err := json.MarshalIndent(doc, "", "  ")
+
 	if err != nil {
 		return err
 	}
