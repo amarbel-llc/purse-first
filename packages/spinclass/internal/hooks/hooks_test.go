@@ -222,7 +222,7 @@ func TestBashNoPathAllowed(t *testing.T) {
 	}
 }
 
-func TestTaskAlwaysDenied(t *testing.T) {
+func TestTaskAllowedBecauseSubagentsInheritHooks(t *testing.T) {
 	boundary := t.TempDir()
 
 	input := makeInput("Task", map[string]any{
@@ -236,21 +236,8 @@ func TestTaskAlwaysDenied(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if out.Len() == 0 {
-		t.Fatal("expected deny output for Task")
-	}
-
-	var result map[string]any
-	json.Unmarshal(out.Bytes(), &result)
-	hookOutput := result["hookSpecificOutput"].(map[string]any)
-
-	if hookOutput["permissionDecision"] != "deny" {
-		t.Errorf("expected deny, got %v", hookOutput["permissionDecision"])
-	}
-
-	reason := hookOutput["permissionDecisionReason"].(string)
-	if reason == "" {
-		t.Error("expected non-empty reason")
+	if out.Len() != 0 {
+		t.Errorf("expected no output for Task (subagents inherit hooks), got %q", out.String())
 	}
 }
 

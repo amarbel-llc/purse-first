@@ -53,7 +53,7 @@ func extractPaths(input hookInput) []string {
 	case "Bash":
 		return extractAbsolutePathsFromCommand(input)
 	case "Task":
-		return []string{"__task_denied__"}
+		return nil
 	}
 	return nil
 }
@@ -74,10 +74,6 @@ func extractAbsolutePathsFromCommand(input hookInput) []string {
 }
 
 func isInsideBoundary(path, boundary string) bool {
-	if path == "__task_denied__" {
-		return false
-	}
-
 	resolved, err := filepath.EvalSymlinks(path)
 	if err != nil {
 		resolved = filepath.Clean(path)
@@ -87,18 +83,10 @@ func isInsideBoundary(path, boundary string) bool {
 }
 
 func writeDeny(w io.Writer, toolName, path, boundary string) error {
-	var reason string
-	if toolName == "Task" {
-		reason = fmt.Sprintf(
-			"subagents are denied in sandboxed worktrees because they may access files outside the boundary; use the worktree at %s instead of the main worktree",
-			boundary,
-		)
-	} else {
-		reason = fmt.Sprintf(
-			"path %s is outside the worktree boundary; use the worktree at %s instead of the main worktree",
-			path, boundary,
-		)
-	}
+	reason := fmt.Sprintf(
+		"path %s is outside the worktree boundary; use the worktree at %s instead of the main worktree",
+		path, boundary,
+	)
 
 	output := map[string]any{
 		"hookSpecificOutput": map[string]any{
