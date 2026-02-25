@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
+	"github.com/mattn/go-isatty"
 
 	"github.com/amarbel-llc/spinclass/internal/executor"
 	"github.com/amarbel-llc/spinclass/internal/git"
@@ -150,10 +151,12 @@ func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format s
 		return nil
 	}
 
-	return closeShop(w, exec, rp, format, noMerge, verbose, tw)
+	interactive := isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd())
+
+	return closeShop(w, exec, rp, format, noMerge, verbose, tw, interactive, command, noAttach)
 }
 
-func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, noMerge bool, verbose bool, tw *tap.Writer) error {
+func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, noMerge bool, verbose bool, tw *tap.Writer, interactive bool, command []string, noAttach bool) error {
 	if rp.Branch == "" {
 		if err := rp.FillBranchFromGit(); err != nil {
 			log.Warn("could not determine current branch")
@@ -176,6 +179,56 @@ func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, fo
 			tw.Plan()
 		}
 		return err
+	}
+
+	if interactive && !noMerge {
+		for {
+			action, promptErr := promptDirtyAction(rp.Branch)
+			if promptErr != nil {
+				break
+			}
+
+			switch action {
+			case actionDiscard:
+				if discardErr := discardAll(rp.AbsPath); discardErr != nil {
+					if tw != nil {
+						tw.NotOk("discard "+rp.Branch, map[string]string{
+							"severity": "fail",
+							"message":  discardErr.Error(),
+						})
+						tw.Plan()
+					}
+					return discardErr
+				}
+				mergeErr := merge.Resolved(exec, w, tw, format, rp.RepoPath, rp.AbsPath, rp.Branch, verbose)
+				if tw != nil {
+					tw.Plan()
+				}
+				return mergeErr
+
+			case actionReattach:
+				tp := tap.TestPoint{
+					Description: "reattach " + rp.Branch,
+					Ok:          true,
+				}
+				if attachErr := exec.Attach(rp.AbsPath, rp.SessionKey, command, noAttach, &tp); attachErr != nil {
+					return fmt.Errorf("reattach failed: %w", attachErr)
+				}
+				worktreeStatus = git.StatusPorcelain(rp.AbsPath)
+				isClean = worktreeStatus == ""
+				if isClean {
+					mergeErr := merge.Resolved(exec, w, tw, format, rp.RepoPath, rp.AbsPath, rp.Branch, verbose)
+					if tw != nil {
+						tw.Plan()
+					}
+					return mergeErr
+				}
+				continue
+
+			case actionExit:
+			}
+			break
+		}
 	}
 
 	commitsAhead := git.CommitsAhead(rp.AbsPath, defaultBranch, rp.Branch)
