@@ -25,3 +25,16 @@ func promptDirtyAction(branch string) (dirtyAction, error) {
 		Run()
 	return action, err
 }
+
+func promptDefaultBranch() (string, error) {
+	var selected string
+	err := huh.NewSelect[string]().
+		Title("Both main and master branches exist. Which should be the rebase target?").
+		Options(
+			huh.NewOption("main", "main"),
+			huh.NewOption("master", "master"),
+		).
+		Value(&selected).
+		Run()
+	return selected, err
+}

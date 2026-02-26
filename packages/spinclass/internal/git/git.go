@@ -1,6 +1,7 @@
 package git
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,6 +10,8 @@ import (
 	"strings"
 	"time"
 )
+
+var ErrAmbiguousDefaultBranch = errors.New("both main and master branches exist")
 
 func Run(repoPath string, args ...string) (string, error) {
 	cmdArgs := append([]string{"-C", repoPath}, args...)
@@ -141,12 +144,19 @@ func BranchExists(repoPath, branch string) bool {
 }
 
 func DefaultBranch(repoPath string) (string, error) {
-	if BranchExists(repoPath, "master") {
+	hasMain := BranchExists(repoPath, "main")
+	hasMaster := BranchExists(repoPath, "master")
+
+	if hasMain && hasMaster {
+		return "", ErrAmbiguousDefaultBranch
+	}
+	if hasMaster {
 		return "master", nil
 	}
-	if BranchExists(repoPath, "main") {
+	if hasMain {
 		return "main", nil
 	}
+
 	out, err := Run(repoPath, "symbolic-ref", "refs/remotes/origin/HEAD")
 	if err == nil {
 		branch := strings.TrimPrefix(out, "refs/remotes/origin/")

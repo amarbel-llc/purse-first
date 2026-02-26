@@ -30,7 +30,7 @@ func Run(r io.Reader, w io.Writer, boundary string, allowed []string) error {
 	case "Stop":
 		return runStopHook(input, w)
 	default:
-		return runPreToolUse(input, w, boundary)
+		return runPreToolUse(input, w, boundary, allowed)
 	}
 }
 
@@ -78,7 +78,7 @@ func runStopHook(input hookInput, w io.Writer) error {
 	return json.NewEncoder(w).Encode(decision)
 }
 
-func runPreToolUse(input hookInput, w io.Writer, boundary string) error {
+func runPreToolUse(input hookInput, w io.Writer, boundary string, allowed []string) error {
 	if boundary == "" {
 		return nil
 	}

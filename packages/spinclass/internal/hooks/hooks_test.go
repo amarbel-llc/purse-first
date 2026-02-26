@@ -342,7 +342,7 @@ func TestStopHookEventRouteApproves(t *testing.T) {
 	})
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, "")
+	err := Run(bytes.NewReader(input), &out, "", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -368,7 +368,7 @@ func TestStopHookBlocksOnFailure(t *testing.T) {
 	})
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, "")
+	err := Run(bytes.NewReader(input), &out, "", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -408,7 +408,7 @@ func TestStopHookApprovesOnSecondInvocation(t *testing.T) {
 	})
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, "")
+	err := Run(bytes.NewReader(input), &out, "", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -433,7 +433,7 @@ func TestStopHookApprovesOnSuccess(t *testing.T) {
 	})
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, "")
+	err := Run(bytes.NewReader(input), &out, "", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

@@ -1,6 +1,7 @@
 package shop
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -165,7 +166,18 @@ func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, fo
 	}
 
 	defaultBranch, err := git.DefaultBranch(rp.RepoPath)
-	if err != nil || defaultBranch == "" {
+	if errors.Is(err, git.ErrAmbiguousDefaultBranch) {
+		if interactive {
+			defaultBranch, err = promptDefaultBranch()
+			if err != nil {
+				log.Warn("branch selection cancelled")
+				return nil
+			}
+		} else {
+			log.Warn("both main and master branches exist, skipping rebase")
+			return nil
+		}
+	} else if err != nil || defaultBranch == "" {
 		log.Warn("could not determine default branch")
 		return nil
 	}
@@ -174,7 +186,7 @@ func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, fo
 	isClean := worktreeStatus == ""
 
 	if isClean && !noMerge {
-		err := merge.Resolved(exec, w, tw, format, rp.RepoPath, rp.AbsPath, rp.Branch, verbose)
+		err := merge.Resolved(exec, w, tw, format, rp.RepoPath, rp.AbsPath, rp.Branch, defaultBranch, verbose)
 		if tw != nil {
 			tw.Plan()
 		}
@@ -200,7 +212,7 @@ func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, fo
 					}
 					return discardErr
 				}
-				mergeErr := merge.Resolved(exec, w, tw, format, rp.RepoPath, rp.AbsPath, rp.Branch, verbose)
+				mergeErr := merge.Resolved(exec, w, tw, format, rp.RepoPath, rp.AbsPath, rp.Branch, defaultBranch, verbose)
 				if tw != nil {
 					tw.Plan()
 				}
@@ -217,7 +229,7 @@ func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, fo
 				worktreeStatus = git.StatusPorcelain(rp.AbsPath)
 				isClean = worktreeStatus == ""
 				if isClean {
-					mergeErr := merge.Resolved(exec, w, tw, format, rp.RepoPath, rp.AbsPath, rp.Branch, verbose)
+					mergeErr := merge.Resolved(exec, w, tw, format, rp.RepoPath, rp.AbsPath, rp.Branch, defaultBranch, verbose)
 					if tw != nil {
 						tw.Plan()
 					}

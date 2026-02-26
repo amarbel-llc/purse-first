@@ -1,6 +1,7 @@
 package merge
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -53,17 +54,25 @@ func Run(execr executor.Executor, format string, target string, verbose bool) er
 		}
 	}
 
-	return Resolved(execr, os.Stdout, nil, format, repoPath, wtPath, branch, verbose)
+	defaultBranch, err := resolveDefaultBranch(repoPath)
+	if err != nil {
+		return err
+	}
+
+	return Resolved(execr, os.Stdout, nil, format, repoPath, wtPath, branch, defaultBranch, verbose)
 }
 
-func Resolved(execr executor.Executor, w io.Writer, tw *tap.Writer, format, repoPath, wtPath, branch string, verbose bool) error {
+func Resolved(execr executor.Executor, w io.Writer, tw *tap.Writer, format, repoPath, wtPath, branch, defaultBranch string, verbose bool) error {
 	if info, err := os.Stat(repoPath); err != nil || !info.IsDir() {
 		return fmt.Errorf("repository not found: %s", repoPath)
 	}
 
-	defaultBranch, err := git.DefaultBranch(repoPath)
-	if err != nil {
-		return fmt.Errorf("could not determine default branch: %w", err)
+	if defaultBranch == "" {
+		var err error
+		defaultBranch, err = resolveDefaultBranch(repoPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	ownWriter := false
@@ -208,4 +217,31 @@ func chooseWorktree(repoPath string) (wtPath, branch string, err error) {
 	}
 
 	return "", "", fmt.Errorf("selected worktree not found: %s", selected)
+}
+
+func resolveDefaultBranch(repoPath string) (string, error) {
+	branch, err := git.DefaultBranch(repoPath)
+	if errors.Is(err, git.ErrAmbiguousDefaultBranch) {
+		return promptDefaultBranch()
+	}
+	if err != nil {
+		return "", fmt.Errorf("could not determine default branch: %w", err)
+	}
+	return branch, nil
+}
+
+func promptDefaultBranch() (string, error) {
+	var selected string
+	err := huh.NewSelect[string]().
+		Title("Both main and master branches exist. Which should be the rebase target?").
+		Options(
+			huh.NewOption("main", "main"),
+			huh.NewOption("master", "master"),
+		).
+		Value(&selected).
+		Run()
+	if err != nil {
+		return "", fmt.Errorf("branch selection cancelled: %w", err)
+	}
+	return selected, nil
 }
