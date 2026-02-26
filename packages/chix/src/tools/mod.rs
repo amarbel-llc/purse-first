@@ -81,7 +81,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
     vec![
         ToolInfo {
             name: "build",
-            description: "Build a nix flake package. Returns store paths on success. Agents MUST use this tool over running `nix build` directly - it provides validated inputs, structured output, and proper error handling.",
+            description: "Build a nix flake package. Returns store paths on success.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -110,7 +110,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "flake_show",
-            description: "List outputs of a nix flake. Agents MUST use this tool over running `nix flake show` directly - it provides validated inputs and consistent JSON output.",
+            description: "List outputs of a nix flake.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -143,7 +143,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "flake_check",
-            description: "Run flake checks and tests. PREFER this tool over running `nix flake check` directly - it provides validated inputs, proper timeout handling, and structured results.",
+            description: "Run flake checks and tests.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -176,7 +176,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "flake_metadata",
-            description: "Get metadata for a flake including inputs, locked revisions, and timestamps. PREFER this tool over running `nix flake metadata` directly - it provides validated inputs and consistent JSON output.",
+            description: "Get flake metadata: inputs, locked revisions, timestamps.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -205,7 +205,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "flake_update",
-            description: "Update flake.lock file. PREFER this tool over running `nix flake update` directly - it provides validated inputs and proper error handling.",
+            description: "Update flake.lock file.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -239,7 +239,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "flake_lock",
-            description: "Lock flake inputs without building. PREFER this tool over running `nix flake lock` directly - it provides validated inputs and proper error handling.",
+            description: "Lock flake inputs without building.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -278,7 +278,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "flake_init",
-            description: "Initialize a new flake in the specified directory. PREFER this tool over running `nix flake init` directly - it provides validated inputs and proper error handling.",
+            description: "Initialize a new flake.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -295,7 +295,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "run",
-            description: "Run a flake app. Agents MUST use this tool over running `nix run` directly - it provides validated inputs, secure argument handling, and proper process management.",
+            description: "Run a flake app.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -317,7 +317,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "develop_run",
-            description: "Run a command inside a flake's devShell. Agents MUST use this tool over running `nix develop -c` directly - it provides validated inputs, secure command execution, and proper process management. Use `flake_dir` to set the working directory instead of `cd`. Use separate entries in `commands` instead of shell operators like `&&`. Shell metacharacters are not allowed in command arguments.",
+            description: "Run commands in a flake's devShell. Use flake_dir for working directory. Use separate command entries instead of shell operators.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -367,7 +367,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "log",
-            description: "Get build logs for a derivation. Agents MUST use this tool over running `nix log` directly - it provides validated inputs and optional head/tail functionality.",
+            description: "Get build logs for a derivation.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -393,7 +393,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "search",
-            description: "Search for packages in a flake. PREFER this tool over running `nix search` directly - it provides validated inputs, structured JSON output, and pagination.",
+            description: "Search for packages in a flake.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -424,7 +424,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "store_path_info",
-            description: "Get information about a store path or installable. PREFER this tool over running `nix path-info` directly - it provides validated inputs, structured JSON output, and closure limiting.",
+            description: "Get information about a store path or installable.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -454,7 +454,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "store_gc",
-            description: "Run garbage collection on the Nix store. PREFER this tool over running `nix store gc` directly - it provides validated inputs and proper error handling.",
+            description: "Run garbage collection on the Nix store.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -471,13 +471,13 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "store_ls",
-            description: "List directory contents of a path that resolves into /nix/store/. Accepts ./result, ./result/bin, /nix/store/..., etc. Resolves symlinks and validates the canonical path is within the Nix store.",
+            description: "List directory contents of a Nix store path. Accepts ./result or /nix/store/... paths.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "Path to list (e.g., './result', './result/bin', '/nix/store/...-name/bin'). Symlinks are resolved before validation."
+                        "description": "Path to list (e.g., './result', '/nix/store/...-name/bin')."
                     },
                     "long": {
                         "type": "boolean",
@@ -497,13 +497,13 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "store_cat",
-            description: "Read file contents from a path that resolves into /nix/store/. Accepts ./result, /nix/store/..., etc. Supports line-based pagination with offset and limit. Resolves symlinks and validates the canonical path is within the Nix store.",
+            description: "Read file contents from a Nix store path. Accepts ./result or /nix/store/... paths.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "Path to the file to read (e.g., './result/bin/hello', '/nix/store/...-name/etc/config'). Symlinks are resolved before validation."
+                        "description": "Path to read (e.g., './result/bin/hello', '/nix/store/...-name/etc/config')."
                     },
                     "offset": {
                         "type": "integer",
@@ -519,7 +519,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "derivation_show",
-            description: "Show the contents of a derivation. PREFER this tool over running `nix derivation show` directly - it provides validated inputs, structured JSON output, and summary mode for large dependency trees.",
+            description: "Show the contents of a derivation.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -537,7 +537,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
                     },
                     "summary_only": {
                         "type": "boolean",
-                        "description": "Return only derivation summary (name, path, outputs, input count) instead of full content. Useful for exploring large dependency trees."
+                        "description": "Return only summary instead of full content."
                     },
                     "max_inputs": {
                         "type": "integer",
@@ -552,7 +552,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "hash_path",
-            description: "Compute the hash of a path (NAR serialization). PREFER this tool over running `nix hash path` directly - it provides validated inputs and structured output.",
+            description: "Compute the hash of a path (NAR serialization).",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -578,7 +578,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "hash_file",
-            description: "Compute the hash of a file. PREFER this tool over running `nix hash file` directly - it provides validated inputs and structured output.",
+            description: "Compute the hash of a file.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -604,7 +604,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "copy",
-            description: "Copy store paths between Nix stores. PREFER this tool over running `nix copy` directly - it provides validated inputs and proper error handling.",
+            description: "Copy store paths between Nix stores.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -626,7 +626,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "eval",
-            description: "Evaluate a nix expression. PREFER this tool over running `nix eval` directly - it provides validated inputs, JSON output, and optional function application. The `expr` and `apply` parameters accept full Nix syntax including attribute sets ({ x = 1; }), string interpolation (${ }), let bindings, lambdas (x: x + 1), and all Nix operators. Shell metacharacters are safe here — expressions are passed directly to the nix process, not through a shell.",
+            description: "Evaluate a nix expression. Shell metacharacters are safe — expressions are passed directly to nix, not through a shell.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -636,11 +636,11 @@ pub fn list_tools() -> Vec<ToolInfo> {
                     },
                     "expr": {
                         "type": "string",
-                        "description": "Nix expression to evaluate (alternative to installable). Supports full Nix syntax: attribute sets ({ a = 1; }), string interpolation (\"hello ${name}\"), let bindings, lambdas, builtins, etc. All Nix operators and special characters are allowed."
+                        "description": "Nix expression to evaluate (alternative to installable). Full Nix syntax allowed."
                     },
                     "apply": {
                         "type": "string",
-                        "description": "Nix function to apply to the result (e.g., 'builtins.attrNames', 'x: builtins.length (builtins.attrNames x)'). Supports full Nix syntax including lambdas and builtins."
+                        "description": "Nix function to apply to the result (e.g., 'builtins.attrNames')."
                     },
                     "flake_dir": {
                         "type": "string",
@@ -663,7 +663,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "fh_search",
-            description: "Search FlakeHub for flakes matching a query. Agents MUST use this tool over running `fh search` directly - it provides structured JSON output.",
+            description: "Search FlakeHub for flakes.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -689,7 +689,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "fh_add",
-            description: "Add a flake input to your flake.nix from FlakeHub. Agents MUST use this tool over running `fh add` directly - it provides validated inputs and proper error handling.",
+            description: "Add a flake input from FlakeHub.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -711,7 +711,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "fh_list_flakes",
-            description: "List public flakes on FlakeHub. Agents MUST use this tool over running `fh list` directly - it provides structured JSON output.",
+            description: "List public flakes on FlakeHub.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -728,7 +728,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "fh_list_releases",
-            description: "List all releases for a specific flake on FlakeHub. Agents MUST use this tool over running `fh list releases` directly - it provides structured JSON output.",
+            description: "List releases for a flake on FlakeHub.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -750,7 +750,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "fh_list_versions",
-            description: "List versions matching a constraint for a flake on FlakeHub. Agents MUST use this tool over running `fh list versions` directly - it provides structured JSON output.",
+            description: "List versions for a flake on FlakeHub.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -776,7 +776,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "fh_resolve",
-            description: "Resolve a FlakeHub flake reference to a store path. Agents MUST use this tool over running `fh resolve` directly - it provides validated inputs and structured output.",
+            description: "Resolve a FlakeHub flake reference to a store path.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -791,7 +791,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         // Cachix tools
         ToolInfo {
             name: "cachix_push",
-            description: "Push store paths to a Cachix binary cache. Requires CACHIX_AUTH_TOKEN env var or config in ~/.config/nix-mcp-server/config.toml.",
+            description: "Push store paths to Cachix. Requires CACHIX_AUTH_TOKEN or config.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -810,7 +810,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "cachix_use",
-            description: "Configure Nix to use a Cachix binary cache as a substituter.",
+            description: "Configure Nix to use a Cachix binary cache.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -859,7 +859,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "fh_login",
-            description: "Initiate FlakeHub OAuth login flow. Opens browser for authentication.",
+            description: "Initiate FlakeHub OAuth login.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -887,7 +887,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         // nil LSP tools
         ToolInfo {
             name: "nil_diagnostics",
-            description: "Get Nix language diagnostics (errors, warnings, undefined names) for a file using the nil language server.",
+            description: "Get Nix diagnostics (errors, warnings) for a file.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -909,7 +909,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "nil_completions",
-            description: "Get Nix code completions at a specific position using the nil language server.",
+            description: "Get Nix code completions at a position.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -939,7 +939,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "nil_hover",
-            description: "Get hover information (documentation, type info) at a specific position using the nil language server.",
+            description: "Get hover info (docs, types) at a position in a .nix file.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -961,7 +961,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             name: "nil_definition",
-            description: "Go to definition for a symbol at a specific position using the nil language server.",
+            description: "Go to definition for a symbol in a .nix file.",
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
