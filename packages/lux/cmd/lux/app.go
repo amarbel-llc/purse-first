@@ -729,7 +729,7 @@ func callService(ctx context.Context, socketPath string, method string, params a
 
 	conn, err := net.Dial("unix", socketPath)
 	if err != nil {
-		return nil, fmt.Errorf("connecting to service: %w", err)
+		return nil, fmt.Errorf("connecting to service (is the daemon running?): %w", err)
 	}
 	defer conn.Close()
 
@@ -741,8 +741,14 @@ func callService(ctx context.Context, socketPath string, method string, params a
 
 	go rpcConn.Run(ctx)
 
-	result, err := rpcConn.Call(ctx, method, params)
+	callCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	result, err := rpcConn.Call(callCtx, method, params)
 	if err != nil {
+		if callCtx.Err() == context.DeadlineExceeded {
+			return nil, fmt.Errorf("service call %s timed out (daemon may not be responding)", method)
+		}
 		return nil, fmt.Errorf("service call %s: %w", method, err)
 	}
 
