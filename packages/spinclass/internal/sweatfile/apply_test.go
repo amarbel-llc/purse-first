@@ -63,7 +63,7 @@ func TestApplyClaudeSettings(t *testing.T) {
 	dir := t.TempDir()
 	rules := []string{"Read", "Glob", "Bash(git *)"}
 
-	err := ApplyClaudeSettings(dir, rules)
+	err := ApplyClaudeSettings(dir, Sweatfile{ClaudeAllow: rules})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestApplyClaudeSettings(t *testing.T) {
 func TestApplyClaudeSettingsEmpty(t *testing.T) {
 	dir := t.TempDir()
 
-	err := ApplyClaudeSettings(dir, nil)
+	err := ApplyClaudeSettings(dir, Sweatfile{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -155,7 +155,7 @@ func TestApplyClaudeSettingsPreservesExistingKeys(t *testing.T) {
 	data, _ := json.MarshalIndent(existing, "", "  ")
 	os.WriteFile(filepath.Join(claudeDir, "settings.local.json"), data, 0o644)
 
-	err := ApplyClaudeSettings(dir, []string{"Read"})
+	err := ApplyClaudeSettings(dir, Sweatfile{ClaudeAllow: []string{"Read"}})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -175,7 +175,7 @@ func TestApplyClaudeSettingsWritesHooksForWorktree(t *testing.T) {
 	// Simulate a worktree by creating .git as a file (not directory)
 	os.WriteFile(filepath.Join(dir, ".git"), []byte("gitdir: /tmp/fake"), 0o644)
 
-	err := ApplyClaudeSettings(dir, nil)
+	err := ApplyClaudeSettings(dir, Sweatfile{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -226,7 +226,7 @@ func TestApplyClaudeSettingsNoHooksForMainRepo(t *testing.T) {
 	// Simulate a main repo by creating .git as a directory
 	os.MkdirAll(filepath.Join(dir, ".git"), 0o755)
 
-	err := ApplyClaudeSettings(dir, nil)
+	err := ApplyClaudeSettings(dir, Sweatfile{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -237,5 +237,56 @@ func TestApplyClaudeSettingsNoHooksForMainRepo(t *testing.T) {
 
 	if _, ok := doc["hooks"]; ok {
 		t.Error("expected no hooks key for main repo")
+	}
+}
+
+func TestApplyClaudeSettingsWritesStopHookWhenConfigured(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, ".git"), []byte("gitdir: /tmp/fake"), 0o644)
+
+	cmd := "just test"
+	err := ApplyClaudeSettings(dir, Sweatfile{StopHook: &cmd})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, _ := os.ReadFile(filepath.Join(dir, ".claude", "settings.local.json"))
+	var doc map[string]any
+	json.Unmarshal(data, &doc)
+
+	hooks := doc["hooks"].(map[string]any)
+
+	stopRaw, ok := hooks["Stop"]
+	if !ok {
+		t.Fatal("expected Stop key in hooks")
+	}
+
+	entries := stopRaw.([]any)
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 Stop entry, got %d", len(entries))
+	}
+
+	entry := entries[0].(map[string]any)
+	if entry["matcher"] != "*" {
+		t.Errorf("matcher: got %q", entry["matcher"])
+	}
+}
+
+func TestApplyClaudeSettingsNoStopHookWhenNotConfigured(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, ".git"), []byte("gitdir: /tmp/fake"), 0o644)
+
+	err := ApplyClaudeSettings(dir, Sweatfile{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, _ := os.ReadFile(filepath.Join(dir, ".claude", "settings.local.json"))
+	var doc map[string]any
+	json.Unmarshal(data, &doc)
+
+	hooks := doc["hooks"].(map[string]any)
+	if _, ok := hooks["Stop"]; ok {
+		t.Error("expected no Stop key when stop_hook is not configured")
 	}
 }

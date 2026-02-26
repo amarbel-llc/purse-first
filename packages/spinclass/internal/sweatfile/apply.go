@@ -41,7 +41,7 @@ func Apply(worktreePath string, sf Sweatfile) error {
 		}
 	}
 
-	if err := ApplyClaudeSettings(worktreePath, merged.ClaudeAllow); err != nil {
+	if err := ApplyClaudeSettings(worktreePath, merged); err != nil {
 		return fmt.Errorf("applying claude settings: %w", err)
 	}
 
@@ -76,7 +76,7 @@ func applyGitExcludes(excludePath string, patterns []string) error {
 	return nil
 }
 
-func ApplyClaudeSettings(worktreePath string, rules []string) error {
+func ApplyClaudeSettings(worktreePath string, sf Sweatfile) error {
 	settingsPath := filepath.Join(worktreePath, ".claude", "settings.local.json")
 
 	var doc map[string]any
@@ -97,7 +97,7 @@ func ApplyClaudeSettings(worktreePath string, rules []string) error {
 		permsMap = make(map[string]any)
 	}
 
-	allRules := append([]string{}, rules...)
+	allRules := append([]string{}, sf.ClaudeAllow...)
 	allRules = append(allRules,
 		"Read("+worktreePath+"/*)",
 		"Edit("+worktreePath+"/*)",
@@ -110,7 +110,7 @@ func ApplyClaudeSettings(worktreePath string, rules []string) error {
 	doc["permissions"] = permsMap
 
 	if git.IsWorktree(worktreePath) {
-		doc["hooks"] = map[string]any{
+		hooksMap := map[string]any{
 			"PreToolUse": []any{
 				map[string]any{
 					"matcher": "Read|Write|Edit|Glob|Grep|Bash|Task",
@@ -123,6 +123,22 @@ func ApplyClaudeSettings(worktreePath string, rules []string) error {
 				},
 			},
 		}
+
+		if sf.StopHook != nil && *sf.StopHook != "" {
+			hooksMap["Stop"] = []any{
+				map[string]any{
+					"matcher": "*",
+					"hooks": []any{
+						map[string]any{
+							"type":    "command",
+							"command": "spinclass hooks",
+						},
+					},
+				},
+			}
+		}
+
+		doc["hooks"] = hooksMap
 	}
 
 	if err := os.MkdirAll(filepath.Dir(settingsPath), 0o755); err != nil {
