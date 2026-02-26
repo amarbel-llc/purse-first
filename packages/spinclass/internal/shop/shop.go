@@ -164,7 +164,7 @@ func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, fo
 		}
 	}
 
-	defaultBranch, err := git.BranchCurrent(rp.RepoPath)
+	defaultBranch, err := git.DefaultBranch(rp.RepoPath)
 	if err != nil || defaultBranch == "" {
 		log.Warn("could not determine default branch")
 		return nil

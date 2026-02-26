@@ -135,7 +135,18 @@ func BranchDelete(repoPath, branch string) error {
 	return err
 }
 
+func BranchExists(repoPath, branch string) bool {
+	_, err := Run(repoPath, "rev-parse", "--verify", "refs/heads/"+branch)
+	return err == nil
+}
+
 func DefaultBranch(repoPath string) (string, error) {
+	if BranchExists(repoPath, "master") {
+		return "master", nil
+	}
+	if BranchExists(repoPath, "main") {
+		return "main", nil
+	}
 	out, err := Run(repoPath, "symbolic-ref", "refs/remotes/origin/HEAD")
 	if err == nil {
 		branch := strings.TrimPrefix(out, "refs/remotes/origin/")
