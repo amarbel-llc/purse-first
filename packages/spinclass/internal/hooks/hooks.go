@@ -83,10 +83,10 @@ func runPreToolUse(input hookInput, w io.Writer, boundary string, allowed []stri
 		return nil
 	}
 
-	boundary = filepath.Clean(boundary)
+	boundary = evalOrClean(boundary)
 
 	for i, a := range allowed {
-		allowed[i] = filepath.Clean(a)
+		allowed[i] = evalOrClean(a)
 	}
 
 	paths := extractPaths(input)
@@ -137,6 +137,14 @@ func extractAbsolutePathsFromCommand(input hookInput) []string {
 		}
 	}
 	return paths
+}
+
+func evalOrClean(path string) string {
+	resolved, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return filepath.Clean(path)
+	}
+	return resolved
 }
 
 func isInsideAllowed(path string, allowed []string) bool {
