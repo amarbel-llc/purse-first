@@ -39,8 +39,8 @@ func TestLocalListsExistingWorktrees(t *testing.T) {
 	Local(tmpDir, &buf)
 
 	output := buf.String()
-	if !strings.Contains(output, filepath.Join("myrepo", worktree.WorktreesDir, "feature-x")) {
-		t.Errorf("expected existing worktree, got %q", output)
+	if !strings.Contains(output, "feature-x\t") {
+		t.Errorf("expected existing worktree name, got %q", output)
 	}
 	if !strings.Contains(output, "existing worktree") {
 		t.Errorf("expected 'existing worktree' description, got %q", output)

@@ -18,7 +18,7 @@ func Local(startDir string, w io.Writer) {
 
 		for _, wtPath := range worktree.ListWorktrees(startDir) {
 			branch := filepath.Base(wtPath)
-			fmt.Fprintf(w, "%s\texisting worktree\n", filepath.Join(repoName, worktree.WorktreesDir, branch))
+			fmt.Fprintf(w, "%s\texisting worktree\n", branch)
 		}
 		return
 	}
@@ -44,7 +44,7 @@ func Local(startDir string, w io.Writer) {
 
 		for _, wtPath := range worktree.ListWorktrees(child) {
 			branch := filepath.Base(wtPath)
-			fmt.Fprintf(w, "%s\texisting worktree\n", filepath.Join(repoName, worktree.WorktreesDir, branch))
+			fmt.Fprintf(w, "%s\texisting worktree\n", branch)
 		}
 	}
 }
