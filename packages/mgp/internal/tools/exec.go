@@ -22,7 +22,7 @@ func registerExecCommand(app *command.App, cat *catalog.Catalog) {
 		Params: []command.Param{
 			{Name: "server", Type: command.String, Description: "MCP server name (e.g. grit, get-hubbed, chix)", Required: true},
 			{Name: "tool", Type: command.String, Description: "Tool name to call", Required: true},
-			{Name: "args", Type: command.String, Description: "Arguments to pass to the tool as JSON object"},
+			{Name: "args", Type: command.Object, Description: "Arguments to pass to the tool as JSON object"},
 		},
 		Run: func(ctx context.Context, rawArgs json.RawMessage, _ command.Prompter) (*command.Result, error) {
 			var params struct {
