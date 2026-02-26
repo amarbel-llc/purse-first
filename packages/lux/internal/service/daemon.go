@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/amarbel-llc/lux/internal/config"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 )
+
+const sdListenFDsStart = 3
 
 const defaultIdleCheckInterval = 30 * time.Second
 
@@ -51,13 +54,25 @@ func NewDaemon(socketPath string, cfg *config.Config, idleTimeout time.Duration)
 }
 
 func (d *Daemon) Run(ctx context.Context) error {
-	if err := removeExistingSocket(d.socketPath); err != nil {
-		return fmt.Errorf("removing existing socket: %w", err)
-	}
+	var listener net.Listener
+	var err error
 
-	listener, err := net.Listen("unix", d.socketPath)
-	if err != nil {
-		return fmt.Errorf("listening on %s: %w", d.socketPath, err)
+	if fd := socketActivationFD(); fd >= 0 {
+		f := os.NewFile(uintptr(fd), "listener")
+		listener, err = net.FileListener(f)
+		f.Close()
+		if err != nil {
+			return fmt.Errorf("inheriting socket from fd %d: %w", fd, err)
+		}
+	} else {
+		if err := removeExistingSocket(d.socketPath); err != nil {
+			return fmt.Errorf("removing existing socket: %w", err)
+		}
+
+		listener, err = net.Listen("unix", d.socketPath)
+		if err != nil {
+			return fmt.Errorf("listening on %s: %w", d.socketPath, err)
+		}
 	}
 
 	d.mu.Lock()
@@ -217,6 +232,20 @@ func (d *Daemon) shutdown() {
 	default:
 		close(d.done)
 	}
+}
+
+func socketActivationFD() int {
+	pid, err := strconv.Atoi(os.Getenv("LISTEN_PID"))
+	if err != nil || pid != os.Getpid() {
+		return -1
+	}
+
+	nfds, err := strconv.Atoi(os.Getenv("LISTEN_FDS"))
+	if err != nil || nfds < 1 {
+		return -1
+	}
+
+	return sdListenFDsStart
 }
 
 func removeExistingSocket(path string) error {
