@@ -263,7 +263,7 @@ func TestNewTapExistingWorktree(t *testing.T) {
 
 	mock := &mockExecutor{}
 	var buf bytes.Buffer
-	err := New(&buf, mock, rp, "tap", nil, true, false, false)
+	err := New(&buf, mock, rp, "tap", nil, false, false, false)
 	if err != nil {
 		t.Fatalf("New returned error: %v", err)
 	}
@@ -335,7 +335,7 @@ func TestNewNoAttach(t *testing.T) {
 
 	mock := &mockExecutor{}
 	var buf bytes.Buffer
-	err := New(&buf, mock, rp, "tap", nil, false, true, false)
+	err := New(&buf, mock, rp, "tap", nil, true, true, false)
 	if err != nil {
 		t.Fatalf("New returned error: %v", err)
 	}

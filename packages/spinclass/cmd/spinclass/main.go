@@ -24,7 +24,7 @@ import (
 
 var outputFormat string
 var verbose bool
-var newNoMerge bool
+var newMergeOnClose bool
 var newNoAttach bool
 
 var rootCmd = &cobra.Command{
@@ -97,7 +97,7 @@ var newCmd = &cobra.Command{
 			return err
 		}
 
-		return shop.New(os.Stdout, exec, rp, format, claudeArgs, newNoMerge, newNoAttach, verbose)
+		return shop.New(os.Stdout, exec, rp, format, claudeArgs, newMergeOnClose, newNoAttach, verbose)
 	},
 }
 
@@ -290,7 +290,7 @@ var validateCmd = &cobra.Command{
 func init() {
 	rootCmd.PersistentFlags().StringVar(&outputFormat, "format", "", "output format: tap or table")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "show detailed output (YAML diagnostics on passing test points)")
-	newCmd.Flags().BoolVar(&newNoMerge, "no-merge", false, "skip auto-merge on session close")
+	newCmd.Flags().BoolVar(&newMergeOnClose, "merge-on-close", false, "auto-merge worktree into default branch on session close")
 	newCmd.Flags().BoolVar(&newNoAttach, "no-attach", false, "create worktree but skip attaching (show command that would run)")
 	cleanCmd.Flags().BoolVarP(&cleanInteractive, "interactive", "i", false, "interactively discard changes in dirty merged worktrees")
 	rootCmd.AddCommand(createCmd)

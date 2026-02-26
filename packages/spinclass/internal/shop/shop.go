@@ -116,7 +116,7 @@ func pullMainWorktree(rp worktree.ResolvedPath, tw *tap.Writer) error {
 	return nil
 }
 
-func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, noMerge bool, noAttach bool, verbose bool) error {
+func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, mergeOnClose bool, noAttach bool, verbose bool) error {
 	var tw *tap.Writer
 	if format == "tap" {
 		tw = tap.NewWriter(w)
@@ -154,10 +154,10 @@ func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format s
 
 	interactive := isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd())
 
-	return closeShop(w, exec, rp, format, noMerge, verbose, tw, interactive, command, noAttach)
+	return closeShop(w, exec, rp, format, mergeOnClose, verbose, tw, interactive, command, noAttach)
 }
 
-func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, noMerge bool, verbose bool, tw *tap.Writer, interactive bool, command []string, noAttach bool) error {
+func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, mergeOnClose bool, verbose bool, tw *tap.Writer, interactive bool, command []string, noAttach bool) error {
 	if rp.Branch == "" {
 		if err := rp.FillBranchFromGit(); err != nil {
 			log.Warn("could not determine current branch")
@@ -185,7 +185,7 @@ func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, fo
 	worktreeStatus := git.StatusPorcelain(rp.AbsPath)
 	isClean := worktreeStatus == ""
 
-	if isClean && !noMerge {
+	if isClean && mergeOnClose {
 		err := merge.Resolved(exec, w, tw, format, rp.RepoPath, rp.AbsPath, rp.Branch, defaultBranch, verbose)
 		if tw != nil {
 			tw.Plan()
@@ -193,7 +193,7 @@ func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, fo
 		return err
 	}
 
-	if interactive && !noMerge {
+	if interactive && mergeOnClose {
 		for {
 			action, promptErr := promptDirtyAction(rp.Branch)
 			if promptErr != nil {
