@@ -13,6 +13,7 @@ import (
 type Sweatfile struct {
 	GitExcludes []string `toml:"git_excludes"`
 	ClaudeAllow []string `toml:"claude_allow"`
+	StopHook    *string  `toml:"stop_hook"`
 }
 
 func Parse(data []byte) (Sweatfile, error) {
@@ -51,6 +52,10 @@ func Merge(base, repo Sweatfile) Sweatfile {
 		} else {
 			merged.ClaudeAllow = append(base.ClaudeAllow, repo.ClaudeAllow...)
 		}
+	}
+
+	if repo.StopHook != nil {
+		merged.StopHook = repo.StopHook
 	}
 
 	return merged

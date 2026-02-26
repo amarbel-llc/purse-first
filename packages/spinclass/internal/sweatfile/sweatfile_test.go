@@ -325,6 +325,59 @@ func TestLoadHierarchyNoSweatfiles(t *testing.T) {
 	}
 }
 
+func TestParseStopHook(t *testing.T) {
+	input := `stop_hook = "just test"`
+	sf, err := Parse([]byte(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sf.StopHook == nil || *sf.StopHook != "just test" {
+		t.Errorf("stop_hook: got %v", sf.StopHook)
+	}
+}
+
+func TestParseStopHookAbsent(t *testing.T) {
+	sf, err := Parse([]byte(`git_excludes = [".claude/"]`))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sf.StopHook != nil {
+		t.Errorf("expected nil stop_hook, got %v", sf.StopHook)
+	}
+}
+
+func TestMergeStopHookInherit(t *testing.T) {
+	cmd := "just test"
+	base := Sweatfile{StopHook: &cmd}
+	repo := Sweatfile{}
+	merged := Merge(base, repo)
+	if merged.StopHook == nil || *merged.StopHook != "just test" {
+		t.Errorf("expected inherited stop_hook, got %v", merged.StopHook)
+	}
+}
+
+func TestMergeStopHookOverride(t *testing.T) {
+	baseCmd := "just test"
+	repoCmd := "just lint"
+	base := Sweatfile{StopHook: &baseCmd}
+	repo := Sweatfile{StopHook: &repoCmd}
+	merged := Merge(base, repo)
+	if merged.StopHook == nil || *merged.StopHook != "just lint" {
+		t.Errorf("expected overridden stop_hook, got %v", merged.StopHook)
+	}
+}
+
+func TestMergeStopHookClear(t *testing.T) {
+	baseCmd := "just test"
+	empty := ""
+	base := Sweatfile{StopHook: &baseCmd}
+	repo := Sweatfile{StopHook: &empty}
+	merged := Merge(base, repo)
+	if merged.StopHook == nil || *merged.StopHook != "" {
+		t.Errorf("expected cleared stop_hook, got %v", merged.StopHook)
+	}
+}
+
 func TestLoadHierarchyRepoOverridesParent(t *testing.T) {
 	home := t.TempDir()
 	repoDir := filepath.Join(home, "eng", "repos", "myrepo")
