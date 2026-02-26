@@ -59,12 +59,14 @@ let
     runtimeInputs = [
       pkgs.bats
       pkgs.coreutils
+      pkgs.gawk
       sandcastle
     ];
     text = ''
       bin_dirs=()
       sandbox=true
       no_tempdir_cleanup=false
+      hide_passing=false
 
       while (( $# > 0 )); do
         case "$1" in
@@ -78,6 +80,10 @@ let
             ;;
           --no-tempdir-cleanup)
             no_tempdir_cleanup=true
+            shift
+            ;;
+          --hide-passing)
+            hide_passing=true
             shift
             ;;
           --)
@@ -108,6 +114,21 @@ let
       if ! $has_formatter; then
         set -- "$@" --tap
       fi
+
+      filter_tap() {
+        if $hide_passing; then
+          awk '
+            /^  ---$/ { in_yaml = 1; if (show) print; next }
+            /^  \.\.\.$/ { in_yaml = 0; if (show) print; next }
+            in_yaml { if (show) print; next }
+            /^ok / { show = ($0 ~ /# [Ss][Kk][Ii][Pp]/ || $0 ~ /# [Tt][Oo][Dd][Oo]/); if (show) print; next }
+            /^not ok / { show = 1; print; next }
+            { show = 1; print }
+          '
+        else
+          cat
+        fi
+      }
 
       if $sandbox; then
         config="$(mktemp)"
@@ -144,12 +165,12 @@ let
               set -- --no-tempdir-cleanup "$@"
             fi
 
-            exec sandcastle "''${sandcastle_args[@]}" --shell bash --config "$config" -- bats "$@"
+            sandcastle "''${sandcastle_args[@]}" --shell bash --config "$config" -- bats "$@" | filter_tap
       else
         if $no_tempdir_cleanup; then
           set -- --no-tempdir-cleanup "$@"
         fi
-        exec bats "$@"
+        bats "$@" | filter_tap
       fi
     '';
   };

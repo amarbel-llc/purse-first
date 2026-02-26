@@ -152,3 +152,73 @@ EOF
   # Clean up manually
   rm -rf "$bats_run_dir"
 }
+
+function bats_wrapper_hide_passing_filters_ok_lines { # @test
+  cat >"${TEST_TMPDIR}/mixed.bats" <<'EOF'
+#! /usr/bin/env bats
+function passing_one { # @test
+  true
+}
+function failing_one { # @test
+  false
+}
+function passing_two { # @test
+  true
+}
+EOF
+  run "$BATS_WRAPPER" --hide-passing --no-sandbox "${TEST_TMPDIR}/mixed.bats"
+  # bats returns non-zero when tests fail
+  assert_failure
+  assert_output --partial "not ok 2"
+  refute_line --regexp "^ok 1 "
+  refute_line --regexp "^ok 3 "
+}
+
+function bats_wrapper_hide_passing_preserves_skip_and_todo { # @test
+  cat >"${TEST_TMPDIR}/directives.bats" <<'EOF'
+#! /usr/bin/env bats
+function skipped_test { # @test
+  skip "not ready"
+}
+function passing_test { # @test
+  true
+}
+EOF
+  run "$BATS_WRAPPER" --hide-passing --no-sandbox "${TEST_TMPDIR}/directives.bats"
+  assert_success
+  assert_line --regexp "^ok 1.* # skip"
+  refute_line --regexp "^ok 2 "
+}
+
+function bats_wrapper_hide_passing_preserves_yaml_on_failure { # @test
+  cat >"${TEST_TMPDIR}/yaml_fail.bats" <<'EOF'
+#! /usr/bin/env bats
+function passing_test { # @test
+  true
+}
+function failing_with_output { # @test
+  run echo "some diagnostic"
+  false
+}
+EOF
+  run "$BATS_WRAPPER" --hide-passing --no-sandbox "${TEST_TMPDIR}/yaml_fail.bats"
+  assert_failure
+  assert_output --partial "not ok 2"
+  refute_line --regexp "^ok 1 "
+}
+
+function bats_wrapper_hide_passing_preserves_plan_and_version { # @test
+  cat >"${TEST_TMPDIR}/plan.bats" <<'EOF'
+#! /usr/bin/env bats
+function passing_one { # @test
+  true
+}
+function passing_two { # @test
+  true
+}
+EOF
+  run "$BATS_WRAPPER" --hide-passing --no-sandbox "${TEST_TMPDIR}/plan.bats"
+  assert_success
+  assert_output --partial "1..2"
+  assert_line --index 0 --regexp "^(TAP version|1\.\.)"
+}
