@@ -69,22 +69,48 @@ func TestStatusDescription(t *testing.T) {
 }
 
 func TestCreateTapNewWorktreeErrorPath(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", t.Name())
-	if err != nil {
+	// Simulate a spinclass-like environment: a parent repo with a worktree,
+	// and a separate non-git directory. GIT_CEILING_DIRECTORIES prevents
+	// git from discovering repos above the test root, so the non-git dir
+	// is truly isolated regardless of where TMPDIR points.
+	root := t.TempDir()
+	t.Setenv("GIT_CEILING_DIRECTORIES", root)
+
+	repoDir := filepath.Join(root, "repo")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.RemoveAll(dir) })
 
-	worktreePath := filepath.Join(dir, "new-worktree")
+	runGit := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+
+	runGit(repoDir, "init")
+	runGit(repoDir, "config", "user.email", "test@test.com")
+	runGit(repoDir, "config", "user.name", "Test")
+	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
+
+	nonGitDir := filepath.Join(root, "non-git")
+	if err := os.MkdirAll(nonGitDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	worktreePath := filepath.Join(nonGitDir, "new-worktree")
 
 	rp := worktree.ResolvedPath{
 		AbsPath:  worktreePath,
-		RepoPath: dir,
+		RepoPath: nonGitDir,
 		Branch:   "feature-x",
 	}
 
 	var buf bytes.Buffer
-	err = Create(&buf, rp, false, "tap", nil)
+	err := Create(&buf, rp, false, "tap", nil)
 	if err == nil {
 		t.Error("expected error when creating worktree in non-git dir, got nil")
 	}

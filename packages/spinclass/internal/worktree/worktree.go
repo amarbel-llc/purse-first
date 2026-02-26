@@ -57,9 +57,13 @@ func ResolvePath(repoPath, target string) (ResolvedPath, error) {
 }
 
 // DetectRepo walks up from dir looking for a .git directory (must be a
-// directory, not a file — files indicate worktrees). Returns the repo root.
+// directory, not a file — files indicate worktrees). Respects
+// GIT_CEILING_DIRECTORIES to prevent discovery above certain paths.
+// Returns the repo root.
 func DetectRepo(dir string) (string, error) {
 	dir = filepath.Clean(dir)
+	ceilings := parseCeilingDirs()
+
 	for {
 		gitPath := filepath.Join(dir, ".git")
 		info, err := os.Lstat(gitPath)
@@ -67,11 +71,35 @@ func DetectRepo(dir string) (string, error) {
 			return dir, nil
 		}
 		parent := filepath.Dir(dir)
-		if parent == dir {
+		if parent == dir || isCeiling(dir, ceilings) {
 			return "", fmt.Errorf("no git repository found from %s", dir)
 		}
 		dir = parent
 	}
+}
+
+func parseCeilingDirs() []string {
+	env := os.Getenv("GIT_CEILING_DIRECTORIES")
+	if env == "" {
+		return nil
+	}
+
+	var dirs []string
+	for _, d := range filepath.SplitList(env) {
+		if clean := filepath.Clean(d); filepath.IsAbs(clean) {
+			dirs = append(dirs, clean)
+		}
+	}
+	return dirs
+}
+
+func isCeiling(dir string, ceilings []string) bool {
+	for _, c := range ceilings {
+		if dir == c {
+			return true
+		}
+	}
+	return false
 }
 
 // Create creates a new git worktree and applies sweatfile configuration.
