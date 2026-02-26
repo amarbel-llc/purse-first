@@ -165,7 +165,7 @@ build-go-mcp:
 
 # Test go-lib-mcp
 test-go-mcp:
-    {{tap-dancer-go-test}} -v ./libs/go-mcp/...
+    {{cmd_nix_dev}} {{tap-dancer-go-test}} -v ./libs/go-mcp/...
 
 # Build rust-lib-mcp
 build-rust-mcp:
