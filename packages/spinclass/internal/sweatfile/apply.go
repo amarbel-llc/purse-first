@@ -85,9 +85,6 @@ func prepareDirenvIfNecessary(worktreePath string) error {
 		// TODO capture error
 		defer bufferedWriter.Flush()
 
-		// TODO capture error
-		defer file.Close()
-
 		if _, err := fmt.Fprintln(bufferedWriter, "source_up"); err != nil {
 			return err
 		}

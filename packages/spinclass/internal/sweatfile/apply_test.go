@@ -290,3 +290,94 @@ func TestApplyClaudeSettingsNoStopHookWhenNotConfigured(t *testing.T) {
 		t.Error("expected no Stop key when stop_hook is not configured")
 	}
 }
+
+func TestPrepareDirenvSkipsWhenNoFlakeNix(t *testing.T) {
+	dir := t.TempDir()
+
+	err := prepareDirenvIfNecessary(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	envrcPath := filepath.Join(dir, ".envrc")
+	if _, err := os.Stat(envrcPath); err == nil {
+		t.Error("expected no .envrc when flake.nix is absent")
+	}
+}
+
+func TestPrepareDirenvSkipsWhenDirenvNotInPath(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "flake.nix"), []byte("{}"), 0o644)
+
+	origPath := os.Getenv("PATH")
+	t.Setenv("PATH", t.TempDir())
+	defer os.Setenv("PATH", origPath)
+
+	err := prepareDirenvIfNecessary(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	envrcPath := filepath.Join(dir, ".envrc")
+	if _, err := os.Stat(envrcPath); err == nil {
+		t.Error("expected no .envrc when direnv is not in PATH")
+	}
+}
+
+func TestPrepareDirenvWritesEnvrc(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "flake.nix"), []byte("{}"), 0o644)
+
+	// Create a fake direnv that just exits 0
+	fakeBin := t.TempDir()
+	fakeDirenv := filepath.Join(fakeBin, "direnv")
+	os.WriteFile(fakeDirenv, []byte("#!/bin/sh\nexit 0\n"), 0o755)
+
+	origPath := os.Getenv("PATH")
+	t.Setenv("PATH", fakeBin)
+	defer os.Setenv("PATH", origPath)
+
+	err := prepareDirenvIfNecessary(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(dir, ".envrc"))
+	if err != nil {
+		t.Fatalf("reading .envrc: %v", err)
+	}
+
+	want := "source_up\nuse flake\n"
+	if string(data) != want {
+		t.Errorf(".envrc content: got %q, want %q", string(data), want)
+	}
+}
+
+func TestPrepareDirenvOverwritesExistingEnvrc(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "flake.nix"), []byte("{}"), 0o644)
+	os.WriteFile(filepath.Join(dir, ".envrc"), []byte("old content\n"), 0o644)
+
+	fakeBin := t.TempDir()
+	fakeDirenv := filepath.Join(fakeBin, "direnv")
+	os.WriteFile(fakeDirenv, []byte("#!/bin/sh\nexit 0\n"), 0o755)
+
+	origPath := os.Getenv("PATH")
+	t.Setenv("PATH", fakeBin)
+	defer os.Setenv("PATH", origPath)
+
+	err := prepareDirenvIfNecessary(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(dir, ".envrc"))
+	if err != nil {
+		t.Fatalf("reading .envrc: %v", err)
+	}
+
+	want := "source_up\nuse flake\n"
+	if string(data) != want {
+		t.Errorf(".envrc content: got %q, want %q (old content should be replaced)", string(data), want)
+	}
+}
