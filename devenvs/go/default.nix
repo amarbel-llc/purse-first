@@ -27,7 +27,7 @@ let
       go
       ;
 
-    gomod2nix = gomod2nix.packages.${pkgs.system}.default;
+    gomod2nix = gomod2nix.packages.${pkgs.stdenv.hostPlatform.system}.default;
   };
 in
 {
