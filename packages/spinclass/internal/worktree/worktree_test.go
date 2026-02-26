@@ -143,9 +143,13 @@ func TestDetectRepoSkipsGitFile(t *testing.T) {
 }
 
 func TestDetectRepoFailsOutsideRepo(t *testing.T) {
-	dir := t.TempDir()
+	dir, err := os.MkdirTemp("/tmp", t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(dir) })
 
-	_, err := DetectRepo(dir)
+	_, err = DetectRepo(dir)
 	if err == nil {
 		t.Error("expected error when no git repo found, got nil")
 	}

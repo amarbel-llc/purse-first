@@ -69,7 +69,12 @@ func TestStatusDescription(t *testing.T) {
 }
 
 func TestCreateTapNewWorktreeErrorPath(t *testing.T) {
-	dir := t.TempDir()
+	dir, err := os.MkdirTemp("/tmp", t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(dir) })
+
 	worktreePath := filepath.Join(dir, "new-worktree")
 
 	rp := worktree.ResolvedPath{
@@ -79,7 +84,7 @@ func TestCreateTapNewWorktreeErrorPath(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := Create(&buf, rp, false, "tap", nil)
+	err = Create(&buf, rp, false, "tap", nil)
 	if err == nil {
 		t.Error("expected error when creating worktree in non-git dir, got nil")
 	}
