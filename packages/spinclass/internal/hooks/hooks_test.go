@@ -352,3 +352,99 @@ func TestStopHookEventRouteApproves(t *testing.T) {
 		t.Errorf("expected no output for Stop with no stop_hook, got %q", out.String())
 	}
 }
+
+func TestStopHookBlocksOnFailure(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv("TMPDIR", tmpDir)
+
+	// Create a sweatfile with a failing stop_hook
+	cwd := t.TempDir()
+	os.WriteFile(filepath.Join(cwd, "sweatfile"), []byte(`stop_hook = "false"`), 0o644)
+
+	input, _ := json.Marshal(map[string]any{
+		"hook_event_name": "Stop",
+		"session_id":      "block-test-session",
+		"cwd":             cwd,
+	})
+
+	var out bytes.Buffer
+	err := Run(bytes.NewReader(input), &out, "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if out.Len() == 0 {
+		t.Fatal("expected block output for failing stop_hook")
+	}
+
+	var result map[string]any
+	json.Unmarshal(out.Bytes(), &result)
+	if result["decision"] != "block" {
+		t.Errorf("expected block decision, got %v", result["decision"])
+	}
+
+	// Sentinel file should exist
+	sentinel := filepath.Join(tmpDir, "stop-hook-block-test-session")
+	if _, err := os.Stat(sentinel); os.IsNotExist(err) {
+		t.Error("expected sentinel file to be created")
+	}
+}
+
+func TestStopHookApprovesOnSecondInvocation(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv("TMPDIR", tmpDir)
+
+	cwd := t.TempDir()
+	os.WriteFile(filepath.Join(cwd, "sweatfile"), []byte(`stop_hook = "false"`), 0o644)
+
+	// Create sentinel file (simulating first invocation already happened)
+	sentinel := filepath.Join(tmpDir, "stop-hook-approve-test-session")
+	os.WriteFile(sentinel, []byte("previous failure output"), 0o644)
+
+	input, _ := json.Marshal(map[string]any{
+		"hook_event_name": "Stop",
+		"session_id":      "approve-test-session",
+		"cwd":             cwd,
+	})
+
+	var out bytes.Buffer
+	err := Run(bytes.NewReader(input), &out, "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Sentinel exists -> approve (no output)
+	if out.Len() != 0 {
+		t.Errorf("expected no output on second invocation, got %q", out.String())
+	}
+}
+
+func TestStopHookApprovesOnSuccess(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv("TMPDIR", tmpDir)
+
+	cwd := t.TempDir()
+	os.WriteFile(filepath.Join(cwd, "sweatfile"), []byte(`stop_hook = "true"`), 0o644)
+
+	input, _ := json.Marshal(map[string]any{
+		"hook_event_name": "Stop",
+		"session_id":      "success-test-session",
+		"cwd":             cwd,
+	})
+
+	var out bytes.Buffer
+	err := Run(bytes.NewReader(input), &out, "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if out.Len() != 0 {
+		t.Errorf("expected no output for passing stop_hook, got %q", out.String())
+	}
+
+	// No sentinel should exist on success
+	sentinel := filepath.Join(tmpDir, "stop-hook-success-test-session")
+	if _, err := os.Stat(sentinel); !os.IsNotExist(err) {
+		t.Error("expected no sentinel file for successful stop_hook")
+	}
+}

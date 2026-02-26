@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/amarbel-llc/spinclass/internal/sweatfile"
 )
 
 type hookInput struct {
@@ -31,7 +35,47 @@ func Run(r io.Reader, w io.Writer, boundary string, allowed []string) error {
 }
 
 func runStopHook(input hookInput, w io.Writer) error {
-	return nil // stub: no stop_hook configured -> approve
+	tmpDir := os.TempDir()
+	sentinelPath := filepath.Join(tmpDir, "stop-hook-"+input.SessionID)
+
+	if _, err := os.Stat(sentinelPath); err == nil {
+		return nil // second invocation -> approve
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil // can't load sweatfile -> approve
+	}
+
+	result, err := sweatfile.LoadHierarchy(home, input.CWD)
+	if err != nil || result.Merged.StopHook == nil || *result.Merged.StopHook == "" {
+		return nil // no stop_hook -> approve
+	}
+
+	cmd := exec.Command("sh", "-c", *result.Merged.StopHook)
+	cmd.Dir = input.CWD
+	output, cmdErr := cmd.CombinedOutput()
+
+	if cmdErr == nil {
+		return nil // command passed -> approve
+	}
+
+	// Command failed -> write output to sentinel and block
+	os.WriteFile(sentinelPath, output, 0o644)
+
+	reason := fmt.Sprintf("stop_hook failed: %s", *result.Merged.StopHook)
+	systemMsg := fmt.Sprintf(
+		"Stop hook failed. Output written to %s. Review the failures and address them before completing.",
+		sentinelPath,
+	)
+
+	decision := map[string]any{
+		"decision":      "block",
+		"reason":        reason,
+		"systemMessage": systemMsg,
+	}
+
+	return json.NewEncoder(w).Encode(decision)
 }
 
 func runPreToolUse(input hookInput, w io.Writer, boundary string) error {
