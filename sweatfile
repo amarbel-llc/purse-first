@@ -1,0 +1,3 @@
+# vim: ft=toml
+
+# stop_hook = "just build test"
