@@ -49,21 +49,23 @@ update: update-nix
 update-nix:
     nix flake update
 
+tap-dancer-go-test := "go run ./packages/tap-dancer/go/cmd/tap-dancer go-test -skip-empty"
+
 # Test individual Go packages
 test-grit:
-    {{cmd_nix_dev}} go test ./packages/grit/...
+    {{cmd_nix_dev}} {{tap-dancer-go-test}} ./packages/grit/...
 
 test-get-hubbed:
-    {{cmd_nix_dev}} go test ./packages/get-hubbed/...
+    {{cmd_nix_dev}} {{tap-dancer-go-test}} ./packages/get-hubbed/...
 
 test-lux:
-    {{cmd_nix_dev}} go test ./packages/lux/...
+    {{cmd_nix_dev}} {{tap-dancer-go-test}} ./packages/lux/...
 
 test-spinclass:
-    {{cmd_nix_dev}} go test ./packages/spinclass/...
+    {{cmd_nix_dev}} {{tap-dancer-go-test}} ./packages/spinclass/...
 
 test-tap-dancer-go:
-    {{cmd_nix_dev}} go test ./packages/tap-dancer/go/...
+    {{cmd_nix_dev}} {{tap-dancer-go-test}} ./packages/tap-dancer/go/...
 
 # Test Rust packages
 [working-directory: 'packages/chix']
@@ -76,11 +78,11 @@ test-tap-dancer-rust:
 
 # Run tests
 test-go:
-    {{cmd_nix_dev}} go test ./...
+    {{cmd_nix_dev}} {{tap-dancer-go-test}} ./...
 
 # Run tests with verbose output
 test-v:
-    {{cmd_nix_dev}} go test -v ./...
+    {{cmd_nix_dev}} {{tap-dancer-go-test}} -v ./...
 
 # Format code
 fmt:
@@ -157,11 +159,11 @@ test: \
 
 # Build go-lib-mcp
 build-go-mcp:
-    cd libs/go-mcp && nix develop ../../ --command go build ./...
+    {{cmd_nix_dev}} go build ./...
 
 # Test go-lib-mcp
 test-go-mcp:
-    cd libs/go-mcp && nix develop ../../ --command go test -v ./...
+    {{tap-dancer-go-test}} -v ./libs/go-mcp/...
 
 # Build rust-lib-mcp
 build-rust-mcp:
@@ -173,7 +175,7 @@ test-rust-mcp:
 
 # Test command package specifically
 test-command:
-    cd libs/go-mcp && nix develop ../../ --command go test -v ./command/
+    cd libs/go-mcp && nix develop ../../ --command {{tap-dancer-go-test}} -v ./command/
 
 # Verify mkMarketplace.nix parses
 check-lib:

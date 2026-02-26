@@ -59,7 +59,7 @@ func Create(w io.Writer, rp worktree.ResolvedPath, verbose bool, format string, 
 	return nil
 }
 
-func logSweatfileResult(result sweatfile.LoadResult) {
+func logSweatfileResult(result sweatfile.Hierarchy) {
 	for _, src := range result.Sources {
 		if src.Found {
 			log.Info("loaded sweatfile", "path", src.Path)

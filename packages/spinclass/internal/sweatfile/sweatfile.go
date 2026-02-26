@@ -1,21 +1,26 @@
 package sweatfile
 
 import (
+	"bytes"
 	"errors"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/google/shlex"
 )
 
 type Sweatfile struct {
-	GitExcludes []string `toml:"git_excludes"`
-	ClaudeAllow []string `toml:"claude_allow"`
-	StopHook    *string  `toml:"stop_hook"`
+	BranchNameCommand string   `toml:"branch-name-command"`
+	GitExcludes       []string `toml:"git_excludes"` // TODO rename toml to git-excludes
+	ClaudeAllow       []string `toml:"claude_allow"` // TODO rename toml to claude-allow
+	StopHook          *string  `toml:"stop_hook"`    // TODO rename toml to stop-hook
 }
 
+// TODO rewrite as object-oriented
 func Parse(data []byte) (Sweatfile, error) {
 	var sf Sweatfile
 	if err := toml.Unmarshal(data, &sf); err != nil {
@@ -24,6 +29,7 @@ func Parse(data []byte) (Sweatfile, error) {
 	return sf, nil
 }
 
+// TODO rewrite as object-oriented
 func Load(path string) (Sweatfile, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -35,6 +41,7 @@ func Load(path string) (Sweatfile, error) {
 	return Parse(data)
 }
 
+// TODO rewrite as object-oriented
 func Merge(base, repo Sweatfile) Sweatfile {
 	merged := base
 
@@ -61,6 +68,7 @@ func Merge(base, repo Sweatfile) Sweatfile {
 	return merged
 }
 
+// TODO rewrite as object-oriented
 func Save(path string, sf Sweatfile) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
@@ -79,13 +87,36 @@ type LoadSource struct {
 	File  Sweatfile
 }
 
-type LoadResult struct {
+type Hierarchy struct {
 	Sources []LoadSource
 	Merged  Sweatfile
 }
 
+func (sweatfile Sweatfile) CreateBranchName(
+	base string,
+) (string, error) {
+	if sweatfile.BranchNameCommand == "" {
+		return base, nil
+	}
 
-func LoadHierarchy(home, repoDir string) (LoadResult, error) {
+	cmdComponents, err := shlex.Split(sweatfile.BranchNameCommand)
+	if err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command(cmdComponents[0], cmdComponents[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
+	if replacementBytes, err := cmd.Output(); err != nil {
+		return "", err
+	} else {
+		return string(bytes.TrimSpace(replacementBytes)), nil
+	}
+}
+
+func LoadHierarchy(home, repoDir string) (Hierarchy, error) {
 	var sources []LoadSource
 	merged := Sweatfile{}
 
@@ -105,7 +136,7 @@ func LoadHierarchy(home, repoDir string) (LoadResult, error) {
 	// 1. Global config
 	globalPath := filepath.Join(home, ".config", "spinclass", "sweatfile")
 	if err := loadAndMerge(globalPath); err != nil {
-		return LoadResult{}, err
+		return Hierarchy{}, err
 	}
 
 	// 2. Parent directories walking DOWN from home to repo dir
@@ -120,7 +151,7 @@ func LoadHierarchy(home, repoDir string) (LoadResult, error) {
 			parentDir := filepath.Join(cleanHome, filepath.Join(parts[:i]...))
 			parentPath := filepath.Join(parentDir, "sweatfile")
 			if err := loadAndMerge(parentPath); err != nil {
-				return LoadResult{}, err
+				return Hierarchy{}, err
 			}
 		}
 	}
@@ -128,10 +159,10 @@ func LoadHierarchy(home, repoDir string) (LoadResult, error) {
 	// 3. Repo sweatfile
 	repoPath := filepath.Join(cleanRepo, "sweatfile")
 	if err := loadAndMerge(repoPath); err != nil {
-		return LoadResult{}, err
+		return Hierarchy{}, err
 	}
 
-	return LoadResult{
+	return Hierarchy{
 		Sources: sources,
 		Merged:  merged,
 	}, nil
@@ -141,4 +172,3 @@ func fileExists(path string) (os.FileInfo, bool) {
 	info, err := os.Stat(path)
 	return info, err == nil
 }
-

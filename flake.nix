@@ -19,15 +19,15 @@
   };
 
   outputs =
-    {
-      self,
-      nixpkgs,
-      nixpkgs-master,
-      utils,
-      gomod2nix,
-      crane,
-      rust-overlay,
-      fh,
+    { self
+    , nixpkgs
+    , nixpkgs-master
+    , utils
+    , gomod2nix
+    , crane
+    , rust-overlay
+    , fh
+    ,
     }:
     let
       mkMarketplace = import ./lib/mkMarketplace.nix;
@@ -53,7 +53,7 @@
 
       # Single vendor hash for the entire Go workspace.
       # Only covers external deps — workspace module changes don't affect it.
-      goVendorHash = "sha256-029kWjAcZLb27oHj/XwSL0b4+CQCmeJrqoCzmjIsJAY=";
+      goVendorHash = "sha256-nFnvKmU08onz8Y7MMV+PYuBiYQeiWgzpvI/zNyP96mg=";
 
       buildDevenvs =
         system:
@@ -315,6 +315,7 @@
                 ];
               };
             };
+
           devShells = {
             default = marketplaceOutputs.devShells.${system}.default;
             go = devenvs.go.devShell;

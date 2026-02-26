@@ -18,14 +18,17 @@ import (
 	"github.com/amarbel-llc/spinclass/internal/pull"
 	"github.com/amarbel-llc/spinclass/internal/shop"
 	"github.com/amarbel-llc/spinclass/internal/status"
+	"github.com/amarbel-llc/spinclass/internal/sweatfile"
 	"github.com/amarbel-llc/spinclass/internal/validate"
 	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
 
-var outputFormat string
-var verbose bool
-var newMergeOnClose bool
-var newNoAttach bool
+var (
+	outputFormat    string
+	verbose         bool
+	newMergeOnClose bool
+	newNoAttach     bool
+)
 
 var rootCmd = &cobra.Command{
 	Use:   "spinclass",
@@ -33,42 +36,11 @@ var rootCmd = &cobra.Command{
 	Long:  `spinclass manages git worktree lifecycles: creating worktrees + sessions, and offering close workflows (rebase, merge, cleanup, push).`,
 }
 
-var createCmd = &cobra.Command{
-	Use:   "create <target>",
-	Short: "Create a worktree without attaching",
-	Long:  `Create a new worktree and apply sweatfile settings. Does not start a session. Target is a branch name or path, resolved relative to the current git repository.`,
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		format := outputFormat
-		if format == "" {
-			format = "tap"
-		}
-
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-
-		repoPath, err := worktree.DetectRepo(cwd)
-		if err != nil {
-			return err
-		}
-
-		rp, err := worktree.ResolvePath(repoPath, args[0])
-		if err != nil {
-			return err
-		}
-
-		return shop.Create(os.Stdout, rp, verbose, format, nil)
-	},
-}
-
 var newCmd = &cobra.Command{
-	Use:     "new <target> [claude args...]",
-	Aliases: []string{"attach", "open"},
-	Short:   "Create (if needed) and attach to a worktree session",
-	Long:    `Create a worktree if it doesn't exist, then attach to a session. Target is a branch name or path, resolved relative to the current git repository. If additional arguments are provided, claude is launched with those arguments instead of a shell.`,
-	Args:    cobra.MinimumNArgs(1),
+	Use:   "new <target> [claude args...]",
+	Short: "Create (if needed) and attach to a worktree session",
+	Long:  `Create a worktree if it doesn't exist, then attach to a session. Target is a branch name or path, resolved relative to the current git repository. If additional arguments are provided, claude is launched with those arguments instead of a shell.`,
+	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		format := outputFormat
 		if format == "" {
@@ -78,6 +50,7 @@ var newCmd = &cobra.Command{
 		exec := executor.ZmxExecutor{}
 
 		var claudeArgs []string
+
 		if len(args) >= 2 {
 			claudeArgs = args[1:]
 		}
@@ -87,17 +60,36 @@ var newCmd = &cobra.Command{
 			return err
 		}
 
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return err
+		}
+
 		repoPath, err := worktree.DetectRepo(cwd)
 		if err != nil {
 			return err
 		}
 
-		rp, err := worktree.ResolvePath(repoPath, args[0])
+		hierarchy, err := sweatfile.LoadHierarchy(home, cwd)
 		if err != nil {
 			return err
 		}
 
-		return shop.New(os.Stdout, exec, rp, format, claudeArgs, newMergeOnClose, newNoAttach, verbose)
+		resolvedPath, err := worktree.ResolvePath(hierarchy.Merged, repoPath, args[0])
+		if err != nil {
+			return err
+		}
+
+		return shop.New(
+			os.Stdout,
+			exec,
+			resolvedPath,
+			format,
+			claudeArgs,
+			newMergeOnClose,
+			newNoAttach,
+			verbose,
+		)
 	},
 }
 
@@ -208,7 +200,6 @@ var completionsCmd = &cobra.Command{
 	},
 }
 
-
 var forkCmd = &cobra.Command{
 	Use:   "fork [<new-branch>]",
 	Short: "Fork current worktree into a new branch",
@@ -293,7 +284,6 @@ func init() {
 	newCmd.Flags().BoolVar(&newMergeOnClose, "merge-on-close", false, "auto-merge worktree into default branch on session close")
 	newCmd.Flags().BoolVar(&newNoAttach, "no-attach", false, "create worktree but skip attaching (show command that would run)")
 	cleanCmd.Flags().BoolVarP(&cleanInteractive, "interactive", "i", false, "interactively discard changes in dirty merged worktrees")
-	rootCmd.AddCommand(createCmd)
 	rootCmd.AddCommand(newCmd)
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(mergeCmd)

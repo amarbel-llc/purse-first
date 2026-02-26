@@ -50,6 +50,7 @@ func parseFileLine(output string) (file string, line string) {
 // If skipEmpty is true, packages with no tests emit a SKIP directive instead of not ok.
 // Returns an exit code: 0 for all pass, 1 for any failure, 2 for build errors.
 func ConvertGoTest(r io.Reader, w io.Writer, verbose bool, skipEmpty bool) int {
+	// TODO wrap with bufio.Reader
 	scanner := bufio.NewScanner(r)
 
 	packages := make(map[string]*packageResult)
@@ -58,6 +59,7 @@ func ConvertGoTest(r io.Reader, w io.Writer, verbose bool, skipEmpty bool) int {
 	tw := NewWriter(w)
 	exitCode := 0
 
+	// TODO switch to json.Decoder
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == "" {
@@ -65,6 +67,7 @@ func ConvertGoTest(r io.Reader, w io.Writer, verbose bool, skipEmpty bool) int {
 		}
 
 		var ev testEvent
+		// TODO extract / prepare package full path
 		if err := json.Unmarshal([]byte(line), &ev); err != nil {
 			tw.Comment(fmt.Sprintf("unparseable: %s", line))
 			continue
@@ -158,29 +161,30 @@ func emptyPackageReason(output string) string {
 	return "no tests"
 }
 
-func emitPackage(tw *Writer, pkg *packageResult, verbose bool) {
-	sub := tw.Subtest(pkg.name)
+func emitPackage(tapWriter *Writer, pkg *packageResult, verbose bool) {
+	subtest := tapWriter.Subtest(pkg.name)
 
-	for _, tr := range pkg.tests {
+	for _, testResult := range pkg.tests {
 		// Skip subtests -- they are emitted by their parent
-		if strings.Contains(tr.name, "/") {
+		if strings.Contains(testResult.name, "/") {
 			continue
 		}
-		emitTest(sub, pkg, tr, verbose)
+
+		emitTest(subtest, pkg, testResult, verbose)
 	}
 
-	sub.Plan()
+	subtest.Plan()
 
 	if pkg.failed {
-		tw.NotOk(pkg.name, nil)
+		tapWriter.NotOk(pkg.name, nil)
 	} else {
-		tw.Ok(pkg.name)
+		tapWriter.Ok(pkg.name)
 	}
 }
 
-func emitTest(tw *Writer, pkg *packageResult, tr *testResult, verbose bool) {
+func emitTest(tapWriter *Writer, pkg *packageResult, testRezult *testResult, verbose bool) {
 	// Check for child subtests
-	prefix := tr.name + "/"
+	prefix := testRezult.name + "/"
 	var children []*testResult
 	for _, child := range pkg.tests {
 		if strings.HasPrefix(child.name, prefix) && !strings.Contains(child.name[len(prefix):], "/") {
@@ -189,34 +193,34 @@ func emitTest(tw *Writer, pkg *packageResult, tr *testResult, verbose bool) {
 	}
 
 	if len(children) > 0 {
-		sub := tw.Subtest(tr.name)
+		sub := tapWriter.Subtest(testRezult.name)
 		for _, child := range children {
 			emitTest(sub, pkg, child, verbose)
 		}
 		sub.Plan()
-		if tr.action == "fail" {
-			tw.NotOk(tr.name, nil)
+		if testRezult.action == "fail" {
+			tapWriter.NotOk(testRezult.name, nil)
 		} else {
-			tw.Ok(tr.name)
+			tapWriter.Ok(testRezult.name)
 		}
 		return
 	}
 
 	// Leaf test
-	name := tr.name
+	name := testRezult.name
 	// For display, use just the last segment
 	if idx := strings.LastIndex(name, "/"); idx >= 0 {
-		name = tr.name[idx+1:]
+		name = testRezult.name[idx+1:]
 	}
 
-	output := cleanTestOutput(tr.output.String())
+	output := cleanTestOutput(testRezult.output.String())
 
-	switch tr.action {
+	switch testRezult.action {
 	case "pass":
-		tw.Ok(name)
+		tapWriter.Ok(name)
 	case "fail":
 		diag := map[string]string{
-			"elapsed": fmt.Sprintf("%.3f", tr.elapsed),
+			"elapsed": fmt.Sprintf("%.3f", testRezult.elapsed),
 			"package": pkg.name,
 		}
 		if output != "" {
@@ -227,12 +231,12 @@ func emitTest(tw *Writer, pkg *packageResult, tr *testResult, verbose bool) {
 			diag["file"] = file
 			diag["line"] = line
 		}
-		tw.NotOk(name, diag)
+		tapWriter.NotOk(name, diag)
 	case "skip":
 		reason := extractSkipReason(output)
-		tw.Skip(name, reason)
+		tapWriter.Skip(name, reason)
 	default:
-		tw.Ok(name)
+		tapWriter.Ok(name)
 	}
 }
 

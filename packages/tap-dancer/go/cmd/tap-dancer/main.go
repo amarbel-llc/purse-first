@@ -269,7 +269,7 @@ func handleValidate(ctx context.Context, args json.RawMessage, _ command.Prompte
 	// Format output
 	switch params.Format {
 	case "json":
-		result := map[string]interface{}{
+		result := map[string]any{
 			"summary":     summary,
 			"diagnostics": diags,
 		}

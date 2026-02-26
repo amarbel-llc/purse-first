@@ -25,25 +25,22 @@ type ResolvedPath struct {
 //
 // target interpretation:
 //   - bare branch name (no "/" or ".") -> <repoPath>/.spinclass/<branch>
-//   - relative path (contains "/" or ".") -> resolved relative to repoPath
-//   - absolute path -> used directly
 //
 // SessionKey is always <repo-dirname>/<branch>.
-func ResolvePath(repoPath, target string) (ResolvedPath, error) {
-	var absPath string
-	var branch string
+func ResolvePath(
+	sweatfile sweatfile.Sweatfile,
+	repoPath,
+	branch string,
+) (ResolvedPath, error) {
+	{
+		var err error
 
-	if filepath.IsAbs(target) {
-		absPath = filepath.Clean(target)
-		branch = filepath.Base(absPath)
-	} else if strings.ContainsAny(target, "/.") {
-		absPath = filepath.Clean(filepath.Join(repoPath, target))
-		branch = filepath.Base(absPath)
-	} else {
-		// Bare branch name
-		branch = target
-		absPath = filepath.Join(repoPath, WorktreesDir, branch)
+		if branch, err = sweatfile.CreateBranchName(branch); err != nil {
+			return ResolvedPath{}, err
+		}
 	}
+
+	absPath := filepath.Join(repoPath, WorktreesDir, branch)
 
 	repoDirname := filepath.Base(repoPath)
 	sessionKey := repoDirname + "/" + branch
@@ -103,9 +100,9 @@ func isCeiling(dir string, ceilings []string) bool {
 }
 
 // Create creates a new git worktree and applies sweatfile configuration.
-func Create(repoPath, worktreePath string) (sweatfile.LoadResult, error) {
+func Create(repoPath, worktreePath string) (sweatfile.Hierarchy, error) {
 	if err := git.RunPassthrough(repoPath, "worktree", "add", worktreePath); err != nil {
-		return sweatfile.LoadResult{}, fmt.Errorf("git worktree add: %w", err)
+		return sweatfile.Hierarchy{}, fmt.Errorf("git worktree add: %w", err)
 	}
 	return applyWorktreeConfig(repoPath, worktreePath)
 }
@@ -113,41 +110,41 @@ func Create(repoPath, worktreePath string) (sweatfile.LoadResult, error) {
 // CreateFrom creates a new worktree branched from fromPath's current HEAD.
 // It runs git worktree add -b from fromPath, then applies sweatfile and
 // trusts the workspace, same as Create.
-func CreateFrom(repoPath, fromPath, newPath, newBranch string) (sweatfile.LoadResult, error) {
+func CreateFrom(repoPath, fromPath, newPath, newBranch string) (sweatfile.Hierarchy, error) {
 	if err := git.WorktreeAddFrom(fromPath, newBranch, newPath); err != nil {
-		return sweatfile.LoadResult{}, fmt.Errorf("git worktree add: %w", err)
+		return sweatfile.Hierarchy{}, fmt.Errorf("git worktree add: %w", err)
 	}
 	return applyWorktreeConfig(repoPath, newPath)
 }
 
 // applyWorktreeConfig excludes .worktrees from git, loads and applies sweatfile,
 // and trusts worktreePath in Claude.
-func applyWorktreeConfig(repoPath, worktreePath string) (sweatfile.LoadResult, error) {
+func applyWorktreeConfig(repoPath, worktreePath string) (sweatfile.Hierarchy, error) {
 	if err := excludeWorktreesDir(repoPath); err != nil {
-		return sweatfile.LoadResult{}, fmt.Errorf("excluding %s from git: %w", WorktreesDir, err)
+		return sweatfile.Hierarchy{}, fmt.Errorf("excluding %s from git: %w", WorktreesDir, err)
 	}
 
 	tmpDir := filepath.Join(worktreePath, ".tmp")
 	if err := os.MkdirAll(tmpDir, 0o755); err != nil {
-		return sweatfile.LoadResult{}, fmt.Errorf("creating .tmp directory: %w", err)
+		return sweatfile.Hierarchy{}, fmt.Errorf("creating .tmp directory: %w", err)
 	}
 
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return sweatfile.LoadResult{}, fmt.Errorf("getting home directory: %w", err)
+		return sweatfile.Hierarchy{}, fmt.Errorf("getting home directory: %w", err)
 	}
 
 	result, err := sweatfile.LoadHierarchy(home, repoPath)
 	if err != nil {
-		return sweatfile.LoadResult{}, fmt.Errorf("loading sweatfile: %w", err)
+		return sweatfile.Hierarchy{}, fmt.Errorf("loading sweatfile: %w", err)
 	}
 	if err := sweatfile.Apply(worktreePath, result.Merged); err != nil {
-		return sweatfile.LoadResult{}, fmt.Errorf("applying sweatfile: %w", err)
+		return sweatfile.Hierarchy{}, fmt.Errorf("applying sweatfile: %w", err)
 	}
 
 	claudeJSONPath := filepath.Join(home, ".claude.json")
 	if err := claude.TrustWorkspace(claudeJSONPath, worktreePath); err != nil {
-		return sweatfile.LoadResult{}, fmt.Errorf("trusting workspace in claude: %w", err)
+		return sweatfile.Hierarchy{}, fmt.Errorf("trusting workspace in claude: %w", err)
 	}
 
 	return result, nil

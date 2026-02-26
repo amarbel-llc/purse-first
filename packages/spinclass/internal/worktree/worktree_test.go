@@ -5,13 +5,15 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/amarbel-llc/spinclass/internal/sweatfile"
 )
 
 func TestResolvePathBranchName(t *testing.T) {
 	home := t.TempDir()
 	repoPath := filepath.Join(home, "repos", "myrepo")
 
-	rp, err := ResolvePath(repoPath, "feature-x")
+	rp, err := ResolvePath(sweatfile.Sweatfile{}, repoPath, "feature-x")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -22,45 +24,6 @@ func TestResolvePathBranchName(t *testing.T) {
 	}
 	if rp.Branch != "feature-x" {
 		t.Errorf("Branch = %q, want %q", rp.Branch, "feature-x")
-	}
-	if rp.RepoPath != repoPath {
-		t.Errorf("RepoPath = %q, want %q", rp.RepoPath, repoPath)
-	}
-}
-
-func TestResolvePathRelativePath(t *testing.T) {
-	home := t.TempDir()
-	repoPath := filepath.Join(home, "repos", "myrepo")
-
-	rp, err := ResolvePath(repoPath, WorktreesDir+"/feature-x")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	wantAbs := filepath.Join(repoPath, WorktreesDir, "feature-x")
-	if rp.AbsPath != wantAbs {
-		t.Errorf("AbsPath = %q, want %q", rp.AbsPath, wantAbs)
-	}
-	if rp.Branch != "feature-x" {
-		t.Errorf("Branch = %q, want %q", rp.Branch, "feature-x")
-	}
-}
-
-func TestResolvePathAbsolutePath(t *testing.T) {
-	home := t.TempDir()
-	repoPath := filepath.Join(home, "repos", "myrepo")
-	absTarget := "/tmp/my-custom-worktree"
-
-	rp, err := ResolvePath(repoPath, absTarget)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if rp.AbsPath != absTarget {
-		t.Errorf("AbsPath = %q, want %q", rp.AbsPath, absTarget)
-	}
-	if rp.Branch != "my-custom-worktree" {
-		t.Errorf("Branch = %q, want %q", rp.Branch, "my-custom-worktree")
 	}
 	if rp.RepoPath != repoPath {
 		t.Errorf("RepoPath = %q, want %q", rp.RepoPath, repoPath)
@@ -71,27 +34,12 @@ func TestResolvePathSessionKey(t *testing.T) {
 	home := t.TempDir()
 	repoPath := filepath.Join(home, "repos", "myrepo")
 
-	rp, err := ResolvePath(repoPath, "feature-x")
+	rp, err := ResolvePath(sweatfile.Sweatfile{}, repoPath, "feature-x")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	wantKey := "myrepo/feature-x"
-	if rp.SessionKey != wantKey {
-		t.Errorf("SessionKey = %q, want %q", rp.SessionKey, wantKey)
-	}
-}
-
-func TestResolvePathSessionKeyAbsolutePath(t *testing.T) {
-	home := t.TempDir()
-	repoPath := filepath.Join(home, "repos", "dodder")
-
-	rp, err := ResolvePath(repoPath, "/tmp/custom-wt")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	wantKey := "dodder/custom-wt"
 	if rp.SessionKey != wantKey {
 		t.Errorf("SessionKey = %q, want %q", rp.SessionKey, wantKey)
 	}
