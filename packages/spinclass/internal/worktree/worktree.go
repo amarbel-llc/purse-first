@@ -12,7 +12,7 @@ import (
 	"github.com/amarbel-llc/spinclass/internal/sweatfile"
 )
 
-const WorktreesDir = ".spinclass"
+const WorktreesDir = ".worktrees"
 
 type ResolvedPath struct {
 	AbsPath    string // absolute filesystem path to the worktree
@@ -24,7 +24,7 @@ type ResolvedPath struct {
 // ResolvePath resolves a worktree target relative to a git repo.
 //
 // target interpretation:
-//   - bare branch name (no "/" or ".") -> <repoPath>/.spinclass/<branch>
+//   - bare branch name (no "/" or ".") -> <repoPath>/.worktrees/<branch>
 //
 // SessionKey is always <repo-dirname>/<branch>.
 func ResolvePath(
