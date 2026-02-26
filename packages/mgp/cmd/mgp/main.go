@@ -11,6 +11,7 @@ import (
 
 	"github.com/amarbel-llc/mgp/internal/catalog"
 	"github.com/amarbel-llc/mgp/internal/tools"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
 )
@@ -66,11 +67,35 @@ func main() {
 	registry := server.NewToolRegistryV1()
 	app.RegisterMCPToolsV1(registry)
 
+	resources := server.NewResourceRegistry()
+	resources.RegisterResource(
+		protocol.Resource{
+			URI:         "mgp://catalog",
+			Name:        "Tool Catalog",
+			Description: "Complete catalog of tools available across all MCP servers",
+			MimeType:    "application/json",
+		},
+		func(ctx context.Context, uri string) (*protocol.ResourceReadResult, error) {
+			data, err := catalog.CatalogResourceJSON(cat)
+			if err != nil {
+				return nil, fmt.Errorf("serializing catalog: %w", err)
+			}
+			return &protocol.ResourceReadResult{
+				Contents: []protocol.ResourceContent{{
+					URI:      uri,
+					MimeType: "application/json",
+					Text:     string(data),
+				}},
+			}, nil
+		},
+	)
+
 	srv, err := server.New(t, server.Options{
 		ServerName:    app.Name,
 		ServerVersion: app.Version,
 		Instructions:  "Model graph protocol MCP server. Query and execute tools from the purse-first tool catalog via GraphQL.",
 		Tools:         registry,
+		Resources:     resources,
 	})
 	if err != nil {
 		log.Fatalf("creating server: %v", err)
