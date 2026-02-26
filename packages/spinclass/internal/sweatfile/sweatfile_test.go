@@ -411,3 +411,42 @@ claude_allow = []
 		t.Errorf("expected empty ClaudeAllow (cleared by repo), got %v", result.Merged.ClaudeAllow)
 	}
 }
+
+func TestLoadHierarchyStopHookInherited(t *testing.T) {
+	home := t.TempDir()
+	repoDir := filepath.Join(home, "eng", "repos", "myrepo")
+	os.MkdirAll(repoDir, 0o755)
+
+	globalPath := filepath.Join(home, ".config", "spinclass", "sweatfile")
+	writeSweatfile(t, globalPath, `stop_hook = "just test"`)
+
+	result, err := LoadHierarchy(home, repoDir)
+	if err != nil {
+		t.Fatalf("LoadHierarchy returned error: %v", err)
+	}
+
+	if result.Merged.StopHook == nil || *result.Merged.StopHook != "just test" {
+		t.Errorf("expected inherited stop_hook, got %v", result.Merged.StopHook)
+	}
+}
+
+func TestLoadHierarchyStopHookOverriddenByRepo(t *testing.T) {
+	home := t.TempDir()
+	repoDir := filepath.Join(home, "eng", "repos", "myrepo")
+	os.MkdirAll(repoDir, 0o755)
+
+	globalPath := filepath.Join(home, ".config", "spinclass", "sweatfile")
+	writeSweatfile(t, globalPath, `stop_hook = "just test"`)
+
+	repoSweatfile := filepath.Join(repoDir, "sweatfile")
+	writeSweatfile(t, repoSweatfile, `stop_hook = "just lint"`)
+
+	result, err := LoadHierarchy(home, repoDir)
+	if err != nil {
+		t.Fatalf("LoadHierarchy returned error: %v", err)
+	}
+
+	if result.Merged.StopHook == nil || *result.Merged.StopHook != "just lint" {
+		t.Errorf("expected overridden stop_hook, got %v", result.Merged.StopHook)
+	}
+}
