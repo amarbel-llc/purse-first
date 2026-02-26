@@ -93,6 +93,10 @@ func NewPool(executor Executor, handlerFactory HandlerFactory) *Pool {
 	}
 }
 
+func (p *Pool) HandlerForLSP(lspName string) jsonrpc.Handler {
+	return p.handlerFactory(lspName)
+}
+
 func (p *Pool) Register(name, flake, binary string, args []string, env map[string]string, initOpts map[string]any, settings map[string]any, settingsKey string, capOverrides *CapabilityOverride, waitForReady bool, readyTimeout, activityTimeout time.Duration) {
 	p.mu.Lock()
 	defer p.mu.Unlock()

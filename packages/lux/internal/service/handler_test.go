@@ -217,6 +217,62 @@ func TestHandler_Warmup(t *testing.T) {
 	}
 }
 
+func TestWorkspaceRegistry_BroadcasterWiredToPool(t *testing.T) {
+	reg := NewWorkspaceRegistry(nil)
+
+	var broadcasterCalled bool
+	var broadcasterWorkspace string
+	var broadcasterLSP string
+	reg.SetBroadcaster(func(workspace, lspName string, ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {
+		broadcasterCalled = true
+		broadcasterWorkspace = workspace
+		broadcasterLSP = lspName
+		return nil, nil
+	})
+
+	ws := reg.GetOrCreate("/proj/test")
+	if ws == nil {
+		t.Fatal("expected workspace")
+	}
+
+	// Verify the broadcaster field is set on the registry.
+	reg.mu.RLock()
+	hasBroadcaster := reg.broadcaster != nil
+	reg.mu.RUnlock()
+	if !hasBroadcaster {
+		t.Error("expected broadcaster to be set on registry")
+	}
+
+	// Verify the pool's handler factory produces a handler that calls the
+	// broadcaster. We can test this by invoking the handler returned for
+	// a given LSP name directly.
+	handler := ws.Pool.HandlerForLSP("test-lsp")
+	if handler == nil {
+		t.Fatal("expected handler from pool handler factory")
+	}
+
+	msg := &jsonrpc.Message{
+		JSONRPC: jsonrpc.Version,
+		Method:  "textDocument/publishDiagnostics",
+		Params:  json.RawMessage(`{"uri":"file:///test.go"}`),
+	}
+
+	_, err := handler(context.Background(), msg)
+	if err != nil {
+		t.Fatalf("handler returned error: %v", err)
+	}
+
+	if !broadcasterCalled {
+		t.Error("expected broadcaster to be called")
+	}
+	if broadcasterWorkspace != "/proj/test" {
+		t.Errorf("expected workspace '/proj/test', got %q", broadcasterWorkspace)
+	}
+	if broadcasterLSP != "test-lsp" {
+		t.Errorf("expected lsp 'test-lsp', got %q", broadcasterLSP)
+	}
+}
+
 func newTestHandler(t *testing.T) *Handler {
 	t.Helper()
 	return NewHandler(NewSessionRegistry(), NewWorkspaceRegistry(nil))

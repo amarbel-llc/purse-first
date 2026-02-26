@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"sync"
 
 	"github.com/amarbel-llc/lux/internal/config"
@@ -9,6 +10,12 @@ import (
 	"github.com/amarbel-llc/lux/internal/subprocess"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 )
+
+// NotificationBroadcaster is called when an LSP subprocess sends a
+// server-to-client notification (e.g. textDocument/publishDiagnostics).
+// workspace is the workspace root, lspName identifies the originating LSP,
+// and msg is the raw JSON-RPC notification or request from the LSP.
+type NotificationBroadcaster func(workspace, lspName string, ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error)
 
 type Workspace struct {
 	Root      string
@@ -20,9 +27,10 @@ type Workspace struct {
 }
 
 type WorkspaceRegistry struct {
-	workspaces map[string]*Workspace
-	baseCfg    *config.Config
-	mu         sync.RWMutex
+	workspaces  map[string]*Workspace
+	baseCfg     *config.Config
+	broadcaster NotificationBroadcaster
+	mu          sync.RWMutex
 }
 
 func NewWorkspaceRegistry(baseCfg *config.Config) *WorkspaceRegistry {
@@ -30,6 +38,12 @@ func NewWorkspaceRegistry(baseCfg *config.Config) *WorkspaceRegistry {
 		workspaces: make(map[string]*Workspace),
 		baseCfg:    baseCfg,
 	}
+}
+
+func (r *WorkspaceRegistry) SetBroadcaster(b NotificationBroadcaster) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.broadcaster = b
 }
 
 func (r *WorkspaceRegistry) GetOrCreate(root string) *Workspace {
@@ -53,7 +67,16 @@ func (r *WorkspaceRegistry) createWorkspace(root string) *Workspace {
 
 	executor := subprocess.NewNixExecutor()
 	pool := subprocess.NewPool(executor, func(lspName string) jsonrpc.Handler {
-		return nil
+		return func(ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {
+			r.mu.RLock()
+			b := r.broadcaster
+			r.mu.RUnlock()
+
+			if b != nil {
+				return b(root, lspName, ctx, msg)
+			}
+			return nil, nil
+		}
 	})
 
 	if cfg != nil {

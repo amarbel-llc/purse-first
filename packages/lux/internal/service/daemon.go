@@ -23,7 +23,8 @@ type Daemon struct {
 	listener          net.Listener
 	idleTimeout       time.Duration
 	idleCheckInterval time.Duration
-	conns             map[net.Conn]string // conn -> session ID
+	conns             map[net.Conn]string      // conn -> session ID
+	rpcConns          map[string]*jsonrpc.Conn // session ID -> rpc connection
 	done              chan struct{}
 	mu                sync.Mutex
 }
@@ -33,7 +34,7 @@ func NewDaemon(socketPath string, cfg *config.Config, idleTimeout time.Duration)
 	workspaces := NewWorkspaceRegistry(cfg)
 	handler := NewHandler(sessions, workspaces)
 
-	return &Daemon{
+	d := &Daemon{
 		socketPath:        socketPath,
 		handler:           handler,
 		sessions:          sessions,
@@ -41,8 +42,12 @@ func NewDaemon(socketPath string, cfg *config.Config, idleTimeout time.Duration)
 		idleTimeout:       idleTimeout,
 		idleCheckInterval: defaultIdleCheckInterval,
 		conns:             make(map[net.Conn]string),
+		rpcConns:          make(map[string]*jsonrpc.Conn),
 		done:              make(chan struct{}),
 	}
+
+	workspaces.SetBroadcaster(d.broadcastNotification)
+	return d
 }
 
 func (d *Daemon) Run(ctx context.Context) error {
@@ -99,23 +104,24 @@ func (d *Daemon) acceptLoop(ctx context.Context, listener net.Listener) {
 func (d *Daemon) handleConn(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
+	var rpcConn *jsonrpc.Conn
 	handlerFunc := func(ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {
 		resp, err := d.handler.Handle(ctx, msg)
 
 		if resp != nil && msg.Method == MethodSessionRegister && resp.Error == nil {
-			d.trackSessionForConn(conn, resp.Result)
+			d.trackSessionForConn(conn, rpcConn, resp.Result)
 		}
 
 		return resp, err
 	}
 
-	rpcConn := jsonrpc.NewConn(conn, conn, handlerFunc)
+	rpcConn = jsonrpc.NewConn(conn, conn, handlerFunc)
 	rpcConn.Run(ctx)
 
 	d.deregisterConnSessions(conn)
 }
 
-func (d *Daemon) trackSessionForConn(conn net.Conn, result json.RawMessage) {
+func (d *Daemon) trackSessionForConn(conn net.Conn, rpcConn *jsonrpc.Conn, result json.RawMessage) {
 	var reg RegisterResult
 	if err := json.Unmarshal(result, &reg); err != nil {
 		return
@@ -124,6 +130,7 @@ func (d *Daemon) trackSessionForConn(conn net.Conn, result json.RawMessage) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.conns[conn] = reg.SessionID
+	d.rpcConns[reg.SessionID] = rpcConn
 }
 
 func (d *Daemon) deregisterConnSessions(conn net.Conn) {
@@ -131,12 +138,38 @@ func (d *Daemon) deregisterConnSessions(conn net.Conn) {
 	sessionID, ok := d.conns[conn]
 	if ok {
 		delete(d.conns, conn)
+		delete(d.rpcConns, sessionID)
 	}
 	d.mu.Unlock()
 
 	if ok {
 		d.sessions.Deregister(sessionID)
 	}
+}
+
+func (d *Daemon) broadcastNotification(workspace, lspName string, ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {
+	if msg.IsRequest() {
+		// Server-to-client requests (e.g. window/workDoneProgress/create)
+		// are acknowledged directly rather than forwarded to all sessions.
+		return jsonrpc.NewResponse(*msg.ID, nil)
+	}
+
+	sessions := d.sessions.SessionsForWorkspace(workspace)
+
+	d.mu.Lock()
+	conns := make([]*jsonrpc.Conn, 0, len(sessions))
+	for _, s := range sessions {
+		if rc, ok := d.rpcConns[s.ID]; ok {
+			conns = append(conns, rc)
+		}
+	}
+	d.mu.Unlock()
+
+	for _, rc := range conns {
+		rc.Notify(msg.Method, msg.Params)
+	}
+
+	return nil, nil
 }
 
 func (d *Daemon) idleWatcher(ctx context.Context) {
