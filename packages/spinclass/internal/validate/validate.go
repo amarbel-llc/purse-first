@@ -144,25 +144,19 @@ func findDuplicates(items []string) []string {
 }
 
 func CheckUnknownFields(data []byte) []Issue {
-	var raw map[string]any
-	if err := toml.Unmarshal(data, &raw); err != nil {
+	var sf sweatfile.Sweatfile
+	md, err := toml.Decode(string(data), &sf)
+	if err != nil {
 		return nil
 	}
 
-	known := map[string]bool{
-		"git_excludes": true,
-		"claude_allow": true,
-	}
-
 	var issues []Issue
-	for key := range raw {
-		if !known[key] {
-			issues = append(issues, Issue{
-				Message:  fmt.Sprintf("unknown field %q", key),
-				Severity: SeverityError,
-				Field:    key,
-			})
-		}
+	for _, key := range md.Undecoded() {
+		issues = append(issues, Issue{
+			Message:  fmt.Sprintf("unknown field %q", key.String()),
+			Severity: SeverityError,
+			Field:    key.String(),
+		})
 	}
 	return issues
 }

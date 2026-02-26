@@ -128,3 +128,13 @@ claude_allow = ["Read"]
 		t.Errorf("expected no issues, got %v", issues)
 	}
 }
+
+func TestCheckUnknownFieldsStopHook(t *testing.T) {
+	data := []byte(`
+stop_hook = "just build test"
+`)
+	issues := CheckUnknownFields(data)
+	if len(issues) != 0 {
+		t.Errorf("expected no issues for stop_hook, got %v", issues)
+	}
+}
