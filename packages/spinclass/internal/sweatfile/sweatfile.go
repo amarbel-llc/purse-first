@@ -14,10 +14,13 @@ import (
 )
 
 type Sweatfile struct {
-	BranchNameCommand string   `toml:"branch-name-command"`
-	GitExcludes       []string `toml:"git_excludes"` // TODO rename toml to git-excludes
-	ClaudeAllow       []string `toml:"claude_allow"` // TODO rename toml to claude-allow
-	StopHook          *string  `toml:"stop_hook"`    // TODO rename toml to stop-hook
+	DirenvUse         []string `toml:"direnv-use"`
+	BranchNameCommand string   `toml:"branch-name-command"` // TODO add tests
+	GitExcludes       []string `toml:"git_excludes"`        // TODO rename toml to git-excludes
+
+	// TODO turn ClaudeAllows into struct
+	ClaudeAllow       []string `toml:"claude_allow"`        // TODO rename toml to claude-allow
+	StopHook          *string  `toml:"stop_hook"`           // TODO rename toml to stop-hook
 }
 
 // TODO rewrite as object-oriented
@@ -168,6 +171,7 @@ func LoadHierarchy(home, repoDir string) (Hierarchy, error) {
 	}, nil
 }
 
+// TODO replace with util
 func fileExists(path string) (os.FileInfo, bool) {
 	info, err := os.Stat(path)
 	return info, err == nil

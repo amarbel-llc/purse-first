@@ -1,9 +1,11 @@
 package sweatfile
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/amarbel-llc/spinclass/internal/git"
@@ -27,15 +29,16 @@ func HardcodedDefaults() Sweatfile {
 	return sf
 }
 
-func Apply(worktreePath string, sf Sweatfile) error {
+func (sweatfile Sweatfile) Apply(worktreePath string) error {
 	defaults := HardcodedDefaults()
-	merged := Merge(sf, defaults)
+	merged := Merge(sweatfile, defaults)
 
 	if len(merged.GitExcludes) > 0 {
 		excludePath, err := resolveExcludePath(worktreePath)
 		if err != nil {
 			return fmt.Errorf("resolving git exclude path: %w", err)
 		}
+
 		if err := applyGitExcludes(excludePath, merged.GitExcludes); err != nil {
 			return fmt.Errorf("applying git excludes: %w", err)
 		}
@@ -45,7 +48,65 @@ func Apply(worktreePath string, sf Sweatfile) error {
 		return fmt.Errorf("applying claude settings: %w", err)
 	}
 
+	if err := prepareDirenvIfNecessary(worktreePath); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func prepareDirenvIfNecessary(worktreePath string) error {
+	if _, ok := fileExists(filepath.Join(worktreePath, "flake.nix")); !ok {
+		return nil
+	}
+
+	direnvPath, err := exec.LookPath("direnv")
+	if err != nil {
+		// TODO output skip
+		return nil
+	}
+
+	// write .envrc
+	{
+		file, err := os.OpenFile(
+			filepath.Join(worktreePath, ".envrc"),
+			os.O_TRUNC|os.O_CREATE|os.O_WRONLY,
+			0o644,
+		)
+		if err != nil {
+			return err
+		}
+
+		// TODO capture error
+		defer file.Close()
+
+		bufferedWriter := bufio.NewWriter(file)
+
+		// TODO capture error
+		defer bufferedWriter.Flush()
+
+		// TODO capture error
+		defer file.Close()
+
+		if _, err := fmt.Fprintln(bufferedWriter, "source_up"); err != nil {
+			return err
+		}
+
+		if _, err := fmt.Fprintln(bufferedWriter, "use flake"); err != nil {
+			return err
+		}
+	}
+
+	// direnv allow
+	{
+		cmd := exec.Command(direnvPath, "allow")
+
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+
+		return cmd.Run()
+	}
 }
 
 func resolveExcludePath(worktreePath string) (string, error) {
@@ -63,16 +124,22 @@ func applyGitExcludes(excludePath string, patterns []string) error {
 	if err := os.MkdirAll(filepath.Dir(excludePath), 0o755); err != nil {
 		return err
 	}
-	f, err := os.OpenFile(excludePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+
+	// TODO use bufio
+	file, err := os.OpenFile(excludePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+
+	// TODO capture error
+	defer file.Close()
+
 	for _, p := range patterns {
-		if _, err := fmt.Fprintln(f, p); err != nil {
+		if _, err := fmt.Fprintln(file, p); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -146,11 +213,9 @@ func ApplyClaudeSettings(worktreePath string, sf Sweatfile) error {
 	}
 
 	data, err := json.MarshalIndent(doc, "", "  ")
-
 	if err != nil {
 		return err
 	}
 
 	return os.WriteFile(settingsPath, append(data, '\n'), 0o644)
 }
-

@@ -15,16 +15,45 @@ import (
 	"github.com/amarbel-llc/spinclass/internal/git"
 	"github.com/amarbel-llc/spinclass/internal/merge"
 	"github.com/amarbel-llc/spinclass/internal/sweatfile"
-	tap "github.com/amarbel-llc/tap-dancer/go"
 	"github.com/amarbel-llc/spinclass/internal/worktree"
+	tap "github.com/amarbel-llc/tap-dancer/go"
 )
 
-func createWorktree(rp worktree.ResolvedPath, verbose bool) (bool, error) {
+func Create(
+	writer io.Writer,
+	worktreePath worktree.ResolvedPath,
+	verbose bool,
+	format string,
+	tapWriter *tap.Writer,
+) error {
+	existed, err := createWorktree(worktreePath, verbose)
+	if err != nil {
+		return err
+	}
+
+	if format == "tap" {
+		if tapWriter == nil {
+			tapWriter = tap.NewWriter(writer)
+			tapWriter.PlanAhead(1)
+		}
+		if existed {
+			tapWriter.Skip("create "+worktreePath.Branch, "already exists "+worktreePath.AbsPath)
+		} else {
+			tapWriter.Ok("create " + worktreePath.Branch + " " + worktreePath.AbsPath)
+		}
+		return nil
+	}
+
+	fmt.Fprintln(writer, worktreePath.AbsPath)
+	return nil
+}
+
+func createWorktree(worktreePath worktree.ResolvedPath, verbose bool) (bool, error) {
 	existed := true
 
-	if _, err := os.Stat(rp.AbsPath); os.IsNotExist(err) {
+	if _, err := os.Stat(worktreePath.AbsPath); os.IsNotExist(err) {
 		existed = false
-		result, err := worktree.Create(rp.RepoPath, rp.AbsPath)
+		result, err := worktree.Create(worktreePath.RepoPath, worktreePath.AbsPath)
 		if err != nil {
 			return false, err
 		}
@@ -34,29 +63,6 @@ func createWorktree(rp worktree.ResolvedPath, verbose bool) (bool, error) {
 	}
 
 	return existed, nil
-}
-
-func Create(w io.Writer, rp worktree.ResolvedPath, verbose bool, format string, tw *tap.Writer) error {
-	existed, err := createWorktree(rp, verbose)
-	if err != nil {
-		return err
-	}
-
-	if format == "tap" {
-		if tw == nil {
-			tw = tap.NewWriter(w)
-			tw.PlanAhead(1)
-		}
-		if existed {
-			tw.Skip("create "+rp.Branch, "already exists "+rp.AbsPath)
-		} else {
-			tw.Ok("create " + rp.Branch + " " + rp.AbsPath)
-		}
-		return nil
-	}
-
-	fmt.Fprintln(w, rp.AbsPath)
-	return nil
 }
 
 func logSweatfileResult(result sweatfile.Hierarchy) {
@@ -295,24 +301,34 @@ func statusDescription(defaultBranch string, commitsAhead int, porcelain string)
 // Fork creates a new worktree branched from rp's current HEAD.
 // If newBranch is empty, a name is auto-generated as <rp.Branch>-N.
 // Does not attach to the new session.
-func Fork(w io.Writer, rp worktree.ResolvedPath, newBranch string, format string) error {
+func Fork(
+	writer io.Writer,
+	worktreePath worktree.ResolvedPath,
+	newBranch string,
+	format string,
+) error {
 	if newBranch == "" {
-		newBranch = worktree.ForkName(rp.RepoPath, rp.Branch)
+		newBranch = worktree.ForkName(worktreePath.RepoPath, worktreePath.Branch)
 	}
 
-	newPath := filepath.Join(rp.RepoPath, worktree.WorktreesDir, newBranch)
+	newPath := filepath.Join(worktreePath.RepoPath, worktree.WorktreesDir, newBranch)
 
-	if _, err := worktree.CreateFrom(rp.RepoPath, rp.AbsPath, newPath, newBranch); err != nil {
+	if _, err := worktree.CreateFrom(
+		worktreePath.RepoPath,
+		worktreePath.AbsPath,
+		newPath,
+		newBranch,
+	); err != nil {
 		return err
 	}
 
 	if format == "tap" {
-		tw := tap.NewWriter(w)
+		tw := tap.NewWriter(writer)
 		tw.PlanAhead(1)
 		tw.Ok("fork " + newBranch + " " + newPath)
 		return nil
 	}
 
-	fmt.Fprintln(w, newPath)
+	fmt.Fprintln(writer, newPath)
 	return nil
 }

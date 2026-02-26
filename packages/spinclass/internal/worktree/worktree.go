@@ -101,10 +101,21 @@ func isCeiling(dir string, ceilings []string) bool {
 
 // Create creates a new git worktree and applies sweatfile configuration.
 func Create(repoPath, worktreePath string) (sweatfile.Hierarchy, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return sweatfile.Hierarchy{}, fmt.Errorf("getting home directory: %w", err)
+	}
+
+	sweetfile, err := sweatfile.LoadHierarchy(home, repoPath)
+	if err != nil {
+		return sweetfile, fmt.Errorf("loading sweatfile: %w", err)
+	}
+
 	if err := git.RunPassthrough(repoPath, "worktree", "add", worktreePath); err != nil {
 		return sweatfile.Hierarchy{}, fmt.Errorf("git worktree add: %w", err)
 	}
-	return applyWorktreeConfig(repoPath, worktreePath)
+
+	return sweetfile, applyWorktreeConfig(home, sweetfile, repoPath, worktreePath)
 }
 
 // CreateFrom creates a new worktree branched from fromPath's current HEAD.
@@ -114,40 +125,47 @@ func CreateFrom(repoPath, fromPath, newPath, newBranch string) (sweatfile.Hierar
 	if err := git.WorktreeAddFrom(fromPath, newBranch, newPath); err != nil {
 		return sweatfile.Hierarchy{}, fmt.Errorf("git worktree add: %w", err)
 	}
-	return applyWorktreeConfig(repoPath, newPath)
-}
-
-// applyWorktreeConfig excludes .worktrees from git, loads and applies sweatfile,
-// and trusts worktreePath in Claude.
-func applyWorktreeConfig(repoPath, worktreePath string) (sweatfile.Hierarchy, error) {
-	if err := excludeWorktreesDir(repoPath); err != nil {
-		return sweatfile.Hierarchy{}, fmt.Errorf("excluding %s from git: %w", WorktreesDir, err)
-	}
-
-	tmpDir := filepath.Join(worktreePath, ".tmp")
-	if err := os.MkdirAll(tmpDir, 0o755); err != nil {
-		return sweatfile.Hierarchy{}, fmt.Errorf("creating .tmp directory: %w", err)
-	}
 
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return sweatfile.Hierarchy{}, fmt.Errorf("getting home directory: %w", err)
 	}
 
-	result, err := sweatfile.LoadHierarchy(home, repoPath)
+	sweetfile, err := sweatfile.LoadHierarchy(home, repoPath)
 	if err != nil {
-		return sweatfile.Hierarchy{}, fmt.Errorf("loading sweatfile: %w", err)
+		return sweetfile, fmt.Errorf("loading sweatfile: %w", err)
 	}
-	if err := sweatfile.Apply(worktreePath, result.Merged); err != nil {
-		return sweatfile.Hierarchy{}, fmt.Errorf("applying sweatfile: %w", err)
+
+	return sweetfile, applyWorktreeConfig(home, sweetfile, repoPath, newPath)
+}
+
+// applyWorktreeConfig excludes .worktrees from git, loads and applies sweatfile,
+// and trusts worktreePath in Claude.
+func applyWorktreeConfig(
+	home string,
+	sweetfile sweatfile.Hierarchy,
+	repoPath string,
+	worktreePath string,
+) error {
+	if err := excludeWorktreesDir(repoPath); err != nil {
+		return fmt.Errorf("excluding %s from git: %w", WorktreesDir, err)
+	}
+
+	tmpDir := filepath.Join(worktreePath, ".tmp")
+	if err := os.MkdirAll(tmpDir, 0o755); err != nil {
+		return fmt.Errorf("creating .tmp directory: %w", err)
+	}
+
+	if err := sweetfile.Merged.Apply(worktreePath); err != nil {
+		return fmt.Errorf("applying sweatfile: %w", err)
 	}
 
 	claudeJSONPath := filepath.Join(home, ".claude.json")
 	if err := claude.TrustWorkspace(claudeJSONPath, worktreePath); err != nil {
-		return sweatfile.Hierarchy{}, fmt.Errorf("trusting workspace in claude: %w", err)
+		return fmt.Errorf("trusting workspace in claude: %w", err)
 	}
 
-	return result, nil
+	return nil
 }
 
 // excludeWorktreesDir appends WorktreesDir to .git/info/exclude if not already present.
