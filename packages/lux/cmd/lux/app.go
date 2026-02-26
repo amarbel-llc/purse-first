@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -280,7 +281,7 @@ With --formatter, adds a formatter to formatters.toml:
 				return fmt.Errorf("loading config: %w", err)
 			}
 
-			result, err := callService(ctx, cfg.SocketPath(), service.MethodPoolStatus, nil)
+			result, err := callService(ctx, cfg.SocketPath(), service.MethodPoolStatus, nil, nil)
 			if err != nil {
 				return err
 			}
@@ -314,7 +315,7 @@ With --formatter, adds a formatter to formatters.toml:
 
 			_, err = callService(ctx, cfg.SocketPath(), service.MethodPoolStart, service.PoolStartParams{
 				Name: p.Name,
-			})
+			}, nil)
 
 			return err
 		},
@@ -344,7 +345,7 @@ With --formatter, adds a formatter to formatters.toml:
 
 			_, err = callService(ctx, cfg.SocketPath(), service.MethodPoolStop, service.PoolStopParams{
 				Name: p.Name,
-			})
+			}, nil)
 
 			return err
 		},
@@ -384,7 +385,7 @@ With --formatter, adds a formatter to formatters.toml:
 
 			_, err = callService(ctx, cfg.SocketPath(), service.MethodWarmup, service.WarmupParams{
 				Dir: absDir,
-			})
+			}, nil)
 
 			return err
 		},
@@ -553,13 +554,30 @@ func buildServiceApp() *command.App {
 			Short: "Show service and LSP pool status",
 			Long:  "Connect to the service daemon and show the status of all LSPs as JSON.",
 		},
+		Params: []command.Param{
+			{Name: "verbose", Short: 'v', Type: command.Bool, Description: "Print diagnostic output to stderr"},
+		},
 		RunCLI: func(ctx context.Context, args json.RawMessage) error {
+			var p struct {
+				Verbose bool `json:"verbose"`
+			}
+			if err := json.Unmarshal(args, &p); err != nil {
+				return fmt.Errorf("invalid arguments: %w", err)
+			}
+
+			var verbose io.Writer = io.Discard
+			if p.Verbose {
+				verbose = os.Stderr
+			}
+
 			cfg, err := config.Load()
 			if err != nil {
 				return fmt.Errorf("loading config: %w", err)
 			}
 
-			result, err := callService(ctx, cfg.SocketPath(), service.MethodPoolStatus, nil)
+			fmt.Fprintf(verbose, "socket: %s\n", cfg.SocketPath())
+
+			result, err := callService(ctx, cfg.SocketPath(), service.MethodPoolStatus, nil, verbose)
 			if err != nil {
 				return err
 			}
@@ -702,12 +720,20 @@ func buildMCPTransportApp() *command.App {
 	return mcpApp
 }
 
-func callService(ctx context.Context, socketPath string, method string, params any) (json.RawMessage, error) {
+func callService(ctx context.Context, socketPath string, method string, params any, verbose io.Writer) (json.RawMessage, error) {
+	if verbose == nil {
+		verbose = io.Discard
+	}
+
+	fmt.Fprintf(verbose, "dialing %s\n", socketPath)
+
 	conn, err := net.Dial("unix", socketPath)
 	if err != nil {
 		return nil, fmt.Errorf("connecting to service: %w", err)
 	}
 	defer conn.Close()
+
+	fmt.Fprintf(verbose, "connected, sending %s\n", method)
 
 	rpcConn := jsonrpc.NewConn(conn, conn, func(_ context.Context, _ *jsonrpc.Message) (*jsonrpc.Message, error) {
 		return nil, nil
@@ -719,6 +745,8 @@ func callService(ctx context.Context, socketPath string, method string, params a
 	if err != nil {
 		return nil, fmt.Errorf("service call %s: %w", method, err)
 	}
+
+	fmt.Fprintf(verbose, "received %d bytes\n", len(result))
 
 	return result, nil
 }
