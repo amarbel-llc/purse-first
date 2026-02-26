@@ -2,6 +2,7 @@ package hooks
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,7 +14,9 @@ import (
 )
 
 func NewHooksCmd() *cobra.Command {
-	return &cobra.Command{
+	var notifyViolations bool
+
+	cmd := &cobra.Command{
 		Use:    "hooks",
 		Short:  "Handle PreToolUse hook for worktree boundary enforcement",
 		Hidden: true,
@@ -37,9 +40,23 @@ func NewHooksCmd() *cobra.Command {
 				allowed = append(allowed, filepath.Join(home, ".claude"))
 			}
 
-			return Run(os.Stdin, os.Stdout, boundary, allowed)
+			var notify io.Writer
+			if notifyViolations {
+				notify = os.Stderr
+			}
+
+			return Run(os.Stdin, os.Stdout, boundary, allowed, notify)
 		},
 	}
+
+	cmd.Flags().BoolVar(
+		&notifyViolations,
+		"worktree-boundary-violations-notification",
+		false,
+		"Log boundary violations to stderr instead of denying",
+	)
+
+	return cmd
 }
 
 func detectBoundary(cwd string) (string, error) {

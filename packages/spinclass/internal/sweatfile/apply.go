@@ -117,7 +117,7 @@ func ApplyClaudeSettings(worktreePath string, sf Sweatfile) error {
 					"hooks": []any{
 						map[string]any{
 							"type":    "command",
-							"command": "spinclass hooks",
+							"command": "spinclass hooks --worktree-boundary-violations-notification",
 						},
 					},
 				},

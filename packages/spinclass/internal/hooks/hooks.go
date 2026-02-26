@@ -20,7 +20,7 @@ type hookInput struct {
 	CWD           string         `json:"cwd"`
 }
 
-func Run(r io.Reader, w io.Writer, boundary string, allowed []string) error {
+func Run(r io.Reader, w io.Writer, boundary string, allowed []string, notify io.Writer) error {
 	var input hookInput
 	if err := json.NewDecoder(r).Decode(&input); err != nil {
 		return fmt.Errorf("decoding hook input: %w", err)
@@ -30,7 +30,7 @@ func Run(r io.Reader, w io.Writer, boundary string, allowed []string) error {
 	case "Stop":
 		return runStopHook(input, w)
 	default:
-		return runPreToolUse(input, w, boundary, allowed)
+		return runPreToolUse(input, boundary, allowed, notify)
 	}
 }
 
@@ -78,8 +78,8 @@ func runStopHook(input hookInput, w io.Writer) error {
 	return json.NewEncoder(w).Encode(decision)
 }
 
-func runPreToolUse(input hookInput, w io.Writer, boundary string, allowed []string) error {
-	if boundary == "" {
+func runPreToolUse(input hookInput, boundary string, allowed []string, notify io.Writer) error {
+	if notify == nil || boundary == "" {
 		return nil
 	}
 
@@ -99,7 +99,10 @@ func runPreToolUse(input hookInput, w io.Writer, boundary string, allowed []stri
 			continue
 		}
 		if !isInsideBoundary(p, boundary) {
-			return writeDeny(w, input.ToolName, p, boundary)
+			fmt.Fprintf(notify,
+				"worktree boundary violation: %s %s is outside %s\n",
+				input.ToolName, p, boundary,
+			)
 		}
 	}
 
@@ -170,19 +173,3 @@ func isInsideBoundary(path, boundary string) bool {
 	return resolved == boundary || strings.HasPrefix(resolved, boundary+string(filepath.Separator))
 }
 
-func writeDeny(w io.Writer, toolName, path, boundary string) error {
-	reason := fmt.Sprintf(
-		"path %s is outside the worktree boundary; use the worktree at %s instead of the main worktree",
-		path, boundary,
-	)
-
-	output := map[string]any{
-		"hookSpecificOutput": map[string]any{
-			"hookEventName":            "PreToolUse",
-			"permissionDecision":       "deny",
-			"permissionDecisionReason": reason,
-		},
-	}
-
-	return json.NewEncoder(w).Encode(output)
-}

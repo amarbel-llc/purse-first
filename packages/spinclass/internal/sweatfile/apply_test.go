@@ -215,7 +215,7 @@ func TestApplyClaudeSettingsWritesHooksForWorktree(t *testing.T) {
 	if hook["type"] != "command" {
 		t.Errorf("hook type: got %q", hook["type"])
 	}
-	if hook["command"] != "spinclass hooks" {
+	if hook["command"] != "spinclass hooks --worktree-boundary-violations-notification" {
 		t.Errorf("hook command: got %q", hook["command"])
 	}
 }
