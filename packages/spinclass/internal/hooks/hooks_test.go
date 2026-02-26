@@ -25,7 +25,7 @@ func TestReadInsideBoundaryAllowed(t *testing.T) {
 	input := makeInput("Read", map[string]any{"file_path": target}, dir)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, dir)
+	err := Run(bytes.NewReader(input), &out, dir, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -43,7 +43,7 @@ func TestReadOutsideBoundaryDenied(t *testing.T) {
 	input := makeInput("Read", map[string]any{"file_path": target}, boundary)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, boundary)
+	err := Run(bytes.NewReader(input), &out, boundary, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestWriteOutsideBoundaryDenied(t *testing.T) {
 	input := makeInput("Write", map[string]any{"file_path": target}, boundary)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, boundary)
+	err := Run(bytes.NewReader(input), &out, boundary, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -87,7 +87,7 @@ func TestEditOutsideBoundaryDenied(t *testing.T) {
 	input := makeInput("Edit", map[string]any{"file_path": target}, boundary)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, boundary)
+	err := Run(bytes.NewReader(input), &out, boundary, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestGlobOutsideBoundaryDenied(t *testing.T) {
 	}, boundary)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, boundary)
+	err := Run(bytes.NewReader(input), &out, boundary, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -125,7 +125,7 @@ func TestGlobNoPathAllowed(t *testing.T) {
 	}, boundary)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, boundary)
+	err := Run(bytes.NewReader(input), &out, boundary, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -145,7 +145,7 @@ func TestGrepOutsideBoundaryDenied(t *testing.T) {
 	}, boundary)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, boundary)
+	err := Run(bytes.NewReader(input), &out, boundary, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -163,7 +163,7 @@ func TestBashAbsolutePathOutsideDenied(t *testing.T) {
 	input := makeInput("Bash", map[string]any{"command": cmd}, boundary)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, boundary)
+	err := Run(bytes.NewReader(input), &out, boundary, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -180,7 +180,7 @@ func TestBashAbsolutePathInsideAllowed(t *testing.T) {
 	input := makeInput("Bash", map[string]any{"command": cmd}, boundary)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, boundary)
+	err := Run(bytes.NewReader(input), &out, boundary, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -196,7 +196,7 @@ func TestBashRelativePathAllowed(t *testing.T) {
 	input := makeInput("Bash", map[string]any{"command": "cat ../../etc/passwd"}, boundary)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, boundary)
+	err := Run(bytes.NewReader(input), &out, boundary, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -212,7 +212,7 @@ func TestBashNoPathAllowed(t *testing.T) {
 	input := makeInput("Bash", map[string]any{"command": "go test ./..."}, boundary)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, boundary)
+	err := Run(bytes.NewReader(input), &out, boundary, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -231,7 +231,7 @@ func TestTaskAllowedBecauseSubagentsInheritHooks(t *testing.T) {
 	}, boundary)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, boundary)
+	err := Run(bytes.NewReader(input), &out, boundary, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -254,7 +254,7 @@ func TestSymlinkOutsideBoundaryDenied(t *testing.T) {
 	input := makeInput("Read", map[string]any{"file_path": link}, boundary)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, boundary)
+	err := Run(bytes.NewReader(input), &out, boundary, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -264,13 +264,67 @@ func TestSymlinkOutsideBoundaryDenied(t *testing.T) {
 	}
 }
 
+func TestAllowedPathBypassesBoundary(t *testing.T) {
+	boundary := t.TempDir()
+	allowedDir := t.TempDir()
+	target := filepath.Join(allowedDir, "settings.json")
+
+	input := makeInput("Read", map[string]any{"file_path": target}, boundary)
+
+	var out bytes.Buffer
+	err := Run(bytes.NewReader(input), &out, boundary, []string{allowedDir})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if out.Len() != 0 {
+		t.Errorf("expected no output for allowed path outside boundary, got %q", out.String())
+	}
+}
+
+func TestAllowedPathExactMatch(t *testing.T) {
+	boundary := t.TempDir()
+	allowedDir := t.TempDir()
+
+	input := makeInput("Read", map[string]any{"file_path": allowedDir}, boundary)
+
+	var out bytes.Buffer
+	err := Run(bytes.NewReader(input), &out, boundary, []string{allowedDir})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if out.Len() != 0 {
+		t.Errorf("expected no output for exact allowed path, got %q", out.String())
+	}
+}
+
+func TestNonAllowedPathStillDenied(t *testing.T) {
+	boundary := t.TempDir()
+	allowedDir := t.TempDir()
+	outside := t.TempDir()
+	target := filepath.Join(outside, "secret.go")
+
+	input := makeInput("Read", map[string]any{"file_path": target}, boundary)
+
+	var out bytes.Buffer
+	err := Run(bytes.NewReader(input), &out, boundary, []string{allowedDir})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if out.Len() == 0 {
+		t.Fatal("expected deny for path outside both boundary and allowed list")
+	}
+}
+
 func TestUnmatchedToolPassesThrough(t *testing.T) {
 	boundary := t.TempDir()
 
 	input := makeInput("WebSearch", map[string]any{"query": "test"}, boundary)
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, boundary)
+	err := Run(bytes.NewReader(input), &out, boundary, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

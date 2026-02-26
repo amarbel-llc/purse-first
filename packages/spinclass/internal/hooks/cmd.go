@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -31,7 +32,12 @@ func NewHooksCmd() *cobra.Command {
 				return nil
 			}
 
-			return Run(os.Stdin, os.Stdout, boundary)
+			var allowed []string
+			if home, err := os.UserHomeDir(); err == nil && home != "" {
+				allowed = append(allowed, filepath.Join(home, ".claude"))
+			}
+
+			return Run(os.Stdin, os.Stdout, boundary, allowed)
 		},
 	}
 }

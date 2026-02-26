@@ -13,12 +13,12 @@ func TestApplyGitExcludes(t *testing.T) {
 	os.MkdirAll(gitDir, 0o755)
 	excludePath := filepath.Join(gitDir, "exclude")
 
-	err := applyGitExcludes(excludePath, []string{".claude/", ".direnv/"})
+	err := applyGitExcludes(excludePath, []string{".claude/", ".direnv/", ".tmp"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	data, _ := os.ReadFile(excludePath)
-	if string(data) != ".claude/\n.direnv/\n" {
+	if string(data) != ".claude/\n.direnv/\n.tmp\n" {
 		t.Errorf("exclude content: got %q", string(data))
 	}
 }
@@ -52,9 +52,15 @@ func TestApplyClaudeSettings(t *testing.T) {
 		t.Errorf("defaultMode: got %q, want %q", defaultMode, "acceptEdits")
 	}
 
+	home, _ := os.UserHomeDir()
+
 	allowRaw, _ := permsMap["allow"].([]any)
-	if len(allowRaw) != 6 {
-		t.Fatalf("expected 6 rules (3 sweatfile + 3 scoped), got %d: %v", len(allowRaw), allowRaw)
+	expectedCount := 7 // 3 sweatfile + 3 scoped + 1 claude dir
+	if home == "" {
+		expectedCount = 6
+	}
+	if len(allowRaw) != expectedCount {
+		t.Fatalf("expected %d rules, got %d: %v", expectedCount, len(allowRaw), allowRaw)
 	}
 
 	// First 3 are from sweatfile
@@ -65,7 +71,7 @@ func TestApplyClaudeSettings(t *testing.T) {
 		}
 	}
 
-	// Last 3 are auto-injected scoped rules
+	// Next 3 are auto-injected scoped rules
 	readRule, _ := allowRaw[3].(string)
 	editRule, _ := allowRaw[4].(string)
 	writeRule, _ := allowRaw[5].(string)
@@ -81,6 +87,15 @@ func TestApplyClaudeSettings(t *testing.T) {
 	}
 	if writeRule != wantWrite {
 		t.Errorf("write rule: got %q, want %q", writeRule, wantWrite)
+	}
+
+	// Last rule is the claude dir read permission
+	if home != "" {
+		claudeRule, _ := allowRaw[6].(string)
+		wantClaude := "Read(" + filepath.Join(home, ".claude") + "/*)"
+		if claudeRule != wantClaude {
+			t.Errorf("claude rule: got %q, want %q", claudeRule, wantClaude)
+		}
 	}
 }
 
@@ -102,9 +117,13 @@ func TestApplyClaudeSettingsEmpty(t *testing.T) {
 	permsMap, _ := doc["permissions"].(map[string]any)
 	allowRaw, _ := permsMap["allow"].([]any)
 
-	// Even with no sweatfile rules, the 3 scoped rules are injected
-	if len(allowRaw) != 3 {
-		t.Fatalf("expected 3 scoped rules, got %d: %v", len(allowRaw), allowRaw)
+	home, _ := os.UserHomeDir()
+	expectedCount := 4 // 3 scoped + 1 claude dir
+	if home == "" {
+		expectedCount = 3
+	}
+	if len(allowRaw) != expectedCount {
+		t.Fatalf("expected %d scoped rules, got %d: %v", expectedCount, len(allowRaw), allowRaw)
 	}
 }
 

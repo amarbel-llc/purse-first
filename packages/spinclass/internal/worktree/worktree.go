@@ -99,6 +99,11 @@ func applyWorktreeConfig(repoPath, worktreePath string) (sweatfile.LoadResult, e
 		return sweatfile.LoadResult{}, fmt.Errorf("excluding %s from git: %w", WorktreesDir, err)
 	}
 
+	tmpDir := filepath.Join(worktreePath, ".tmp")
+	if err := os.MkdirAll(tmpDir, 0o755); err != nil {
+		return sweatfile.LoadResult{}, fmt.Errorf("creating .tmp directory: %w", err)
+	}
+
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return sweatfile.LoadResult{}, fmt.Errorf("getting home directory: %w", err)

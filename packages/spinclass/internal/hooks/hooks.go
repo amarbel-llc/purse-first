@@ -14,7 +14,7 @@ type hookInput struct {
 	CWD       string         `json:"cwd"`
 }
 
-func Run(r io.Reader, w io.Writer, boundary string) error {
+func Run(r io.Reader, w io.Writer, boundary string, allowed []string) error {
 	var input hookInput
 	if err := json.NewDecoder(r).Decode(&input); err != nil {
 		return fmt.Errorf("decoding hook input: %w", err)
@@ -26,12 +26,19 @@ func Run(r io.Reader, w io.Writer, boundary string) error {
 
 	boundary = filepath.Clean(boundary)
 
+	for i, a := range allowed {
+		allowed[i] = filepath.Clean(a)
+	}
+
 	paths := extractPaths(input)
 	if paths == nil {
 		return nil
 	}
 
 	for _, p := range paths {
+		if isInsideAllowed(p, allowed) {
+			continue
+		}
 		if !isInsideBoundary(p, boundary) {
 			return writeDeny(w, input.ToolName, p, boundary)
 		}
@@ -71,6 +78,20 @@ func extractAbsolutePathsFromCommand(input hookInput) []string {
 		}
 	}
 	return paths
+}
+
+func isInsideAllowed(path string, allowed []string) bool {
+	resolved, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		resolved = filepath.Clean(path)
+	}
+
+	for _, a := range allowed {
+		if resolved == a || strings.HasPrefix(resolved, a+string(filepath.Separator)) {
+			return true
+		}
+	}
+	return false
 }
 
 func isInsideBoundary(path, boundary string) bool {
