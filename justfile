@@ -49,7 +49,9 @@ update: update-nix
 update-nix:
     nix flake update
 
-tap-dancer-go-test := "go run ./packages/tap-dancer/go/cmd/tap-dancer go-test -skip-empty"
+cmd-tap-dancer := join(justfile_directory(), "./packages/tap-dancer/go/cmd/tap-dancer")
+tap-dancer-go-test := "go run " + cmd-tap-dancer + " go-test -skip-empty"
+tap-dancer-cargo-test := "go run " + cmd-tap-dancer + " cargo-test -skip-empty"
 
 # Test individual Go packages
 test-grit:
@@ -70,11 +72,11 @@ test-tap-dancer-go:
 # Test Rust packages
 [working-directory: 'packages/chix']
 test-chix:
-  {{cmd_nix_dev}} cargo test
+  {{cmd_nix_dev}} {{tap-dancer-cargo-test}} test
 
 [working-directory: 'packages/tap-dancer/rust']
 test-tap-dancer-rust:
-    {{cmd_nix_dev}} cargo test
+    {{cmd_nix_dev}} {{tap-dancer-cargo-test}} test
 
 # Run tests
 test-go:
