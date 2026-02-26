@@ -2,6 +2,13 @@ package catalog
 
 import "encoding/json"
 
+type ServerSource int
+
+const (
+	SourcePlugin  ServerSource = iota // discovered via plugin.json
+	SourceGraphQL                     // discovered via GraphQL server
+)
+
 type CatalogTool struct {
 	Name        string          `json:"name"`
 	Title       string          `json:"title,omitempty"`
@@ -18,6 +25,7 @@ type ServerEntry struct {
 	Name    string
 	Command string
 	Args    []string
+	Source  ServerSource
 }
 
 type Catalog struct {
