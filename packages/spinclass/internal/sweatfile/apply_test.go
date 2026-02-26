@@ -7,6 +7,42 @@ import (
 	"testing"
 )
 
+func TestHardcodedDefaultsGitExcludes(t *testing.T) {
+	defaults := HardcodedDefaults()
+
+	if len(defaults.GitExcludes) != 2 {
+		t.Fatalf("expected 2 git excludes, got %d: %v", len(defaults.GitExcludes), defaults.GitExcludes)
+	}
+
+	want := []string{".claude/settings.local.json", ".tmp"}
+	for i, w := range want {
+		if defaults.GitExcludes[i] != w {
+			t.Errorf("GitExcludes[%d]: got %q, want %q", i, defaults.GitExcludes[i], w)
+		}
+	}
+}
+
+func TestHardcodedDefaultsClaudeAllow(t *testing.T) {
+	defaults := HardcodedDefaults()
+
+	home, _ := os.UserHomeDir()
+	if home == "" {
+		if defaults.ClaudeAllow != nil {
+			t.Errorf("expected nil ClaudeAllow when HOME is empty, got %v", defaults.ClaudeAllow)
+		}
+		return
+	}
+
+	if len(defaults.ClaudeAllow) != 1 {
+		t.Fatalf("expected 1 claude allow rule, got %d: %v", len(defaults.ClaudeAllow), defaults.ClaudeAllow)
+	}
+
+	wantRule := "Read(" + filepath.Join(home, ".claude") + "/*)"
+	if defaults.ClaudeAllow[0] != wantRule {
+		t.Errorf("ClaudeAllow[0]: got %q, want %q", defaults.ClaudeAllow[0], wantRule)
+	}
+}
+
 func TestApplyGitExcludes(t *testing.T) {
 	dir := t.TempDir()
 	gitDir := filepath.Join(dir, ".git", "info")
@@ -52,18 +88,12 @@ func TestApplyClaudeSettings(t *testing.T) {
 		t.Errorf("defaultMode: got %q, want %q", defaultMode, "acceptEdits")
 	}
 
-	home, _ := os.UserHomeDir()
-
 	allowRaw, _ := permsMap["allow"].([]any)
-	expectedCount := 7 // 3 sweatfile + 3 scoped + 1 claude dir
-	if home == "" {
-		expectedCount = 6
-	}
-	if len(allowRaw) != expectedCount {
-		t.Fatalf("expected %d rules, got %d: %v", expectedCount, len(allowRaw), allowRaw)
+	if len(allowRaw) != 6 {
+		t.Fatalf("expected 6 rules (3 passed + 3 scoped), got %d: %v", len(allowRaw), allowRaw)
 	}
 
-	// First 3 are from sweatfile
+	// First 3 are from the passed rules
 	for i, want := range rules {
 		got, _ := allowRaw[i].(string)
 		if got != want {
@@ -71,7 +101,7 @@ func TestApplyClaudeSettings(t *testing.T) {
 		}
 	}
 
-	// Next 3 are auto-injected scoped rules
+	// Last 3 are auto-injected scoped rules
 	readRule, _ := allowRaw[3].(string)
 	editRule, _ := allowRaw[4].(string)
 	writeRule, _ := allowRaw[5].(string)
@@ -87,15 +117,6 @@ func TestApplyClaudeSettings(t *testing.T) {
 	}
 	if writeRule != wantWrite {
 		t.Errorf("write rule: got %q, want %q", writeRule, wantWrite)
-	}
-
-	// Last rule is the claude dir read permission
-	if home != "" {
-		claudeRule, _ := allowRaw[6].(string)
-		wantClaude := "Read(" + filepath.Join(home, ".claude") + "/*)"
-		if claudeRule != wantClaude {
-			t.Errorf("claude rule: got %q, want %q", claudeRule, wantClaude)
-		}
 	}
 }
 
@@ -117,13 +138,9 @@ func TestApplyClaudeSettingsEmpty(t *testing.T) {
 	permsMap, _ := doc["permissions"].(map[string]any)
 	allowRaw, _ := permsMap["allow"].([]any)
 
-	home, _ := os.UserHomeDir()
-	expectedCount := 4 // 3 scoped + 1 claude dir
-	if home == "" {
-		expectedCount = 3
-	}
-	if len(allowRaw) != expectedCount {
-		t.Fatalf("expected %d scoped rules, got %d: %v", expectedCount, len(allowRaw), allowRaw)
+	// Even with no passed rules, the 3 scoped rules are injected
+	if len(allowRaw) != 3 {
+		t.Fatalf("expected 3 scoped rules, got %d: %v", len(allowRaw), allowRaw)
 	}
 }
 

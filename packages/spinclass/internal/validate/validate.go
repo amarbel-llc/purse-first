@@ -284,10 +284,8 @@ func Run(w io.Writer, home, repoDir string) int {
 	tw.EndSubtest("merged result", sub)
 
 	applySub := tw.Subtest("apply (dry-run)")
-	allExcludes := make([]string, 0, len(result.Merged.GitExcludes)+len(sweatfile.HardcodedExcludes))
-	allExcludes = append(allExcludes, result.Merged.GitExcludes...)
-	allExcludes = append(allExcludes, sweatfile.HardcodedExcludes...)
-	if issues := CheckGitExcludes(sweatfile.Sweatfile{GitExcludes: allExcludes}); len(issues) > 0 {
+	merged := sweatfile.Merge(result.Merged, sweatfile.HardcodedDefaults())
+	if issues := CheckGitExcludes(sweatfile.Sweatfile{GitExcludes: merged.GitExcludes}); len(issues) > 0 {
 		for _, iss := range issues {
 			applySub.NotOk("git excludes structure valid", map[string]string{
 				"severity": iss.Severity,

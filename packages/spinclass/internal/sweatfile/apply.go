@@ -9,25 +9,39 @@ import (
 	"github.com/amarbel-llc/spinclass/internal/git"
 )
 
-// HardcodedExcludes are always written to .git/info/exclude regardless of sweatfile config.
-var HardcodedExcludes = []string{
-	".claude/settings.local.json",
-	".tmp",
+// HardcodedDefaults returns a Sweatfile with baseline excludes and allow rules
+// that are always applied regardless of user sweatfile config.
+func HardcodedDefaults() Sweatfile {
+	sf := Sweatfile{
+		GitExcludes: []string{
+			".claude/settings.local.json",
+			".tmp",
+		},
+	}
+
+	if home, err := os.UserHomeDir(); err == nil && home != "" {
+		claudeDir := filepath.Join(home, ".claude")
+		sf.ClaudeAllow = []string{"Read(" + claudeDir + "/*)"}
+	}
+
+	return sf
 }
 
 func Apply(worktreePath string, sf Sweatfile) error {
-	allExcludes := append(sf.GitExcludes, HardcodedExcludes...)
-	if len(allExcludes) > 0 {
+	defaults := HardcodedDefaults()
+	merged := Merge(sf, defaults)
+
+	if len(merged.GitExcludes) > 0 {
 		excludePath, err := resolveExcludePath(worktreePath)
 		if err != nil {
 			return fmt.Errorf("resolving git exclude path: %w", err)
 		}
-		if err := applyGitExcludes(excludePath, allExcludes); err != nil {
+		if err := applyGitExcludes(excludePath, merged.GitExcludes); err != nil {
 			return fmt.Errorf("applying git excludes: %w", err)
 		}
 	}
 
-	if err := ApplyClaudeSettings(worktreePath, sf.ClaudeAllow); err != nil {
+	if err := ApplyClaudeSettings(worktreePath, merged.ClaudeAllow); err != nil {
 		return fmt.Errorf("applying claude settings: %w", err)
 	}
 
@@ -89,11 +103,6 @@ func ApplyClaudeSettings(worktreePath string, rules []string) error {
 		"Edit("+worktreePath+"/*)",
 		"Write("+worktreePath+"/*)",
 	)
-
-	if home, err := os.UserHomeDir(); err == nil && home != "" {
-		claudeDir := filepath.Join(home, ".claude")
-		allRules = append(allRules, "Read("+claudeDir+"/*)")
-	}
 
 	permsMap["defaultMode"] = "acceptEdits"
 	permsMap["allow"] = allRules
