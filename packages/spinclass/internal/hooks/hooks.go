@@ -9,9 +9,11 @@ import (
 )
 
 type hookInput struct {
-	ToolName  string         `json:"tool_name"`
-	ToolInput map[string]any `json:"tool_input"`
-	CWD       string         `json:"cwd"`
+	HookEventName string         `json:"hook_event_name"`
+	SessionID     string         `json:"session_id"`
+	ToolName      string         `json:"tool_name"`
+	ToolInput     map[string]any `json:"tool_input"`
+	CWD           string         `json:"cwd"`
 }
 
 func Run(r io.Reader, w io.Writer, boundary string, allowed []string) error {
@@ -20,6 +22,19 @@ func Run(r io.Reader, w io.Writer, boundary string, allowed []string) error {
 		return fmt.Errorf("decoding hook input: %w", err)
 	}
 
+	switch input.HookEventName {
+	case "Stop":
+		return runStopHook(input, w)
+	default:
+		return runPreToolUse(input, w, boundary)
+	}
+}
+
+func runStopHook(input hookInput, w io.Writer) error {
+	return nil // stub: no stop_hook configured -> approve
+}
+
+func runPreToolUse(input hookInput, w io.Writer, boundary string) error {
 	if boundary == "" {
 		return nil
 	}

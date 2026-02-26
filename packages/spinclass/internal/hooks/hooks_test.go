@@ -333,3 +333,22 @@ func TestUnmatchedToolPassesThrough(t *testing.T) {
 		t.Errorf("expected passthrough for unmatched tool, got %q", out.String())
 	}
 }
+
+func TestStopHookEventRouteApproves(t *testing.T) {
+	input, _ := json.Marshal(map[string]any{
+		"hook_event_name": "Stop",
+		"session_id":      "test-session-123",
+		"cwd":             t.TempDir(),
+	})
+
+	var out bytes.Buffer
+	err := Run(bytes.NewReader(input), &out, "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// No stop_hook configured -> approve (no output)
+	if out.Len() != 0 {
+		t.Errorf("expected no output for Stop with no stop_hook, got %q", out.String())
+	}
+}
