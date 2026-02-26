@@ -512,7 +512,22 @@ func buildServiceApp() *command.App {
 			Long:  "Install the lux service so it starts automatically on login.",
 		},
 		RunCLI: func(ctx context.Context, args json.RawMessage) error {
-			return fmt.Errorf("not implemented")
+			binaryPath, err := os.Executable()
+			if err != nil {
+				return fmt.Errorf("resolving binary path: %w", err)
+			}
+
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("loading config: %w", err)
+			}
+
+			if err := service.InstallService(binaryPath, cfg.SocketPath()); err != nil {
+				return fmt.Errorf("installing service: %w", err)
+			}
+
+			fmt.Println("Service installed successfully.")
+			return nil
 		},
 	})
 
@@ -523,7 +538,12 @@ func buildServiceApp() *command.App {
 			Long:  "Remove the lux service from automatic startup.",
 		},
 		RunCLI: func(ctx context.Context, args json.RawMessage) error {
-			return fmt.Errorf("not implemented")
+			if err := service.UninstallService(); err != nil {
+				return fmt.Errorf("uninstalling service: %w", err)
+			}
+
+			fmt.Println("Service uninstalled successfully.")
+			return nil
 		},
 	})
 
