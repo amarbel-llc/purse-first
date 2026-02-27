@@ -297,7 +297,6 @@ func TestPrepareDirenvWritesEnvrcWithoutUseFlakeWhenNoFlakeNix(t *testing.T) {
 
 	content := string(data)
 
-	// The implementation resolves .git/spinclass/bin/ from cwd, not worktreePath
 	binAbs, _ := filepath.Abs(".git/spinclass/bin")
 	wantPathAdd := fmt.Sprintf("PATH_add \"%s\"\n", binAbs)
 

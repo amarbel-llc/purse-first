@@ -56,6 +56,45 @@ exec spinclass exec-claude "$@"`,
 	return nil
 }
 
+func writeEnvrc(worktreePath string) error {
+	file, err := os.OpenFile(
+		filepath.Join(worktreePath, ".envrc"),
+		os.O_TRUNC|os.O_CREATE|os.O_WRONLY,
+		0o644,
+	)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	bufferedWriter := bufio.NewWriter(file)
+
+	if _, err := fmt.Fprintln(bufferedWriter, "source_up"); err != nil {
+		return err
+	}
+
+	if _, ok := fileExists(filepath.Join(worktreePath, "flake.nix")); ok {
+		if _, err := fmt.Fprintln(bufferedWriter, "use flake"); err != nil {
+			return err
+		}
+	}
+
+	dirSpinclassBinAbs, err := filepath.Abs(".git/spinclass/bin")
+	if err != nil {
+		return err
+	}
+
+	if _, err := fmt.Fprintf(
+		bufferedWriter,
+		"PATH_add \"%s\"\n",
+		dirSpinclassBinAbs,
+	); err != nil {
+		return err
+	}
+
+	return bufferedWriter.Flush()
+}
+
 func prepareDirenv(worktreePath string) error {
 	direnvPath, err := exec.LookPath("direnv")
 	if err != nil {
@@ -63,62 +102,17 @@ func prepareDirenv(worktreePath string) error {
 		return nil
 	}
 
-	// write .envrc
-	{
-		file, err := os.OpenFile(
-			filepath.Join(worktreePath, ".envrc"),
-			os.O_TRUNC|os.O_CREATE|os.O_WRONLY,
-			0o644,
-		)
-		if err != nil {
-			return err
-		}
-
-		// TODO capture error
-		defer file.Close()
-
-		bufferedWriter := bufio.NewWriter(file)
-
-		// TODO capture error
-		defer bufferedWriter.Flush()
-
-		if _, err := fmt.Fprintln(bufferedWriter, "source_up"); err != nil {
-			return err
-		}
-
-		if _, ok := fileExists(filepath.Join(worktreePath, "flake.nix")); ok {
-			if _, err := fmt.Fprintln(bufferedWriter, "use flake"); err != nil {
-				return err
-			}
-		}
-
-		dirSpinclassBin := filepath.Join(".git/spinclass/bin/")
-
-		dirSpinclassBinAbs, err := filepath.Abs(dirSpinclassBin)
-		if err != nil {
-			return err
-		}
-
-		if _, err := fmt.Fprintf(
-			bufferedWriter,
-			"PATH_add \"%s\"\n",
-			dirSpinclassBinAbs,
-		); err != nil {
-			return err
-		}
+	if err := writeEnvrc(worktreePath); err != nil {
+		return err
 	}
 
-	// direnv allow
-	{
-		cmd := exec.Command(direnvPath, "allow")
+	cmd := exec.Command(direnvPath, "allow")
+	cmd.Dir = worktreePath
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 
-		cmd.Dir = worktreePath
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-
-		return cmd.Run()
-	}
+	return cmd.Run()
 }
 
 func ApplyClaudeSettings(worktreePath string, sweatfile Sweatfile) error {
