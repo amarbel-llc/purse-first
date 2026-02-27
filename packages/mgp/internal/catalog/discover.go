@@ -91,23 +91,27 @@ func DiscoverGraphQL(ctx context.Context, cat *Catalog, command string, args ...
 		return fmt.Errorf("spawning graphql server: %w", err)
 	}
 
+	ok := false
+	defer func() {
+		if !ok {
+			client.Close()
+		}
+	}()
+
 	// Send introspection query to verify the server is alive and has a schema
 	_, err = client.Query(ctx, introspectionQuery, nil)
 	if err != nil {
-		client.Close()
 		return fmt.Errorf("introspecting graphql server: %w", err)
 	}
 
 	// Query for tools
 	result, err := client.Query(ctx, toolsQuery, nil)
 	if err != nil {
-		client.Close()
 		return fmt.Errorf("querying tools: %w", err)
 	}
 
 	tools, err := parseToolsResponse(result)
 	if err != nil {
-		client.Close()
 		return fmt.Errorf("parsing tools response: %w", err)
 	}
 
@@ -128,6 +132,7 @@ func DiscoverGraphQL(ctx context.Context, cat *Catalog, command string, args ...
 	}
 
 	cat.GraphQLClient = client
+	ok = true
 
 	return nil
 }

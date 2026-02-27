@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -55,4 +56,46 @@ done
 		t.Fatal("expected GraphQLClient to be set")
 	}
 	cat.GraphQLClient.Close()
+}
+
+func TestDiscoverGraphQL_GraphQLError(t *testing.T) {
+	ctx := context.Background()
+
+	// Server that returns a GraphQL error on the tools query
+	script := `
+while IFS= read -r line; do
+  if echo "$line" | grep -q '__schema'; then
+    echo '{"data":{"__schema":{"queryType":{"name":"Query"}}}}'
+  else
+    echo '{"errors":[{"message":"field tools not found"}]}'
+  fi
+done
+`
+	cat := NewCatalog()
+	err := DiscoverGraphQL(ctx, cat, "bash", "-c", script)
+	if err == nil {
+		t.Fatal("expected error for GraphQL error response")
+	}
+	if !strings.Contains(err.Error(), "field tools not found") {
+		t.Errorf("expected error to contain GraphQL message, got: %v", err)
+	}
+
+	// Client should be cleaned up on error
+	if cat.GraphQLClient != nil {
+		t.Error("expected GraphQLClient to be nil on error")
+	}
+}
+
+func TestDiscoverGraphQL_IntrospectionFailure(t *testing.T) {
+	ctx := context.Background()
+
+	// Server that exits immediately
+	cat := NewCatalog()
+	err := DiscoverGraphQL(ctx, cat, "bash", "-c", "exit 0")
+	if err == nil {
+		t.Fatal("expected error when server exits during introspection")
+	}
+	if !strings.Contains(err.Error(), "introspecting") {
+		t.Errorf("expected introspection error, got: %v", err)
+	}
 }
