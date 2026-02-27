@@ -430,6 +430,132 @@ func TestLoadHierarchyStopHookInherited(t *testing.T) {
 	}
 }
 
+func TestParseSystemPrompt(t *testing.T) {
+	input := `system-prompt = "do stuff"`
+	sf, err := Parse([]byte(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sf.SystemPrompt == nil || *sf.SystemPrompt != "do stuff" {
+		t.Errorf("system-prompt: got %v", sf.SystemPrompt)
+	}
+}
+
+func TestParseSystemPromptEmpty(t *testing.T) {
+	input := `system-prompt = ""`
+	sf, err := Parse([]byte(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sf.SystemPrompt == nil {
+		t.Fatal("expected non-nil system-prompt for explicit empty string")
+	}
+	if *sf.SystemPrompt != "" {
+		t.Errorf("expected empty system-prompt, got %q", *sf.SystemPrompt)
+	}
+}
+
+func TestParseSystemPromptAbsent(t *testing.T) {
+	sf, err := Parse([]byte(`git_excludes = [".claude/"]`))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sf.SystemPrompt != nil {
+		t.Errorf("expected nil system-prompt, got %v", sf.SystemPrompt)
+	}
+}
+
+func TestParseSystemPromptAppend(t *testing.T) {
+	input := `system-prompt-append = "extra instructions"`
+	sf, err := Parse([]byte(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sf.SystemPromptAppend == nil || *sf.SystemPromptAppend != "extra instructions" {
+		t.Errorf("system-prompt-append: got %v", sf.SystemPromptAppend)
+	}
+}
+
+func TestParseSystemPromptAppendAbsent(t *testing.T) {
+	sf, err := Parse([]byte(`git_excludes = [".claude/"]`))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sf.SystemPromptAppend != nil {
+		t.Errorf("expected nil system-prompt-append, got %v", sf.SystemPromptAppend)
+	}
+}
+
+func TestMergeSystemPromptInherit(t *testing.T) {
+	prompt := "base prompt"
+	base := Sweatfile{SystemPrompt: &prompt}
+	repo := Sweatfile{}
+	merged := Merge(base, repo)
+	if merged.SystemPrompt == nil || *merged.SystemPrompt != "base prompt" {
+		t.Errorf("expected inherited system-prompt, got %v", merged.SystemPrompt)
+	}
+}
+
+func TestMergeSystemPromptConcatenate(t *testing.T) {
+	basePrompt := "base prompt"
+	repoPrompt := "repo prompt"
+	base := Sweatfile{SystemPrompt: &basePrompt}
+	repo := Sweatfile{SystemPrompt: &repoPrompt}
+	merged := Merge(base, repo)
+	if merged.SystemPrompt == nil || *merged.SystemPrompt != "base prompt repo prompt" {
+		t.Errorf("expected concatenated system-prompt, got %v", merged.SystemPrompt)
+	}
+}
+
+func TestMergeSystemPromptClear(t *testing.T) {
+	basePrompt := "base prompt"
+	empty := ""
+	base := Sweatfile{SystemPrompt: &basePrompt}
+	repo := Sweatfile{SystemPrompt: &empty}
+	merged := Merge(base, repo)
+	if merged.SystemPrompt == nil {
+		t.Fatal("expected non-nil system-prompt after clear")
+	}
+	if *merged.SystemPrompt != "" {
+		t.Errorf("expected cleared system-prompt, got %q", *merged.SystemPrompt)
+	}
+}
+
+func TestMergeSystemPromptAppendInherit(t *testing.T) {
+	prompt := "base append"
+	base := Sweatfile{SystemPromptAppend: &prompt}
+	repo := Sweatfile{}
+	merged := Merge(base, repo)
+	if merged.SystemPromptAppend == nil || *merged.SystemPromptAppend != "base append" {
+		t.Errorf("expected inherited system-prompt-append, got %v", merged.SystemPromptAppend)
+	}
+}
+
+func TestMergeSystemPromptAppendConcatenate(t *testing.T) {
+	basePrompt := "base append"
+	repoPrompt := "repo append"
+	base := Sweatfile{SystemPromptAppend: &basePrompt}
+	repo := Sweatfile{SystemPromptAppend: &repoPrompt}
+	merged := Merge(base, repo)
+	if merged.SystemPromptAppend == nil || *merged.SystemPromptAppend != "base append repo append" {
+		t.Errorf("expected concatenated system-prompt-append, got %v", merged.SystemPromptAppend)
+	}
+}
+
+func TestMergeSystemPromptAppendClear(t *testing.T) {
+	basePrompt := "base append"
+	empty := ""
+	base := Sweatfile{SystemPromptAppend: &basePrompt}
+	repo := Sweatfile{SystemPromptAppend: &empty}
+	merged := Merge(base, repo)
+	if merged.SystemPromptAppend == nil {
+		t.Fatal("expected non-nil system-prompt-append after clear")
+	}
+	if *merged.SystemPromptAppend != "" {
+		t.Errorf("expected cleared system-prompt-append, got %q", *merged.SystemPromptAppend)
+	}
+}
+
 func TestLoadHierarchyStopHookOverriddenByRepo(t *testing.T) {
 	home := t.TempDir()
 	repoDir := filepath.Join(home, "eng", "repos", "myrepo")

@@ -6,12 +6,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	"github.com/google/shlex"
 )
 
 type Sweatfile struct {
-	SystemPromptAppend string   `toml:"system-prompt-append"` // TODO replace with PathOrString struct
+	SystemPrompt       *string  `toml:"system-prompt"`        // TODO replace with PathOrString struct
+	SystemPromptAppend *string  `toml:"system-prompt-append"` // TODO replace with PathOrString struct
 	BranchNameCommand  string   `toml:"branch-name-command"`  // TODO add tests
 	GitSkipIndex       []string `toml:"git_excludes"`         // TODO rename toml to git-skip-index
 
@@ -62,15 +65,38 @@ func (sweatfile Sweatfile) CreateBranchName(
 func (sweatfile Sweatfile) ExecClaude(
 	args ...string,
 ) error {
-	if sweatfile.SystemPromptAppend != "" {
+	if sweatfile.SystemPromptAppend != nil {
 		args = append(
 			[]string{
-				"--system-prompt-append",
-				sweatfile.SystemPromptAppend,
+				"--append-system-prompt",
+				*sweatfile.SystemPromptAppend,
 			},
 			args...,
 		)
 	}
+
+	if sweatfile.SystemPrompt != nil {
+		args = append(
+			[]string{
+				"--system-prompt",
+				*sweatfile.SystemPrompt,
+			},
+			args...,
+		)
+	}
+
+	pathGitDirCommon, err := getGitDirCommon()
+	if err != nil {
+		return err
+	}
+
+	pathSweatfileBin := filepath.Join(pathGitDirCommon, "spinclass/bin/")
+
+	envVarPath := filepath.SplitList(os.Getenv("PATH"))
+	envVarPath = slices.DeleteFunc(envVarPath, func(value string) bool {
+		return filepath.Clean(value) == pathSweatfileBin
+	})
+	os.Setenv("PATH", strings.Join(envVarPath, string(filepath.ListSeparator)))
 
 	cmdClaude := exec.Command("claude", args...)
 	cmdClaude.Stdout = os.Stdout

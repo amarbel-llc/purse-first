@@ -87,3 +87,52 @@ func LoadHierarchy(home, repoDir string) (Hierarchy, error) {
 		Merged:  merged,
 	}, nil
 }
+
+// TODO rewrite as object-oriented
+func Merge(base, repo Sweatfile) Sweatfile {
+	merged := base
+
+	if repo.SystemPrompt != nil {
+		if *repo.SystemPrompt == "" {
+			merged.SystemPrompt = repo.SystemPrompt
+		} else if base.SystemPrompt != nil && *base.SystemPrompt != "" {
+			joined := *base.SystemPrompt + " " + *repo.SystemPrompt
+			merged.SystemPrompt = &joined
+		} else {
+			merged.SystemPrompt = repo.SystemPrompt
+		}
+	}
+
+	if repo.SystemPromptAppend != nil {
+		if *repo.SystemPromptAppend == "" {
+			merged.SystemPromptAppend = repo.SystemPromptAppend
+		} else if base.SystemPromptAppend != nil && *base.SystemPromptAppend != "" {
+			joined := *base.SystemPromptAppend + " " + *repo.SystemPromptAppend
+			merged.SystemPromptAppend = &joined
+		} else {
+			merged.SystemPromptAppend = repo.SystemPromptAppend
+		}
+	}
+
+	// Arrays: nil = inherit, empty = clear, non-empty = append
+	if repo.GitSkipIndex != nil {
+		if len(repo.GitSkipIndex) == 0 {
+			merged.GitSkipIndex = []string{}
+		} else {
+			merged.GitSkipIndex = append(base.GitSkipIndex, repo.GitSkipIndex...)
+		}
+	}
+	if repo.ClaudeAllow != nil {
+		if len(repo.ClaudeAllow) == 0 {
+			merged.ClaudeAllow = []string{}
+		} else {
+			merged.ClaudeAllow = append(base.ClaudeAllow, repo.ClaudeAllow...)
+		}
+	}
+
+	if repo.StopHook != nil {
+		merged.StopHook = repo.StopHook
+	}
+
+	return merged
+}

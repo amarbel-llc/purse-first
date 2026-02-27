@@ -23,3 +23,17 @@ func resolveExcludePath(worktreePath string) (string, error) {
 	}
 	return rel, nil
 }
+
+func getGitDirCommon() (string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	path, err := git.Run(cwd, "rev-parse", "--git-common-dir")
+	if err != nil {
+		return "", err
+	}
+
+	return path, nil
+}
