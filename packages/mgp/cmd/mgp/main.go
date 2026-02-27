@@ -19,6 +19,7 @@ import (
 func main() {
 	pluginsDir := flag.String("plugins-dir", "", "path to share/purse-first/ directory containing plugin.json files")
 	binDir := flag.String("bin-dir", "", "path to bin/ directory containing MCP server binaries")
+	graphqlServer := flag.String("graphql-server", "", "command to spawn as GraphQL server (newline-delimited JSON over stdio)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "mgp — model graph protocol MCP server\n\n")
@@ -60,6 +61,13 @@ func main() {
 	defer cancel()
 
 	cat := discoverCatalog(ctx, *pluginsDir, *binDir)
+
+	if *graphqlServer != "" {
+		if err := catalog.DiscoverGraphQL(ctx, cat, *graphqlServer); err != nil {
+			log.Fatalf("graphql server discovery failed: %v", err)
+		}
+	}
+
 	app := tools.RegisterAll(cat)
 
 	t := transport.NewStdio(os.Stdin, os.Stdout)
@@ -103,6 +111,10 @@ func main() {
 
 	if err := srv.Run(ctx); err != nil {
 		log.Fatalf("server error: %v", err)
+	}
+
+	if cat.GraphQLClient != nil {
+		cat.GraphQLClient.Close()
 	}
 }
 
