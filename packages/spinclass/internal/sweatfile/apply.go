@@ -98,6 +98,7 @@ func prepareDirenvIfNecessary(worktreePath string) error {
 	{
 		cmd := exec.Command(direnvPath, "allow")
 
+		cmd.Dir = worktreePath
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
