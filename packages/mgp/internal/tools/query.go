@@ -32,6 +32,15 @@ func registerQueryCommand(app *command.App, cat *catalog.Catalog, schema graphql
 				return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 			}
 
+			// Forward to remote GraphQL server if available
+			if cat.GraphQLClient != nil {
+				result, err := cat.GraphQLClient.Query(ctx, params.Query, nil)
+				if err != nil {
+					return command.TextErrorResult(fmt.Sprintf("graphql query error: %v", err)), nil
+				}
+				return command.TextResult(string(result)), nil
+			}
+
 			result, err := graphqlschema.Execute(schema, params.Query)
 			if err != nil {
 				return command.TextErrorResult(fmt.Sprintf("graphql execution error: %v", err)), nil
