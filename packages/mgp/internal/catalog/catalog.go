@@ -1,6 +1,10 @@
 package catalog
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/amarbel-llc/mgp/internal/graphqlclient"
+)
 
 type ServerSource int
 
@@ -29,8 +33,9 @@ type ServerEntry struct {
 }
 
 type Catalog struct {
-	Tools   []CatalogTool
-	Servers map[string]ServerEntry
+	Tools         []CatalogTool
+	Servers       map[string]ServerEntry
+	GraphQLClient *graphqlclient.Client
 }
 
 func NewCatalog() *Catalog {

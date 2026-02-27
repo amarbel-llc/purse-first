@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/amarbel-llc/mgp/internal/graphqlclient"
 	"github.com/amarbel-llc/mgp/internal/mcpclient"
 )
 
@@ -82,6 +83,78 @@ func resolveCommand(command, binDir string) string {
 	}
 
 	return command
+}
+
+func DiscoverGraphQL(ctx context.Context, cat *Catalog, command string, args ...string) error {
+	client, err := graphqlclient.Spawn(ctx, command, args...)
+	if err != nil {
+		return fmt.Errorf("spawning graphql server: %w", err)
+	}
+
+	// Send introspection query to verify the server is alive and has a schema
+	_, err = client.Query(ctx, introspectionQuery, nil)
+	if err != nil {
+		client.Close()
+		return fmt.Errorf("introspecting graphql server: %w", err)
+	}
+
+	// Query for tools
+	result, err := client.Query(ctx, toolsQuery, nil)
+	if err != nil {
+		client.Close()
+		return fmt.Errorf("querying tools: %w", err)
+	}
+
+	tools, err := parseToolsResponse(result)
+	if err != nil {
+		client.Close()
+		return fmt.Errorf("parsing tools response: %w", err)
+	}
+
+	seenPackages := make(map[string]bool)
+
+	for _, tool := range tools {
+		cat.AddTool(tool)
+
+		if !seenPackages[tool.Package] {
+			seenPackages[tool.Package] = true
+			cat.AddServer(ServerEntry{
+				Name:    tool.Package,
+				Command: command,
+				Args:    args,
+				Source:  SourceGraphQL,
+			})
+		}
+	}
+
+	cat.GraphQLClient = client
+
+	return nil
+}
+
+const introspectionQuery = `{ __schema { queryType { name } types { name kind fields { name type { name kind ofType { name kind } } } } } }`
+
+const toolsQuery = `{ tools { name title description package inputSchema readOnly destructive idempotent openWorld } }`
+
+func parseToolsResponse(data json.RawMessage) ([]CatalogTool, error) {
+	var resp struct {
+		Data struct {
+			Tools []CatalogTool `json:"tools"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return nil, fmt.Errorf("parsing response: %w", err)
+	}
+
+	if len(resp.Errors) > 0 {
+		return nil, fmt.Errorf("graphql error: %s", resp.Errors[0].Message)
+	}
+
+	return resp.Data.Tools, nil
 }
 
 func introspectServer(ctx context.Context, cat *Catalog, entry ServerEntry) error {
