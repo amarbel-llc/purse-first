@@ -69,8 +69,8 @@ func logSweatfileResult(result sweatfile.Hierarchy) {
 	for _, src := range result.Sources {
 		if src.Found {
 			log.Info("loaded sweatfile", "path", src.Path)
-			if len(src.File.GitExcludes) > 0 {
-				log.Info("  git_excludes", "values", src.File.GitExcludes)
+			if len(src.File.GitSkipIndex) > 0 {
+				log.Info("  git_excludes", "values", src.File.GitSkipIndex)
 			}
 			if len(src.File.ClaudeAllow) > 0 {
 				log.Info("  claude_allow", "values", src.File.ClaudeAllow)
@@ -81,7 +81,7 @@ func logSweatfileResult(result sweatfile.Hierarchy) {
 	}
 	merged := result.Merged
 	log.Info("merged sweatfile",
-		"git_excludes", merged.GitExcludes,
+		"git_excludes", merged.GitSkipIndex,
 		"claude_allow", merged.ClaudeAllow,
 	)
 }

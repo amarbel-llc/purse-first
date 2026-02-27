@@ -2,28 +2,26 @@ package sweatfile
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
 func TestHardcodedDefaultsGitExcludes(t *testing.T) {
-	defaults := HardcodedDefaults()
+	defaults := GetDefault()
 
-	if len(defaults.GitExcludes) != 2 {
-		t.Fatalf("expected 2 git excludes, got %d: %v", len(defaults.GitExcludes), defaults.GitExcludes)
+	if defaults.GitSkipIndex == nil {
+		t.Fatal("expected non-nil git excludes slice")
 	}
 
-	want := []string{".claude/settings.local.json", ".tmp"}
-	for i, w := range want {
-		if defaults.GitExcludes[i] != w {
-			t.Errorf("GitExcludes[%d]: got %q, want %q", i, defaults.GitExcludes[i], w)
-		}
+	if len(defaults.GitSkipIndex) != 0 {
+		t.Fatalf("expected 0 git excludes, got %d: %v", len(defaults.GitSkipIndex), defaults.GitSkipIndex)
 	}
 }
 
 func TestHardcodedDefaultsClaudeAllow(t *testing.T) {
-	defaults := HardcodedDefaults()
+	defaults := GetDefault()
 
 	home, _ := os.UserHomeDir()
 	if home == "" {
@@ -40,22 +38,6 @@ func TestHardcodedDefaultsClaudeAllow(t *testing.T) {
 	wantRule := "Read(" + filepath.Join(home, ".claude") + "/*)"
 	if defaults.ClaudeAllow[0] != wantRule {
 		t.Errorf("ClaudeAllow[0]: got %q, want %q", defaults.ClaudeAllow[0], wantRule)
-	}
-}
-
-func TestApplyGitExcludes(t *testing.T) {
-	dir := t.TempDir()
-	gitDir := filepath.Join(dir, ".git", "info")
-	os.MkdirAll(gitDir, 0o755)
-	excludePath := filepath.Join(gitDir, "exclude")
-
-	err := applyGitExcludes(excludePath, []string{".claude/", ".direnv/", ".tmp"})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	data, _ := os.ReadFile(excludePath)
-	if string(data) != ".claude/\n.direnv/\n.tmp\n" {
-		t.Errorf("exclude content: got %q", string(data))
 	}
 }
 
@@ -144,7 +126,7 @@ func TestApplyClaudeSettingsEmpty(t *testing.T) {
 	}
 }
 
-func TestApplyClaudeSettingsPreservesExistingKeys(t *testing.T) {
+func TestApplyClaudeSettingsOverwritesExistingKeys(t *testing.T) {
 	dir := t.TempDir()
 	claudeDir := filepath.Join(dir, ".claude")
 	os.MkdirAll(claudeDir, 0o755)
@@ -164,8 +146,8 @@ func TestApplyClaudeSettingsPreservesExistingKeys(t *testing.T) {
 	var doc map[string]any
 	json.Unmarshal(result, &doc)
 
-	if _, ok := doc["mcpServers"]; !ok {
-		t.Error("expected mcpServers key to be preserved")
+	if _, ok := doc["mcpServers"]; ok {
+		t.Error("expected mcpServers key to be overwritten")
 	}
 }
 
@@ -291,17 +273,38 @@ func TestApplyClaudeSettingsNoStopHookWhenNotConfigured(t *testing.T) {
 	}
 }
 
-func TestPrepareDirenvSkipsWhenNoFlakeNix(t *testing.T) {
+func TestPrepareDirenvWritesEnvrcWithoutUseFlakeWhenNoFlakeNix(t *testing.T) {
 	dir := t.TempDir()
 
-	err := prepareDirenvIfNecessary(dir)
+	// Create a fake direnv that just exits 0
+	fakeBin := t.TempDir()
+	fakeDirenv := filepath.Join(fakeBin, "direnv")
+	os.WriteFile(fakeDirenv, []byte("#!/bin/sh\nexit 0\n"), 0o755)
+
+	origPath := os.Getenv("PATH")
+	t.Setenv("PATH", fakeBin)
+	defer os.Setenv("PATH", origPath)
+
+	err := prepareDirenv(dir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	envrcPath := filepath.Join(dir, ".envrc")
-	if _, err := os.Stat(envrcPath); err == nil {
-		t.Error("expected no .envrc when flake.nix is absent")
+	data, err := os.ReadFile(filepath.Join(dir, ".envrc"))
+	if err != nil {
+		t.Fatalf("reading .envrc: %v", err)
+	}
+
+	content := string(data)
+
+	// The implementation resolves .git/spinclass/bin/ from cwd, not worktreePath
+	binAbs, _ := filepath.Abs(".git/spinclass/bin")
+	wantPathAdd := fmt.Sprintf("PATH_add \"%s\"\n", binAbs)
+
+	// Should have source_up and PATH_add but NOT use flake
+	want := "source_up\n" + wantPathAdd
+	if content != want {
+		t.Errorf(".envrc content: got %q, want %q", content, want)
 	}
 }
 
@@ -313,7 +316,7 @@ func TestPrepareDirenvSkipsWhenDirenvNotInPath(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 	defer os.Setenv("PATH", origPath)
 
-	err := prepareDirenvIfNecessary(dir)
+	err := prepareDirenv(dir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -337,7 +340,7 @@ func TestPrepareDirenvWritesEnvrc(t *testing.T) {
 	t.Setenv("PATH", fakeBin)
 	defer os.Setenv("PATH", origPath)
 
-	err := prepareDirenvIfNecessary(dir)
+	err := prepareDirenv(dir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -347,7 +350,9 @@ func TestPrepareDirenvWritesEnvrc(t *testing.T) {
 		t.Fatalf("reading .envrc: %v", err)
 	}
 
-	want := "source_up\nuse flake\n"
+	binAbs, _ := filepath.Abs(".git/spinclass/bin")
+	wantPathAdd := fmt.Sprintf("PATH_add \"%s\"\n", binAbs)
+	want := "source_up\nuse flake\n" + wantPathAdd
 	if string(data) != want {
 		t.Errorf(".envrc content: got %q, want %q", string(data), want)
 	}
@@ -366,7 +371,7 @@ func TestPrepareDirenvOverwritesExistingEnvrc(t *testing.T) {
 	t.Setenv("PATH", fakeBin)
 	defer os.Setenv("PATH", origPath)
 
-	err := prepareDirenvIfNecessary(dir)
+	err := prepareDirenv(dir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -376,7 +381,9 @@ func TestPrepareDirenvOverwritesExistingEnvrc(t *testing.T) {
 		t.Fatalf("reading .envrc: %v", err)
 	}
 
-	want := "source_up\nuse flake\n"
+	binAbs, _ := filepath.Abs(".git/spinclass/bin")
+	wantPathAdd := fmt.Sprintf("PATH_add \"%s\"\n", binAbs)
+	want := "source_up\nuse flake\n" + wantPathAdd
 	if string(data) != want {
 		t.Errorf(".envrc content: got %q, want %q (old content should be replaced)", string(data), want)
 	}

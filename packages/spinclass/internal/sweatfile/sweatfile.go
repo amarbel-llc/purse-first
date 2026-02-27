@@ -2,97 +2,37 @@ package sweatfile
 
 import (
 	"bytes"
-	"errors"
-	"io/fs"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
-	"github.com/BurntSushi/toml"
 	"github.com/google/shlex"
 )
 
 type Sweatfile struct {
-	DirenvUse         []string `toml:"direnv-use"`
-	BranchNameCommand string   `toml:"branch-name-command"` // TODO add tests
-	GitExcludes       []string `toml:"git_excludes"`        // TODO rename toml to git-excludes
+	SystemPromptAppend string   `toml:"system-prompt-append"` // TODO replace with PathOrString struct
+	BranchNameCommand  string   `toml:"branch-name-command"`  // TODO add tests
+	GitSkipIndex       []string `toml:"git_excludes"`         // TODO rename toml to git-skip-index
 
 	// TODO turn ClaudeAllows into struct
-	ClaudeAllow       []string `toml:"claude_allow"`        // TODO rename toml to claude-allow
-	StopHook          *string  `toml:"stop_hook"`           // TODO rename toml to stop-hook
+	ClaudeAllow []string `toml:"claude_allow"` // TODO rename toml to claude-allow
+	StopHook    *string  `toml:"stop_hook"`    // TODO rename toml to stop-hook
 }
 
-// TODO rewrite as object-oriented
-func Parse(data []byte) (Sweatfile, error) {
-	var sf Sweatfile
-	if err := toml.Unmarshal(data, &sf); err != nil {
-		return Sweatfile{}, err
-	}
-	return sf, nil
-}
-
-// TODO rewrite as object-oriented
-func Load(path string) (Sweatfile, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return Sweatfile{}, nil
-		}
-		return Sweatfile{}, err
-	}
-	return Parse(data)
-}
-
-// TODO rewrite as object-oriented
-func Merge(base, repo Sweatfile) Sweatfile {
-	merged := base
-
-	// Arrays: nil = inherit, empty = clear, non-empty = append
-	if repo.GitExcludes != nil {
-		if len(repo.GitExcludes) == 0 {
-			merged.GitExcludes = []string{}
-		} else {
-			merged.GitExcludes = append(base.GitExcludes, repo.GitExcludes...)
-		}
-	}
-	if repo.ClaudeAllow != nil {
-		if len(repo.ClaudeAllow) == 0 {
-			merged.ClaudeAllow = []string{}
-		} else {
-			merged.ClaudeAllow = append(base.ClaudeAllow, repo.ClaudeAllow...)
-		}
+// baseline excludes and allow rules that are always applied regardless of user
+// sweatfile config.
+func GetDefault() Sweatfile {
+	sweatfile := Sweatfile{
+		GitSkipIndex: []string{},
 	}
 
-	if repo.StopHook != nil {
-		merged.StopHook = repo.StopHook
+	if home, err := os.UserHomeDir(); err == nil && home != "" {
+		claudeDir := filepath.Join(home, ".claude")
+		sweatfile.ClaudeAllow = []string{fmt.Sprintf("Read(%s/*)", claudeDir)}
 	}
 
-	return merged
-}
-
-// TODO rewrite as object-oriented
-func Save(path string, sf Sweatfile) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	return toml.NewEncoder(f).Encode(sf)
-}
-
-type LoadSource struct {
-	Path  string
-	Found bool
-	File  Sweatfile
-}
-
-type Hierarchy struct {
-	Sources []LoadSource
-	Merged  Sweatfile
+	return sweatfile
 }
 
 func (sweatfile Sweatfile) CreateBranchName(
@@ -119,60 +59,27 @@ func (sweatfile Sweatfile) CreateBranchName(
 	}
 }
 
-func LoadHierarchy(home, repoDir string) (Hierarchy, error) {
-	var sources []LoadSource
-	merged := Sweatfile{}
-
-	loadAndMerge := func(path string) error {
-		sf, err := Load(path)
-		if err != nil {
-			return err
-		}
-		_, found := fileExists(path)
-		sources = append(sources, LoadSource{Path: path, Found: found, File: sf})
-		if found {
-			merged = Merge(merged, sf)
-		}
-		return nil
+func (sweatfile Sweatfile) ExecClaude(
+	args ...string,
+) error {
+	if sweatfile.SystemPromptAppend != "" {
+		args = append(
+			[]string{
+				"--system-prompt-append",
+				sweatfile.SystemPromptAppend,
+			},
+			args...,
+		)
 	}
 
-	// 1. Global config
-	globalPath := filepath.Join(home, ".config", "spinclass", "sweatfile")
-	if err := loadAndMerge(globalPath); err != nil {
-		return Hierarchy{}, err
+	cmdClaude := exec.Command("claude", args...)
+	cmdClaude.Stdout = os.Stdout
+	cmdClaude.Stderr = os.Stderr
+	cmdClaude.Stdin = os.Stdin
+
+	if err := cmdClaude.Run(); err != nil {
+		return err
 	}
 
-	// 2. Parent directories walking DOWN from home to repo dir
-	cleanHome := filepath.Clean(home)
-	cleanRepo := filepath.Clean(repoDir)
-
-	rel, err := filepath.Rel(cleanHome, cleanRepo)
-	if err == nil && !strings.HasPrefix(rel, "..") && rel != "." {
-		parts := strings.Split(rel, string(filepath.Separator))
-		// Walk each intermediate directory (excluding repo dir itself)
-		for i := 1; i < len(parts); i++ {
-			parentDir := filepath.Join(cleanHome, filepath.Join(parts[:i]...))
-			parentPath := filepath.Join(parentDir, "sweatfile")
-			if err := loadAndMerge(parentPath); err != nil {
-				return Hierarchy{}, err
-			}
-		}
-	}
-
-	// 3. Repo sweatfile
-	repoPath := filepath.Join(cleanRepo, "sweatfile")
-	if err := loadAndMerge(repoPath); err != nil {
-		return Hierarchy{}, err
-	}
-
-	return Hierarchy{
-		Sources: sources,
-		Merged:  merged,
-	}, nil
-}
-
-// TODO replace with util
-func fileExists(path string) (os.FileInfo, bool) {
-	info, err := os.Stat(path)
-	return info, err == nil
+	return nil
 }

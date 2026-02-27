@@ -60,17 +60,12 @@ var newCmd = &cobra.Command{
 			return err
 		}
 
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
-
 		repoPath, err := worktree.DetectRepo(cwd)
 		if err != nil {
 			return err
 		}
 
-		hierarchy, err := sweatfile.LoadHierarchy(home, cwd)
+		hierarchy, err := sweatfile.LoadDefaultHierarchy()
 		if err != nil {
 			return err
 		}
@@ -278,6 +273,20 @@ var validateCmd = &cobra.Command{
 	},
 }
 
+var cmdExecClaude = &cobra.Command{
+	Use:   "exec-claude [claude args...]",
+	Short: "Executes claude after applying sweatfile settings",
+	Args:  cobra.MinimumNArgs(0),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		hierarchy, err := sweatfile.LoadDefaultHierarchy()
+		if err != nil {
+			return err
+		}
+
+		return hierarchy.Merged.ExecClaude(args...)
+	},
+}
+
 func init() {
 	rootCmd.PersistentFlags().StringVar(&outputFormat, "format", "", "output format: tap or table")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "show detailed output (YAML diagnostics on passing test points)")
@@ -295,6 +304,7 @@ func init() {
 	rootCmd.AddCommand(hooks.NewHooksCmd())
 	rootCmd.AddCommand(forkCmd)
 	rootCmd.AddCommand(validateCmd)
+	rootCmd.AddCommand(cmdExecClaude)
 }
 
 func main() {

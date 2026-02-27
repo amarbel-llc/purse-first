@@ -14,8 +14,8 @@ git_excludes = [".claude/"]
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(sf.GitExcludes) != 1 || sf.GitExcludes[0] != ".claude/" {
-		t.Errorf("git_excludes: got %v", sf.GitExcludes)
+	if len(sf.GitSkipIndex) != 1 || sf.GitSkipIndex[0] != ".claude/" {
+		t.Errorf("git_excludes: got %v", sf.GitSkipIndex)
 	}
 }
 
@@ -24,8 +24,8 @@ func TestParseEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if sf.GitExcludes != nil {
-		t.Errorf("expected nil git_excludes, got %v", sf.GitExcludes)
+	if sf.GitSkipIndex != nil {
+		t.Errorf("expected nil git_excludes, got %v", sf.GitSkipIndex)
 	}
 }
 
@@ -38,8 +38,8 @@ func TestLoadFromPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(sf.GitExcludes) != 1 || sf.GitExcludes[0] != ".direnv/" {
-		t.Errorf("git_excludes: got %v", sf.GitExcludes)
+	if len(sf.GitSkipIndex) != 1 || sf.GitSkipIndex[0] != ".direnv/" {
+		t.Errorf("git_excludes: got %v", sf.GitSkipIndex)
 	}
 }
 
@@ -48,45 +48,45 @@ func TestLoadMissing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if sf.GitExcludes != nil {
-		t.Errorf("expected nil git_excludes, got %v", sf.GitExcludes)
+	if sf.GitSkipIndex != nil {
+		t.Errorf("expected nil git_excludes, got %v", sf.GitSkipIndex)
 	}
 }
 
 func TestMergeConcatenatesArrays(t *testing.T) {
 	base := Sweatfile{
-		GitExcludes: []string{".claude/"},
+		GitSkipIndex: []string{".claude/"},
 	}
 	repo := Sweatfile{
-		GitExcludes: []string{".direnv/"},
+		GitSkipIndex: []string{".direnv/"},
 	}
 	merged := Merge(base, repo)
-	if len(merged.GitExcludes) != 2 {
-		t.Fatalf("expected 2 git_excludes, got %v", merged.GitExcludes)
+	if len(merged.GitSkipIndex) != 2 {
+		t.Fatalf("expected 2 git_excludes, got %v", merged.GitSkipIndex)
 	}
-	if merged.GitExcludes[0] != ".claude/" || merged.GitExcludes[1] != ".direnv/" {
-		t.Errorf("git_excludes: got %v", merged.GitExcludes)
+	if merged.GitSkipIndex[0] != ".claude/" || merged.GitSkipIndex[1] != ".direnv/" {
+		t.Errorf("git_excludes: got %v", merged.GitSkipIndex)
 	}
 }
 
 func TestMergeClearSentinel(t *testing.T) {
 	base := Sweatfile{
-		GitExcludes: []string{".claude/"},
+		GitSkipIndex: []string{".claude/"},
 	}
 	repo := Sweatfile{
-		GitExcludes: []string{},
+		GitSkipIndex: []string{},
 	}
 	merged := Merge(base, repo)
-	if len(merged.GitExcludes) != 0 {
-		t.Errorf("expected cleared git_excludes, got %v", merged.GitExcludes)
+	if len(merged.GitSkipIndex) != 0 {
+		t.Errorf("expected cleared git_excludes, got %v", merged.GitSkipIndex)
 	}
 }
 
 func TestMergeBaseOnly(t *testing.T) {
-	base := Sweatfile{GitExcludes: []string{".claude/"}}
+	base := Sweatfile{GitSkipIndex: []string{".claude/"}}
 	merged := Merge(base, Sweatfile{})
-	if len(merged.GitExcludes) != 1 || merged.GitExcludes[0] != ".claude/" {
-		t.Errorf("expected inherited git_excludes, got %v", merged.GitExcludes)
+	if len(merged.GitSkipIndex) != 1 || merged.GitSkipIndex[0] != ".claude/" {
+		t.Errorf("expected inherited git_excludes, got %v", merged.GitSkipIndex)
 	}
 }
 
@@ -95,7 +95,7 @@ func TestSaveRoundTrip(t *testing.T) {
 	path := filepath.Join(dir, "sweatfile")
 
 	sf := Sweatfile{
-		GitExcludes: []string{".claude/"},
+		GitSkipIndex: []string{".claude/"},
 	}
 
 	err := Save(path, sf)
@@ -107,8 +107,8 @@ func TestSaveRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error loading: %v", err)
 	}
-	if len(loaded.GitExcludes) != 1 || loaded.GitExcludes[0] != ".claude/" {
-		t.Errorf("git_excludes roundtrip: got %v", loaded.GitExcludes)
+	if len(loaded.GitSkipIndex) != 1 || loaded.GitSkipIndex[0] != ".claude/" {
+		t.Errorf("git_excludes roundtrip: got %v", loaded.GitSkipIndex)
 	}
 }
 
@@ -192,8 +192,8 @@ claude_allow = ["/docs"]
 		}
 	}
 
-	if len(result.Merged.GitExcludes) != 1 || result.Merged.GitExcludes[0] != ".DS_Store" {
-		t.Errorf("expected GitExcludes=[.DS_Store], got %v", result.Merged.GitExcludes)
+	if len(result.Merged.GitSkipIndex) != 1 || result.Merged.GitSkipIndex[0] != ".DS_Store" {
+		t.Errorf("expected GitExcludes=[.DS_Store], got %v", result.Merged.GitSkipIndex)
 	}
 	if len(result.Merged.ClaudeAllow) != 1 || result.Merged.ClaudeAllow[0] != "/docs" {
 		t.Errorf("expected ClaudeAllow=[/docs], got %v", result.Merged.ClaudeAllow)
@@ -224,11 +224,11 @@ claude_allow = ["/src"]
 	}
 
 	// Merged should have both git_excludes appended
-	if len(result.Merged.GitExcludes) != 2 {
-		t.Fatalf("expected 2 GitExcludes, got %v", result.Merged.GitExcludes)
+	if len(result.Merged.GitSkipIndex) != 2 {
+		t.Fatalf("expected 2 GitExcludes, got %v", result.Merged.GitSkipIndex)
 	}
-	if result.Merged.GitExcludes[0] != ".DS_Store" || result.Merged.GitExcludes[1] != ".idea" {
-		t.Errorf("expected GitExcludes=[.DS_Store, .idea], got %v", result.Merged.GitExcludes)
+	if result.Merged.GitSkipIndex[0] != ".DS_Store" || result.Merged.GitSkipIndex[1] != ".idea" {
+		t.Errorf("expected GitExcludes=[.DS_Store, .idea], got %v", result.Merged.GitSkipIndex)
 	}
 
 	// ClaudeAllow from repo only
@@ -267,11 +267,11 @@ claude_allow = ["/src"]
 
 	// git_excludes: global .DS_Store + parent .envrc = [.DS_Store, .envrc]
 	// repo has nil git_excludes so inherits
-	if len(result.Merged.GitExcludes) != 2 {
-		t.Fatalf("expected 2 GitExcludes, got %v", result.Merged.GitExcludes)
+	if len(result.Merged.GitSkipIndex) != 2 {
+		t.Fatalf("expected 2 GitExcludes, got %v", result.Merged.GitSkipIndex)
 	}
-	if result.Merged.GitExcludes[0] != ".DS_Store" || result.Merged.GitExcludes[1] != ".envrc" {
-		t.Errorf("expected GitExcludes=[.DS_Store, .envrc], got %v", result.Merged.GitExcludes)
+	if result.Merged.GitSkipIndex[0] != ".DS_Store" || result.Merged.GitSkipIndex[1] != ".envrc" {
+		t.Errorf("expected GitExcludes=[.DS_Store, .envrc], got %v", result.Merged.GitSkipIndex)
 	}
 
 	// claude_allow: parent /eng-docs + repo /src = [/eng-docs, /src]
@@ -317,8 +317,8 @@ func TestLoadHierarchyNoSweatfiles(t *testing.T) {
 	}
 
 	// Merged should be empty
-	if result.Merged.GitExcludes != nil {
-		t.Errorf("expected nil GitExcludes, got %v", result.Merged.GitExcludes)
+	if result.Merged.GitSkipIndex != nil {
+		t.Errorf("expected nil GitExcludes, got %v", result.Merged.GitSkipIndex)
 	}
 	if result.Merged.ClaudeAllow != nil {
 		t.Errorf("expected nil ClaudeAllow, got %v", result.Merged.ClaudeAllow)
@@ -404,8 +404,8 @@ claude_allow = []
 	}
 
 	// Empty arrays should clear parent values
-	if result.Merged.GitExcludes == nil || len(result.Merged.GitExcludes) != 0 {
-		t.Errorf("expected empty GitExcludes (cleared by repo), got %v", result.Merged.GitExcludes)
+	if result.Merged.GitSkipIndex == nil || len(result.Merged.GitSkipIndex) != 0 {
+		t.Errorf("expected empty GitExcludes (cleared by repo), got %v", result.Merged.GitSkipIndex)
 	}
 	if result.Merged.ClaudeAllow == nil || len(result.Merged.ClaudeAllow) != 0 {
 		t.Errorf("expected empty ClaudeAllow (cleared by repo), got %v", result.Merged.ClaudeAllow)

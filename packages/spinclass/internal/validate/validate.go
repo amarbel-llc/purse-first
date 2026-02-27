@@ -90,7 +90,7 @@ func CheckClaudeAllow(sf sweatfile.Sweatfile) []Issue {
 
 func CheckGitExcludes(sf sweatfile.Sweatfile) []Issue {
 	var issues []Issue
-	for _, exc := range sf.GitExcludes {
+	for _, exc := range sf.GitSkipIndex {
 		if exc == "" {
 			issues = append(issues, Issue{
 				Message:  "empty exclude pattern",
@@ -112,7 +112,7 @@ func CheckGitExcludes(sf sweatfile.Sweatfile) []Issue {
 func CheckMerged(sf sweatfile.Sweatfile) []Issue {
 	var issues []Issue
 
-	if dups := findDuplicates(sf.GitExcludes); len(dups) > 0 {
+	if dups := findDuplicates(sf.GitSkipIndex); len(dups) > 0 {
 		issues = append(issues, Issue{
 			Message:  fmt.Sprintf("duplicate git_excludes: %s", strings.Join(dups, ", ")),
 			Severity: SeverityWarning,
@@ -238,7 +238,7 @@ func Run(w io.Writer, home, repoDir string) int {
 			}
 		}
 
-		if len(src.File.GitExcludes) > 0 {
+		if len(src.File.GitSkipIndex) > 0 {
 			if issues := CheckGitExcludes(src.File); len(issues) > 0 {
 				for _, iss := range issues {
 					diag := map[string]string{
@@ -278,8 +278,8 @@ func Run(w io.Writer, home, repoDir string) int {
 	tw.EndSubtest("merged result", sub)
 
 	applySub := tw.Subtest("apply (dry-run)")
-	merged := sweatfile.Merge(result.Merged, sweatfile.HardcodedDefaults())
-	if issues := CheckGitExcludes(sweatfile.Sweatfile{GitExcludes: merged.GitExcludes}); len(issues) > 0 {
+	merged := sweatfile.Merge(result.Merged, sweatfile.GetDefault())
+	if issues := CheckGitExcludes(sweatfile.Sweatfile{GitSkipIndex: merged.GitSkipIndex}); len(issues) > 0 {
 		for _, iss := range issues {
 			applySub.NotOk("git excludes structure valid", map[string]string{
 				"severity": iss.Severity,

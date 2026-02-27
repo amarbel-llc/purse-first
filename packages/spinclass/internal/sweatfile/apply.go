@@ -11,55 +11,52 @@ import (
 	"github.com/amarbel-llc/spinclass/internal/git"
 )
 
-// HardcodedDefaults returns a Sweatfile with baseline excludes and allow rules
-// that are always applied regardless of user sweatfile config.
-func HardcodedDefaults() Sweatfile {
-	sf := Sweatfile{
-		GitExcludes: []string{
-			".claude/settings.local.json",
-			".tmp",
-		},
-	}
-
-	if home, err := os.UserHomeDir(); err == nil && home != "" {
-		claudeDir := filepath.Join(home, ".claude")
-		sf.ClaudeAllow = []string{"Read(" + claudeDir + "/*)"}
-	}
-
-	return sf
-}
-
 func (sweatfile Sweatfile) Apply(worktreePath string) error {
-	defaults := HardcodedDefaults()
+	defaults := GetDefault()
 	merged := Merge(sweatfile, defaults)
-
-	if len(merged.GitExcludes) > 0 {
-		excludePath, err := resolveExcludePath(worktreePath)
-		if err != nil {
-			return fmt.Errorf("resolving git exclude path: %w", err)
-		}
-
-		if err := applyGitExcludes(excludePath, merged.GitExcludes); err != nil {
-			return fmt.Errorf("applying git excludes: %w", err)
-		}
-	}
 
 	if err := ApplyClaudeSettings(worktreePath, merged); err != nil {
 		return fmt.Errorf("applying claude settings: %w", err)
 	}
 
-	if err := prepareDirenvIfNecessary(worktreePath); err != nil {
+	if err := sweatfile.prepareLocalBin(); err != nil {
+		return err
+	}
+
+	if err := prepareDirenv(worktreePath); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func prepareDirenvIfNecessary(worktreePath string) error {
-	if _, ok := fileExists(filepath.Join(worktreePath, "flake.nix")); !ok {
-		return nil
+func (sweatfile Sweatfile) GetDirSpinclassBin() string {
+	return filepath.Join(".git/spinclass/bin/")
+}
+
+func (sweatfile Sweatfile) prepareLocalBin() error {
+	dirSpinclassBin := sweatfile.GetDirSpinclassBin()
+
+	if err := os.MkdirAll(dirSpinclassBin, 0o755); err != nil {
+		return err
 	}
 
+	if err := os.WriteFile(
+		filepath.Join(dirSpinclassBin, "claude"),
+		[]byte(`#! /usr/bin/env -S bash -e
+exec spinclass exec-claude "$@"`,
+		),
+		0o644,
+	); err != nil {
+		return err
+	}
+
+	// TODO write claude bin
+
+	return nil
+}
+
+func prepareDirenv(worktreePath string) error {
 	direnvPath, err := exec.LookPath("direnv")
 	if err != nil {
 		// TODO output skip
@@ -89,7 +86,24 @@ func prepareDirenvIfNecessary(worktreePath string) error {
 			return err
 		}
 
-		if _, err := fmt.Fprintln(bufferedWriter, "use flake"); err != nil {
+		if _, ok := fileExists(filepath.Join(worktreePath, "flake.nix")); ok {
+			if _, err := fmt.Fprintln(bufferedWriter, "use flake"); err != nil {
+				return err
+			}
+		}
+
+		dirSpinclassBin := filepath.Join(".git/spinclass/bin/")
+
+		dirSpinclassBinAbs, err := filepath.Abs(dirSpinclassBin)
+		if err != nil {
+			return err
+		}
+
+		if _, err := fmt.Fprintf(
+			bufferedWriter,
+			"PATH_add \"%s\"\n",
+			dirSpinclassBinAbs,
+		); err != nil {
 			return err
 		}
 	}
@@ -107,54 +121,10 @@ func prepareDirenvIfNecessary(worktreePath string) error {
 	}
 }
 
-func resolveExcludePath(worktreePath string) (string, error) {
-	rel, err := git.Run(worktreePath, "rev-parse", "--git-path", "info/exclude")
-	if err != nil {
-		return "", err
-	}
-	if !filepath.IsAbs(rel) {
-		rel = filepath.Join(worktreePath, rel)
-	}
-	return rel, nil
-}
-
-func applyGitExcludes(excludePath string, patterns []string) error {
-	if err := os.MkdirAll(filepath.Dir(excludePath), 0o755); err != nil {
-		return err
-	}
-
-	// TODO use bufio
-	file, err := os.OpenFile(excludePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return err
-	}
-
-	// TODO capture error
-	defer file.Close()
-
-	for _, p := range patterns {
-		if _, err := fmt.Fprintln(file, p); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func ApplyClaudeSettings(worktreePath string, sf Sweatfile) error {
+func ApplyClaudeSettings(worktreePath string, sweatfile Sweatfile) error {
 	settingsPath := filepath.Join(worktreePath, ".claude", "settings.local.json")
 
-	var doc map[string]any
-
-	if data, err := os.ReadFile(settingsPath); err == nil {
-		if err := json.Unmarshal(data, &doc); err != nil {
-			return err
-		}
-	}
-
-	if doc == nil {
-		doc = make(map[string]any)
-	}
+	doc := make(map[string]any)
 
 	permsMap, _ := doc["permissions"].(map[string]any)
 
@@ -162,7 +132,9 @@ func ApplyClaudeSettings(worktreePath string, sf Sweatfile) error {
 		permsMap = make(map[string]any)
 	}
 
-	allRules := append([]string{}, sf.ClaudeAllow...)
+	allRules := append([]string{}, sweatfile.ClaudeAllow...)
+
+	// TODO rewrite as sprintf
 	allRules = append(allRules,
 		"Read("+worktreePath+"/*)",
 		"Edit("+worktreePath+"/*)",
@@ -189,7 +161,7 @@ func ApplyClaudeSettings(worktreePath string, sf Sweatfile) error {
 			},
 		}
 
-		if sf.StopHook != nil && *sf.StopHook != "" {
+		if sweatfile.StopHook != nil && *sweatfile.StopHook != "" {
 			hooksMap["Stop"] = []any{
 				map[string]any{
 					"matcher": "*",

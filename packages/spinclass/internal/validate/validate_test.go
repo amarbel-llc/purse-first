@@ -60,7 +60,7 @@ func TestCheckClaudeAllowUnknownTool(t *testing.T) {
 
 func TestCheckGitExcludesValid(t *testing.T) {
 	sf := sweatfile.Sweatfile{
-		GitExcludes: []string{".claude/", ".direnv/"},
+		GitSkipIndex: []string{".claude/", ".direnv/"},
 	}
 	issues := CheckGitExcludes(sf)
 	if len(issues) != 0 {
@@ -70,7 +70,7 @@ func TestCheckGitExcludesValid(t *testing.T) {
 
 func TestCheckGitExcludesEmpty(t *testing.T) {
 	sf := sweatfile.Sweatfile{
-		GitExcludes: []string{".claude/", "", ".direnv/"},
+		GitSkipIndex: []string{".claude/", "", ".direnv/"},
 	}
 	issues := CheckGitExcludes(sf)
 	if len(issues) != 1 {
@@ -80,7 +80,7 @@ func TestCheckGitExcludesEmpty(t *testing.T) {
 
 func TestCheckGitExcludesAbsolutePath(t *testing.T) {
 	sf := sweatfile.Sweatfile{
-		GitExcludes: []string{"/absolute/path"},
+		GitSkipIndex: []string{"/absolute/path"},
 	}
 	issues := CheckGitExcludes(sf)
 	if len(issues) != 1 {
@@ -90,7 +90,7 @@ func TestCheckGitExcludesAbsolutePath(t *testing.T) {
 
 func TestCheckMergedDuplicates(t *testing.T) {
 	sf := sweatfile.Sweatfile{
-		GitExcludes: []string{".claude/", ".direnv/", ".claude/"},
+		GitSkipIndex: []string{".claude/", ".direnv/", ".claude/"},
 		ClaudeAllow: []string{"Read", "Read"},
 	}
 	issues := CheckMerged(sf)
