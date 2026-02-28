@@ -128,11 +128,10 @@ func ApplyClaudeSettings(worktreePath string, sweatfile Sweatfile) error {
 
 	allRules := append([]string{}, sweatfile.ClaudeAllow...)
 
-	// TODO rewrite as sprintf
 	allRules = append(allRules,
-		"Read("+worktreePath+"/*)",
-		"Edit("+worktreePath+"/*)",
-		"Write("+worktreePath+"/*)",
+		fmt.Sprintf("Read(%s/*)", worktreePath),
+		fmt.Sprintf("Edit(%s/*)", worktreePath),
+		fmt.Sprintf("Write(%s/*)", worktreePath),
 	)
 
 	permsMap["defaultMode"] = "acceptEdits"
