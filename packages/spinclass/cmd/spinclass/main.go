@@ -37,10 +37,10 @@ var rootCmd = &cobra.Command{
 }
 
 var newCmd = &cobra.Command{
-	Use:   "new <target> [claude args...]",
+	Use:   "new [target] [claude args...]",
 	Short: "Create (if needed) and attach to a worktree session",
-	Long:  `Create a worktree if it doesn't exist, then attach to a session. Target is a branch name or path, resolved relative to the current git repository. If additional arguments are provided, claude is launched with those arguments instead of a shell.`,
-	Args:  cobra.MinimumNArgs(1),
+	Long:  `Create a worktree if it doesn't exist, then attach to a session. Target is a branch name or path, resolved relative to the current git repository. If target is omitted, a random name is generated. If additional arguments are provided, claude is launched with those arguments instead of a shell.`,
+	Args:  cobra.MinimumNArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		format := outputFormat
 		if format == "" {
@@ -48,12 +48,6 @@ var newCmd = &cobra.Command{
 		}
 
 		exec := executor.ZmxExecutor{}
-
-		var claudeArgs []string
-
-		if len(args) >= 2 {
-			claudeArgs = args[1:]
-		}
 
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -65,12 +59,24 @@ var newCmd = &cobra.Command{
 			return err
 		}
 
+		var target string
+		var claudeArgs []string
+
+		if len(args) == 0 {
+			target = worktree.RandomName(repoPath)
+		} else {
+			target = args[0]
+			if len(args) >= 2 {
+				claudeArgs = args[1:]
+			}
+		}
+
 		hierarchy, err := sweatfile.LoadDefaultHierarchy()
 		if err != nil {
 			return err
 		}
 
-		resolvedPath, err := worktree.ResolvePath(hierarchy.Merged, repoPath, args[0])
+		resolvedPath, err := worktree.ResolvePath(hierarchy.Merged, repoPath, target)
 		if err != nil {
 			return err
 		}
