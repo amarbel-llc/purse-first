@@ -21,6 +21,7 @@
     "./skills/overview",
     "./skills/receiving-code-review",
     "./skills/requesting-code-review",
+    "./skills/rfc",
     "./skills/subagent-driven-development",
     "./skills/systematic-debugging",
     "./skills/test-driven-development",
