@@ -19,3 +19,4 @@ vendor/
 /purse-first
 /packages/grit/grit
 /packages/get-hubbed/get-hubbed
+.tmp/
