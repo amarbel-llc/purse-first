@@ -21,16 +21,16 @@ var adjectives = []string{
 }
 
 var nouns = []string{
-	"arrow", "badge", "bloom", "brook", "cedar",
-	"cliff", "cloud", "coral", "crane", "creek",
-	"crown", "delta", "ember", "fable", "fern",
-	"finch", "flame", "frost", "glade", "grove",
-	"haven", "heron", "ivory", "jewel", "larch",
-	"lemon", "lily", "maple", "marsh", "moon",
-	"oak", "olive", "otter", "pearl", "pine",
-	"plume", "pond", "quail", "ridge", "river",
-	"robin", "sage", "shore", "spark", "spire",
-	"stone", "storm", "trail", "vine", "wolf",
+	"alder", "aspen", "beech", "birch", "cedar",
+	"cherry", "chestnut", "cypress", "elder", "elm",
+	"fir", "hazel", "hemlock", "hickory", "holly",
+	"juniper", "larch", "laurel", "linden", "locust",
+	"magnolia", "mahogany", "maple", "mulberry", "myrtle",
+	"oak", "olive", "palm", "pecan", "pine",
+	"plum", "poplar", "redwood", "rowan", "sequoia",
+	"spruce", "sumac", "sycamore", "teak", "walnut",
+	"willow", "yew", "acacia", "banyan", "baobab",
+	"buckeye", "catalpa", "dogwood", "ebony", "fig",
 }
 
 // RandomName generates a random adjective-noun name that does not collide
