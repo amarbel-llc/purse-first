@@ -7,7 +7,7 @@ setup() {
 }
 
 teardown() {
-  chflags_and_rm
+  teardown_test_home
 }
 
 function mcp_clean_rebase { # @test

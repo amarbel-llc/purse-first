@@ -6,7 +6,7 @@ setup() {
 }
 
 teardown() {
-  chflags_and_rm
+  teardown_test_home
 }
 
 function clean_rebase_completes { # @test

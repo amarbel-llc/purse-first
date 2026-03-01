@@ -1,46 +1,7 @@
 bats_load_library bats-support
 bats_load_library bats-assert
 bats_load_library bats-assert-additions
-
-set_xdg() {
-  loc="$(realpath "$1" 2>/dev/null)"
-  export XDG_DATA_HOME="$loc/.xdg/data"
-  export XDG_CONFIG_HOME="$loc/.xdg/config"
-  export XDG_STATE_HOME="$loc/.xdg/state"
-  export XDG_CACHE_HOME="$loc/.xdg/cache"
-  export XDG_RUNTIME_HOME="$loc/.xdg/runtime"
-  mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_STATE_HOME" \
-    "$XDG_CACHE_HOME" "$XDG_RUNTIME_HOME"
-}
-
-setup_test_home() {
-  export REAL_HOME="$HOME"
-  export HOME="$BATS_TEST_TMPDIR/home"
-  mkdir -p "$HOME"
-  set_xdg "$BATS_TEST_TMPDIR"
-  mkdir -p "$XDG_CONFIG_HOME/git"
-  export GIT_CONFIG_GLOBAL="$XDG_CONFIG_HOME/git/config"
-  git config --global user.name "Test User"
-  git config --global user.email "test@example.com"
-  git config --global init.defaultBranch main
-  export GIT_EDITOR=true
-}
-
-chflags_and_rm() {
-  chflags -R nouchg "$BATS_TEST_TMPDIR" 2>/dev/null || true
-  rm -rf "$BATS_TEST_TMPDIR"
-}
-
-# Create a git repo with an initial commit
-setup_test_repo() {
-  setup_test_home
-  export TEST_REPO="$BATS_TEST_TMPDIR/repo"
-  mkdir -p "$TEST_REPO"
-  git -C "$TEST_REPO" init
-  echo "initial" > "$TEST_REPO/file.txt"
-  git -C "$TEST_REPO" add file.txt
-  git -C "$TEST_REPO" commit -m "initial commit"
-}
+bats_load_library bats-island
 
 # Create a conflict scenario:
 # - main branch has one change to file.txt

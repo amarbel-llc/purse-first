@@ -17,11 +17,12 @@
 - [ ] add PreToolUse hooks to chix (depends on rust-mcp hook support) — map nix/fh/cachix CLI tools to MCP equivalents
 - [ ] explore purse-first neovim plugin packaging (ftplugins, lux config fragments, auto-discovery)
 - [ ] pivot hook matching to delegation: let packages provide custom matchers (e.g. a `MatchHook` callback on `Command`) instead of the framework owning all matching logic via static `CommandPrefixes`/`Extensions`
-- [ ] migrate grit to `bats_load_library bats-island`
-- [ ] migrate dodder to `bats_load_library bats-island`
-- [ ] migrate pivy to `bats_load_library bats-island`
+- [x] migrate grit to `bats_load_library bats-island`
+- [x] migrate dodder to `bats_load_library bats-island` (moved to ~/eng/repos/dodder/TODO.md)
+- [x] migrate pivy to `bats_load_library bats-island` (moved to ~/eng/repos/pivy/TODO.md)
 - [x] migrate purse-first root tests to `bats_load_library bats-island`
 - [x] update batman bats-testing skill examples/references to use bats-island
 - [x] promote FDR 0001-bats-island from `exploring` to `proposed` after tests pass
+- [ ] fix grit rebase_mcp.bats: tests expect `packages/grit/result/bin/grit` symlink but no build step creates it
 - [ ] fix `tap-dancer cargo-test`
 - [ ] add ANSI color output to `tap-dancer *-test` for TTY's
