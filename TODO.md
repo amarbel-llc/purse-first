@@ -25,4 +25,4 @@
 - [x] promote FDR 0001-bats-island from `exploring` to `proposed` after tests pass
 - [x] fix grit rebase_mcp.bats: tests expect `packages/grit/result/bin/grit` symlink but no build step creates it
 - [x] add ANSI color output to `tap-dancer *-test` for TTY's
-- [ ] fix sandcastle/batman socket permission failures: use `--allow-unix-sockets` in bats wrapper tests and sandcastle tests
+- [x] fix sandcastle/batman socket permission failures: use `--allow-unix-sockets` in bats wrapper tests and sandcastle tests
