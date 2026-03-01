@@ -148,16 +148,31 @@ test-spinclass-bats:
     nix build .#spinclass
     {{cmd_nix_dev}} just packages/spinclass/zz-tests_bats/test
 
+test-grit-bats:
+    nix build .#grit
+    GRIT_BIN={{justfile_directory()}}/result/bin/grit {{cmd_nix_dev}} just packages/grit/zz-tests_bats/test
+
+test-batman-bats:
+    nix build .#batman
+    BATS_WRAPPER={{justfile_directory()}}/result/bin/bats {{cmd_nix_dev}} just packages/batman/zz-tests_bats/test
+
+test-sandcastle-bats:
+    nix build .#sandcastle
+    PATH="{{justfile_directory()}}/result/bin:$PATH" {{cmd_nix_dev}} just packages/sandcastle/zz-tests_bats/test
+
 test: \
+    test-batman-bats \
     test-chix \
     test-get-hubbed \
     test-go \
     test-go-mcp \
     test-grit \
+    test-grit-bats \
     test-integration \
     test-lifecycle \
     test-lux \
     test-rust-mcp \
+    test-sandcastle-bats \
     test-spinclass \
     test-spinclass-bats \
     test-tap-dancer-go \

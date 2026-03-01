@@ -6,11 +6,7 @@ setup() {
   BATS_TMPDIR="${BATS_TMPDIR:-/tmp}"
   TEST_TMPDIR="$(mktemp -d "${BATS_TMPDIR}/bats-wrapper-XXXXXX")"
 
-  # Resolve our wrapper binary (the one under test).
-  # BATS_WRAPPER can be set externally; otherwise derive from the result symlink.
-  if [[ -z "${BATS_WRAPPER:-}" ]]; then
-    BATS_WRAPPER="$(cd "$BATS_TEST_DIRNAME/.." && pwd)/result/bin/bats"
-  fi
+  require_bin BATS_WRAPPER
   export BATS_WRAPPER
 }
 

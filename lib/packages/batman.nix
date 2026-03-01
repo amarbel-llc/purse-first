@@ -62,9 +62,22 @@ let
     '';
   };
 
+  bats-emo = pkgs.stdenvNoCC.mkDerivation {
+    pname = "bats-emo";
+    version = "0.1.0";
+    src = "${src}/lib/bats-emo";
+    dontUnpack = true;
+    dontBuild = true;
+    installPhase = ''
+      mkdir -p $out/share/bats/bats-emo/src
+      cp $src/load.bash $out/share/bats/bats-emo/
+      cp $src/src/*.bash $out/share/bats/bats-emo/src/
+    '';
+  };
+
   bats-libs = pkgs.symlinkJoin {
     name = "bats-libs";
-    paths = [ bats-support bats-assert bats-assert-additions tap-writer bats-island ];
+    paths = [ bats-support bats-assert bats-assert-additions tap-writer bats-island bats-emo ];
   };
 
   bats = pkgs.writeShellApplication {
@@ -224,5 +237,5 @@ in
     name = "batman";
     paths = [ bats-libs bats robin ];
   };
-  inherit bats-support bats-assert bats-assert-additions tap-writer bats-island bats-libs bats robin;
+  inherit bats-support bats-assert bats-assert-additions tap-writer bats-island bats-emo bats-libs bats robin;
 }

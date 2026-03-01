@@ -3,7 +3,6 @@
 setup() {
   load "$(dirname "$BATS_TEST_FILE")/common.bash"
   export output
-  export GRIT_BIN="$BATS_TEST_DIRNAME/../result/bin/grit"
 }
 
 teardown() {
