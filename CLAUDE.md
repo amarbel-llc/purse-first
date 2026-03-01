@@ -4,18 +4,142 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Package framework for bundling CLIs, MCP servers, and skills into composable, Nix-built packages for humans and agents like Claude Code. Three layers: Protocol (share/purse-first/ convention), CLI (purse-first binary), Libraries (go-mcp, rust-mcp).
+Package framework for bundling CLIs, MCP servers, and skills into composable, Nix-built packages for humans and agents like Claude Code. Three layers: Protocol (`share/purse-first/` convention), CLI (`purse-first` binary), Libraries (`go-mcp`, `rust-mcp`).
 
 ## Build & Test Commands
 
 ```sh
-just build              # Build the project (alias: build-all)
-just test               # Run all tests (Go + BATS)
+just build              # nix build (marketplace bundle with all packages)
+just test               # Run ALL tests (Go + Rust + BATS integration)
 just fmt                # Format code (Go, shell, Nix)
 nix flake check         # Nix-level validation
-just build-nix          # Nix build only
-just update-plugins     # Update flake inputs for packages
+just validate           # Validate own .claude-plugin/plugin.json
+just lint               # go vet ./...
+just vendor             # Regenerate go workspace vendor after dep changes
+just vendor-hash        # Recompute goVendorHash in flake.nix from vendor/
+just deps               # go work sync + go work vendor
 ```
+
+### Running Individual Tests
+
+```sh
+# Per-package Go tests (via justfile):
+just test-grit          # packages/grit/...
+just test-lux           # packages/lux/...
+just test-get-hubbed    # packages/get-hubbed/...
+just test-go-mcp        # libs/go-mcp/... (verbose)
+just test-chix          # packages/chix (Rust, via cargo test)
+
+# Single Go test function (bypass justfile):
+nix develop --command go test -run TestFunctionName ./packages/grit/...
+
+# Single BATS file:
+nix develop --command bats --tap zz-tests_bats/validate_marketplace.bats
+
+# Integration tests (requires nix build first):
+just test-integration   # validate_marketplace + validate_documents + validate_plugin_repos
+just test-lifecycle     # hook_lifecycle.bats
+```
+
+Note: `just test-go` and per-package test targets use `tap-dancer go-test -skip-empty` which wraps `go test` with TAP-14 formatted output.
+
+### Building Individual Packages
+
+```sh
+nix build .#grit        # or: just build-grit
+nix build .#lux
+nix build .#get-hubbed
+nix build .#chix
+nix build .#purse-first
+nix build .#robin       # skill-only package from batman
+nix build .#tap-dancer
+nix build .#marketplace-no-hooks  # marketplace with hooks stripped
+```
+
+## Terminology
+
+- **Package** (not "plugin") — the user-facing term. Three flavors:
+  - **MCP package** — MCP server only (grit, get-hubbed, lux, mgp)
+  - **Skill package** — Skill only (robin, tap-dancer, bob)
+  - **MCP + Skill package** — Both (chix)
+- **Marketplace** — aggregated `symlinkJoin` output with `marketplace.json` listing all packages
+- **bob** — purse-first's own skill package for working with purse-first codebases
+
+## Architecture
+
+### Go Workspace
+
+All Go packages share a single `go.work` workspace. Modules: root (`.`), `libs/go-mcp`, `libs/go-mcp/command/huh`, `packages/{grit,get-hubbed,lux,mgp,potato,spinclass}`, `packages/tap-dancer/go`, `dummies/go`.
+
+In Nix, all Go packages share a single `goWorkspaceSrc` and `goVendorHash` in `flake.nix`. The vendor hash only covers external dependencies — local code changes never require recomputing it. Run `just vendor-hash` only after adding/removing external dependencies.
+
+### Package Lifecycle (Three-Mode Main)
+
+Every Go MCP package's `main.go` dispatches on its first argument:
+
+1. **`generate-plugin <dir>`** — build-time: `app.GenerateAll(dir)` writes `plugin.json`, `mappings.json`, and `hooks/` to the output directory
+2. **`hook`** — Claude Code PreToolUse handler: `app.HandleHook(stdin, stdout)` reads hook input and denies built-in tools when an MCP tool should be used instead
+3. **no args** — runtime: starts the MCP server via `server.New(...).Run(ctx)`
+
+### command.App Pattern (libs/go-mcp)
+
+The `command` package is the primary abstraction for building MCP servers. Define commands once, get MCP tools + CLI subcommands + plugin manifests + hook generation:
+
+```go
+app := command.NewApp("name", "description")
+app.AddCommand(&command.Command{
+    Name:   "my-tool",
+    Params: []command.Param{{Name: "path", Type: command.String, Required: true}},
+    MapsTools: []command.ToolMapping{
+        {Replaces: "Bash", CommandPrefixes: []string{"git status"}},
+    },
+    Run: handleMyTool, // func(ctx, json.RawMessage, Prompter) (*Result, error)
+})
+```
+
+`MapsTools` declares which built-in Claude Code tools this command replaces — used by `GenerateAll` to produce hooks that deny the built-in tool in favor of the MCP tool. Hooks follow a fail-open model: errors return success, never deny.
+
+For the lower-level server API, use `server.NewToolRegistryV1()` directly.
+
+### Skill Documents
+
+Skills live in `skills/<name>/SKILL.md` with YAML frontmatter:
+
+```yaml
+---
+name: Human-readable name
+description: Trigger description with specific keyword phrases
+version: 0.1.0
+---
+```
+
+Skills MAY have `references/` and `examples/` subdirectories. The SKILL.md body should be 1,500–2,000 words; put detailed content in `references/`. Discovery is automatic — any `skills/*/SKILL.md` is a skill.
+
+### package.toml
+
+Non-Go packages (and the repo itself) use `package.toml` at the package root instead of Go's `generate-plugin` pattern. `purse-first generate-plugin` reads it to produce `plugin.json`.
+
+### mkMarketplace.nix
+
+`lib/mkMarketplace.nix` is the core Nix function that assembles everything. It takes a list of plugin derivations, runs `symlinkJoin`, then `purse-first generate-marketplace` in `postBuild` to scan `share/purse-first/` and write `marketplace.json`. It also resolves or builds the `purse-first` CLI, optionally builds a meta-plugin from `skills/`, and generates dev shells.
+
+### purse-first CLI
+
+| Command | Purpose |
+|---------|---------|
+| `generate-marketplace` | Discover packages in `share/purse-first/` and write `marketplace.json` |
+| `generate-plugin` | Generate `plugin.json` from `package.toml` |
+| `install` | Install marketplace packages into Claude Code |
+| `install-local` | Set up local dev: skills and MCP servers |
+| `validate` | Validate plugin.json, mapping.json, or marketplace.json (auto-detects type) |
+
+### Protocol Key Rules
+
+- `plugin.name` MUST equal the directory name under `share/purse-first/`
+- Binaries resolve as `<package-root>/../../bin/<command>` (two levels up from share dir)
+- Runtime discovery: `$PURSE_FIRST_PLUGINS_DIR` env var, then `<exe-dir>/../share/purse-first/`
+- Two derivations MUST NOT produce the same package name — `symlinkJoin` fails at build time
+- Reserved paths: `commands/`, `agents/`, `output-styles/`
 
 ## Repository Layout
 
@@ -23,40 +147,16 @@ just update-plugins     # Update flake inputs for packages
 |-----------|---------|
 | `cmd/purse-first/` | CLI entrypoint |
 | `internal/` | Go internal packages (install, marketplace, config, validate, localplugin, mcp) |
-| `libs/go-mcp/` | Go MCP server library |
+| `libs/go-mcp/` | Go MCP server library (`command`, `server`, `transport`, `output`, `purse`) |
 | `libs/rust-mcp/` | Rust MCP server library |
 | `purse/` | Go package for building package manifests (plugin.json) |
-| `skills/` | Skill documents (plugin-mcp, context-saving, go-cli-framework) |
-| `packages/grit/` | Git MCP server (Go) |
-| `packages/get-hubbed/` | GitHub MCP server (Go) |
-| `packages/lux/` | LSP multiplexer MCP server (Go) |
-| `packages/chix/` | Nix MCP+Skill server (Rust) |
-| `packages/batman/` | BATS testing skill + libraries (Shell/Nix) |
-| `packages/tap-dancer/` | TAP-14 libraries + skill (Go/Rust/Bash) |
-| `lib/packages/` | Per-package Nix build expressions |
-| `docs/` | Protocol spec and design docs |
+| `skills/` | Skill documents (26 skills for bob) |
+| `packages/` | All packages (grit, get-hubbed, lux, mgp, chix, batman, tap-dancer, etc.) |
+| `lib/` | Nix build expressions (`mkMarketplace.nix`, `packages/*.nix`) |
+| `dummies/go/` | Fake MCP servers for testing |
 | `zz-tests_bats/` | BATS integration tests |
-| `.claude-plugin/` | Claude Code plugin manifest for bob |
-| `marketplace-config.json` | Metadata for marketplace generation |
-| `templates/` | Nix templates |
-| `lib/` | Nix library functions (mkMarketplace) |
-
-## Terminology
-
-- **Package** (not "plugin") — the user-facing term for what purse-first distributes. Three flavors:
-  - **MCP package** — MCP server only (grit, get-hubbed, lux)
-  - **Skill package** — Skill only (robin, tap-dancer, bob)
-  - **MCP + Skill package** — Both (chix)
-- **Marketplace** — aggregated JSON output listing all available packages
-- **bob** — purse-first's own skill package for working with purse-first codebases
-
-## Monorepo Structure
-
-All packages are co-located in this repo under `packages/`. Go modules use a `go.work` workspace for local resolution with `replace` directives. All Go packages share a single `goWorkspaceSrc` and `goVendorHash` in `flake.nix` — the vendor hash only covers external dependencies, so local code changes never invalidate it. Rust packages use path dependencies to `libs/rust-mcp`. The top-level `flake.nix` builds everything from local sources via per-package expressions in `lib/packages/`.
-
-### Per-Package Hooks
-
-Tool routing is handled per-package, not centrally. Each MCP package that declares tool mappings ships its own `hooks/hooks.json` and `pre-tool-use` wrapper (generated by `GenerateAll`/`GenerateHooks`). The package binary's `hook` subcommand reads PreToolUse input from stdin and denies built-in tools when an MCP tool should be used instead.
+| `.claude-plugin/` | This repo's own plugin manifest (bob) |
+| `docs/` | Protocol spec (`purse-first-protocol.md`) and design docs |
 
 ## Key Conventions
 
@@ -71,12 +171,9 @@ Every flake uses this pattern — do not deviate:
 
 ### Build Artifacts
 
-Nix builds output to `result`/`result-*` symlinks (managed by nix, already
-gitignored). All other toolchain builds (go, cargo, etc.) must output to the
-`build/` directory. Never place binaries in the repo root or source directories.
-Prefer `just build` or `nix build` which handle output paths automatically.
+Nix builds output to `result`/`result-*` symlinks (managed by nix, already gitignored). All other toolchain builds (go, cargo, etc.) must output to the `build/` directory. Never place binaries in the repo root or source directories.
 
-### Code Style & Tooling
+### Code Style
 
 - **Nix**: Format with `nix fmt` (nixfmt-rfc-style)
 - **Shell**: `set -euo pipefail`, 2-space indent, `[[ ]]` conditionals, quote all vars. Format with `shfmt -s -i=2`
@@ -86,7 +183,3 @@ Prefer `just build` or `nix build` which handle output paths automatically.
 ### Git
 
 - GPG signing is required for commits. If signing fails, ask user to unlock their agent rather than skipping signatures
-
-## Protocol Specification
-
-See `docs/purse-first-protocol.md` for the full protocol specification.
