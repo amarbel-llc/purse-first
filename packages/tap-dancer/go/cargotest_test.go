@@ -7,17 +7,16 @@ import (
 )
 
 func TestCargoConvertSingleSuiteAllPass(t *testing.T) {
-	jsonEvents := strings.Join([]string{
-		`{ "type": "suite", "event": "started", "test_count": 2 }`,
-		`{ "type": "test", "event": "started", "name": "tests::test_a" }`,
-		`{ "type": "test", "name": "tests::test_a", "event": "ok", "exec_time": 0.001, "stdout": "" }`,
-		`{ "type": "test", "event": "started", "name": "tests::test_b" }`,
-		`{ "type": "test", "name": "tests::test_b", "event": "ok", "exec_time": 0.002, "stdout": "" }`,
-		`{ "type": "suite", "event": "ok", "passed": 2, "failed": 0, "ignored": 0, "measured": 0, "filtered_out": 0, "exec_time": 0.005 }`,
+	prettyOutput := strings.Join([]string{
+		"running 2 tests",
+		"test tests::test_a ... ok",
+		"test tests::test_b ... ok",
+		"",
+		"test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(jsonEvents), &buf, false, false)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -48,15 +47,27 @@ func TestCargoConvertSingleSuiteAllPass(t *testing.T) {
 }
 
 func TestCargoConvertFailingTest(t *testing.T) {
-	jsonEvents := strings.Join([]string{
-		`{ "type": "suite", "event": "started", "test_count": 1 }`,
-		`{ "type": "test", "event": "started", "name": "tests::test_bad" }`,
-		`{ "type": "test", "name": "tests::test_bad", "event": "failed", "exec_time": 0.003, "stdout": "thread 'tests::test_bad' panicked at src/lib.rs:10:5:\nassertion ` + "`" + `left == right` + "`" + ` failed\n  left: 1\n right: 2" }`,
-		`{ "type": "suite", "event": "failed", "passed": 0, "failed": 1, "ignored": 0, "measured": 0, "filtered_out": 0, "exec_time": 0.010 }`,
+	prettyOutput := strings.Join([]string{
+		"running 1 test",
+		"test tests::test_bad ... FAILED",
+		"",
+		"failures:",
+		"",
+		"---- tests::test_bad stdout ----",
+		"thread 'tests::test_bad' panicked at src/lib.rs:10:5:",
+		"assertion `left == right` failed",
+		"  left: 1",
+		" right: 2",
+		"",
+		"",
+		"failures:",
+		"    tests::test_bad",
+		"",
+		"test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(jsonEvents), &buf, false, false)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false)
 
 	if exitCode != 1 {
 		t.Errorf("expected exit code 1, got %d", exitCode)
@@ -77,17 +88,16 @@ func TestCargoConvertFailingTest(t *testing.T) {
 }
 
 func TestCargoConvertIgnoredTest(t *testing.T) {
-	jsonEvents := strings.Join([]string{
-		`{ "type": "suite", "event": "started", "test_count": 2 }`,
-		`{ "type": "test", "event": "started", "name": "tests::test_ok" }`,
-		`{ "type": "test", "name": "tests::test_ok", "event": "ok", "exec_time": 0.001, "stdout": "" }`,
-		`{ "type": "test", "event": "started", "name": "tests::test_ignored" }`,
-		`{ "type": "test", "name": "tests::test_ignored", "event": "ignored" }`,
-		`{ "type": "suite", "event": "ok", "passed": 1, "failed": 0, "ignored": 1, "measured": 0, "filtered_out": 0, "exec_time": 0.005 }`,
+	prettyOutput := strings.Join([]string{
+		"running 2 tests",
+		"test tests::test_ok ... ok",
+		"test tests::test_ignored ... ignored",
+		"",
+		"test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s",
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(jsonEvents), &buf, false, false)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -105,21 +115,24 @@ func TestCargoConvertIgnoredTest(t *testing.T) {
 }
 
 func TestCargoConvertMultipleSuites(t *testing.T) {
-	jsonEvents := strings.Join([]string{
-		`Running unittests src/lib.rs (target/debug/deps/my_crate-abc123)`,
-		`{ "type": "suite", "event": "started", "test_count": 1 }`,
-		`{ "type": "test", "event": "started", "name": "tests::test_lib" }`,
-		`{ "type": "test", "name": "tests::test_lib", "event": "ok", "exec_time": 0.001, "stdout": "" }`,
-		`{ "type": "suite", "event": "ok", "passed": 1, "failed": 0, "ignored": 0, "measured": 0, "filtered_out": 0, "exec_time": 0.003 }`,
-		`Running tests/integration.rs (target/debug/deps/integration-def456)`,
-		`{ "type": "suite", "event": "started", "test_count": 1 }`,
-		`{ "type": "test", "event": "started", "name": "test_integration" }`,
-		`{ "type": "test", "name": "test_integration", "event": "ok", "exec_time": 0.002, "stdout": "" }`,
-		`{ "type": "suite", "event": "ok", "passed": 1, "failed": 0, "ignored": 0, "measured": 0, "filtered_out": 0, "exec_time": 0.004 }`,
+	prettyOutput := strings.Join([]string{
+		"     Running unittests src/lib.rs (target/debug/deps/my_crate-abc123)",
+		"",
+		"running 1 test",
+		"test tests::test_lib ... ok",
+		"",
+		"test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+		"",
+		"     Running tests/integration.rs (target/debug/deps/integration-def456)",
+		"",
+		"running 1 test",
+		"test test_integration ... ok",
+		"",
+		"test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(jsonEvents), &buf, false, false)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -146,14 +159,16 @@ func TestCargoConvertMultipleSuites(t *testing.T) {
 }
 
 func TestCargoConvertEmptySuiteDefault(t *testing.T) {
-	jsonEvents := strings.Join([]string{
-		`Running unittests src/lib.rs (target/debug/deps/my_crate-abc123)`,
-		`{ "type": "suite", "event": "started", "test_count": 0 }`,
-		`{ "type": "suite", "event": "ok", "passed": 0, "failed": 0, "ignored": 0, "measured": 0, "filtered_out": 0, "exec_time": 0.0 }`,
+	prettyOutput := strings.Join([]string{
+		"     Running unittests src/lib.rs (target/debug/deps/my_crate-abc123)",
+		"",
+		"running 0 tests",
+		"",
+		"test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(jsonEvents), &buf, false, false)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false)
 
 	if exitCode != 1 {
 		t.Errorf("expected exit code 1, got %d", exitCode)
@@ -174,14 +189,16 @@ func TestCargoConvertEmptySuiteDefault(t *testing.T) {
 }
 
 func TestCargoConvertEmptySuiteSkipEmpty(t *testing.T) {
-	jsonEvents := strings.Join([]string{
-		`Running unittests src/lib.rs (target/debug/deps/my_crate-abc123)`,
-		`{ "type": "suite", "event": "started", "test_count": 0 }`,
-		`{ "type": "suite", "event": "ok", "passed": 0, "failed": 0, "ignored": 0, "measured": 0, "filtered_out": 0, "exec_time": 0.0 }`,
+	prettyOutput := strings.Join([]string{
+		"     Running unittests src/lib.rs (target/debug/deps/my_crate-abc123)",
+		"",
+		"running 0 tests",
+		"",
+		"test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(jsonEvents), &buf, false, true)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, true)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -205,19 +222,23 @@ func TestCargoConvertEmptySuiteSkipEmpty(t *testing.T) {
 }
 
 func TestCargoConvertMixedEmptyAndRealSuites(t *testing.T) {
-	jsonEvents := strings.Join([]string{
-		`Running unittests src/lib.rs (target/debug/deps/my_crate-abc123)`,
-		`{ "type": "suite", "event": "started", "test_count": 1 }`,
-		`{ "type": "test", "event": "started", "name": "tests::test_real" }`,
-		`{ "type": "test", "name": "tests::test_real", "event": "ok", "exec_time": 0.001, "stdout": "" }`,
-		`{ "type": "suite", "event": "ok", "passed": 1, "failed": 0, "ignored": 0, "measured": 0, "filtered_out": 0, "exec_time": 0.003 }`,
-		`Running unittests src/main.rs (target/debug/deps/my_crate-def456)`,
-		`{ "type": "suite", "event": "started", "test_count": 0 }`,
-		`{ "type": "suite", "event": "ok", "passed": 0, "failed": 0, "ignored": 0, "measured": 0, "filtered_out": 0, "exec_time": 0.0 }`,
+	prettyOutput := strings.Join([]string{
+		"     Running unittests src/lib.rs (target/debug/deps/my_crate-abc123)",
+		"",
+		"running 1 test",
+		"test tests::test_real ... ok",
+		"",
+		"test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+		"",
+		"     Running unittests src/main.rs (target/debug/deps/my_crate-def456)",
+		"",
+		"running 0 tests",
+		"",
+		"test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(jsonEvents), &buf, false, true)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, true)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)

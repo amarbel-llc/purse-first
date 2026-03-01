@@ -2,27 +2,11 @@ package tap
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"io"
 	"regexp"
 	"strings"
 )
-
-// cargoEvent represents a JSON event from `cargo test -- --format json`.
-type cargoEvent struct {
-	Type        string  `json:"type"`
-	Event       string  `json:"event"`
-	Name        string  `json:"name"`
-	TestCount   int     `json:"test_count"`
-	ExecTime    float64 `json:"exec_time"`
-	Stdout      string  `json:"stdout"`
-	Passed      int     `json:"passed"`
-	Failed      int     `json:"failed"`
-	Ignored     int     `json:"ignored"`
-	Measured    int     `json:"measured"`
-	FilteredOut int     `json:"filtered_out"`
-}
 
 type cargoTestResult struct {
 	name    string
@@ -49,7 +33,19 @@ func parseRustFileLine(output string) (file string, line string) {
 	return "", ""
 }
 
-// ConvertCargoTest reads cargo test --format json events from r and writes TAP-14 to w.
+// Patterns for cargo test pretty output.
+var (
+	// "running 36 tests" or "running 0 tests" or "running 1 test"
+	runningTestsRe = regexp.MustCompile(`^running (\d+) tests?$`)
+	// "test tests::test_a ... ok" / "test tests::test_b ... FAILED" / "test tests::test_c ... ignored"
+	testResultRe = regexp.MustCompile(`^test (.+) \.\.\. (ok|FAILED|ignored)$`)
+	// "test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+	testSummaryRe = regexp.MustCompile(`^test result: (ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;`)
+	// "---- tests::test_fail stdout ----"
+	failureStdoutHeaderRe = regexp.MustCompile(`^---- (.+) stdout ----$`)
+)
+
+// ConvertCargoTest reads cargo test pretty output from r and writes TAP-14 to w.
 // If verbose is true, passing tests include output diagnostics.
 // If skipEmpty is true, suites with no tests emit a SKIP directive instead of not ok.
 // Returns an exit code: 0 for all pass, 1 for any failure.
@@ -61,71 +57,111 @@ func ConvertCargoTest(r io.Reader, w io.Writer, verbose bool, skipEmpty bool) in
 	var suiteCount int
 	var current *cargoSuiteResult
 
+	// Failure stdout is printed in a block after all tests run but before the
+	// summary line. We collect it per-test, then attach to the test results.
+	failureStdout := make(map[string]string)
+	var capturingFailure string
+
 	for scanner.Scan() {
 		line := scanner.Text()
-		if line == "" {
+
+		// Check for suite binary name lines first.
+		if name := parseCargoBinaryLine(line); name != "" {
+			// If we have a pending suite waiting for results, that shouldn't
+			// happen in well-formed output — but handle it gracefully.
+			if current != nil && current.testCount >= 0 {
+				// Suite from previous binary without a result line — emit what we have.
+			}
+			current = &cargoSuiteResult{name: name}
+			capturingFailure = ""
 			continue
 		}
 
-		var ev cargoEvent
-		if err := json.Unmarshal([]byte(line), &ev); err != nil {
-			// Non-JSON line -- check if it names a test binary
-			name := parseCargoBinaryLine(line)
-			if name != "" && current != nil {
-				current.name = name
-			} else if name != "" {
-				current = &cargoSuiteResult{name: name}
-			} else {
-				tw.Comment(fmt.Sprintf("unparseable: %s", line))
+		// "running N tests"
+		if m := runningTestsRe.FindStringSubmatch(line); m != nil {
+			if current == nil {
+				current = &cargoSuiteResult{}
 			}
+			fmt.Sscanf(m[1], "%d", &current.testCount)
+			if current.name == "" {
+				current.name = fmt.Sprintf("suite-%d", suiteCount+1)
+			}
+			capturingFailure = ""
 			continue
 		}
 
-		switch ev.Type {
-		case "suite":
-			switch ev.Event {
-			case "started":
-				if current == nil {
-					current = &cargoSuiteResult{}
-				}
-				current.testCount = ev.TestCount
-				if current.name == "" {
-					current.name = fmt.Sprintf("suite-%d", suiteCount+1)
-				}
-			case "ok", "failed":
-				if current == nil {
-					continue
-				}
-				current.elapsed = ev.ExecTime
-				current.failed = ev.Event == "failed"
-				suiteCount++
-
-				emitCargoSuite(tw, current, verbose, skipEmpty)
-				if current.failed && exitCode < 1 {
-					exitCode = 1
-				}
-				if current.testCount == 0 && !skipEmpty && exitCode < 1 {
-					exitCode = 1
-				}
-				current = nil
-			}
-
-		case "test":
+		// "test <name> ... ok/FAILED/ignored"
+		if m := testResultRe.FindStringSubmatch(line); m != nil {
 			if current == nil {
 				continue
 			}
-			switch ev.Event {
-			case "started":
-				// nothing to track yet
-			case "ok", "failed", "ignored":
-				current.tests = append(current.tests, &cargoTestResult{
-					name:    ev.Name,
-					event:   ev.Event,
-					stdout:  ev.Stdout,
-					elapsed: ev.ExecTime,
-				})
+			event := m[2]
+			switch event {
+			case "FAILED":
+				event = "failed"
+			case "ignored":
+				// already lowercase
+			default:
+				event = "ok"
+			}
+			current.tests = append(current.tests, &cargoTestResult{
+				name:  m[1],
+				event: event,
+			})
+			continue
+		}
+
+		// Failure stdout capture: "---- tests::test_fail stdout ----"
+		if m := failureStdoutHeaderRe.FindStringSubmatch(line); m != nil {
+			capturingFailure = m[1]
+			failureStdout[capturingFailure] = ""
+			continue
+		}
+
+		// If we're capturing failure stdout, accumulate lines until we hit
+		// another failure header, the "failures:" marker, or the summary.
+		if capturingFailure != "" {
+			if line == "failures:" || testSummaryRe.MatchString(line) {
+				capturingFailure = ""
+				// Fall through to handle these lines below.
+			} else {
+				if failureStdout[capturingFailure] != "" {
+					failureStdout[capturingFailure] += "\n"
+				}
+				failureStdout[capturingFailure] += line
+				continue
 			}
 		}
+
+		// "test result: ok/FAILED. N passed; N failed; ..."
+		if m := testSummaryRe.FindStringSubmatch(line); m != nil {
+			if current == nil {
+				continue
+			}
+			current.failed = m[1] == "FAILED"
+			suiteCount++
+
+			// Attach failure stdout to test results.
+			for _, tr := range current.tests {
+				if stdout, ok := failureStdout[tr.name]; ok {
+					tr.stdout = stdout
+				}
+			}
+			failureStdout = make(map[string]string)
+
+			emitCargoSuite(tw, current, verbose, skipEmpty)
+			if current.failed && exitCode < 1 {
+				exitCode = 1
+			}
+			if current.testCount == 0 && !skipEmpty && exitCode < 1 {
+				exitCode = 1
+			}
+			current = nil
+			continue
+		}
+
+		// "failures:" section listing test names — skip these lines.
+		// Other unrecognized lines (blank, compiler output, etc.) — skip.
 	}
 
 	tw.Plan()
@@ -175,9 +211,7 @@ func emitCargoTest(tw *Writer, tr *cargoTestResult, verbose bool) {
 	case "ok":
 		tw.Ok(tr.name)
 	case "failed":
-		diag := map[string]string{
-			"elapsed": fmt.Sprintf("%.3f", tr.elapsed),
-		}
+		diag := map[string]string{}
 		stdout := strings.TrimSpace(tr.stdout)
 		if stdout != "" {
 			diag["message"] = stdout

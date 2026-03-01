@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -201,11 +202,12 @@ func handleCargoTest(ctx context.Context, args json.RawMessage) error {
 		}
 	}
 
-	// Append --format json after the -- separator
-	cargoArgs = append(cargoArgs, "--", "--format", "json")
-
 	cmd := exec.CommandContext(ctx, "cargo", cargoArgs...)
-	cmd.Stderr = os.Stderr
+
+	// Capture stderr so compiler warnings don't pollute TAP output.
+	// On build failure with no test results, emit stderr as a bail-out.
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -220,7 +222,18 @@ func handleCargoTest(ctx context.Context, args json.RawMessage) error {
 
 	exitCode := tap.ConvertCargoTest(stdout, os.Stdout, params.Verbose, params.SkipEmpty)
 
-	cmd.Wait()
+	cmdErr := cmd.Wait()
+
+	// If cargo failed and we got no test output, it's a build failure.
+	if cmdErr != nil && exitCode == 0 {
+		tw := tap.NewWriter(os.Stdout)
+		msg := strings.TrimSpace(stderrBuf.String())
+		if msg == "" {
+			msg = cmdErr.Error()
+		}
+		tw.BailOut(fmt.Sprintf("cargo test failed: %s", msg))
+		os.Exit(1)
+	}
 
 	if exitCode != 0 {
 		os.Exit(exitCode)
