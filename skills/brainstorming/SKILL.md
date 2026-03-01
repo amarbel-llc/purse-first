@@ -19,6 +19,32 @@ Do NOT invoke any implementation skill, write any code, scaffold any project, or
 
 Every project goes through this process. A todo list, a single-function utility, a config change — all of them. "Simple" projects are where unexamined assumptions cause the most wasted work. The design can be short (a few sentences for truly simple projects), but you MUST present it and get approval.
 
+## Mandatory Threshold
+
+This skill MUST be invoked when the planned work meets any threshold from the
+project's CLAUDE.md planning requirements (3+ files, external integrations, CLI
+surface area, cross-repo coordination, new project).
+
+If the request meets any threshold and brainstorming has not been invoked,
+announce: "This change meets the planning threshold. Starting with design."
+
+## Rollback Strategy Requirement
+
+Every design that replaces existing infrastructure MUST include:
+
+1. **Dual-architecture period** --- both old and new approaches coexist and can
+   be switched between (e.g., native LSP configs alongside lux, old alias names
+   alongside new ones)
+2. **Promotion criteria** --- measurable conditions for removing the old approach
+   (e.g., "7 days with no fallback to native LSP configs")
+3. **Rollback procedure** --- how to revert to the old approach if issues arise
+   (should be a single command or config change, not a multi-commit revert)
+
+If the design cannot support dual-architecture (e.g., breaking wire format
+change), document why and what the rollback procedure is instead.
+
+Ask during design: "How would we roll this back if it doesn't work?"
+
 ## Checklist
 
 You MUST create a task for each of these items and complete them in order:

@@ -106,15 +106,19 @@ date: 2026-02-28
 
 | Field | Values / Format | Purpose |
 |-------|----------------|---------|
-| `status` | `proposed` &#124; `accepted` &#124; `deprecated` &#124; `superseded by RFC-NNNN` | Current state of the specification |
+| `status` | `exploring` &#124; `proposed` &#124; `experimental` &#124; `testing` &#124; `accepted` &#124; `deprecated` &#124; `superseded by RFC-NNNN` | Current state of the specification |
 | `date` | `YYYY-MM-DD` | Date the record was last updated |
 
 ## Status Lifecycle
 
 RFC status progresses through these transitions:
 
-- `proposed` — The specification is drafted and open for review.
+- `exploring` — Problem defined, collecting thoughts on potential interface approaches.
+- `exploring` --> `proposed` — Interface design selected, full RFC drafted.
 - `proposed` --> `accepted` — The specification is ratified and implementations should conform to it.
+- `accepted` --> `experimental` — Specification implemented in limited scope, not yet validated.
+- `experimental` --> `testing` — Promotion criteria defined and being measured.
+- `testing` --> `accepted` — Promotion criteria met, specification fully validated.
 - `accepted` --> `deprecated` — The interface is no longer supported (e.g., the protocol has been retired).
 - `accepted` --> `superseded by RFC-NNNN` — The specification is replaced by a newer version.
 

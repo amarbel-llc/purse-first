@@ -31,7 +31,7 @@ Do NOT create an FDR for:
 | Section | Required | Description |
 |---------|----------|-------------|
 | Title (H1) | Yes | Feature name, scannable in a file listing |
-| Motivation | Yes | What user need this feature addresses (2-3 sentences) |
+| Problem Statement | Yes | What problem, need, or gap this feature addresses (2-3 sentences) |
 | Interface | Yes | How users interact with it: commands, flags, defaults, behavior |
 | Examples | Yes | Concrete usage showing the feature in action |
 | Limitations | No | What the feature deliberately does not do, known constraints |
@@ -41,7 +41,7 @@ Do NOT create an FDR for:
 
 **Title** — Use the feature's natural name. Good: "Auto-generated session names". Bad: "Session name feature" or "FDR about naming".
 
-**Motivation** — Describe the user need that prompted the feature. Two to three sentences. Focus on the problem from the user's perspective, not the implementation. Link to design documents for deeper background.
+**Problem Statement** — Define the problem, need, or gap this feature addresses. Write this first, before considering solutions. In `exploring` state, this is the only required section. Two to three sentences for simple features; can be longer for complex problem spaces. Focus on the problem from the user's perspective, not the solution.
 
 **Interface** — Describe what the feature does and how users interact with it. Include commands, flags, defaults, and observable behavior. Be precise about what happens, not how it happens internally.
 
@@ -75,13 +75,15 @@ FDRs use YAML front matter for status tracking:
 ---
 status: accepted
 date: 2026-02-28
+promotion-criteria:
 ---
 ```
 
 | Field | Values / Format | Purpose |
 |-------|----------------|---------|
-| `status` | `proposed` &#124; `accepted` &#124; `deprecated` &#124; `superseded by FDR-NNNN` | Current state of the feature |
+| `status` | `exploring` &#124; `proposed` &#124; `experimental` &#124; `testing` &#124; `accepted` &#124; `deprecated` &#124; `superseded by FDR-NNNN` | Current state of the feature |
 | `date` | `YYYY-MM-DD` | Date the record was last updated |
+| `promotion-criteria` | Free text | Measurable conditions for advancing to next lifecycle stage |
 
 Both fields are recommended. Keep metadata minimal — FDRs do not need RACI tracking.
 
@@ -89,8 +91,11 @@ Both fields are recommended. Keep metadata minimal — FDRs do not need RACI tra
 
 FDR status progresses through these transitions:
 
-- `proposed` — The feature is designed but not yet implemented.
-- `proposed` --> `accepted` — The feature is implemented and available.
+- `exploring` — Problem defined, collecting thoughts on potential solutions. Only Problem Statement is required.
+- `exploring` --> `proposed` — Solution selected, full FDR drafted.
+- `proposed` --> `experimental` — Working implementation exists in 1-2 repos.
+- `experimental` --> `testing` — Promotion criteria defined and being measured.
+- `testing` --> `accepted` — Promotion criteria met, feature is fully integrated.
 - `accepted` --> `deprecated` — The feature has been removed or is no longer supported.
 - `accepted` --> `superseded by FDR-NNNN` — The feature has been replaced by a newer design.
 
@@ -103,7 +108,7 @@ When superseding an FDR:
 ## Writing Tips
 
 - **Write for the user, not the implementer.** Describe what the feature does from the user's perspective. Save implementation details for code comments.
-- **Keep Motivation to 2-3 sentences.** Enough context for someone unfamiliar with the project, but not an essay.
+- **Keep Problem Statement to 2-3 sentences.** Enough context for someone unfamiliar with the project, but not an essay. In `exploring` state, this is the only section that needs content.
 - **Be concrete in Interface.** "Generates a random adjective-noun name" is better than "auto-generates names". Include defaults, flag names, and observable behavior.
 - **Show, don't tell, in Examples.** Concrete commands with expected behavior are more useful than prose descriptions.
 - **Document deliberate limitations honestly.** Future contributors will thank you for explaining what the feature intentionally does not do.

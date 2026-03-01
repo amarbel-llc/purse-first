@@ -183,3 +183,32 @@ Nix builds output to `result`/`result-*` symlinks (managed by nix, already gitig
 ### Git
 
 - GPG signing is required for commits. If signing fails, ask user to unlock their agent rather than skipping signatures
+
+## Protocol Specification
+
+See `docs/purse-first-protocol.md` for the full protocol specification.
+
+## External Integrations (verify before committing)
+
+| Integration | How to verify |
+|-------------|---------------|
+| direnv (`prepareDirenv`) | Integration test suite or manual: create worktree, `direnv allow` |
+| MCP JSON-RPC | Send `tools/list` via stdin, verify JSON response |
+| Claude Code plugin install | `purse-first install`, verify plugin appears |
+| git worktree operations | Create and close a worktree, verify cleanup |
+| lux service RPC | Start `lux serve`, verify `lux service status` responds |
+
+## Versioning
+
+Packages use semantic versioning (MAJOR.MINOR.PATCH):
+
+- **MAJOR** --- breaking changes to MCP tool interfaces, skill behavior, or
+  protocol (corresponds to RFC changes)
+- **MINOR** --- new features, new tools, new skills (corresponds to FDR reaching
+  `accepted` status)
+- **PATCH** --- bug fixes, documentation, dependency updates
+
+Version strings live in `marketplace-config.json` (source of truth) and are
+propagated to other locations by `just bump-version`.
+
+Pre-1.0: MINOR bumps may include breaking changes. Post-1.0: semver is strict.

@@ -41,6 +41,8 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Tech Stack:** [Key technologies/libraries]
 
+**Rollback:** [How to revert if this doesn't work. "N/A" if purely additive.]
+
 ---
 ```
 
@@ -48,6 +50,8 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 ````markdown
 ### Task N: [Component Name]
+
+**Promotion criteria:** [When can the old approach be removed? "N/A" if no old approach.]
 
 **Files:**
 - Create: `exact/path/to/file.py`

@@ -95,7 +95,7 @@ informed: Engineering team
 
 | Field | Values / Format | Purpose |
 |-------|----------------|---------|
-| `status` | `proposed` &#124; `accepted` &#124; `rejected` &#124; `deprecated` &#124; `superseded by ADR-NNNN` | Current state of the decision |
+| `status` | `exploring` &#124; `proposed` &#124; `experimental` &#124; `testing` &#124; `accepted` &#124; `rejected` &#124; `deprecated` &#124; `superseded by ADR-NNNN` | Current state of the decision |
 | `date` | `YYYY-MM-DD` | Date the record was last updated |
 | `decision-makers` | Comma-separated names | People who made or approved the decision |
 | `consulted` | Names with optional role context | Subject-matter experts consulted (two-way communication) |
@@ -107,9 +107,13 @@ All fields are optional. At minimum, include `status` and `date` to make the rec
 
 ADR status progresses through these transitions:
 
-- `proposed` -- The decision is drafted and open for discussion.
+- `exploring` -- Problem defined, collecting thoughts on potential approaches.
+- `exploring` --> `proposed` -- Approach selected, full ADR drafted.
 - `proposed` --> `accepted` -- The decision is adopted and should be followed.
 - `proposed` --> `rejected` -- The decision was considered but not adopted.
+- `accepted` --> `experimental` -- Decision implemented in limited scope, not yet validated.
+- `experimental` --> `testing` -- Promotion criteria defined and being measured.
+- `testing` --> `accepted` -- Promotion criteria met, decision fully validated.
 - `accepted` --> `deprecated` -- The decision is no longer relevant (e.g., the feature was removed).
 - `accepted` --> `superseded by ADR-NNNN` -- The decision is replaced by a newer one.
 

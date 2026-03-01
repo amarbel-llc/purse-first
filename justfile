@@ -204,6 +204,17 @@ build-dummies-go:
 test-dummies-go:
     {{cmd_nix_dev}} go vet ./dummies/go/...
 
+# Bump version for a package. Usage: just bump-version grit 0.2.0
+bump-version package version:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  # Update marketplace-config.json (source of truth)
+  jq --arg pkg "{{package}}" --arg ver "{{version}}" \
+    '.plugins[$pkg].version = $ver' marketplace-config.json > marketplace-config.json.tmp
+  mv marketplace-config.json.tmp marketplace-config.json
+  gum log --level info "{{package}}: version bumped to {{version}}"
+  gum log --level warn "Remember to update Cargo.toml and SKILL.md frontmatter if applicable"
+
 # Clean build artifacts
 clean:
     rm -f purse-first

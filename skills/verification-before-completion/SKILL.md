@@ -49,6 +49,21 @@ Skip any step = lying, not verifying
 | Agent completed | VCS diff shows changes | Agent reports "success" |
 | Requirements met | Line-by-line checklist | Tests passing |
 
+## External Integration Gate
+
+Code calling external systems requires real-system verification, not just test
+suite output.
+
+| Integration Type | Verification Requires |
+|-----------------|----------------------|
+| CLI subprocess | Run the actual CLI, check output and exit code |
+| OS service install | Install, verify running, uninstall, reinstall |
+| Hardware token | Real operation with real hardware |
+| Crypto sign/verify | Round-trip: sign + verify, not just one direction |
+| File format for external consumer | Write + read back with actual consumer |
+
+**"I tested the signing" without testing the verification is half a test.**
+
 ## Red Flags - STOP
 
 - Using "should", "probably", "seems to"
