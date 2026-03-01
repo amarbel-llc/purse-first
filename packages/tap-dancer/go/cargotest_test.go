@@ -16,7 +16,7 @@ func TestCargoConvertSingleSuiteAllPass(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -67,7 +67,7 @@ func TestCargoConvertFailingTest(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false, false)
 
 	if exitCode != 1 {
 		t.Errorf("expected exit code 1, got %d", exitCode)
@@ -97,7 +97,7 @@ func TestCargoConvertIgnoredTest(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -132,7 +132,7 @@ func TestCargoConvertMultipleSuites(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -168,7 +168,7 @@ func TestCargoConvertEmptySuiteDefault(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false, false)
 
 	if exitCode != 1 {
 		t.Errorf("expected exit code 1, got %d", exitCode)
@@ -198,7 +198,7 @@ func TestCargoConvertEmptySuiteSkipEmpty(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, true)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, true, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -238,7 +238,7 @@ func TestCargoConvertMixedEmptyAndRealSuites(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, true)
+	exitCode := ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, true, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)

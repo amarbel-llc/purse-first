@@ -8,12 +8,21 @@ import (
 	"strings"
 )
 
+// ANSI color codes for TTY output.
+const (
+	ansiGreen  = "\033[32m"
+	ansiRed    = "\033[31m"
+	ansiYellow = "\033[33m"
+	ansiReset  = "\033[0m"
+)
+
 type Writer struct {
 	w           io.Writer
 	n           int
 	depth       int
 	planEmitted bool
 	failed      bool
+	color       bool
 }
 
 func NewWriter(w io.Writer) *Writer {
@@ -21,15 +30,49 @@ func NewWriter(w io.Writer) *Writer {
 	return &Writer{w: w}
 }
 
+// NewColorWriter creates a Writer that colorizes ok/not ok when color is true.
+func NewColorWriter(w io.Writer, color bool) *Writer {
+	fmt.Fprintln(w, "TAP version 14")
+	return &Writer{w: w, color: color}
+}
+
+func (tw *Writer) colorOk() string {
+	if tw.color {
+		return ansiGreen + "ok" + ansiReset
+	}
+	return "ok"
+}
+
+func (tw *Writer) colorNotOk() string {
+	if tw.color {
+		return ansiRed + "not ok" + ansiReset
+	}
+	return "not ok"
+}
+
+func (tw *Writer) colorSkip() string {
+	if tw.color {
+		return ansiYellow + "# SKIP" + ansiReset
+	}
+	return "# SKIP"
+}
+
+func (tw *Writer) colorBailOut() string {
+	if tw.color {
+		return ansiRed + "Bail out!" + ansiReset
+	}
+	return "Bail out!"
+}
+
 func (tw *Writer) Ok(description string) int {
 	tw.n++
-	fmt.Fprintf(tw.w, "ok %d - %s\n", tw.n, description)
+	fmt.Fprintf(tw.w, "%s %d - %s\n", tw.colorOk(), tw.n, description)
 	return tw.n
 }
 
 func (tw *Writer) OkDiag(description string, diagnostics *Diagnostics) int {
 	tw.n++
-	fmt.Fprintf(tw.w, "ok %d - %s\n", tw.n, description)
+	fmt.Fprintf(tw.w, "%s %d - %s\n", tw.colorOk(), tw.n, description)
 	writeDiagnostics(tw.w, diagnostics)
 	return tw.n
 }
@@ -41,7 +84,7 @@ func (tw *Writer) HasFailures() bool {
 func (tw *Writer) NotOk(description string, diagnostics map[string]string) int {
 	tw.n++
 	tw.failed = true
-	fmt.Fprintf(tw.w, "not ok %d - %s\n", tw.n, description)
+	fmt.Fprintf(tw.w, "%s %d - %s\n", tw.colorNotOk(), tw.n, description)
 	if len(diagnostics) > 0 {
 		fmt.Fprintln(tw.w, "  ---")
 		keys := make([]string, 0, len(diagnostics))
@@ -71,20 +114,20 @@ func (tw *Writer) NotOk(description string, diagnostics map[string]string) int {
 
 func (tw *Writer) Skip(description, reason string) int {
 	tw.n++
-	fmt.Fprintf(tw.w, "ok %d - %s # SKIP %s\n", tw.n, description, reason)
+	fmt.Fprintf(tw.w, "%s %d - %s %s %s\n", tw.colorOk(), tw.n, description, tw.colorSkip(), reason)
 	return tw.n
 }
 
 func (tw *Writer) SkipDiag(description, reason string, diagnostics *Diagnostics) int {
 	tw.n++
-	fmt.Fprintf(tw.w, "ok %d - %s # SKIP %s\n", tw.n, description, reason)
+	fmt.Fprintf(tw.w, "%s %d - %s %s %s\n", tw.colorOk(), tw.n, description, tw.colorSkip(), reason)
 	writeDiagnostics(tw.w, diagnostics)
 	return tw.n
 }
 
 func (tw *Writer) Todo(description, reason string) int {
 	tw.n++
-	fmt.Fprintf(tw.w, "not ok %d - %s # TODO %s\n", tw.n, description, reason)
+	fmt.Fprintf(tw.w, "%s %d - %s # TODO %s\n", tw.colorNotOk(), tw.n, description, reason)
 	return tw.n
 }
 
@@ -102,7 +145,7 @@ func (tw *Writer) Plan() {
 }
 
 func (tw *Writer) BailOut(reason string) {
-	fmt.Fprintf(tw.w, "Bail out! %s\n", reason)
+	fmt.Fprintf(tw.w, "%s %s\n", tw.colorBailOut(), reason)
 }
 
 func (tw *Writer) Comment(text string) {
@@ -193,7 +236,7 @@ func (tw *Writer) Subtest(name string) *Writer {
 	prefix := "    "
 	fmt.Fprintf(tw.w, "%s# Subtest: %s\n", prefix, name)
 	iw := &indentWriter{w: tw.w, prefix: prefix}
-	return &Writer{w: iw, depth: tw.depth + 1}
+	return &Writer{w: iw, depth: tw.depth + 1, color: tw.color}
 }
 
 type TestPoint struct {
@@ -220,11 +263,12 @@ func (tw *Writer) WriteAll(tests iter.Seq[TestPoint]) {
 			tw.Todo(tp.Description, tp.Todo)
 		} else if tp.Ok {
 			tw.n++
-			fmt.Fprintf(tw.w, "ok %d - %s\n", tw.n, tp.Description)
+			fmt.Fprintf(tw.w, "%s %d - %s\n", tw.colorOk(), tw.n, tp.Description)
 			writeDiagnostics(tw.w, tp.Diagnostics)
 		} else {
 			tw.n++
-			fmt.Fprintf(tw.w, "not ok %d - %s\n", tw.n, tp.Description)
+			tw.failed = true
+			fmt.Fprintf(tw.w, "%s %d - %s\n", tw.colorNotOk(), tw.n, tp.Description)
 			writeDiagnostics(tw.w, tp.Diagnostics)
 		}
 	}

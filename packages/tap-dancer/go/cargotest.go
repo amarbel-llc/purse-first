@@ -48,10 +48,11 @@ var (
 // ConvertCargoTest reads cargo test pretty output from r and writes TAP-14 to w.
 // If verbose is true, passing tests include output diagnostics.
 // If skipEmpty is true, suites with no tests emit a SKIP directive instead of not ok.
+// If color is true, ok/not ok keywords are ANSI-colorized.
 // Returns an exit code: 0 for all pass, 1 for any failure.
-func ConvertCargoTest(r io.Reader, w io.Writer, verbose bool, skipEmpty bool) int {
+func ConvertCargoTest(r io.Reader, w io.Writer, verbose bool, skipEmpty bool, color bool) int {
 	scanner := bufio.NewScanner(r)
-	tw := NewWriter(w)
+	tw := NewColorWriter(w, color)
 	exitCode := 0
 
 	var suiteCount int

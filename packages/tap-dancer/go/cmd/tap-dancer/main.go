@@ -154,14 +154,15 @@ func handleGoTest(ctx context.Context, args json.RawMessage) error {
 		return fmt.Errorf("creating stdout pipe: %w", err)
 	}
 
+	color := stdoutIsTerminal()
+
 	if err := cmd.Start(); err != nil {
-		// Bail out if go test can't start
-		tw := tap.NewWriter(os.Stdout)
+		tw := tap.NewColorWriter(os.Stdout, color)
 		tw.BailOut(fmt.Sprintf("failed to start go test: %v", err))
 		return err
 	}
 
-	exitCode := tap.ConvertGoTest(stdout, os.Stdout, params.Verbose, params.SkipEmpty)
+	exitCode := tap.ConvertGoTest(stdout, os.Stdout, params.Verbose, params.SkipEmpty, color)
 
 	// Wait for command to finish (ignore error — we use our own exit code)
 	cmd.Wait()
@@ -214,19 +215,21 @@ func handleCargoTest(ctx context.Context, args json.RawMessage) error {
 		return fmt.Errorf("creating stdout pipe: %w", err)
 	}
 
+	color := stdoutIsTerminal()
+
 	if err := cmd.Start(); err != nil {
-		tw := tap.NewWriter(os.Stdout)
+		tw := tap.NewColorWriter(os.Stdout, color)
 		tw.BailOut(fmt.Sprintf("failed to start cargo test: %v", err))
 		return err
 	}
 
-	exitCode := tap.ConvertCargoTest(stdout, os.Stdout, params.Verbose, params.SkipEmpty)
+	exitCode := tap.ConvertCargoTest(stdout, os.Stdout, params.Verbose, params.SkipEmpty, color)
 
 	cmdErr := cmd.Wait()
 
 	// If cargo failed and we got no test output, it's a build failure.
 	if cmdErr != nil && exitCode == 0 {
-		tw := tap.NewWriter(os.Stdout)
+		tw := tap.NewColorWriter(os.Stdout, color)
 		msg := strings.TrimSpace(stderrBuf.String())
 		if msg == "" {
 			msg = cmdErr.Error()
@@ -345,4 +348,12 @@ func handleValidate(ctx context.Context, args json.RawMessage, _ command.Prompte
 		}
 		return command.TextResult(sb.String()), nil
 	}
+}
+
+func stdoutIsTerminal() bool {
+	stat, err := os.Stdout.Stat()
+	if err != nil {
+		return false
+	}
+	return (stat.Mode() & os.ModeCharDevice) != 0
 }

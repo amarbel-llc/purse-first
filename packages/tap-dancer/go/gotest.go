@@ -48,15 +48,16 @@ func parseFileLine(output string) (file string, line string) {
 // ConvertGoTest reads go test -json events from r and writes TAP-14 to w.
 // If verbose is true, passing tests include output diagnostics.
 // If skipEmpty is true, packages with no tests emit a SKIP directive instead of not ok.
+// If color is true, ok/not ok keywords are ANSI-colorized.
 // Returns an exit code: 0 for all pass, 1 for any failure, 2 for build errors.
-func ConvertGoTest(r io.Reader, w io.Writer, verbose bool, skipEmpty bool) int {
+func ConvertGoTest(r io.Reader, w io.Writer, verbose bool, skipEmpty bool, color bool) int {
 	// TODO wrap with bufio.Reader
 	scanner := bufio.NewScanner(r)
 
 	packages := make(map[string]*packageResult)
 	var packageOrder []string
 
-	tw := NewWriter(w)
+	tw := NewColorWriter(w, color)
 	exitCode := 0
 
 	// TODO switch to json.Decoder

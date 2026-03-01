@@ -24,4 +24,4 @@
 - [x] update batman bats-testing skill examples/references to use bats-island
 - [x] promote FDR 0001-bats-island from `exploring` to `proposed` after tests pass
 - [ ] fix grit rebase_mcp.bats: tests expect `packages/grit/result/bin/grit` symlink but no build step creates it
-- [ ] add ANSI color output to `tap-dancer *-test` for TTY's
+- [x] add ANSI color output to `tap-dancer *-test` for TTY's

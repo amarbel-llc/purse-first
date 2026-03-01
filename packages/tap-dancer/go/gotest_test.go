@@ -20,7 +20,7 @@ func TestConvertSinglePackageAllPass(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false)
+	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -58,7 +58,7 @@ func TestConvertFailingTest(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false)
+	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false, false)
 
 	if exitCode != 1 {
 		t.Errorf("expected exit code 1, got %d", exitCode)
@@ -90,7 +90,7 @@ func TestConvertSkippedTest(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false)
+	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -123,7 +123,7 @@ func TestConvertSubtests(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false)
+	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -163,7 +163,7 @@ func TestConvertMultiplePackages(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false)
+	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -195,7 +195,7 @@ func TestConvertNoTestFilesDefault(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false)
+	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false, false)
 
 	if exitCode != 1 {
 		t.Errorf("expected exit code 1, got %d", exitCode)
@@ -223,7 +223,7 @@ func TestConvertNoTestFilesSkipEmpty(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, true)
+	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, true, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -256,7 +256,7 @@ func TestConvertNoTestsToRunDefault(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false)
+	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false, false)
 
 	if exitCode != 1 {
 		t.Errorf("expected exit code 1, got %d", exitCode)
@@ -285,7 +285,7 @@ func TestConvertNoTestsToRunSkipEmpty(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, true)
+	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, true, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
@@ -322,7 +322,7 @@ func TestConvertMixedEmptyAndRealPackages(t *testing.T) {
 	}, "\n") + "\n"
 
 	var buf bytes.Buffer
-	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, true)
+	exitCode := ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, true, false)
 
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
