@@ -477,8 +477,28 @@ export async function initializeLinuxNetworkBridge(
   socksProxyPort: number,
 ): Promise<LinuxNetworkBridgeContext> {
   const socketId = randomBytes(8).toString('hex')
-  const httpSocketPath = join(tmpdir(), `claude-http-${socketId}.sock`)
-  const socksSocketPath = join(tmpdir(), `claude-socks-${socketId}.sock`)
+  // Use /tmp directly instead of TMPDIR to keep paths under the 108-byte
+  // Unix socket limit. TMPDIR can be long (e.g. nix develop adds subdirs).
+  const socketDir = '/tmp'
+  const httpSocketPath = join(socketDir, `sc-http-${socketId}.sock`)
+  const socksSocketPath = join(socketDir, `sc-socks-${socketId}.sock`)
+
+  // Unix socket paths are limited to 108 bytes (including null terminator)
+  const UNIX_SOCKET_MAX_PATH = 107
+  for (const p of [httpSocketPath, socksSocketPath]) {
+    if (p.length > UNIX_SOCKET_MAX_PATH) {
+      throw new Error(
+        `Socket path too long (${p.length} chars, max ${UNIX_SOCKET_MAX_PATH}): ${p}`,
+      )
+    }
+  }
+
+  // Collect stderr from socat so failures are diagnosable
+  const collectStderr = (proc: ReturnType<typeof spawn>): string[] => {
+    const chunks: string[] = []
+    proc.stderr?.on('data', (data: Buffer) => chunks.push(data.toString()))
+    return chunks
+  }
 
   // Start HTTP bridge
   const httpSocatArgs = [
@@ -489,8 +509,9 @@ export async function initializeLinuxNetworkBridge(
   logForDebugging(`Starting HTTP bridge: socat ${httpSocatArgs.join(' ')}`)
 
   const httpBridgeProcess = spawn('socat', httpSocatArgs, {
-    stdio: 'ignore',
+    stdio: ['ignore', 'ignore', 'pipe'],
   })
+  const httpStderr = collectStderr(httpBridgeProcess)
 
   if (!httpBridgeProcess.pid) {
     throw new Error('Failed to start HTTP bridge process')
@@ -516,8 +537,9 @@ export async function initializeLinuxNetworkBridge(
   logForDebugging(`Starting SOCKS bridge: socat ${socksSocatArgs.join(' ')}`)
 
   const socksBridgeProcess = spawn('socat', socksSocatArgs, {
-    stdio: 'ignore',
+    stdio: ['ignore', 'ignore', 'pipe'],
   })
+  const socksStderr = collectStderr(socksBridgeProcess)
 
   if (!socksBridgeProcess.pid) {
     // Clean up HTTP bridge
@@ -551,7 +573,10 @@ export async function initializeLinuxNetworkBridge(
       !socksBridgeProcess.pid ||
       socksBridgeProcess.killed
     ) {
-      throw new Error('Linux bridge process died unexpectedly')
+      const stderr = [...httpStderr, ...socksStderr].join('').trim()
+      throw new Error(
+        `Linux bridge process died unexpectedly${stderr ? `\nsocat stderr: ${stderr}` : ''}`,
+      )
     }
 
     try {
@@ -582,8 +607,12 @@ export async function initializeLinuxNetworkBridge(
           // Ignore errors
         }
       }
+      const stderr = [...httpStderr, ...socksStderr].join('').trim()
       throw new Error(
-        `Failed to create bridge sockets after ${maxAttempts} attempts`,
+        `Failed to create bridge sockets after ${maxAttempts} attempts` +
+          `\nhttpSocket: ${httpSocketPath} (exists: ${fs.existsSync(httpSocketPath)})` +
+          `\nsocksSocket: ${socksSocketPath} (exists: ${fs.existsSync(socksSocketPath)})` +
+          (stderr ? `\nsocat stderr: ${stderr}` : ''),
       )
     }
 
