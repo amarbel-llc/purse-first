@@ -182,7 +182,7 @@ function passing_test { # @test
 EOF
   run "$BATS_WRAPPER" --hide-passing --no-sandbox "${TEST_TMPDIR}/directives.bats"
   assert_success
-  assert_line --regexp "^ok 1.* # skip"
+  assert_line --regexp "^ok 1.* # [Ss][Kk][Ii][Pp]"
   refute_line --regexp "^ok 2 "
 }
 

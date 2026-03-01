@@ -27,3 +27,4 @@
 - [x] fix grit rebase_mcp.bats: tests expect `packages/grit/result/bin/grit` symlink but no build step creates it
 - [x] add ANSI color output to `tap-dancer *-test` for TTY's
 - [x] fix sandcastle/batman socket permission failures: use `--allow-unix-sockets` in bats wrapper tests and sandcastle tests
+- [ ] P0: flaky timeout in `bats_wrapper_hide_passing_preserves_plan_and_version` (test 12) — 10s BATS_TEST_TIMEOUT too tight under parallel load
