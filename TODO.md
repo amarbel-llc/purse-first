@@ -1,4 +1,14 @@
 
+## Feature Design Records
+
+- [x] FDR: Sweatfile Configuration & Apply — `docs/features/0002-sweatfile-configuration.md`
+- [ ] FDR: Worktree Boundary Enforcement — deny→notify design reversal, boundary rules undocumented
+- [ ] FDR: Per-Package Hook Architecture — central→per-package pivot, fail-open model, MapsTools/CommandPrefixes matching
+- [ ] FDR: Merge & Close-Shop Lifecycle — complex state machine, silent error swallowing, --merge-on-close semantics
+- [ ] FDR: Lux Service Daemon — session/workspace/pool hierarchy, socket activation, notification broadcasting
+
+## Other
+
 - [ ] fix issues with skills not loading
 - [ ] separate libs and marketplace generation into new `bob` repo
 - [ ] migrate everything to latest MCP
