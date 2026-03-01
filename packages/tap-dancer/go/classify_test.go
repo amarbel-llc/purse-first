@@ -108,6 +108,27 @@ func TestClassifyPragma(t *testing.T) {
 	}
 }
 
+func TestStripANSI(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"ok 1 - plain", "ok 1 - plain"},
+		{"\033[32mok\033[0m 1 - colored", "ok 1 - colored"},
+		{"\033[31mnot ok\033[0m 2 - fail", "not ok 2 - fail"},
+		{"\033[32mok\033[0m 1 - desc \033[33m# SKIP\033[0m reason", "ok 1 - desc # SKIP reason"},
+		{"\033[31mBail out!\033[0m reason", "Bail out! reason"},
+		// Non-SGR CSI sequences should also be stripped
+		{"\033[2Jok 1 - after clear", "ok 1 - after clear"},
+		{"no escapes", "no escapes"},
+	}
+	for _, tt := range tests {
+		if got := stripANSI(tt.input); got != tt.want {
+			t.Errorf("stripANSI(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
+
 func TestClassifyComment(t *testing.T) {
 	tests := []struct {
 		line string

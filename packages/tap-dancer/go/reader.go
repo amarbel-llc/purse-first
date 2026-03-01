@@ -72,6 +72,11 @@ func (r *Reader) Next() (Event, error) {
 		r.lineNum++
 		raw := r.scanner.Text()
 
+		// Strip ANSI CSI escape sequences before parsing, per the
+		// ANSI Display Hints amendment. This ensures colored TAP
+		// streams parse identically to uncolored streams.
+		raw = stripANSI(raw)
+
 		// Determine indentation depth
 		trimmed := strings.TrimLeft(raw, " ")
 		indent := len(raw) - len(trimmed)

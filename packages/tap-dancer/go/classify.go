@@ -25,7 +25,15 @@ var (
 	planRegexp      = regexp.MustCompile(`^1\.\.(\d+)(\s+#\s+(.*))?$`)
 	testPointRegexp = regexp.MustCompile(`^(not )?ok\b`)
 	pragmaRegexp    = regexp.MustCompile(`^pragma\s+[+-]\w`)
+	// csiRegexp matches all CSI escape sequences (ESC [ ... <final byte>),
+	// not just SGR, per the ANSI Display Hints amendment security guidance.
+	csiRegexp = regexp.MustCompile("\x1b\\[[0-9;]*[A-Za-z]")
 )
+
+// stripANSI removes all CSI escape sequences from a string.
+func stripANSI(s string) string {
+	return csiRegexp.ReplaceAllString(s, "")
+}
 
 func classifyLine(line string) lineKind {
 	if line == "TAP version 14" {

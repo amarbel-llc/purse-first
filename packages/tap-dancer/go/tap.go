@@ -57,6 +57,13 @@ func (tw *Writer) colorSkip() string {
 	return "# SKIP"
 }
 
+func (tw *Writer) colorTodo() string {
+	if tw.color {
+		return ansiYellow + "# TODO" + ansiReset
+	}
+	return "# TODO"
+}
+
 func (tw *Writer) colorBailOut() string {
 	if tw.color {
 		return ansiRed + "Bail out!" + ansiReset
@@ -127,7 +134,7 @@ func (tw *Writer) SkipDiag(description, reason string, diagnostics *Diagnostics)
 
 func (tw *Writer) Todo(description, reason string) int {
 	tw.n++
-	fmt.Fprintf(tw.w, "%s %d - %s # TODO %s\n", tw.colorNotOk(), tw.n, description, reason)
+	fmt.Fprintf(tw.w, "%s %d - %s %s %s\n", tw.colorNotOk(), tw.n, description, tw.colorTodo(), reason)
 	return tw.n
 }
 

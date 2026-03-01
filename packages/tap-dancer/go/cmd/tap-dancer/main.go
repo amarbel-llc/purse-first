@@ -351,6 +351,9 @@ func handleValidate(ctx context.Context, args json.RawMessage, _ command.Prompte
 }
 
 func stdoutIsTerminal() bool {
+	if os.Getenv("NO_COLOR") != "" {
+		return false
+	}
 	stat, err := os.Stdout.Stat()
 	if err != nil {
 		return false
