@@ -45,6 +45,7 @@ Do NOT create an RFC for:
 | Requirements Language | Yes* | RFC 2119 boilerplate (*required when using MUST/SHOULD/MAY) |
 | Specification | Yes | The interface definition — precise, normative |
 | Security Considerations | Yes | Security implications of the interface |
+| Conformance Testing | Conditional | Conformance test suite via bats-emo (when a binary implements the spec) |
 | Compatibility | No | Backwards compatibility, migration, versioning notes |
 | References | No | Normative and informative references |
 
@@ -155,8 +156,57 @@ Use restraint. Not every sentence needs a requirement keyword. Reserve them for 
 - **Do not backfill retroactively unless asked.** Only create RFCs for interfaces being defined now.
 - **Remove unused optional sections.** If Compatibility or References do not apply, delete them.
 
+## Conformance Tests
+
+When the protocol being specified describes behavior that can reasonably be tested against a specific binary — CLI tools, MCP servers, file processors, or any executable that consumes or produces the specified format — the RFC MUST include a `Conformance Testing` section.
+
+This section specifies:
+
+1. **What to test**: Which normative requirements (MUST/MUST NOT) are covered by conformance tests
+2. **Where tests live**: Path to a `zz-tests_bats/` directory containing the conformance suite
+3. **Binary injection**: Tests MUST use the `bats-emo` library (`require_bin`) for binary injection — never hardcode build output paths. This makes the suite portable across implementations (e.g., a Go binary and a Rust rewrite can run the same tests)
+
+Use the `robin:bats-testing` skill for test structure and the `robin:emo` skill for binary injection patterns.
+
+### When to Include
+
+Include this section when:
+
+- The RFC specifies CLI behavior (flags, exit codes, stdout/stderr format)
+- The RFC specifies a wire format that a binary produces or consumes (JSON-RPC, TAP, etc.)
+- The RFC specifies file format handling where a tool reads/writes the format
+- Any MUST requirement can be verified by running a binary and checking its output
+
+Do NOT include this section when:
+
+- The RFC specifies a purely declarative format with no reference implementation binary (e.g., a JSON schema convention)
+- The protocol is between two libraries with no CLI surface
+- No binary exists or is planned that implements the specification
+
+### Template Addition
+
+When the conformance testing section applies, add this to the RFC after Security Considerations:
+
+```markdown
+## Conformance Testing
+
+Conformance tests for this specification live in `<path>/zz-tests_bats/`.
+
+Tests use binary injection via `bats-emo`:
+
+    require_bin <VAR_NAME> <command-name>
+
+### Covered Requirements
+
+| Requirement | Test File | Description |
+|-------------|-----------|-------------|
+| Section N.N, MUST ... | `test_file.bats` | What the test verifies |
+```
+
 ## Related Skills
 
 - **bob:adr** — Architecture Decision Records for documenting choices and trade-offs
 - **bob:fdr** — Feature Design Records for documenting user-facing features
 - **bob:overview** — Framework orientation, terminology, and workflow overview
+- **robin:bats-testing** — BATS test structure, helpers, and integration patterns
+- **robin:emo** — Binary injection via `require_bin` for conformance test portability

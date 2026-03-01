@@ -19,6 +19,10 @@ interpreted as described in RFC 2119.
 
 ## Security Considerations
 
+## Conformance Testing
+
+<!-- Remove this section if the protocol cannot be tested against a binary -->
+
 ## Compatibility
 
 ## References
