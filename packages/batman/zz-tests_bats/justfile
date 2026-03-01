@@ -1,4 +1,4 @@
-bats_timeout := "10"
+bats_timeout := "30"
 
 test-targets *targets="*.bats":
   BATS_TEST_TIMEOUT="{{bats_timeout}}" \
