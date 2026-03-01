@@ -144,6 +144,10 @@ test-brew:
     nix build .#homebrew-tap
     {{cmd_nix_dev}} bats --tap zz-tests_bats/homebrew_tap.bats
 
+test-spinclass-bats:
+    nix build .#spinclass
+    {{cmd_nix_dev}} just packages/spinclass/zz-tests_bats/test
+
 test: \
     test-chix \
     test-get-hubbed \
@@ -155,6 +159,7 @@ test: \
     test-lux \
     test-rust-mcp \
     test-spinclass \
+    test-spinclass-bats \
     test-tap-dancer-go \
     test-tap-dancer-rust \
     test-template

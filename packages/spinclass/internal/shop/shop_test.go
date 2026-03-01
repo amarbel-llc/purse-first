@@ -210,10 +210,17 @@ func TestCreateSharedWriter(t *testing.T) {
 
 type mockExecutor struct {
 	attachCalled bool
+	attachDir    string
+	attachKey    string
+	attachCmd    []string
+	detachCalled bool
 }
 
 func (m *mockExecutor) Attach(dir string, key string, command []string, dryRun bool, tp *tap.TestPoint) error {
 	m.attachCalled = true
+	m.attachDir = dir
+	m.attachKey = key
+	m.attachCmd = command
 	if dryRun {
 		tp.Skip = "dry run"
 		tp.Diagnostics = &tap.Diagnostics{
@@ -224,6 +231,7 @@ func (m *mockExecutor) Attach(dir string, key string, command []string, dryRun b
 }
 
 func (m *mockExecutor) Detach() error {
+	m.detachCalled = true
 	return nil
 }
 
@@ -418,6 +426,122 @@ func TestForkAutoName(t *testing.T) {
 	forkedPath := filepath.Join(wtDir, "source-branch-1")
 	if _, err := os.Stat(forkedPath); os.IsNotExist(err) {
 		t.Errorf("expected forked worktree at %s", forkedPath)
+	}
+}
+
+func TestAttachCallsExecutorWithCorrectArgs(t *testing.T) {
+	parentDir := t.TempDir()
+	repoDir := filepath.Join(parentDir, "myrepo")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	runGit := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+
+	runGit(repoDir, "init")
+	runGit(repoDir, "config", "user.email", "test@test.com")
+	runGit(repoDir, "config", "user.name", "Test")
+	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
+
+	wtDir := filepath.Join(repoDir, worktree.WorktreesDir)
+	wtPath := filepath.Join(wtDir, "feature-attach")
+	runGit(repoDir, "worktree", "add", "-b", "feature-attach", wtPath)
+
+	rp := worktree.ResolvedPath{
+		AbsPath:    wtPath,
+		RepoPath:   repoDir,
+		Branch:     "feature-attach",
+		SessionKey: "myrepo/feature-attach",
+	}
+
+	mock := &mockExecutor{}
+	var buf bytes.Buffer
+	err := New(&buf, mock, rp, "tap", nil, false, true, false)
+	if err != nil {
+		t.Fatalf("New returned error: %v", err)
+	}
+
+	if !mock.attachCalled {
+		t.Fatal("expected executor.Attach to be called")
+	}
+	if mock.attachDir != wtPath {
+		t.Errorf("Attach dir = %q, want %q", mock.attachDir, wtPath)
+	}
+	if mock.attachKey != "myrepo/feature-attach" {
+		t.Errorf("Attach key = %q, want %q", mock.attachKey, "myrepo/feature-attach")
+	}
+}
+
+func TestNewMergeOnCloseCleanWorktree(t *testing.T) {
+	parentDir := t.TempDir()
+	repoDir := filepath.Join(parentDir, "repo")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	runGit := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+
+	runGit(repoDir, "init")
+	runGit(repoDir, "config", "user.email", "test@test.com")
+	runGit(repoDir, "config", "user.name", "Test")
+	if err := os.WriteFile(filepath.Join(repoDir, "file.txt"), []byte("original"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	runGit(repoDir, "add", "file.txt")
+	runGit(repoDir, "commit", "-m", "initial")
+
+	wtDir := filepath.Join(repoDir, worktree.WorktreesDir)
+	wtPath := filepath.Join(wtDir, "feature-moc")
+	runGit(repoDir, "worktree", "add", "-b", "feature-moc", wtPath)
+
+	// Add a commit on the feature branch so merge has something to do
+	if err := os.WriteFile(filepath.Join(wtPath, "new.txt"), []byte("new"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	runGit(wtPath, "add", "new.txt")
+	runGit(wtPath, "commit", "-m", "feature commit")
+
+	rp := worktree.ResolvedPath{
+		AbsPath:    wtPath,
+		RepoPath:   repoDir,
+		Branch:     "feature-moc",
+		SessionKey: "repo/feature-moc",
+	}
+
+	mock := &mockExecutor{}
+	var buf bytes.Buffer
+
+	// mergeOnClose=true, noAttach=false (Attach returns immediately from mock)
+	err := New(&buf, mock, rp, "tap", nil, true, false, false)
+	if err != nil {
+		t.Fatalf("New returned error: %v", err)
+	}
+
+	// Worktree should have been merged and removed
+	if _, statErr := os.Stat(wtPath); !os.IsNotExist(statErr) {
+		t.Error("expected worktree to be removed after merge-on-close")
+	}
+
+	// Commit should be on main
+	out, _ := exec.Command("git", "-C", repoDir, "log", "--oneline").CombinedOutput()
+	if !strings.Contains(string(out), "feature commit") {
+		t.Errorf("expected feature commit on main, got: %s", string(out))
 	}
 }
 
