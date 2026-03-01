@@ -178,7 +178,7 @@ build-rust-mcp:
 
 # Test rust-lib-mcp
 test-rust-mcp:
-    cd libs/rust-mcp && {{cmd_nix_dev}} cargo test
+    cd libs/rust-mcp && {{cmd_nix_dev}} {{tap-dancer-cargo-test}} test
 
 # Test command package specifically
 test-command:
