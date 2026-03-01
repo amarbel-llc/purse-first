@@ -1,5 +1,6 @@
 
 cmd_nix_dev := "nix develop " + justfile_directory() + " --command "
+cmd_batman_bats := justfile_directory() + "/result-batman/bin/bats"
 
 default: && update build test
 
@@ -39,6 +40,9 @@ build-brew:
 # Build marketplace without hooks
 build-no-hooks:
     nix build .#marketplace-no-hooks
+
+build-batman:
+    nix build .#batman -o result-batman
 
 # Install MCP servers and packages
 install:
@@ -114,9 +118,9 @@ vendor-hash:
     echo "updated goVendorHash to $hash"
 
 # Run integration tests
-test-integration:
+test-integration: build-batman
     nix build
-    {{cmd_nix_dev}} bats --tap \
+    {{cmd_nix_dev}} {{cmd_batman_bats}} \
       zz-tests_bats/validate_marketplace.bats \
       zz-tests_bats/validate_documents.bats \
       zz-tests_bats/validate_plugin_repos.bats
@@ -126,23 +130,23 @@ test-validate-repos:
     {{cmd_nix_dev}} bats --tap zz-tests_bats/validate_plugin_repos.bats
 
 # Run validate-specific BATS tests
-test-validate:
+test-validate: build-batman
     nix build
-    {{cmd_nix_dev}} bats --tap zz-tests_bats/validate_documents.bats
+    {{cmd_nix_dev}} {{cmd_batman_bats}} zz-tests_bats/validate_documents.bats
 
 # Run lifecycle tests
-test-lifecycle:
+test-lifecycle: build-batman
     nix build
-    {{cmd_nix_dev}} bats --tap zz-tests_bats/hook_lifecycle.bats
+    {{cmd_nix_dev}} {{cmd_batman_bats}} zz-tests_bats/hook_lifecycle.bats
 
 # Validate own plugin manifest
 validate:
     {{cmd_nix_dev}} go run ./cmd/purse-first validate .claude-plugin/plugin.json
 
 # Run Homebrew tap BATS tests
-test-brew:
+test-brew: build-batman
     nix build .#homebrew-tap
-    {{cmd_nix_dev}} bats --tap zz-tests_bats/homebrew_tap.bats
+    {{cmd_nix_dev}} {{cmd_batman_bats}} zz-tests_bats/homebrew_tap.bats
 
 test-spinclass-bats:
     nix build .#spinclass
@@ -152,9 +156,8 @@ test-grit-bats:
     nix build .#grit
     GRIT_BIN={{justfile_directory()}}/result/bin/grit {{cmd_nix_dev}} just packages/grit/zz-tests_bats/test
 
-test-batman-bats:
-    nix build .#batman
-    BATS_WRAPPER={{justfile_directory()}}/result/bin/bats {{cmd_nix_dev}} just packages/batman/zz-tests_bats/test
+test-batman-bats: build-batman
+    BATS_WRAPPER={{justfile_directory()}}/result-batman/bin/bats {{cmd_nix_dev}} just packages/batman/zz-tests_bats/test
 
 test-sandcastle-bats:
     nix build .#sandcastle
@@ -234,4 +237,4 @@ bump-version package version:
 clean:
     rm -f purse-first
     rm -rf build/
-    rm -rf result
+    rm -rf result result-batman
