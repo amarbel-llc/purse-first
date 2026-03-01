@@ -23,3 +23,5 @@
 - [ ] migrate purse-first root tests to `bats_load_library bats-island`
 - [ ] update batman bats-testing skill examples/references to use bats-island
 - [ ] promote FDR 0001-bats-island from `exploring` to `proposed` after tests pass
+- [ ] fix `tap-dancer cargo-test`
+- [ ] add ANSI color output to `tap-dancer *-test` for TTY's
