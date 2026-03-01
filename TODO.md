@@ -9,7 +9,7 @@
 
 ## Other
 
-- [ ] fix issues with skills not loading
+- [ ] verify install-local skill path resolution (./skills/<name> in .claude-plugin/plugin.json may not resolve correctly — needs manual test)
 - [ ] separate libs and marketplace generation into new `bob` repo
 - [ ] migrate everything to latest MCP
 - [ ] add rust tap-dancer library
@@ -20,8 +20,8 @@
 - [ ] migrate grit to `bats_load_library bats-island`
 - [ ] migrate dodder to `bats_load_library bats-island`
 - [ ] migrate pivy to `bats_load_library bats-island`
-- [ ] migrate purse-first root tests to `bats_load_library bats-island`
-- [ ] update batman bats-testing skill examples/references to use bats-island
-- [ ] promote FDR 0001-bats-island from `exploring` to `proposed` after tests pass
+- [x] migrate purse-first root tests to `bats_load_library bats-island`
+- [x] update batman bats-testing skill examples/references to use bats-island
+- [x] promote FDR 0001-bats-island from `exploring` to `proposed` after tests pass
 - [ ] fix `tap-dancer cargo-test`
 - [ ] add ANSI color output to `tap-dancer *-test` for TTY's

@@ -2,8 +2,13 @@
 
 setup() {
   load "$(dirname "$BATS_TEST_FILE")/common.bash"
+  setup_test_home
   export output
   purse_first="$(purse_first_bin)"
+}
+
+teardown() {
+  teardown_test_home
 }
 
 function claude_validates_grit { # @test

@@ -2,9 +2,14 @@
 
 setup() {
   load "$(dirname "$BATS_TEST_FILE")/common.bash"
+  setup_test_home
   export output
   marketplace_json="$(marketplace_result)"
   purse_first="$(purse_first_bin)"
+}
+
+teardown() {
+  teardown_test_home
 }
 
 function marketplace_json_exists { # @test

@@ -104,11 +104,12 @@ Create `zz-tests_bats/common.bash` to load assertion libraries and define shared
 bats_load_library bats-support
 bats_load_library bats-assert
 bats_load_library bats-assert-additions
+bats_load_library bats-island
 ```
 
 The `bats_load_library` function searches `BATS_LIB_PATH` for each library. Batman's `bats` wrapper automatically appends the bundled libraries to `BATS_LIB_PATH` at runtime — no devShell setup-hook or manual configuration needed. If you set `BATS_LIB_PATH` before invoking `bats`, your paths take precedence (searched first).
 
-Add project-specific helpers here: XDG isolation, command wrappers with default flags, fixture loaders, and cleanup functions. See `references/patterns.md` for detailed examples.
+The `bats-island` library provides test isolation functions — see the Sandcastle Environment Isolation section below. Add project-specific helpers here: command wrappers with default flags, fixture loaders, etc. See `references/patterns.md` for detailed examples.
 
 ## Assertion Libraries
 
@@ -170,25 +171,32 @@ Sandcastle and XDG isolation are complementary layers:
 
 Both layers are required. Without sandcastle, XDG isolation can silently fail (e.g. `GIT_CONFIG_GLOBAL` overriding `XDG_CONFIG_HOME`). Without XDG isolation, sandcastle will block legitimate test operations that need config directories.
 
-### Git Config Isolation
+### Test Isolation with bats-island
 
-`git config --global` uses `$XDG_CONFIG_HOME/git/config` by default, but **`GIT_CONFIG_GLOBAL` takes precedence** if set. Many dotfile setups (rcm, direnv) export `GIT_CONFIG_GLOBAL` to an absolute path, which bypasses `$HOME` and `$XDG_CONFIG_HOME` redirection entirely. Always override `GIT_CONFIG_GLOBAL` alongside the XDG vars in `setup_test_home`:
+The `bats-island` library (loaded via `bats_load_library bats-island`) provides two function pairs for test isolation:
+
+| Function | Purpose |
+|----------|---------|
+| `setup_test_home` | Redirects `$HOME`, all XDG dirs, and git config into `$BATS_TEST_TMPDIR`. Seeds minimal git config. |
+| `teardown_test_home` | Cleans up (strips macOS immutable flags, removes tmpdir). |
+| `setup_test_repo [dir]` | Calls `setup_test_home` + creates an isolated git repo at `$TEST_REPO`. |
+| `set_xdg <dir>` | Low-level: redirects only XDG dirs (called internally by `setup_test_home`). |
+
+Use `setup_test_home` / `teardown_test_home` in any test that touches `$HOME`, git, or config files:
 
 ```bash
-setup_test_home() {
-  export REAL_HOME="$HOME"
-  export HOME="$BATS_TEST_TMPDIR/home"
-  mkdir -p "$HOME"
-  set_xdg "$BATS_TEST_TMPDIR"
-  mkdir -p "$XDG_CONFIG_HOME/git"
-  export GIT_CONFIG_GLOBAL="$XDG_CONFIG_HOME/git/config"
-  git config --global user.name "Test User"
-  git config --global user.email "test@example.com"
-  git config --global init.defaultBranch main
+setup() {
+  load "$(dirname "$BATS_TEST_FILE")/common.bash"
+  setup_test_home
+  export output
+}
+
+teardown() {
+  teardown_test_home
 }
 ```
 
-The `mkdir -p "$XDG_CONFIG_HOME/git"` is required because `set_xdg` creates the top-level XDG directories but git needs the `git/` subdirectory to exist before it can write config files.
+`setup_test_home` handles git config isolation automatically — it overrides `GIT_CONFIG_GLOBAL` (which takes precedence over `XDG_CONFIG_HOME` and can bypass redirection when set by dotfile managers like rcm/direnv) and sets `GIT_CONFIG_SYSTEM=/dev/null` and `GIT_CEILING_DIRECTORIES=$BATS_TEST_TMPDIR`.
 
 Batman's packaged `bats` binary wraps sandcastle transparently — every `bats` invocation is automatically sandboxed with sensible defaults:
 
@@ -246,7 +254,7 @@ When setting up BATS in a new repo:
 1. Add `batman` flake input to `flake.nix`
 2. Add `batman.packages.${system}.default` to devShell packages (do not add `pkgs.bats` separately)
 3. Create `zz-tests_bats/` directory structure
-4. Create `common.bash` using `bats_load_library` to load assertion libraries
+4. Create `common.bash` using `bats_load_library` to load assertion libraries and `bats-island`
 5. Add test justfile with `test-targets`, `test-tags`, and `test` recipes
 6. Wire root justfile to delegate to `zz-tests_bats/test`
 7. Create first `.bats` test file following the function-name pattern
@@ -259,6 +267,7 @@ All libraries are packaged in `bats-libs` and available via `BATS_LIB_PATH` auto
 - **bats-support** -- Core support library (output formatting, error helpers, lang utilities)
 - **bats-assert** -- Standard assertion library (assert_success, assert_output, assert_line, etc.)
 - **bats-assert-additions** -- Custom assertions (assert_output_unsorted, assert_output_cut)
+- **bats-island** -- Test isolation library (setup_test_home, teardown_test_home, setup_test_repo, set_xdg)
 
 ### Reference Files
 

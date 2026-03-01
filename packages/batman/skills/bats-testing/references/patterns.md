@@ -23,34 +23,36 @@ function run_my_command {
 
 Use `timeout --preserve-status` to prevent hangs from blocking the test suite. The timeout value should be short (1-5 seconds) since integration tests should be fast.
 
-## XDG Directory Isolation
+## XDG and HOME Isolation
 
-Prevent tests from reading or writing the user's real XDG directories:
+Use `bats-island` (loaded via `bats_load_library bats-island` in `common.bash`) for test isolation instead of defining helpers inline.
+
+For most tests, call `setup_test_home` / `teardown_test_home` which handle HOME, XDG, and git config redirection:
 
 ```bash
-set_xdg() {
-  loc="$(realpath "$1" 2>/dev/null)"
-  export XDG_DATA_HOME="$loc/.xdg/data"
-  export XDG_CONFIG_HOME="$loc/.xdg/config"
-  export XDG_STATE_HOME="$loc/.xdg/state"
-  export XDG_CACHE_HOME="$loc/.xdg/cache"
-  export XDG_RUNTIME_HOME="$loc/.xdg/runtime"
-  mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_STATE_HOME" \
-    "$XDG_CACHE_HOME" "$XDG_RUNTIME_HOME"
+setup() {
+  load "$(dirname "$BATS_TEST_FILE")/common.bash"
+  setup_test_home
+  export output
+}
+
+teardown() {
+  teardown_test_home
 }
 ```
 
-Call `set_xdg "$BATS_TEST_TMPDIR"` in `setup()` to route all XDG paths into the test's temp directory. Each test gets its own `$BATS_TEST_TMPDIR`, ensuring complete isolation.
-
-**Important:** `set_xdg` alone is not sufficient for tools that use their own config env vars. For example, `git config --global` respects `GIT_CONFIG_GLOBAL` over `XDG_CONFIG_HOME`. If your dotfile manager (rcm, direnv) exports `GIT_CONFIG_GLOBAL` to an absolute path, `set_xdg` will have no effect on git. Always pair `set_xdg` with explicit overrides for tool-specific config env vars:
+For tests that also need a git repo, use `setup_test_repo` instead (it calls `setup_test_home` internally):
 
 ```bash
-# After set_xdg, redirect git global config into the isolated XDG dir
-mkdir -p "$XDG_CONFIG_HOME/git"
-export GIT_CONFIG_GLOBAL="$XDG_CONFIG_HOME/git/config"
+setup() {
+  load "$(dirname "$BATS_TEST_FILE")/common.bash"
+  setup_test_repo
+  export output
+  cd "$TEST_REPO"
+}
 ```
 
-The `mkdir -p` for `git/` is required because git needs the subdirectory to exist before writing config files — `set_xdg` only creates the top-level XDG directories.
+If you only need XDG redirection without HOME isolation, use `set_xdg "$BATS_TEST_TMPDIR"` directly. Note that `set_xdg` alone is not sufficient for tools that use their own config env vars (e.g. `GIT_CONFIG_GLOBAL` takes precedence over `XDG_CONFIG_HOME`). Prefer `setup_test_home` which handles these edge cases.
 
 ## Fixture Management
 

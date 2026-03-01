@@ -1,5 +1,5 @@
 ---
-status: exploring
+status: proposed
 date: 2026-03-01
 promotion-criteria: >
   Promote to proposed when the consumer audit is reviewed and the interface

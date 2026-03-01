@@ -2,19 +2,15 @@
 
 setup() {
   load "$(dirname "$BATS_TEST_FILE")/common.bash"
+  setup_test_home
   export output
-
-  # Isolate XDG directories
-  set_xdg "$BATS_TEST_TMPDIR"
 
   # Copy fixtures or initialize state as needed
   # copy_from_version "$DIR"
 }
 
 teardown() {
-  # Runs after each test regardless of success/failure. BATS_TEST_TMPDIR is
-  # cleaned up automatically by bats — use teardown for resources created
-  # outside managed temp dirs (e.g. background processes, external files).
+  teardown_test_home
 }
 
 function init_creates_directory { # @test

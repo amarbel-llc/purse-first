@@ -8,6 +8,7 @@ fi
 bats_load_library "bats-support"
 bats_load_library "bats-assert"
 bats_load_library "bats-assert-additions"
+bats_load_library "bats-island"
 
 marketplace_result() {
   local result_path="${PURSE_FIRST_RESULT:-$BATS_CWD/result}"

@@ -2,9 +2,14 @@
 
 setup() {
   load "$(dirname "$BATS_TEST_FILE")/common.bash"
+  setup_test_home
   export output
   purse_first="$(purse_first_bin)"
   result_path="${PURSE_FIRST_RESULT:-$BATS_CWD/result}"
+}
+
+teardown() {
+  teardown_test_home
 }
 
 function install_produces_tap_output { # @test
