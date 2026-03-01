@@ -171,6 +171,7 @@
           batmanPkgs = import ./lib/packages/batman.nix {
             inherit pkgs purse-first-cli;
             sandcastle = sandcastlePkg;
+            tap-dancer-cli = tapDancerPkgs.cli;
             src = ./packages/batman;
           };
         in

@@ -1,4 +1,4 @@
-{ pkgs, src, sandcastle, purse-first-cli }:
+{ pkgs, src, sandcastle, purse-first-cli, tap-dancer-cli }:
 
 let
   bats-support = pkgs.stdenvNoCC.mkDerivation {
@@ -74,6 +74,7 @@ let
       pkgs.coreutils
       pkgs.gawk
       sandcastle
+      tap-dancer-cli
     ];
     text = ''
       bin_dirs=()
@@ -129,8 +130,10 @@ let
           --tap|--formatter|-F|--output) has_formatter=true; break ;;
         esac
       done
+      use_tap14=false
       if ! $has_formatter; then
         set -- "$@" --tap
+        use_tap14=true
       fi
 
       filter_tap() {
@@ -143,6 +146,14 @@ let
             /^not ok / { show = 1; print; next }
             { show = 1; print }
           '
+        else
+          cat
+        fi
+      }
+
+      reformat_tap() {
+        if $use_tap14; then
+          tap-dancer reformat
         else
           cat
         fi
@@ -184,12 +195,12 @@ let
               set -- --no-tempdir-cleanup "$@"
             fi
 
-            sandcastle "''${sandcastle_args[@]}" --shell bash --config "$config" -- bats "$@" | filter_tap
+            sandcastle "''${sandcastle_args[@]}" --shell bash --config "$config" -- bats "$@" | filter_tap | reformat_tap
       else
         if $no_tempdir_cleanup; then
           set -- --no-tempdir-cleanup "$@"
         fi
-        bats "$@" | filter_tap
+        bats "$@" | filter_tap | reformat_tap
       fi
     '';
   };

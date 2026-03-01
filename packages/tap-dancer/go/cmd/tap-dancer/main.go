@@ -28,6 +28,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  validate              Validate TAP-14 input\n")
 		fmt.Fprintf(os.Stderr, "  go-test [args...]     Run go test and convert output to TAP-14\n")
 		fmt.Fprintf(os.Stderr, "  cargo-test [args...]  Run cargo test and convert output to TAP-14\n")
+		fmt.Fprintf(os.Stderr, "  reformat              Read TAP from stdin and emit TAP-14 with ANSI colors\n")
 		fmt.Fprintf(os.Stderr, "  generate-plugin DIR   Generate MCP plugin (for Nix postInstall)\n")
 		fmt.Fprintf(os.Stderr, "\nWhen run with no args and no TTY, starts MCP server mode\n")
 	}
@@ -110,6 +111,12 @@ func registerCommands() *command.App {
 			{Name: "skip-empty", Type: command.Bool, Description: "Emit SKIP directive instead of not ok for suites with no tests", Required: false},
 		},
 		RunCLI: handleCargoTest,
+	})
+
+	app.AddCommand(&command.Command{
+		Name:        "reformat",
+		Description: command.Description{Short: "Read TAP from stdin and emit TAP-14 with optional ANSI colors"},
+		RunCLI:      handleReformat,
 	})
 
 	return app
@@ -348,6 +355,11 @@ func handleValidate(ctx context.Context, args json.RawMessage, _ command.Prompte
 		}
 		return command.TextResult(sb.String()), nil
 	}
+}
+
+func handleReformat(_ context.Context, _ json.RawMessage) error {
+	tap.ReformatTAP(os.Stdin, os.Stdout, stdoutIsTerminal())
+	return nil
 }
 
 func stdoutIsTerminal() bool {
