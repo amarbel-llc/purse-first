@@ -9,6 +9,7 @@
 
 ## Other
 
+- [ ] update tap-dancer with latest tap amendments
 - [ ] verify install-local skill path resolution (./skills/<name> in .claude-plugin/plugin.json may not resolve correctly — needs manual test)
 - [ ] separate libs and marketplace generation into new `bob` repo
 - [ ] migrate everything to latest MCP
