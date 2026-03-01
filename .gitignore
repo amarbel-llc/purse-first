@@ -20,3 +20,4 @@ vendor/
 /packages/grit/grit
 /packages/get-hubbed/get-hubbed
 .tmp/
+node_modules/
