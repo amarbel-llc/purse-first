@@ -148,20 +148,20 @@ test-brew: build-batman
     nix build .#homebrew-tap
     {{cmd_nix_dev}} {{cmd_batman_bats}} zz-tests_bats/homebrew_tap.bats
 
-test-spinclass-bats:
+test-spinclass-bats: build-batman
     nix build .#spinclass
-    {{cmd_nix_dev}} just packages/spinclass/zz-tests_bats/test
+    PATH="{{justfile_directory()}}/result-batman/bin:$PATH" {{cmd_nix_dev}} just packages/spinclass/zz-tests_bats/test
 
-test-grit-bats:
+test-grit-bats: build-batman
     nix build .#grit
-    GRIT_BIN={{justfile_directory()}}/result/bin/grit {{cmd_nix_dev}} just packages/grit/zz-tests_bats/test
+    GRIT_BIN={{justfile_directory()}}/result/bin/grit PATH="{{justfile_directory()}}/result-batman/bin:$PATH" {{cmd_nix_dev}} just packages/grit/zz-tests_bats/test
 
 test-batman-bats: build-batman
-    BATS_WRAPPER={{justfile_directory()}}/result-batman/bin/bats {{cmd_nix_dev}} just packages/batman/zz-tests_bats/test
+    BATS_WRAPPER={{justfile_directory()}}/result-batman/bin/bats PATH="{{justfile_directory()}}/result-batman/bin:$PATH" {{cmd_nix_dev}} just packages/batman/zz-tests_bats/test
 
-test-sandcastle-bats:
+test-sandcastle-bats: build-batman
     nix build .#sandcastle
-    PATH="{{justfile_directory()}}/result/bin:$PATH" {{cmd_nix_dev}} just packages/sandcastle/zz-tests_bats/test
+    PATH="{{justfile_directory()}}/result-batman/bin:{{justfile_directory()}}/result/bin:$PATH" {{cmd_nix_dev}} just packages/sandcastle/zz-tests_bats/test
 
 test: \
     test-batman-bats \
