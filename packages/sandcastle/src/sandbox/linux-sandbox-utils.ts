@@ -1,4 +1,4 @@
-import shellquote from 'shell-quote'
+import { quoteArgs, singleQuote } from '../utils/shell-quote.js'
 import { logForDebugging } from '../utils/debug.js'
 import { whichSync } from '../utils/which.js'
 import { randomBytes } from 'node:crypto'
@@ -641,7 +641,7 @@ function buildSandboxCommand(
       )
     }
 
-    const applySeccompCmd = shellquote.quote([
+    const applySeccompCmd = quoteArgs([
       applySeccompBinary,
       seccompFilterPath,
       shellPath,
@@ -650,15 +650,15 @@ function buildSandboxCommand(
     ])
 
     const innerScript = [...socatCommands, applySeccompCmd].join('\n')
-    return `${shellPath} -c ${shellquote.quote([innerScript])}`
+    return `${shellPath} -c ${singleQuote(innerScript)}`
   } else {
     // No seccomp filter - run user command directly
     const innerScript = [
       ...socatCommands,
-      `eval ${shellquote.quote([userCommand])}`,
+      `eval ${singleQuote(userCommand)}`,
     ].join('\n')
 
-    return `${shellPath} -c ${shellquote.quote([innerScript])}`
+    return `${shellPath} -c ${singleQuote(innerScript)}`
   }
 }
 
@@ -1002,7 +1002,7 @@ export async function wrapCommandWithSandboxLinux(
     }
     bwrapArgs.push('--', shell, '-c', command)
 
-    const wrappedCommand = shellquote.quote(['bwrap', ...bwrapArgs])
+    const wrappedCommand = quoteArgs(['bwrap', ...bwrapArgs])
 
     logForDebugging(
       '[Sandbox Linux] Wrapped command with nested bwrap (filesystem restrictions only)',
@@ -1183,7 +1183,7 @@ export async function wrapCommandWithSandboxLinux(
         )
       }
 
-      const applySeccompCmd = shellquote.quote([
+      const applySeccompCmd = quoteArgs([
         applySeccompBinary,
         seccompFilterPath,
         shell,
@@ -1196,7 +1196,7 @@ export async function wrapCommandWithSandboxLinux(
     }
 
     // Build the outer bwrap command
-    const wrappedCommand = shellquote.quote(['bwrap', ...bwrapArgs])
+    const wrappedCommand = quoteArgs(['bwrap', ...bwrapArgs])
 
     const restrictions = []
     if (needsNetworkRestriction) restrictions.push('network')

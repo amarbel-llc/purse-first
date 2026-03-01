@@ -63,11 +63,9 @@ let
       sandcastle
     ];
     text = ''
-      # TODO: add --allow-unix-sockets flag that sets allowAllUnixSockets: true
-      # in the sandcastle config, so tests needing AF_UNIX (e.g. ssh-agent) can
-      # run sandboxed without --no-sandbox
       bin_dirs=()
       sandbox=true
+      allow_unix_sockets=false
       no_tempdir_cleanup=false
       hide_passing=false
 
@@ -79,6 +77,10 @@ let
             ;;
           --no-sandbox)
             sandbox=false
+            shift
+            ;;
+          --allow-unix-sockets)
+            allow_unix_sockets=true
             shift
             ;;
           --no-tempdir-cleanup)
@@ -157,7 +159,8 @@ let
         },
         "network": {
           "allowedDomains": [],
-          "deniedDomains": []
+          "deniedDomains": []$(if $allow_unix_sockets; then echo ',
+          "allowAllUnixSockets": true'; fi)
         }
       }
       SANDCASTLE_CONFIG

@@ -72,3 +72,15 @@ function special_characters_in_arguments { # @test
   assert_success
   assert_output "hello   world"
 }
+
+function exclamation_mark_not_escaped { # @test
+  run sandcastle echo '!x'
+  assert_success
+  assert_output '!x'
+}
+
+function exclamation_mark_with_shell_flag_not_escaped { # @test
+  run sandcastle --shell bash -- echo '!x'
+  assert_success
+  assert_output '!x'
+}

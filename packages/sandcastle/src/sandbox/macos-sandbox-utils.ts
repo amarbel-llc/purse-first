@@ -1,4 +1,4 @@
-import shellquote from 'shell-quote'
+import { quoteArgs } from '../utils/shell-quote.js'
 import { spawn } from 'child_process'
 import * as path from 'path'
 import { logForDebugging } from '../utils/debug.js'
@@ -701,8 +701,8 @@ export function wrapCommandWithSandboxMacOS(
   }
 
   // Use `env` command to set environment variables - each VAR=value is a separate
-  // argument that shellquote handles properly, avoiding shell quoting issues
-  const wrappedCommand = shellquote.quote([
+  // argument that quoteArgs handles properly, avoiding shell quoting issues
+  const wrappedCommand = quoteArgs([
     'env',
     ...proxyEnvArgs,
     'sandbox-exec',
