@@ -126,8 +126,8 @@ test-integration: build-batman
       zz-tests_bats/validate_plugin_repos.bats
 
 # Validate plugin repos have correct .claude-plugin/plugin.json
-test-validate-repos:
-    {{cmd_nix_dev}} bats --tap zz-tests_bats/validate_plugin_repos.bats
+test-validate-repos: build-batman
+    {{cmd_nix_dev}} {{cmd_batman_bats}} zz-tests_bats/validate_plugin_repos.bats
 
 # Run validate-specific BATS tests
 test-validate: build-batman
@@ -211,8 +211,8 @@ check-template:
     nix-instantiate --parse templates/marketplace/flake.nix
 
 # Run template tests
-test-template:
-    {{cmd_nix_dev}} bats --tap zz-tests_bats/marketplace_template.bats
+test-template: build-batman
+    {{cmd_nix_dev}} {{cmd_batman_bats}} zz-tests_bats/marketplace_template.bats
 
 # Build dummy Go MCP servers
 build-dummies-go:
