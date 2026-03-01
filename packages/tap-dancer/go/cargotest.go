@@ -53,6 +53,7 @@ var (
 func ConvertCargoTest(r io.Reader, w io.Writer, verbose bool, skipEmpty bool, color bool) int {
 	scanner := bufio.NewScanner(r)
 	tw := NewColorWriter(w, color)
+	tw.Pragma("streamed-output", true)
 	exitCode := 0
 
 	var suiteCount int
@@ -212,10 +213,16 @@ func emitCargoTest(tw *Writer, tr *cargoTestResult, verbose bool) {
 	case "ok":
 		tw.Ok(tr.name)
 	case "failed":
-		diag := map[string]string{}
 		stdout := strings.TrimSpace(tr.stdout)
 		if stdout != "" {
-			diag["message"] = stdout
+			for _, line := range strings.Split(stdout, "\n") {
+				if line != "" {
+					tw.StreamedOutput(line)
+				}
+			}
+		}
+		diag := map[string]string{}
+		if stdout != "" {
 			file, line := parseRustFileLine(stdout)
 			if file != "" {
 				diag["file"] = file

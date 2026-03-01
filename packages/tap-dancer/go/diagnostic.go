@@ -91,16 +91,17 @@ type PragmaResult struct {
 
 // Event represents a single parsed TAP element.
 type Event struct {
-	Type      EventType         `json:"type"`
-	Line      int               `json:"line"`
-	Depth     int               `json:"depth"`
-	Raw       string            `json:"raw"`
-	TestPoint *TestPointResult  `json:"test_point,omitempty"`
-	Plan      *PlanResult       `json:"plan,omitempty"`
-	BailOut   *BailOutResult    `json:"bail_out,omitempty"`
-	YAML      map[string]string `json:"yaml,omitempty"`
-	Comment   string            `json:"comment,omitempty"`
-	Pragma    *PragmaResult     `json:"pragma,omitempty"`
+	Type           EventType         `json:"type"`
+	Line           int               `json:"line"`
+	Depth          int               `json:"depth"`
+	Raw            string            `json:"raw"`
+	TestPoint      *TestPointResult  `json:"test_point,omitempty"`
+	Plan           *PlanResult       `json:"plan,omitempty"`
+	BailOut        *BailOutResult    `json:"bail_out,omitempty"`
+	YAML           map[string]string `json:"yaml,omitempty"`
+	Comment        string            `json:"comment,omitempty"`
+	Pragma         *PragmaResult     `json:"pragma,omitempty"`
+	StreamedOutput bool              `json:"streamed_output,omitempty"`
 }
 
 // Summary provides aggregate results after parsing a TAP document.

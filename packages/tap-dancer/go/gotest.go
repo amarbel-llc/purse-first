@@ -58,6 +58,7 @@ func ConvertGoTest(r io.Reader, w io.Writer, verbose bool, skipEmpty bool, color
 	var packageOrder []string
 
 	tw := NewColorWriter(w, color)
+	tw.Pragma("streamed-output", true)
 	exitCode := 0
 
 	// TODO switch to json.Decoder
@@ -218,14 +219,25 @@ func emitTest(tapWriter *Writer, pkg *packageResult, testRezult *testResult, ver
 
 	switch testRezult.action {
 	case "pass":
+		if verbose && output != "" {
+			for _, line := range strings.Split(output, "\n") {
+				if line != "" {
+					tapWriter.StreamedOutput(line)
+				}
+			}
+		}
 		tapWriter.Ok(name)
 	case "fail":
+		if output != "" {
+			for _, line := range strings.Split(output, "\n") {
+				if line != "" {
+					tapWriter.StreamedOutput(line)
+				}
+			}
+		}
 		diag := map[string]string{
 			"elapsed": fmt.Sprintf("%.3f", testRezult.elapsed),
 			"package": pkg.name,
-		}
-		if output != "" {
-			diag["message"] = output
 		}
 		file, line := parseFileLine(output)
 		if file != "" {

@@ -353,6 +353,88 @@ func TestReaderANSIBailOut(t *testing.T) {
 	}
 }
 
+func TestReaderStreamedOutputPragma(t *testing.T) {
+	input := "TAP version 14\npragma +streamed-output\n1..1\n# compiling\n# linking\nok 1 - build\n"
+	events, diags, summary := collectEvents(input)
+
+	for _, d := range diags {
+		if d.Severity == SeverityError {
+			t.Errorf("unexpected error: %s: %s", d.Rule, d.Message)
+		}
+	}
+	if !summary.Valid {
+		t.Error("expected Valid=true")
+	}
+
+	var commentEvents []Event
+	for _, ev := range events {
+		if ev.Type == EventComment {
+			commentEvents = append(commentEvents, ev)
+		}
+	}
+	if len(commentEvents) != 2 {
+		t.Fatalf("expected 2 comment events, got %d", len(commentEvents))
+	}
+	for _, ev := range commentEvents {
+		if !ev.StreamedOutput {
+			t.Errorf("expected StreamedOutput=true for comment %q", ev.Comment)
+		}
+	}
+}
+
+func TestReaderStreamedOutputDeactivation(t *testing.T) {
+	input := "TAP version 14\npragma +streamed-output\npragma -streamed-output\n1..1\nok 1 - a\n"
+	_, diags, _ := collectEvents(input)
+
+	found := false
+	for _, d := range diags {
+		if d.Rule == "streamed-output-deactivation" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected streamed-output-deactivation diagnostic")
+	}
+}
+
+func TestReaderStreamedOutputSubtestIsolation(t *testing.T) {
+	input := "TAP version 14\npragma +streamed-output\n1..1\n# parent comment\n    # Subtest: child\n    # child comment\n    ok 1 - inner\n    1..1\nok 1 - child\n"
+	events, diags, summary := collectEvents(input)
+
+	for _, d := range diags {
+		if d.Severity == SeverityError {
+			t.Errorf("unexpected error: %s: %s", d.Rule, d.Message)
+		}
+	}
+	if !summary.Valid {
+		t.Error("expected Valid=true")
+	}
+
+	for _, ev := range events {
+		if ev.Type == EventComment && ev.Comment == "parent comment" {
+			if !ev.StreamedOutput {
+				t.Error("expected parent comment to have StreamedOutput=true")
+			}
+		}
+		if ev.Type == EventComment && ev.Comment == "child comment" {
+			if ev.StreamedOutput {
+				t.Error("expected child comment to have StreamedOutput=false (subtest has no pragma)")
+			}
+		}
+	}
+}
+
+func TestReaderStreamedOutputNotActiveByDefault(t *testing.T) {
+	input := "TAP version 14\n1..1\n# just a comment\nok 1 - a\n"
+	events, _, _ := collectEvents(input)
+
+	for _, ev := range events {
+		if ev.Type == EventComment && ev.StreamedOutput {
+			t.Error("expected StreamedOutput=false without pragma")
+		}
+	}
+}
+
 func TestReaderUnclosedYAML(t *testing.T) {
 	input := "TAP version 14\n1..1\nnot ok 1 - fail\n  ---\n  message: broken\n"
 	_, diags, _ := collectEvents(input)

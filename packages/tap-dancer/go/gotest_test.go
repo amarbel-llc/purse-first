@@ -308,6 +308,47 @@ func TestConvertNoTestsToRunSkipEmpty(t *testing.T) {
 	}
 }
 
+func TestConvertEmitsPragmaAndStreamedOutput(t *testing.T) {
+	jsonEvents := strings.Join([]string{
+		`{"Action":"run","Package":"example.com/foo","Test":"TestBad"}`,
+		`{"Action":"output","Package":"example.com/foo","Test":"TestBad","Output":"=== RUN   TestBad\n"}`,
+		`{"Action":"output","Package":"example.com/foo","Test":"TestBad","Output":"    foo_test.go:10: expected 1, got 2\n"}`,
+		`{"Action":"fail","Package":"example.com/foo","Test":"TestBad","Elapsed":0.003}`,
+		`{"Action":"output","Package":"example.com/foo","Output":"FAIL\n"}`,
+		`{"Action":"fail","Package":"example.com/foo","Elapsed":0.010}`,
+	}, "\n") + "\n"
+
+	var buf bytes.Buffer
+	ConvertGoTest(strings.NewReader(jsonEvents), &buf, false, false, false)
+	out := buf.String()
+
+	if !strings.Contains(out, "pragma +streamed-output") {
+		t.Errorf("expected pragma +streamed-output in output:\n%s", out)
+	}
+
+	// Streamed output comments should appear before the not ok line
+	pragmaIdx := strings.Index(out, "pragma +streamed-output")
+	commentIdx := strings.Index(out, "# foo_test.go:10: expected 1, got 2")
+	notOkIdx := strings.Index(out, "not ok")
+	if commentIdx < 0 {
+		t.Fatalf("expected streamed output comment in output:\n%s", out)
+	}
+	if commentIdx < pragmaIdx {
+		t.Error("streamed output comment should appear after pragma")
+	}
+	if commentIdx > notOkIdx {
+		t.Error("streamed output comment should appear before not ok")
+	}
+
+	reader := NewReader(strings.NewReader(out))
+	if !reader.Summary().Valid {
+		for _, d := range reader.Diagnostics() {
+			t.Errorf("diagnostic: line %d: %s: %s", d.Line, d.Severity, d.Message)
+		}
+		t.Fatalf("output is not valid TAP-14:\n%s", out)
+	}
+}
+
 func TestConvertMixedEmptyAndRealPackages(t *testing.T) {
 	// One package with tests, one with no test files.
 	// With skipEmpty, the empty one is skipped, the real one passes.

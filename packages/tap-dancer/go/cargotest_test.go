@@ -114,6 +114,53 @@ func TestCargoConvertIgnoredTest(t *testing.T) {
 	}
 }
 
+func TestCargoConvertEmitsPragmaAndStreamedOutput(t *testing.T) {
+	prettyOutput := strings.Join([]string{
+		"running 1 test",
+		"test tests::test_bad ... FAILED",
+		"",
+		"failures:",
+		"",
+		"---- tests::test_bad stdout ----",
+		"thread 'tests::test_bad' panicked at src/lib.rs:10:5:",
+		"assertion `left == right` failed",
+		"  left: 1",
+		" right: 2",
+		"",
+		"",
+		"failures:",
+		"    tests::test_bad",
+		"",
+		"test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+	}, "\n") + "\n"
+
+	var buf bytes.Buffer
+	ConvertCargoTest(strings.NewReader(prettyOutput), &buf, false, false, false)
+	out := buf.String()
+
+	if !strings.Contains(out, "pragma +streamed-output") {
+		t.Errorf("expected pragma +streamed-output in output:\n%s", out)
+	}
+
+	// Streamed output should appear before not ok
+	commentIdx := strings.Index(out, "# thread 'tests::test_bad' panicked")
+	notOkIdx := strings.Index(out, "not ok")
+	if commentIdx < 0 {
+		t.Fatalf("expected streamed output comment in output:\n%s", out)
+	}
+	if commentIdx > notOkIdx {
+		t.Error("streamed output comment should appear before not ok")
+	}
+
+	reader := NewReader(strings.NewReader(out))
+	if !reader.Summary().Valid {
+		for _, d := range reader.Diagnostics() {
+			t.Errorf("diagnostic: line %d: %s: %s", d.Line, d.Severity, d.Message)
+		}
+		t.Fatalf("output is not valid TAP-14:\n%s", out)
+	}
+}
+
 func TestCargoConvertMultipleSuites(t *testing.T) {
 	prettyOutput := strings.Join([]string{
 		"     Running unittests src/lib.rs (target/debug/deps/my_crate-abc123)",

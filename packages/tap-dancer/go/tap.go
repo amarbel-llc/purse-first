@@ -159,6 +159,18 @@ func (tw *Writer) Comment(text string) {
 	fmt.Fprintf(tw.w, "# %s\n", text)
 }
 
+func (tw *Writer) Pragma(key string, enabled bool) {
+	sign := "-"
+	if enabled {
+		sign = "+"
+	}
+	fmt.Fprintf(tw.w, "pragma %s%s\n", sign, key)
+}
+
+func (tw *Writer) StreamedOutput(text string) {
+	fmt.Fprintf(tw.w, "# %s\n", text)
+}
+
 type Diagnostics struct {
 	Message  string
 	Severity string

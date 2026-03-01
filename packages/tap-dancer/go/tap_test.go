@@ -526,6 +526,34 @@ func TestWriteAllMixedImperativeAndIterator(t *testing.T) {
 	}
 }
 
+func TestPragma(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.Pragma("streamed-output", true)
+	tw.Pragma("strict", false)
+	out := buf.String()
+	if !strings.Contains(out, "pragma +streamed-output\n") {
+		t.Errorf("expected pragma +streamed-output, got: %q", out)
+	}
+	if !strings.Contains(out, "pragma -strict\n") {
+		t.Errorf("expected pragma -strict, got: %q", out)
+	}
+}
+
+func TestStreamedOutput(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.StreamedOutput("compiling main.rs")
+	tw.StreamedOutput("linking binary")
+	out := buf.String()
+	if !strings.Contains(out, "# compiling main.rs\n") {
+		t.Errorf("expected streamed output line, got: %q", out)
+	}
+	if !strings.Contains(out, "# linking binary\n") {
+		t.Errorf("expected streamed output line, got: %q", out)
+	}
+}
+
 func TestWriteAllOutputValidatesWithReader(t *testing.T) {
 	var buf bytes.Buffer
 	tw := NewWriter(&buf)

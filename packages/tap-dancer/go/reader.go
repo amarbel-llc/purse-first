@@ -25,6 +25,7 @@ type frame struct {
 	planLine       int
 	testCount      int
 	lastTestNumber int
+	streamedOutput bool
 }
 
 // Reader is a streaming TAP-14 parser and validator.
@@ -222,6 +223,14 @@ func (r *Reader) Next() (Event, error) {
 
 		case linePragma:
 			p := parsePragma(trimmed)
+			if p.Key == "streamed-output" {
+				if p.Enabled {
+					r.currentFrame().streamedOutput = true
+				} else if r.currentFrame().streamedOutput {
+					r.addDiag(SeverityError, "streamed-output-deactivation",
+						"pragma -streamed-output is not permitted after activation")
+				}
+			}
 			r.lastWasTestPoint = false
 			return Event{Type: EventPragma, Line: r.lineNum, Depth: depth, Raw: raw, Pragma: &p}, nil
 
@@ -235,7 +244,7 @@ func (r *Reader) Next() (Event, error) {
 			comment := strings.TrimPrefix(trimmed, "#")
 			comment = strings.TrimSpace(comment)
 			r.lastWasTestPoint = false
-			return Event{Type: EventComment, Line: r.lineNum, Depth: depth, Raw: raw, Comment: comment}, nil
+			return Event{Type: EventComment, Line: r.lineNum, Depth: depth, Raw: raw, Comment: comment, StreamedOutput: r.currentFrame().streamedOutput}, nil
 
 		case lineEmpty:
 			r.lastWasTestPoint = false
