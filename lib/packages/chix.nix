@@ -1,28 +1,14 @@
-{ pkgs, src, craneLib, fhPkg, rustMcpSrc, purse-first-cli }:
+{ pkgs, src, craneLib, fhPkg, rustWorkspaceSrc, rustCargoArtifacts, purse-first-cli }:
 
 let
-  # chix Cargo.toml has: mcp-server = { path = "../../libs/rust-mcp" }
-  # Vendor rust-mcp into the chix source so the path dep resolves in the sandbox
-  chixSrc = pkgs.runCommand "chix-src" { } ''
-    cp -r ${src} $out
-    chmod -R u+w $out
-    mkdir -p $out/vendor-libs
-    cp -r ${rustMcpSrc} $out/vendor-libs/rust-mcp
-    sed -i 's|path = "../../libs/rust-mcp"|path = "vendor-libs/rust-mcp"|' $out/Cargo.toml
-  '';
-
-  rustSrc = craneLib.cleanCargoSource chixSrc;
-
-  commonArgs = {
-    src = rustSrc;
+  chix-unwrapped = craneLib.buildPackage {
+    src = rustWorkspaceSrc;
+    cargoArtifacts = rustCargoArtifacts;
+    pname = "chix";
+    version = "0.1.0";
+    cargoExtraArgs = "-p chix";
     strictDeps = true;
   };
-
-  cargoArtifacts = craneLib.buildDepsOnly commonArgs;
-
-  chix-unwrapped = craneLib.buildPackage (
-    commonArgs // { inherit cargoArtifacts; }
-  );
 
   formatNixHook = pkgs.writeShellScript "format-nix" ''
     set -euo pipefail

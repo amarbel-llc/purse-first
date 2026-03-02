@@ -1,4 +1,4 @@
-{ pkgs, src, craneLib, purse-first-cli, goWorkspaceSrc, goVendorHash }:
+{ pkgs, src, craneLib, purse-first-cli, goWorkspaceSrc, goVendorHash, rustWorkspaceSrc, rustCargoArtifacts }:
 
 let
   version = "0.1.0";
@@ -18,14 +18,12 @@ let
     };
   };
 
-  rustSrc = craneLib.cleanCargoSource "${src}/rust";
-  cargoArtifacts = craneLib.buildDepsOnly {
-    src = rustSrc;
-    strictDeps = true;
-  };
   tap-dancer-rust = craneLib.buildPackage {
-    src = rustSrc;
-    inherit cargoArtifacts;
+    src = rustWorkspaceSrc;
+    cargoArtifacts = rustCargoArtifacts;
+    pname = "tap-dancer";
+    version = "0.1.0";
+    cargoExtraArgs = "-p tap-dancer";
     strictDeps = true;
   };
 

@@ -78,6 +78,14 @@
             overlays = [ (import rust-overlay) ];
           };
           craneLib = (crane.mkLib pkgs).overrideToolchain (pkgs-overlay.rust-bin.stable.latest.default);
+          rustWorkspaceSrc = craneLib.cleanCargoSource ./.;
+          rustCommonArgs = {
+            src = rustWorkspaceSrc;
+            pname = "rust-workspace-deps";
+            version = "0.1.0";
+            strictDeps = true;
+          };
+          rustCargoArtifacts = craneLib.buildDepsOnly rustCommonArgs;
           fhPkg = fh.packages.${system}.default;
 
           sandcastlePkg = import ./lib/packages/sandcastle.nix {
@@ -137,9 +145,10 @@
               craneLib
               fhPkg
               purse-first-cli
+              rustWorkspaceSrc
+              rustCargoArtifacts
               ;
             src = ./packages/chix;
-            rustMcpSrc = ./libs/rust-mcp;
           };
 
           tapDancerPkgs = import ./lib/packages/tap-dancer.nix {
@@ -149,6 +158,8 @@
               purse-first-cli
               goWorkspaceSrc
               goVendorHash
+              rustWorkspaceSrc
+              rustCargoArtifacts
               ;
             src = ./packages/tap-dancer;
           };
