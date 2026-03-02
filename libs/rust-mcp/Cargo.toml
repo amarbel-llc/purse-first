@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Reusable Rust library for building MCP (Model Context Protocol) servers"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/amarbel-llc/rust-lib-mcp"
+repository = "https://github.com/amarbel-llc/purse-first"
 
 [features]
 default = ["tools", "resources", "prompts"]
