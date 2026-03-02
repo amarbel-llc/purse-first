@@ -13,6 +13,7 @@
 - [x] tap-dancer rust: add comment/description directive field to `TestResult` (`ok 1 - name # comment`)
 - [x] tap-dancer rust: add carriage return stripping for YAML output fields
 - [x] tap-dancer rust: add ANSI escape code stripping in YAML output
+- [ ] bootstrap root Cargo workspace — add root Cargo.toml with members [packages/chix, packages/tap-dancer/rust, libs/rust-mcp], delete per-crate Cargo.lock files, remove chix.nix vendor workaround, verify: `nix build .#chix`, `nix build .#tap-dancer`, `cargo test --workspace`
 - [ ] update tap-dancer with latest tap amendments
 - [ ] verify install-local skill path resolution (./skills/<name> in .claude-plugin/plugin.json may not resolve correctly — needs manual test)
 - [ ] separate libs and marketplace generation into new `bob` repo
