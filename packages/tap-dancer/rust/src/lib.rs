@@ -4,9 +4,11 @@ pub struct TestResult {
     pub number: usize,
     pub name: String,
     pub ok: bool,
+    pub directive: Option<String>,
     pub error_message: Option<String>,
     pub exit_code: Option<i32>,
     pub output: Option<String>,
+    pub suppress_yaml: bool,
 }
 
 pub struct TapWriter<'a> {
@@ -175,7 +177,40 @@ fn write_diagnostics_block(w: &mut dyn Write, diagnostics: &[(&str, &str)]) -> i
     writeln!(w, "  ...")
 }
 
+fn strip_ansi(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    let mut chars = s.chars();
+    while let Some(c) = chars.next() {
+        if c == '\x1b' {
+            if let Some(next) = chars.next() {
+                if next == '[' {
+                    // Consume CSI sequence: parameters and final byte
+                    for c in chars.by_ref() {
+                        if c.is_ascii_alphabetic() {
+                            break;
+                        }
+                    }
+                }
+                // Non-CSI escape sequence: skip the two chars
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    result
+}
+
+fn normalize_line_endings(s: &str) -> String {
+    s.replace("\r\n", "\n").replace('\r', "\n")
+}
+
+fn sanitize_yaml_value(value: &str) -> String {
+    let value = normalize_line_endings(value);
+    strip_ansi(&value)
+}
+
 fn write_yaml_field(w: &mut (impl Write + ?Sized), key: &str, value: &str) -> io::Result<()> {
+    let value = sanitize_yaml_value(value);
     if value.contains('\n') {
         writeln!(w, "  {key}: |")?;
         for line in value.lines() {
@@ -203,9 +238,13 @@ pub fn write_plan(w: &mut impl Write, count: usize) -> io::Result<()> {
 
 pub fn write_test_point(w: &mut impl Write, result: &TestResult) -> io::Result<()> {
     let status = if result.ok { "ok" } else { "not ok" };
-    writeln!(w, "{status} {} - {}", result.number, result.name)?;
+    if let Some(ref directive) = result.directive {
+        writeln!(w, "{status} {} - {} # {directive}", result.number, result.name)?;
+    } else {
+        writeln!(w, "{status} {} - {}", result.number, result.name)?;
+    }
 
-    if has_yaml_block(result) {
+    if !result.suppress_yaml && has_yaml_block(result) {
         writeln!(w, "  ---")?;
         if let Some(ref message) = result.error_message {
             write_yaml_field(w, "message", message)?;
@@ -286,9 +325,11 @@ mod tests {
             number: 1,
             name: "build".into(),
             ok: true,
+            directive: None,
             error_message: None,
             exit_code: None,
             output: None,
+            suppress_yaml: false,
         };
         write_test_point(&mut buf, &result).unwrap();
         assert_eq!(String::from_utf8(buf).unwrap(), "ok 1 - build\n");
@@ -301,9 +342,11 @@ mod tests {
             number: 1,
             name: "build".into(),
             ok: true,
+            directive: None,
             error_message: None,
             exit_code: None,
             output: Some("building\n".into()),
+            suppress_yaml: false,
         };
         write_test_point(&mut buf, &result).unwrap();
         let out = String::from_utf8(buf).unwrap();
@@ -321,9 +364,11 @@ mod tests {
             number: 2,
             name: "test".into(),
             ok: false,
+            directive: None,
             error_message: Some("something failed".into()),
             exit_code: Some(1),
             output: None,
+            suppress_yaml: false,
         };
         write_test_point(&mut buf, &result).unwrap();
         let out = String::from_utf8(buf).unwrap();
@@ -342,9 +387,11 @@ mod tests {
             number: 1,
             name: "multi".into(),
             ok: false,
+            directive: None,
             error_message: None,
             exit_code: None,
             output: Some("line one\nline two".into()),
+            suppress_yaml: false,
         };
         write_test_point(&mut buf, &result).unwrap();
         let out = String::from_utf8(buf).unwrap();
@@ -668,5 +715,158 @@ mod tests {
         tw.ok("streaming").unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(out.contains("    pragma +streamed-output\n"));
+    }
+
+    // --- Directive/comment on TestResult ---
+
+    #[test]
+    fn test_point_with_directive() {
+        let mut buf = Vec::new();
+        let result = TestResult {
+            number: 1,
+            name: "optional feature".into(),
+            ok: true,
+            directive: Some("SKIP not supported".into()),
+            error_message: None,
+            exit_code: None,
+            output: None,
+            suppress_yaml: false,
+        };
+        write_test_point(&mut buf, &result).unwrap();
+        assert_eq!(
+            String::from_utf8(buf).unwrap(),
+            "ok 1 - optional feature # SKIP not supported\n"
+        );
+    }
+
+    #[test]
+    fn test_point_without_directive() {
+        let mut buf = Vec::new();
+        let result = TestResult {
+            number: 1,
+            name: "plain".into(),
+            ok: true,
+            directive: None,
+            error_message: None,
+            exit_code: None,
+            output: None,
+            suppress_yaml: false,
+        };
+        write_test_point(&mut buf, &result).unwrap();
+        assert_eq!(String::from_utf8(buf).unwrap(), "ok 1 - plain\n");
+    }
+
+    // --- Carriage return stripping ---
+
+    #[test]
+    fn yaml_field_strips_cr_lf() {
+        let mut buf = Vec::new();
+        write_yaml_field(&mut buf, "output", "line one\r\nline two\r\n").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(!out.contains('\r'));
+        assert!(out.contains("  output: |\n"));
+        assert!(out.contains("    line one\n"));
+        assert!(out.contains("    line two\n"));
+    }
+
+    #[test]
+    fn yaml_field_strips_bare_cr() {
+        let mut buf = Vec::new();
+        write_yaml_field(&mut buf, "message", "hello\rworld").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(!out.contains('\r'));
+        assert!(out.contains("  message: |\n"));
+        assert!(out.contains("    hello\n"));
+        assert!(out.contains("    world\n"));
+    }
+
+    // --- ANSI escape code stripping ---
+
+    #[test]
+    fn yaml_field_strips_ansi_sgr() {
+        let mut buf = Vec::new();
+        write_yaml_field(&mut buf, "message", "\x1b[31merror\x1b[0m happened").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert_eq!(out, "  message: \"error happened\"\n");
+    }
+
+    #[test]
+    fn yaml_field_strips_ansi_csi_non_sgr() {
+        let mut buf = Vec::new();
+        write_yaml_field(&mut buf, "output", "\x1b[2Jcleared screen").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert_eq!(out, "  output: \"cleared screen\"\n");
+    }
+
+    #[test]
+    fn yaml_field_preserves_plain_text() {
+        let mut buf = Vec::new();
+        write_yaml_field(&mut buf, "message", "no escapes here").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert_eq!(out, "  message: \"no escapes here\"\n");
+    }
+
+    #[test]
+    fn strip_ansi_function() {
+        assert_eq!(strip_ansi("\x1b[32mok\x1b[0m"), "ok");
+        assert_eq!(strip_ansi("\x1b[31mnot ok\x1b[0m"), "not ok");
+        assert_eq!(strip_ansi("\x1b[2Jafter clear"), "after clear");
+        assert_eq!(strip_ansi("no escapes"), "no escapes");
+    }
+
+    // --- Suppress YAML block mode ---
+
+    #[test]
+    fn test_point_suppress_yaml() {
+        let mut buf = Vec::new();
+        let result = TestResult {
+            number: 1,
+            name: "failing".into(),
+            ok: false,
+            directive: None,
+            error_message: Some("bad stuff".into()),
+            exit_code: Some(1),
+            output: Some("verbose output".into()),
+            suppress_yaml: true,
+        };
+        write_test_point(&mut buf, &result).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert_eq!(out, "not ok 1 - failing\n");
+    }
+
+    #[test]
+    fn test_point_no_suppress_yaml() {
+        let mut buf = Vec::new();
+        let result = TestResult {
+            number: 1,
+            name: "failing".into(),
+            ok: false,
+            directive: None,
+            error_message: Some("bad".into()),
+            exit_code: None,
+            output: None,
+            suppress_yaml: false,
+        };
+        write_test_point(&mut buf, &result).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.contains("  ---\n"));
+        assert!(out.contains("  message: \"bad\"\n"));
+    }
+
+    // --- normalize_line_endings ---
+
+    #[test]
+    fn normalize_crlf() {
+        assert_eq!(normalize_line_endings("a\r\nb\r\n"), "a\nb\n");
+    }
+
+    #[test]
+    fn normalize_bare_cr() {
+        assert_eq!(normalize_line_endings("a\rb"), "a\nb");
+    }
+
+    #[test]
+    fn normalize_lf_unchanged() {
+        assert_eq!(normalize_line_endings("a\nb"), "a\nb");
     }
 }

@@ -10,14 +10,14 @@
 ## Other
 
 - [x] tap-dancer rust: add `write_pragma` support (needed for `pragma +streamed-output`)
-- [ ] tap-dancer rust: add comment/description directive field to `TestResult` (`ok 1 - name # comment`)
-- [ ] tap-dancer rust: add carriage return stripping for YAML output fields
-- [ ] tap-dancer rust: add ANSI escape code preservation/handling in YAML output
+- [x] tap-dancer rust: add comment/description directive field to `TestResult` (`ok 1 - name # comment`)
+- [x] tap-dancer rust: add carriage return stripping for YAML output fields
+- [x] tap-dancer rust: add ANSI escape code stripping in YAML output
 - [ ] update tap-dancer with latest tap amendments
 - [ ] verify install-local skill path resolution (./skills/<name> in .claude-plugin/plugin.json may not resolve correctly — needs manual test)
 - [ ] separate libs and marketplace generation into new `bob` repo
 - [ ] migrate everything to latest MCP
-- [ ] tap-dancer rust: add quiet/suppress-YAML-block mode for test points
+- [x] tap-dancer rust: add quiet/suppress-YAML-block mode for test points
 - [ ] add PreToolUse hook support to rust-mcp (parity with go-mcp's HandleHook, GenerateHooks, ToolMapping/MapsTools, GeneratePlugin)
 - [ ] add PreToolUse hooks to chix (depends on rust-mcp hook support) — map nix/fh/cachix CLI tools to MCP equivalents
 - [ ] explore purse-first neovim plugin packaging (ftplugins, lux config fragments, auto-discovery)
