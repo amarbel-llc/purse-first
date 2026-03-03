@@ -65,8 +65,9 @@ func localeGroupingSeparator(tag language.Tag) string {
 	p := message.NewPrinter(tag)
 	formatted := p.Sprintf("%d", 1234)
 	// "1,234" for en-US, "1.234" for de-DE, "1 234" for fr-FR
-	if len(formatted) >= 2 {
-		return string(formatted[1])
+	runes := []rune(formatted)
+	if len(runes) >= 2 {
+		return string(runes[1])
 	}
 	return ""
 }

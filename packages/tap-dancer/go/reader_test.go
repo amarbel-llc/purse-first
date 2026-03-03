@@ -481,6 +481,15 @@ func TestReaderLocaleGermanPlan(t *testing.T) {
 	}
 }
 
+func TestReaderLocaleFrenchPlan(t *testing.T) {
+	// fr-FR uses non-breaking space (U+00A0) as grouping separator in x/text
+	input := "TAP version 14\npragma +locale-formatting:fr-FR\n1..1\u00a0200\nok 1 - test\n"
+	_, _, summary := collectEvents(input)
+	if summary.PlanCount != 1200 {
+		t.Errorf("expected plan count 1200 from French format, got %d", summary.PlanCount)
+	}
+}
+
 func TestReaderLocaleFormattingSubtestScoping(t *testing.T) {
 	// Subtest without its own pragma should NOT use locale parsing
 	input := "TAP version 14\npragma +locale-formatting:en-US\n1..1\n" +
