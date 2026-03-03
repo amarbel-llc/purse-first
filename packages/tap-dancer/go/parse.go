@@ -7,12 +7,20 @@ import (
 )
 
 func parsePlan(line string) (PlanResult, error) {
+	return parsePlanWithSep(line, "")
+}
+
+func parsePlanWithSep(line, sep string) (PlanResult, error) {
 	m := planRegexp.FindStringSubmatch(line)
 	if m == nil {
 		return PlanResult{}, fmt.Errorf("invalid plan line: %q", line)
 	}
 
-	count, err := strconv.Atoi(m[1])
+	countStr := strings.TrimSpace(m[1])
+	if sep != "" {
+		countStr = strings.ReplaceAll(countStr, sep, "")
+	}
+	count, err := strconv.Atoi(countStr)
 	if err != nil {
 		return PlanResult{}, fmt.Errorf("invalid plan count: %v", err)
 	}
@@ -24,6 +32,10 @@ func parsePlan(line string) (PlanResult, error) {
 }
 
 func parseTestPoint(line string) (TestPointResult, []Diagnostic) {
+	return parseTestPointWithSep(line, "")
+}
+
+func parseTestPointWithSep(line, sep string) (TestPointResult, []Diagnostic) {
 	var tp TestPointResult
 	var diags []Diagnostic
 
@@ -38,13 +50,27 @@ func parseTestPoint(line string) (TestPointResult, []Diagnostic) {
 
 	rest = strings.TrimLeft(rest, " ")
 
-	// Parse optional test number
+	// Parse optional test number, accepting locale grouping separators
 	if len(rest) > 0 && rest[0] >= '0' && rest[0] <= '9' {
 		numEnd := 0
-		for numEnd < len(rest) && rest[numEnd] >= '0' && rest[numEnd] <= '9' {
-			numEnd++
+		for numEnd < len(rest) {
+			b := rest[numEnd]
+			if b >= '0' && b <= '9' {
+				numEnd++
+				continue
+			}
+			// Check for multi-byte separator at this position
+			if sep != "" && strings.HasPrefix(rest[numEnd:], sep) {
+				numEnd += len(sep)
+				continue
+			}
+			break
 		}
-		tp.Number, _ = strconv.Atoi(rest[:numEnd])
+		numStr := rest[:numEnd]
+		if sep != "" {
+			numStr = strings.ReplaceAll(numStr, sep, "")
+		}
+		tp.Number, _ = strconv.Atoi(numStr)
 		rest = rest[numEnd:]
 	}
 

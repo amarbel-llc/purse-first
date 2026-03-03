@@ -6,6 +6,9 @@ import (
 	"io"
 	"strconv"
 	"strings"
+
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 type readerState int
@@ -26,6 +29,7 @@ type frame struct {
 	testCount      int
 	lastTestNumber int
 	streamedOutput bool
+	localeSep      string // grouping separator for active locale, empty = no locale
 }
 
 // Reader is a streaming TAP-14 parser and validator.
@@ -55,6 +59,16 @@ func NewReader(r io.Reader) *Reader {
 
 func (r *Reader) currentFrame() *frame {
 	return &r.stack[len(r.stack)-1]
+}
+
+func localeGroupingSeparator(tag language.Tag) string {
+	p := message.NewPrinter(tag)
+	formatted := p.Sprintf("%d", 1234)
+	// "1,234" for en-US, "1.234" for de-DE, "1 234" for fr-FR
+	if len(formatted) >= 2 {
+		return string(formatted[1])
+	}
+	return ""
 }
 
 func (r *Reader) addDiag(severity Severity, rule, message string) {
@@ -146,7 +160,7 @@ func (r *Reader) Next() (Event, error) {
 			if f.planSeen {
 				r.addDiag(SeverityError, "plan-duplicate", "duplicate plan line")
 			}
-			plan, _ := parsePlan(trimmed)
+			plan, _ := parsePlanWithSep(trimmed, f.localeSep)
 			f.planSeen = true
 			f.planCount = plan.Count
 			f.planLine = r.lineNum
@@ -165,7 +179,7 @@ func (r *Reader) Next() (Event, error) {
 			}
 			r.state = stateBody
 			f := r.currentFrame()
-			tp, tpDiags := parseTestPoint(trimmed)
+			tp, tpDiags := parseTestPointWithSep(trimmed, f.localeSep)
 			r.diags = append(r.diags, tpDiags...)
 			f.testCount++
 
@@ -229,6 +243,13 @@ func (r *Reader) Next() (Event, error) {
 				} else if r.currentFrame().streamedOutput {
 					r.addDiag(SeverityError, "streamed-output-deactivation",
 						"pragma -streamed-output is not permitted after activation")
+				}
+			}
+			if strings.HasPrefix(p.Key, "locale-formatting:") {
+				tag := strings.TrimPrefix(p.Key, "locale-formatting:")
+				langTag, err := language.Parse(tag)
+				if err == nil {
+					r.currentFrame().localeSep = localeGroupingSeparator(langTag)
 				}
 			}
 			r.lastWasTestPoint = false

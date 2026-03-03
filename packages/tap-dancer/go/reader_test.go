@@ -1,9 +1,13 @@
 package tap
 
 import (
+	"bytes"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
+
+	"golang.org/x/text/language"
 )
 
 func collectEvents(input string) ([]Event, []Diagnostic, Summary) {
@@ -447,5 +451,82 @@ func TestReaderUnclosedYAML(t *testing.T) {
 	}
 	if !found {
 		t.Error("expected yaml-unclosed diagnostic")
+	}
+}
+
+func TestReaderLocaleFormattedPlan(t *testing.T) {
+	input := "TAP version 14\npragma +locale-formatting:en-US\n1..1,200\nok 1 - first\nok 2 - second\n"
+	_, _, summary := collectEvents(input)
+	if summary.PlanCount != 1200 {
+		t.Errorf("expected plan count 1200, got %d", summary.PlanCount)
+	}
+}
+
+func TestReaderLocaleFormattedTestPoint(t *testing.T) {
+	input := "TAP version 14\npragma +locale-formatting:en-US\n1..2\nok 1 - first\nok 1,234 - big\n"
+	events, _, _ := collectEvents(input)
+	for _, ev := range events {
+		if ev.Type == EventTestPoint && ev.TestPoint.Number == 1234 {
+			return
+		}
+	}
+	t.Error("expected test point with number 1234 parsed from '1,234'")
+}
+
+func TestReaderLocaleGermanPlan(t *testing.T) {
+	input := "TAP version 14\npragma +locale-formatting:de-DE\n1..1.200\nok 1 - test\n"
+	_, _, summary := collectEvents(input)
+	if summary.PlanCount != 1200 {
+		t.Errorf("expected plan count 1200 from German format, got %d", summary.PlanCount)
+	}
+}
+
+func TestReaderLocaleFormattingSubtestScoping(t *testing.T) {
+	// Subtest without its own pragma should NOT use locale parsing
+	input := "TAP version 14\npragma +locale-formatting:en-US\n1..1\n" +
+		"    # Subtest: child\n    1..1\n    ok 1 - inner\n" +
+		"ok 1 - child\n"
+	_, diags, summary := collectEvents(input)
+	for _, d := range diags {
+		if d.Severity == SeverityError {
+			t.Errorf("unexpected error: %s: %s", d.Rule, d.Message)
+		}
+	}
+	if !summary.Valid {
+		t.Error("expected Valid=true")
+	}
+}
+
+func TestReaderNoLocaleRejectsFormattedNumbers(t *testing.T) {
+	// Without locale pragma, comma in plan should cause parse issues
+	input := "TAP version 14\n1..1,200\nok 1 - test\n"
+	_, _, summary := collectEvents(input)
+	if summary.PlanCount == 1200 {
+		t.Error("expected plan NOT to parse as 1200 without locale pragma")
+	}
+}
+
+func TestReaderLocaleRoundTrip(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewLocaleWriter(&buf, language.MustParse("en-US"))
+	for i := 0; i < 1234; i++ {
+		tw.Ok(fmt.Sprintf("test %d", i+1))
+	}
+	tw.Plan()
+
+	reader := NewReader(strings.NewReader(buf.String()))
+	summary := reader.Summary()
+	if !summary.Valid {
+		diags := reader.Diagnostics()
+		for _, d := range diags {
+			t.Errorf("diagnostic: line %d: %s: %s", d.Line, d.Severity, d.Message)
+		}
+		t.Fatalf("locale-formatted writer output did not validate")
+	}
+	if summary.TotalTests != 1234 {
+		t.Errorf("expected 1234 tests, got %d", summary.TotalTests)
+	}
+	if summary.PlanCount != 1234 {
+		t.Errorf("expected plan count 1234, got %d", summary.PlanCount)
 	}
 }
