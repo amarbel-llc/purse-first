@@ -85,7 +85,7 @@ func TestResolvedMergesAndRemovesWorktree(t *testing.T) {
 	mock := &mockExecutor{}
 	var buf bytes.Buffer
 
-	err := Resolved(mock, &buf, nil, "tap", repoDir, wtPath, "feature-merge", "main", false)
+	err := Resolved(mock, &buf, nil, "tap", repoDir, wtPath, "feature-merge", "main", false, false)
 	if err != nil {
 		t.Fatalf("Resolved() error: %v", err)
 	}
@@ -132,7 +132,7 @@ func TestResolvedTapOutput(t *testing.T) {
 	mock := &mockExecutor{}
 	var buf bytes.Buffer
 
-	err := Resolved(mock, &buf, nil, "tap", repoDir, wtPath, "feature-tap", "main", false)
+	err := Resolved(mock, &buf, nil, "tap", repoDir, wtPath, "feature-tap", "main", false, false)
 	if err != nil {
 		t.Fatalf("Resolved() error: %v", err)
 	}
@@ -153,11 +153,81 @@ func TestResolvedTapOutput(t *testing.T) {
 	}
 }
 
+func TestResolvedGitSyncTapOutput(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("GIT_CEILING_DIRECTORIES", root)
+
+	gitConfigDir := filepath.Join(root, "gitconfig")
+	if err := os.MkdirAll(gitConfigDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GIT_CONFIG_GLOBAL", filepath.Join(gitConfigDir, "config"))
+	t.Setenv("HOME", root)
+
+	// Create a bare remote repo
+	bareDir := filepath.Join(root, "bare.git")
+	runGit(t, root, "init", "--bare", "-b", "main", bareDir)
+
+	// Clone it to get a repo with a remote
+	repoDir := filepath.Join(root, "repo")
+	runGit(t, root, "clone", bareDir, repoDir)
+	runGit(t, repoDir, "config", "user.email", "test@test.com")
+	runGit(t, repoDir, "config", "user.name", "Test")
+	if err := os.WriteFile(filepath.Join(repoDir, "file.txt"), []byte("initial"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	runGit(t, repoDir, "add", "file.txt")
+	runGit(t, repoDir, "commit", "-m", "initial")
+	runGit(t, repoDir, "push")
+
+	// Create a worktree with a commit
+	wtDir := filepath.Join(repoDir, ".worktrees")
+	if err := os.MkdirAll(wtDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	wtPath := filepath.Join(wtDir, "feature-sync")
+	runGit(t, repoDir, "worktree", "add", "-b", "feature-sync", wtPath)
+	if err := os.WriteFile(filepath.Join(wtPath, "sync.txt"), []byte("sync"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	runGit(t, wtPath, "add", "sync.txt")
+	runGit(t, wtPath, "commit", "-m", "sync commit")
+
+	mock := &mockExecutor{}
+	var buf bytes.Buffer
+
+	err := Resolved(mock, &buf, nil, "tap", repoDir, wtPath, "feature-sync", "main", true, false)
+	if err != nil {
+		t.Fatalf("Resolved() error: %v", err)
+	}
+
+	got := buf.String()
+
+	if !strings.Contains(got, "ok 1 - rebase feature-sync") {
+		t.Errorf("expected rebase test point, got: %q", got)
+	}
+	if !strings.Contains(got, "ok 2 - merge feature-sync") {
+		t.Errorf("expected merge test point, got: %q", got)
+	}
+	if !strings.Contains(got, "ok 3 - remove worktree feature-sync") {
+		t.Errorf("expected remove worktree test point, got: %q", got)
+	}
+	if !strings.Contains(got, "ok 4 - pull") {
+		t.Errorf("expected pull test point, got: %q", got)
+	}
+	if !strings.Contains(got, "ok 5 - push") {
+		t.Errorf("expected push test point, got: %q", got)
+	}
+	if !strings.Contains(got, "1..5") {
+		t.Errorf("expected plan 1..5, got: %q", got)
+	}
+}
+
 func TestResolvedRepoNotFound(t *testing.T) {
 	mock := &mockExecutor{}
 	var buf bytes.Buffer
 
-	err := Resolved(mock, &buf, nil, "tap", "/nonexistent/path", "/nonexistent/wt", "feature", "main", false)
+	err := Resolved(mock, &buf, nil, "tap", "/nonexistent/path", "/nonexistent/wt", "feature", "main", false, false)
 	if err == nil {
 		t.Error("expected error for nonexistent repo, got nil")
 	}
@@ -193,7 +263,7 @@ func TestResolvedDivergedBranch(t *testing.T) {
 	mock := &mockExecutor{}
 	var buf bytes.Buffer
 
-	err := Resolved(mock, &buf, nil, "tap", repoDir, wtPath, "feature-diverge", "main", false)
+	err := Resolved(mock, &buf, nil, "tap", repoDir, wtPath, "feature-diverge", "main", false, false)
 	if err == nil {
 		t.Error("expected error for conflicting rebase, got nil")
 	}

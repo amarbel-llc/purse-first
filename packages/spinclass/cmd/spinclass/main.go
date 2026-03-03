@@ -28,6 +28,7 @@ var (
 	verbose         bool
 	newMergeOnClose bool
 	newNoAttach     bool
+	mergeGitSync    bool
 )
 
 var rootCmd = &cobra.Command{
@@ -140,7 +141,7 @@ var mergeCmd = &cobra.Command{
 			target = args[0]
 		}
 
-		return merge.Run(executor.ShellExecutor{}, format, target, verbose)
+		return merge.Run(executor.ShellExecutor{}, format, target, mergeGitSync, verbose)
 	},
 }
 
@@ -298,6 +299,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "show detailed output (YAML diagnostics on passing test points)")
 	newCmd.Flags().BoolVar(&newMergeOnClose, "merge-on-close", false, "auto-merge worktree into default branch on session close")
 	newCmd.Flags().BoolVar(&newNoAttach, "no-attach", false, "create worktree but skip attaching (show command that would run)")
+	mergeCmd.Flags().BoolVar(&mergeGitSync, "git-sync", false, "pull and push after merge")
 	cleanCmd.Flags().BoolVarP(&cleanInteractive, "interactive", "i", false, "interactively discard changes in dirty merged worktrees")
 	rootCmd.AddCommand(newCmd)
 	rootCmd.AddCommand(statusCmd)

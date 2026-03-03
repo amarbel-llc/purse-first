@@ -16,7 +16,7 @@ import (
 	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
 
-func Run(execr executor.Executor, format string, target string, verbose bool) error {
+func Run(execr executor.Executor, format string, target string, gitSync bool, verbose bool) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -59,10 +59,10 @@ func Run(execr executor.Executor, format string, target string, verbose bool) er
 		return err
 	}
 
-	return Resolved(execr, os.Stdout, nil, format, repoPath, wtPath, branch, defaultBranch, verbose)
+	return Resolved(execr, os.Stdout, nil, format, repoPath, wtPath, branch, defaultBranch, gitSync, verbose)
 }
 
-func Resolved(execr executor.Executor, w io.Writer, tw *tap.Writer, format, repoPath, wtPath, branch, defaultBranch string, verbose bool) error {
+func Resolved(execr executor.Executor, w io.Writer, tw *tap.Writer, format, repoPath, wtPath, branch, defaultBranch string, gitSync bool, verbose bool) error {
 	if info, err := os.Stat(repoPath); err != nil || !info.IsDir() {
 		return fmt.Errorf("repository not found: %s", repoPath)
 	}
@@ -161,13 +161,75 @@ func Resolved(execr executor.Executor, w io.Writer, tw *tap.Writer, format, repo
 		} else {
 			tw.Ok("remove worktree " + branch)
 		}
-		if ownWriter {
-			tw.Plan()
-		}
 	} else {
 		if err := git.RunPassthrough(repoPath, "worktree", "remove", wtPath); err != nil {
 			return err
 		}
+	}
+
+	if gitSync {
+		if tw == nil {
+			log.Info("pulling", "repo", repoPath)
+		}
+
+		if tw != nil {
+			out, err := git.Pull(repoPath)
+			if err != nil {
+				diag := map[string]string{"severity": "fail", "message": err.Error()}
+				if out != "" {
+					diag["output"] = out
+				}
+				tw.NotOk("pull", diag)
+				if ownWriter {
+					tw.Plan()
+				}
+				return err
+			}
+			if verbose && out != "" {
+				tw.OkDiag("pull", &tap.Diagnostics{Extras: map[string]any{"output": out}})
+			} else {
+				tw.Ok("pull")
+			}
+		} else {
+			if err := git.RunPassthrough(repoPath, "pull"); err != nil {
+				return err
+			}
+		}
+
+		if tw == nil {
+			log.Info("pushing", "repo", repoPath)
+		}
+
+		if tw != nil {
+			out, err := git.Push(repoPath)
+			if err != nil {
+				diag := map[string]string{"severity": "fail", "message": err.Error()}
+				if out != "" {
+					diag["output"] = out
+				}
+				tw.NotOk("push", diag)
+				if ownWriter {
+					tw.Plan()
+				}
+				return err
+			}
+			if verbose && out != "" {
+				tw.OkDiag("push", &tap.Diagnostics{Extras: map[string]any{"output": out}})
+			} else {
+				tw.Ok("push")
+			}
+		} else {
+			if err := git.RunPassthrough(repoPath, "push"); err != nil {
+				return err
+			}
+		}
+	}
+
+	if ownWriter {
+		tw.Plan()
+	}
+
+	if tw == nil {
 		log.Info("detaching from session")
 	}
 

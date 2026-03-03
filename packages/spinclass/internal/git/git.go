@@ -205,6 +205,10 @@ func Pull(repoPath string) (string, error) {
 	return Run(repoPath, "pull")
 }
 
+func Push(repoPath string) (string, error) {
+	return Run(repoPath, "push")
+}
+
 func Rebase(repoPath, onto string) (string, error) {
 	return Run(repoPath, "rebase", onto)
 }
