@@ -134,5 +134,14 @@ func Merge(base, repo Sweatfile) Sweatfile {
 		merged.StopHook = repo.StopHook
 	}
 
+	if repo.Experimental != nil {
+		if merged.Experimental == nil {
+			merged.Experimental = &Experimental{}
+		}
+		if repo.Experimental.BoundaryNotify != nil {
+			merged.Experimental.BoundaryNotify = repo.Experimental.BoundaryNotify
+		}
+	}
+
 	return merged
 }

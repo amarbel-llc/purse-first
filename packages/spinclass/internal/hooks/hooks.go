@@ -20,7 +20,7 @@ type hookInput struct {
 	CWD           string         `json:"cwd"`
 }
 
-func Run(r io.Reader, w io.Writer, boundary string, allowed []string, notify io.Writer) error {
+func Run(r io.Reader, w io.Writer, boundary string, allowed []string, boundaryNotify bool) error {
 	var input hookInput
 	if err := json.NewDecoder(r).Decode(&input); err != nil {
 		return fmt.Errorf("decoding hook input: %w", err)
@@ -30,7 +30,7 @@ func Run(r io.Reader, w io.Writer, boundary string, allowed []string, notify io.
 	case "Stop":
 		return runStopHook(input, w)
 	default:
-		return runPreToolUse(input, boundary, allowed, notify)
+		return runPreToolUse(input, w, boundary, allowed, boundaryNotify)
 	}
 }
 
@@ -78,8 +78,8 @@ func runStopHook(input hookInput, w io.Writer) error {
 	return json.NewEncoder(w).Encode(decision)
 }
 
-func runPreToolUse(input hookInput, boundary string, allowed []string, notify io.Writer) error {
-	if notify == nil || boundary == "" {
+func runPreToolUse(input hookInput, w io.Writer, boundary string, allowed []string, boundaryNotify bool) error {
+	if !boundaryNotify || boundary == "" {
 		return nil
 	}
 
@@ -94,19 +94,35 @@ func runPreToolUse(input hookInput, boundary string, allowed []string, notify io
 		return nil
 	}
 
+	var violations []string
 	for _, p := range paths {
 		if isInsideAllowed(p, allowed) {
 			continue
 		}
 		if !isInsideBoundary(p, boundary) {
-			fmt.Fprintf(notify,
-				"worktree boundary violation: %s %s is outside %s\n",
+			violations = append(violations, fmt.Sprintf(
+				"worktree boundary violation: %s %s is outside %s",
 				input.ToolName, p, boundary,
-			)
+			))
 		}
 	}
 
-	return nil
+	if len(violations) == 0 {
+		return nil
+	}
+
+	context := strings.Join(violations, "\n") +
+		"\nActivity outside the worktree should only be performed if the user explicitly requested it. Otherwise, work exclusively within the worktree."
+
+	output := map[string]any{
+		"hookSpecificOutput": map[string]any{
+			"hookEventName":      "PreToolUse",
+			"permissionDecision": "allow",
+			"additionalContext":  context,
+		},
+	}
+
+	return json.NewEncoder(w).Encode(output)
 }
 
 func extractPaths(input hookInput) []string {

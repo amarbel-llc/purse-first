@@ -2,7 +2,6 @@ package hooks
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,12 +9,11 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/amarbel-llc/spinclass/internal/sweatfile"
 	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
 
 func NewHooksCmd() *cobra.Command {
-	var notifyViolations bool
-
 	cmd := &cobra.Command{
 		Use:    "hooks",
 		Short:  "Handle PreToolUse hook for worktree boundary enforcement",
@@ -36,25 +34,22 @@ func NewHooksCmd() *cobra.Command {
 			}
 
 			var allowed []string
-			if home, err := os.UserHomeDir(); err == nil && home != "" {
+			home, _ := os.UserHomeDir()
+			if home != "" {
 				allowed = append(allowed, filepath.Join(home, ".claude"))
 			}
 
-			var notify io.Writer
-			if notifyViolations {
-				notify = os.Stderr
+			var boundaryNotify bool
+			if home != "" {
+				result, err := sweatfile.LoadHierarchy(home, cwd)
+				if err == nil {
+					boundaryNotify = result.Merged.BoundaryNotifyEnabled()
+				}
 			}
 
-			return Run(os.Stdin, os.Stdout, boundary, allowed, notify)
+			return Run(os.Stdin, os.Stdout, boundary, allowed, boundaryNotify)
 		},
 	}
-
-	cmd.Flags().BoolVar(
-		&notifyViolations,
-		"worktree-boundary-violations-notification",
-		false,
-		"Log boundary violations to stderr instead of denying",
-	)
 
 	return cmd
 }

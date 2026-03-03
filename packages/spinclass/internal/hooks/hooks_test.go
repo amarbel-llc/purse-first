@@ -19,33 +19,7 @@ func makeInput(toolName string, toolInput map[string]any, cwd string) []byte {
 	return data
 }
 
-func TestNotifyWriterReceivesViolation(t *testing.T) {
-	boundary := t.TempDir()
-	outside := t.TempDir()
-	target := filepath.Join(outside, "secret.go")
-
-	input := makeInput("Read", map[string]any{"file_path": target}, boundary)
-
-	var stdout, notify bytes.Buffer
-	err := Run(bytes.NewReader(input), &stdout, boundary, nil, &notify)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if stdout.Len() != 0 {
-		t.Errorf("expected no stdout output, got %q", stdout.String())
-	}
-
-	if notify.Len() == 0 {
-		t.Fatal("expected violation written to notify writer")
-	}
-
-	if !strings.Contains(notify.String(), "worktree boundary violation") {
-		t.Errorf("expected violation message, got %q", notify.String())
-	}
-}
-
-func TestNilNotifySkipsBoundaryCheck(t *testing.T) {
+func TestViolationWritesJSONApproval(t *testing.T) {
 	boundary := t.TempDir()
 	outside := t.TempDir()
 	target := filepath.Join(outside, "secret.go")
@@ -53,13 +27,96 @@ func TestNilNotifySkipsBoundaryCheck(t *testing.T) {
 	input := makeInput("Read", map[string]any{"file_path": target}, boundary)
 
 	var stdout bytes.Buffer
-	err := Run(bytes.NewReader(input), &stdout, boundary, nil, nil)
+	err := Run(bytes.NewReader(input), &stdout, boundary, nil, true)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if stdout.Len() == 0 {
+		t.Fatal("expected JSON output for boundary violation")
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(stdout.Bytes(), &result); err != nil {
+		t.Fatalf("expected valid JSON, got %q: %v", stdout.String(), err)
+	}
+
+	hso, ok := result["hookSpecificOutput"].(map[string]any)
+	if !ok {
+		t.Fatal("expected hookSpecificOutput in output")
+	}
+
+	if hso["hookEventName"] != "PreToolUse" {
+		t.Errorf("expected hookEventName PreToolUse, got %v", hso["hookEventName"])
+	}
+
+	if hso["permissionDecision"] != "allow" {
+		t.Errorf("expected permissionDecision allow, got %v", hso["permissionDecision"])
+	}
+
+	ctx, ok := hso["additionalContext"].(string)
+	if !ok || ctx == "" {
+		t.Fatal("expected additionalContext in output")
+	}
+
+	if !strings.Contains(ctx, "worktree boundary violation") {
+		t.Errorf("expected violation in additionalContext, got %q", ctx)
+	}
+
+	if !strings.Contains(ctx, "work exclusively within the worktree") {
+		t.Errorf("expected guidance in additionalContext, got %q", ctx)
+	}
+}
+
+func TestNoViolationProducesNoOutput(t *testing.T) {
+	boundary := t.TempDir()
+	target := filepath.Join(boundary, "inside.go")
+
+	input := makeInput("Read", map[string]any{"file_path": target}, boundary)
+
+	var stdout bytes.Buffer
+	err := Run(bytes.NewReader(input), &stdout, boundary, nil, true)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	if stdout.Len() != 0 {
-		t.Errorf("expected no output anywhere, got stdout %q", stdout.String())
+		t.Errorf("expected no output for path inside boundary, got %q", stdout.String())
+	}
+}
+
+func TestBoundaryNotifyDisabledProducesNoOutput(t *testing.T) {
+	boundary := t.TempDir()
+	outside := t.TempDir()
+	target := filepath.Join(outside, "secret.go")
+
+	input := makeInput("Read", map[string]any{"file_path": target}, boundary)
+
+	var stdout bytes.Buffer
+	err := Run(bytes.NewReader(input), &stdout, boundary, nil, false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if stdout.Len() != 0 {
+		t.Errorf("expected no output when boundary notify disabled, got %q", stdout.String())
+	}
+}
+
+func TestNoBoundaryProducesNoOutput(t *testing.T) {
+	outside := t.TempDir()
+	target := filepath.Join(outside, "secret.go")
+
+	input := makeInput("Read", map[string]any{"file_path": target}, outside)
+
+	var stdout bytes.Buffer
+	err := Run(bytes.NewReader(input), &stdout, "", nil, true)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if stdout.Len() != 0 {
+		t.Errorf("expected no output with empty boundary, got %q", stdout.String())
 	}
 }
 
@@ -71,7 +128,7 @@ func TestStopHookEventRouteApproves(t *testing.T) {
 	})
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, "", nil, nil)
+	err := Run(bytes.NewReader(input), &out, "", nil, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -97,7 +154,7 @@ func TestStopHookBlocksOnFailure(t *testing.T) {
 	})
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, "", nil, nil)
+	err := Run(bytes.NewReader(input), &out, "", nil, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -137,7 +194,7 @@ func TestStopHookApprovesOnSecondInvocation(t *testing.T) {
 	})
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, "", nil, nil)
+	err := Run(bytes.NewReader(input), &out, "", nil, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -162,7 +219,7 @@ func TestStopHookApprovesOnSuccess(t *testing.T) {
 	})
 
 	var out bytes.Buffer
-	err := Run(bytes.NewReader(input), &out, "", nil, nil)
+	err := Run(bytes.NewReader(input), &out, "", nil, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

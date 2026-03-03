@@ -12,6 +12,10 @@ import (
 	"github.com/google/shlex"
 )
 
+type Experimental struct {
+	BoundaryNotify *bool `toml:"boundary-notify"`
+}
+
 type Sweatfile struct {
 	SystemPrompt       *string  `toml:"system-prompt"`        // TODO replace with PathOrString struct
 	SystemPromptAppend *string  `toml:"system-prompt-append"` // TODO replace with PathOrString struct
@@ -19,8 +23,15 @@ type Sweatfile struct {
 	GitSkipIndex       []string `toml:"git_excludes"`         // TODO rename toml to git-skip-index
 
 	// TODO turn ClaudeAllows into struct
-	ClaudeAllow []string `toml:"claude_allow"` // TODO rename toml to claude-allow
-	StopHook    *string  `toml:"stop_hook"`    // TODO rename toml to stop-hook
+	ClaudeAllow  []string      `toml:"claude_allow"` // TODO rename toml to claude-allow
+	StopHook     *string       `toml:"stop_hook"`    // TODO rename toml to stop-hook
+	Experimental *Experimental `toml:"experimental"`
+}
+
+func (sf Sweatfile) BoundaryNotifyEnabled() bool {
+	return sf.Experimental != nil &&
+		sf.Experimental.BoundaryNotify != nil &&
+		*sf.Experimental.BoundaryNotify
 }
 
 // baseline excludes and allow rules that are always applied regardless of user
