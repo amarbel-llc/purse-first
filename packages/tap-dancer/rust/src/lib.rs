@@ -1,5 +1,9 @@
 use std::io::{self, Write};
 
+use fixed_decimal::Decimal;
+use icu_decimal::DecimalFormatter;
+use icu_locale_core::Locale;
+
 fn status_ok(color: bool) -> &'static str {
     if color { "\x1b[32mok\x1b[0m" } else { "ok" }
 }
@@ -41,6 +45,8 @@ pub struct TapWriter<'a> {
     failed: bool,
     plan_emitted: bool,
     color: bool,
+    locale: Option<Locale>,
+    formatter: Option<DecimalFormatter>,
 }
 
 impl<'a> TapWriter<'a> {
@@ -56,6 +62,24 @@ impl<'a> TapWriter<'a> {
             failed: false,
             plan_emitted: false,
             color,
+            locale: None,
+            formatter: None,
+        })
+    }
+
+    pub fn with_locale(w: &'a mut dyn Write, locale: Locale) -> io::Result<Self> {
+        writeln!(w, "TAP version 14")?;
+        let formatter = DecimalFormatter::try_new(locale.clone().into(), Default::default())
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+        writeln!(w, "pragma +locale-formatting:{locale}")?;
+        Ok(Self {
+            w,
+            counter: 0,
+            failed: false,
+            plan_emitted: false,
+            color: false,
+            locale: Some(locale),
+            formatter: Some(formatter),
         })
     }
 
@@ -66,6 +90,8 @@ impl<'a> TapWriter<'a> {
             failed: false,
             plan_emitted: false,
             color,
+            locale: None,
+            formatter: None,
         }
     }
 
@@ -76,6 +102,15 @@ impl<'a> TapWriter<'a> {
             failed: false,
             plan_emitted: false,
             color,
+            locale: None,
+            formatter: None,
+        }
+    }
+
+    fn format_number(&self, n: usize) -> String {
+        match &self.formatter {
+            Some(fmt) => fmt.format(&Decimal::from(n as i64)).to_string(),
+            None => n.to_string(),
         }
     }
 
@@ -89,14 +124,16 @@ impl<'a> TapWriter<'a> {
 
     pub fn ok(&mut self, desc: &str) -> io::Result<usize> {
         self.counter += 1;
-        writeln!(self.w, "{} {} - {}", status_ok(self.color), self.counter, desc)?;
+        let num = self.format_number(self.counter);
+        writeln!(self.w, "{} {} - {}", status_ok(self.color), num, desc)?;
         Ok(self.counter)
     }
 
     pub fn not_ok(&mut self, desc: &str) -> io::Result<usize> {
         self.counter += 1;
         self.failed = true;
-        writeln!(self.w, "{} {} - {}", status_not_ok(self.color), self.counter, desc)?;
+        let num = self.format_number(self.counter);
+        writeln!(self.w, "{} {} - {}", status_not_ok(self.color), num, desc)?;
         Ok(self.counter)
     }
 
@@ -107,18 +144,20 @@ impl<'a> TapWriter<'a> {
     ) -> io::Result<usize> {
         self.counter += 1;
         self.failed = true;
-        writeln!(self.w, "{} {} - {}", status_not_ok(self.color), self.counter, desc)?;
+        let num = self.format_number(self.counter);
+        writeln!(self.w, "{} {} - {}", status_not_ok(self.color), num, desc)?;
         write_diagnostics_block(self.w, diagnostics)?;
         Ok(self.counter)
     }
 
     pub fn skip(&mut self, desc: &str, reason: &str) -> io::Result<usize> {
         self.counter += 1;
+        let num = self.format_number(self.counter);
         writeln!(
             self.w,
             "{} {} - {} # {} {}",
             status_ok(self.color),
-            self.counter,
+            num,
             desc,
             directive_skip(self.color),
             reason
@@ -128,11 +167,12 @@ impl<'a> TapWriter<'a> {
 
     pub fn todo(&mut self, desc: &str, reason: &str) -> io::Result<usize> {
         self.counter += 1;
+        let num = self.format_number(self.counter);
         writeln!(
             self.w,
             "{} {} - {} # {} {}",
             status_not_ok(self.color),
-            self.counter,
+            num,
             desc,
             directive_todo(self.color),
             reason
@@ -158,12 +198,14 @@ impl<'a> TapWriter<'a> {
             return Ok(());
         }
         self.plan_emitted = true;
-        writeln!(self.w, "1..{}", self.counter)
+        let num = self.format_number(self.counter);
+        writeln!(self.w, "1..{}", num)
     }
 
     pub fn plan_ahead(&mut self, n: usize) -> io::Result<()> {
         self.plan_emitted = true;
-        writeln!(self.w, "1..{}", n)
+        let num = self.format_number(n);
+        writeln!(self.w, "1..{}", num)
     }
 
     pub fn plan_skip(&mut self, reason: &str) -> io::Result<()> {
@@ -217,6 +259,14 @@ impl<'a> TapWriter<'a> {
         writeln!(self.w, "    # Subtest: {}", name)?;
         let mut indent = IndentWriter { w: &mut *self.w };
         let mut child = TapWriter::child(&mut indent, self.color);
+        if let Some(ref locale) = self.locale {
+            child.formatter = Some(
+                DecimalFormatter::try_new(locale.clone().into(), Default::default())
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?,
+            );
+            child.locale = Some(locale.clone());
+            writeln!(child.w, "pragma +locale-formatting:{locale}")?;
+        }
         f(&mut child)
     }
 }
@@ -380,6 +430,16 @@ pub fn write_pragma(w: &mut impl Write, key: &str, enabled: bool) -> io::Result<
 
 pub fn write_plan_skip(w: &mut impl Write, reason: &str) -> io::Result<()> {
     writeln!(w, "1..0 # SKIP {reason}")
+}
+
+pub fn write_plan_locale(
+    w: &mut impl Write,
+    count: usize,
+    fmt: &DecimalFormatter,
+) -> io::Result<()> {
+    let decimal = Decimal::from(count as i64);
+    let formatted = fmt.format(&decimal);
+    writeln!(w, "1..{formatted}")
 }
 
 #[cfg(test)]
@@ -1070,5 +1130,105 @@ mod tests {
         let out = String::from_utf8(buf).unwrap();
         assert!(out.contains("    \x1b[32mok\x1b[0m 1 - nested\n"));
         assert!(out.contains("\x1b[32mok\x1b[0m 1 - group\n"));
+    }
+
+    // --- Locale formatting tests ---
+
+    #[test]
+    fn writer_locale_emits_pragma() {
+        let mut buf = Vec::new();
+        let locale: Locale = "en-US".parse().unwrap();
+        let mut tw = TapWriter::with_locale(&mut buf, locale).unwrap();
+        tw.ok("first").unwrap();
+        tw.plan().unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(
+            out.contains("pragma +locale-formatting:en-US\n"),
+            "expected locale pragma, got:\n{out}"
+        );
+    }
+
+    #[test]
+    fn writer_locale_formats_large_test_number() {
+        let mut buf = Vec::new();
+        let locale: Locale = "en-US".parse().unwrap();
+        let mut tw = TapWriter::with_locale(&mut buf, locale).unwrap();
+        for _ in 0..1234 {
+            tw.ok("test").unwrap();
+        }
+        let out = String::from_utf8(buf).unwrap();
+        assert!(
+            out.contains("ok 1,234 - test\n"),
+            "expected 'ok 1,234', got last 200 chars: {}",
+            &out[out.len().saturating_sub(200)..]
+        );
+    }
+
+    #[test]
+    fn writer_locale_formats_plan_count() {
+        let mut buf = Vec::new();
+        let locale: Locale = "en-US".parse().unwrap();
+        let mut tw = TapWriter::with_locale(&mut buf, locale).unwrap();
+        tw.plan_ahead(10000).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(
+            out.contains("1..10,000\n"),
+            "expected '1..10,000', got: {out}"
+        );
+    }
+
+    #[test]
+    fn writer_locale_german_separator() {
+        let mut buf = Vec::new();
+        let locale: Locale = "de-DE".parse().unwrap();
+        let mut tw = TapWriter::with_locale(&mut buf, locale).unwrap();
+        tw.plan_ahead(10000).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(
+            out.contains("1..10.000\n"),
+            "expected '1..10.000', got: {out}"
+        );
+    }
+
+    #[test]
+    fn writer_locale_small_numbers_no_separator() {
+        let mut buf = Vec::new();
+        let locale: Locale = "en-US".parse().unwrap();
+        let mut tw = TapWriter::with_locale(&mut buf, locale).unwrap();
+        tw.ok("test").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.contains("ok 1 - test\n"));
+    }
+
+    #[test]
+    fn writer_locale_subtest_inherits() {
+        let mut buf = Vec::new();
+        let locale: Locale = "en-US".parse().unwrap();
+        let mut tw = TapWriter::with_locale(&mut buf, locale).unwrap();
+        tw.subtest("nested", |sub| {
+            sub.plan_ahead(10000)?;
+            sub.plan()
+        })
+        .unwrap();
+        tw.ok("nested").unwrap();
+        tw.plan().unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(
+            out.contains("    pragma +locale-formatting:en-US\n"),
+            "expected subtest locale pragma, got:\n{out}"
+        );
+        assert!(
+            out.contains("    1..10,000\n"),
+            "expected subtest formatted plan, got:\n{out}"
+        );
+    }
+
+    #[test]
+    fn write_plan_locale_free_fn() {
+        let mut buf = Vec::new();
+        let locale: Locale = "en-US".parse().unwrap();
+        let formatter = DecimalFormatter::try_new(locale.into(), Default::default()).unwrap();
+        write_plan_locale(&mut buf, 10000, &formatter).unwrap();
+        assert_eq!(String::from_utf8(buf).unwrap(), "1..10,000\n");
     }
 }

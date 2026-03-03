@@ -5,3 +5,6 @@ edition = "2021"
 description = "TAP-14 writer library"
 
 [dependencies]
+icu_decimal = "2"
+icu_locale_core = "2"
+fixed_decimal = "0.7"
