@@ -53,7 +53,7 @@
 
       # Single vendor hash for the entire Go workspace.
       # Only covers external deps — workspace module changes don't affect it.
-      goVendorHash = "sha256-nFnvKmU08onz8Y7MMV+PYuBiYQeiWgzpvI/zNyP96mg=";
+      goVendorHash = "sha256-A1Nnv2A9DXi/gY9i8DjgBYUbn9wBulD4WBDIfJNIupA=";
 
       buildDevenvs =
         system:
