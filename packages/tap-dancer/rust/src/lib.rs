@@ -1,5 +1,29 @@
 use std::io::{self, Write};
 
+fn status_ok(color: bool) -> &'static str {
+    if color { "\x1b[32mok\x1b[0m" } else { "ok" }
+}
+
+fn status_not_ok(color: bool) -> &'static str {
+    if color { "\x1b[31mnot ok\x1b[0m" } else { "not ok" }
+}
+
+fn directive_skip(color: bool) -> &'static str {
+    if color { "\x1b[33mSKIP\x1b[0m" } else { "SKIP" }
+}
+
+fn directive_todo(color: bool) -> &'static str {
+    if color { "\x1b[33mTODO\x1b[0m" } else { "TODO" }
+}
+
+fn token_bail_out(color: bool) -> &'static str {
+    if color {
+        "\x1b[31mBail out!\x1b[0m"
+    } else {
+        "Bail out!"
+    }
+}
+
 pub struct TestResult {
     pub number: usize,
     pub name: String,
@@ -16,25 +40,42 @@ pub struct TapWriter<'a> {
     counter: usize,
     failed: bool,
     plan_emitted: bool,
+    color: bool,
 }
 
 impl<'a> TapWriter<'a> {
     pub fn new(w: &'a mut dyn Write) -> io::Result<Self> {
+        Self::new_color(w, false)
+    }
+
+    pub fn new_color(w: &'a mut dyn Write, color: bool) -> io::Result<Self> {
         writeln!(w, "TAP version 14")?;
         Ok(Self {
             w,
             counter: 0,
             failed: false,
             plan_emitted: false,
+            color,
         })
     }
 
-    fn child(w: &'a mut dyn Write) -> Self {
+    pub fn bare(w: &'a mut dyn Write, color: bool) -> Self {
         Self {
             w,
             counter: 0,
             failed: false,
             plan_emitted: false,
+            color,
+        }
+    }
+
+    fn child(w: &'a mut dyn Write, color: bool) -> Self {
+        Self {
+            w,
+            counter: 0,
+            failed: false,
+            plan_emitted: false,
+            color,
         }
     }
 
@@ -48,14 +89,14 @@ impl<'a> TapWriter<'a> {
 
     pub fn ok(&mut self, desc: &str) -> io::Result<usize> {
         self.counter += 1;
-        writeln!(self.w, "ok {} - {}", self.counter, desc)?;
+        writeln!(self.w, "{} {} - {}", status_ok(self.color), self.counter, desc)?;
         Ok(self.counter)
     }
 
     pub fn not_ok(&mut self, desc: &str) -> io::Result<usize> {
         self.counter += 1;
         self.failed = true;
-        writeln!(self.w, "not ok {} - {}", self.counter, desc)?;
+        writeln!(self.w, "{} {} - {}", status_not_ok(self.color), self.counter, desc)?;
         Ok(self.counter)
     }
 
@@ -66,14 +107,22 @@ impl<'a> TapWriter<'a> {
     ) -> io::Result<usize> {
         self.counter += 1;
         self.failed = true;
-        writeln!(self.w, "not ok {} - {}", self.counter, desc)?;
+        writeln!(self.w, "{} {} - {}", status_not_ok(self.color), self.counter, desc)?;
         write_diagnostics_block(self.w, diagnostics)?;
         Ok(self.counter)
     }
 
     pub fn skip(&mut self, desc: &str, reason: &str) -> io::Result<usize> {
         self.counter += 1;
-        writeln!(self.w, "ok {} - {} # SKIP {}", self.counter, desc, reason)?;
+        writeln!(
+            self.w,
+            "{} {} - {} # {} {}",
+            status_ok(self.color),
+            self.counter,
+            desc,
+            directive_skip(self.color),
+            reason
+        )?;
         Ok(self.counter)
     }
 
@@ -81,14 +130,18 @@ impl<'a> TapWriter<'a> {
         self.counter += 1;
         writeln!(
             self.w,
-            "not ok {} - {} # TODO {}",
-            self.counter, desc, reason
+            "{} {} - {} # {} {}",
+            status_not_ok(self.color),
+            self.counter,
+            desc,
+            directive_todo(self.color),
+            reason
         )?;
         Ok(self.counter)
     }
 
     pub fn bail_out(&mut self, reason: &str) -> io::Result<()> {
-        writeln!(self.w, "Bail out! {}", reason)
+        writeln!(self.w, "{} {}", token_bail_out(self.color), reason)
     }
 
     pub fn comment(&mut self, text: &str) -> io::Result<()> {
@@ -118,6 +171,44 @@ impl<'a> TapWriter<'a> {
         writeln!(self.w, "1..0 # SKIP {}", reason)
     }
 
+    pub fn test_point(&mut self, result: &TestResult) -> io::Result<()> {
+        self.counter += 1;
+        if !result.ok {
+            self.failed = true;
+        }
+
+        let status = if result.ok {
+            status_ok(self.color)
+        } else {
+            status_not_ok(self.color)
+        };
+
+        if let Some(ref directive) = result.directive {
+            writeln!(self.w, "{status} {} - {} # {directive}", result.number, result.name)?;
+        } else {
+            writeln!(self.w, "{status} {} - {}", result.number, result.name)?;
+        }
+
+        if !result.suppress_yaml && has_yaml_block(result) {
+            writeln!(self.w, "  ---")?;
+            if let Some(ref message) = result.error_message {
+                write_yaml_field(&mut *self.w, "message", message)?;
+            }
+            if !result.ok {
+                writeln!(self.w, "  severity: fail")?;
+            }
+            if let Some(code) = result.exit_code {
+                writeln!(self.w, "  exitcode: {code}")?;
+            }
+            if let Some(ref output) = result.output {
+                write_yaml_field(&mut *self.w, "output", output)?;
+            }
+            writeln!(self.w, "  ...")?;
+        }
+
+        Ok(())
+    }
+
     pub fn subtest(
         &mut self,
         name: &str,
@@ -125,7 +216,7 @@ impl<'a> TapWriter<'a> {
     ) -> io::Result<()> {
         writeln!(self.w, "    # Subtest: {}", name)?;
         let mut indent = IndentWriter { w: &mut *self.w };
-        let mut child = TapWriter::child(&mut indent);
+        let mut child = TapWriter::child(&mut indent, self.color);
         f(&mut child)
     }
 }
@@ -868,5 +959,116 @@ mod tests {
     #[test]
     fn normalize_lf_unchanged() {
         assert_eq!(normalize_line_endings("a\nb"), "a\nb");
+    }
+
+    // --- Color tests ---
+
+    #[test]
+    fn writer_ok_color() {
+        let mut buf = Vec::new();
+        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        tw.ok("pass").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.contains("\x1b[32mok\x1b[0m 1 - pass\n"));
+    }
+
+    #[test]
+    fn writer_not_ok_color() {
+        let mut buf = Vec::new();
+        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        tw.not_ok("fail").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.contains("\x1b[31mnot ok\x1b[0m 1 - fail\n"));
+    }
+
+    #[test]
+    fn writer_skip_color() {
+        let mut buf = Vec::new();
+        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        tw.skip("optional", "not supported").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.contains("\x1b[32mok\x1b[0m 1 - optional # \x1b[33mSKIP\x1b[0m not supported\n"));
+    }
+
+    #[test]
+    fn writer_todo_color() {
+        let mut buf = Vec::new();
+        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        tw.todo("future", "not done").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.contains("\x1b[31mnot ok\x1b[0m 1 - future # \x1b[33mTODO\x1b[0m not done\n"));
+    }
+
+    #[test]
+    fn writer_bail_out_color() {
+        let mut buf = Vec::new();
+        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        tw.bail_out("on fire").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.contains("\x1b[31mBail out!\x1b[0m on fire\n"));
+    }
+
+    #[test]
+    fn writer_test_point_ok_color() {
+        let mut buf = Vec::new();
+        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        let result = TestResult {
+            number: 1,
+            name: "build".into(),
+            ok: true,
+            directive: None,
+            error_message: None,
+            exit_code: None,
+            output: None,
+            suppress_yaml: false,
+        };
+        tw.test_point(&result).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.contains("\x1b[32mok\x1b[0m 1 - build\n"));
+    }
+
+    #[test]
+    fn writer_test_point_not_ok_color() {
+        let mut buf = Vec::new();
+        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        let result = TestResult {
+            number: 1,
+            name: "test".into(),
+            ok: false,
+            directive: None,
+            error_message: Some("boom".into()),
+            exit_code: Some(1),
+            output: None,
+            suppress_yaml: false,
+        };
+        tw.test_point(&result).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.contains("\x1b[31mnot ok\x1b[0m 1 - test\n"));
+        assert!(out.contains("  severity: fail\n"));
+    }
+
+    #[test]
+    fn writer_bare_no_version() {
+        let mut buf = Vec::new();
+        let mut tw = TapWriter::bare(&mut buf, false);
+        tw.ok("first").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(!out.contains("TAP version"));
+        assert!(out.contains("ok 1 - first\n"));
+    }
+
+    #[test]
+    fn writer_subtest_propagates_color() {
+        let mut buf = Vec::new();
+        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        tw.subtest("group", |sub| {
+            sub.ok("nested")?;
+            sub.plan()
+        })
+        .unwrap();
+        tw.ok("group").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.contains("    \x1b[32mok\x1b[0m 1 - nested\n"));
+        assert!(out.contains("\x1b[32mok\x1b[0m 1 - group\n"));
     }
 }
