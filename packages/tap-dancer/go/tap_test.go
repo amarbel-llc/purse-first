@@ -5,6 +5,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"golang.org/x/text/language"
 )
 
 func TestNewWriterEmitsVersionHeader(t *testing.T) {
@@ -667,5 +669,76 @@ func TestWriteAllOkWithDiagnostics(t *testing.T) {
 	}
 	if !strings.Contains(out, "  message: inserted id=42\n") {
 		t.Errorf("expected message diagnostic, got:\n%s", out)
+	}
+}
+
+func TestLocaleWriterEmitsPragma(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewLocaleWriter(&buf, language.MustParse("en-US"))
+	tw.Ok("first")
+	tw.Plan()
+	out := buf.String()
+	if !strings.Contains(out, "pragma +locale-formatting:en-US\n") {
+		t.Errorf("expected locale pragma, got:\n%s", out)
+	}
+}
+
+func TestLocaleWriterFormatsTestPointNumber(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewLocaleWriter(&buf, language.MustParse("en-US"))
+	for i := 0; i < 1234; i++ {
+		tw.Ok("test")
+	}
+	out := buf.String()
+	if !strings.Contains(out, "ok 1,234 - test\n") {
+		t.Errorf("expected locale-formatted number ok 1,234, got last lines:\n%s",
+			out[max(0, len(out)-200):])
+	}
+}
+
+func TestLocaleWriterFormatsPlanCount(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewLocaleWriter(&buf, language.MustParse("en-US"))
+	tw.PlanAhead(10000)
+	out := buf.String()
+	if !strings.Contains(out, "1..10,000\n") {
+		t.Errorf("expected locale-formatted plan 1..10,000, got:\n%s", out)
+	}
+}
+
+func TestLocaleWriterGermanSeparator(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewLocaleWriter(&buf, language.MustParse("de-DE"))
+	tw.PlanAhead(10000)
+	out := buf.String()
+	if !strings.Contains(out, "1..10.000\n") {
+		t.Errorf("expected German-formatted plan 1..10.000, got:\n%s", out)
+	}
+}
+
+func TestLocaleWriterSmallNumbersUnformatted(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewLocaleWriter(&buf, language.MustParse("en-US"))
+	tw.Ok("test")
+	out := buf.String()
+	if !strings.Contains(out, "ok 1 - test\n") {
+		t.Errorf("expected plain number for small values, got:\n%s", out)
+	}
+}
+
+func TestLocaleWriterSubtestInheritsLocale(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewLocaleWriter(&buf, language.MustParse("en-US"))
+	sub := tw.Subtest("nested")
+	sub.PlanAhead(10000)
+	sub.Plan()
+	tw.Ok("nested")
+	tw.Plan()
+	out := buf.String()
+	if !strings.Contains(out, "    pragma +locale-formatting:en-US\n") {
+		t.Errorf("expected subtest to inherit and emit locale pragma, got:\n%s", out)
+	}
+	if !strings.Contains(out, "    1..10,000\n") {
+		t.Errorf("expected subtest to use locale formatting, got:\n%s", out)
 	}
 }

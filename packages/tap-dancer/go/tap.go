@@ -6,6 +6,9 @@ import (
 	"iter"
 	"sort"
 	"strings"
+
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 // ANSI color codes for TTY output.
@@ -23,6 +26,8 @@ type Writer struct {
 	planEmitted bool
 	failed      bool
 	color       bool
+	locale      language.Tag
+	printer     *message.Printer
 }
 
 func NewWriter(w io.Writer) *Writer {
@@ -34,6 +39,23 @@ func NewWriter(w io.Writer) *Writer {
 func NewColorWriter(w io.Writer, color bool) *Writer {
 	fmt.Fprintln(w, "TAP version 14")
 	return &Writer{w: w, color: color}
+}
+
+func NewLocaleWriter(w io.Writer, locale language.Tag) *Writer {
+	fmt.Fprintln(w, "TAP version 14")
+	fmt.Fprintf(w, "pragma +locale-formatting:%s\n", locale)
+	return &Writer{
+		w:       w,
+		locale:  locale,
+		printer: message.NewPrinter(locale),
+	}
+}
+
+func (tw *Writer) formatNumber(n int) string {
+	if tw.printer != nil {
+		return tw.printer.Sprintf("%d", n)
+	}
+	return fmt.Sprintf("%d", n)
 }
 
 func (tw *Writer) colorOk() string {
@@ -73,13 +95,13 @@ func (tw *Writer) colorBailOut() string {
 
 func (tw *Writer) Ok(description string) int {
 	tw.n++
-	fmt.Fprintf(tw.w, "%s %d - %s\n", tw.colorOk(), tw.n, description)
+	fmt.Fprintf(tw.w, "%s %s - %s\n", tw.colorOk(), tw.formatNumber(tw.n), description)
 	return tw.n
 }
 
 func (tw *Writer) OkDiag(description string, diagnostics *Diagnostics) int {
 	tw.n++
-	fmt.Fprintf(tw.w, "%s %d - %s\n", tw.colorOk(), tw.n, description)
+	fmt.Fprintf(tw.w, "%s %s - %s\n", tw.colorOk(), tw.formatNumber(tw.n), description)
 	writeDiagnostics(tw.w, diagnostics)
 	return tw.n
 }
@@ -91,7 +113,7 @@ func (tw *Writer) HasFailures() bool {
 func (tw *Writer) NotOk(description string, diagnostics map[string]string) int {
 	tw.n++
 	tw.failed = true
-	fmt.Fprintf(tw.w, "%s %d - %s\n", tw.colorNotOk(), tw.n, description)
+	fmt.Fprintf(tw.w, "%s %s - %s\n", tw.colorNotOk(), tw.formatNumber(tw.n), description)
 	if len(diagnostics) > 0 {
 		fmt.Fprintln(tw.w, "  ---")
 		keys := make([]string, 0, len(diagnostics))
@@ -121,25 +143,25 @@ func (tw *Writer) NotOk(description string, diagnostics map[string]string) int {
 
 func (tw *Writer) Skip(description, reason string) int {
 	tw.n++
-	fmt.Fprintf(tw.w, "%s %d - %s %s %s\n", tw.colorOk(), tw.n, description, tw.colorSkip(), reason)
+	fmt.Fprintf(tw.w, "%s %s - %s %s %s\n", tw.colorOk(), tw.formatNumber(tw.n), description, tw.colorSkip(), reason)
 	return tw.n
 }
 
 func (tw *Writer) SkipDiag(description, reason string, diagnostics *Diagnostics) int {
 	tw.n++
-	fmt.Fprintf(tw.w, "%s %d - %s %s %s\n", tw.colorOk(), tw.n, description, tw.colorSkip(), reason)
+	fmt.Fprintf(tw.w, "%s %s - %s %s %s\n", tw.colorOk(), tw.formatNumber(tw.n), description, tw.colorSkip(), reason)
 	writeDiagnostics(tw.w, diagnostics)
 	return tw.n
 }
 
 func (tw *Writer) Todo(description, reason string) int {
 	tw.n++
-	fmt.Fprintf(tw.w, "%s %d - %s %s %s\n", tw.colorNotOk(), tw.n, description, tw.colorTodo(), reason)
+	fmt.Fprintf(tw.w, "%s %s - %s %s %s\n", tw.colorNotOk(), tw.formatNumber(tw.n), description, tw.colorTodo(), reason)
 	return tw.n
 }
 
 func (tw *Writer) PlanAhead(n int) {
-	fmt.Fprintf(tw.w, "1..%d\n", n)
+	fmt.Fprintf(tw.w, "1..%s\n", tw.formatNumber(n))
 	tw.planEmitted = true
 }
 
@@ -148,7 +170,7 @@ func (tw *Writer) Plan() {
 		return
 	}
 	tw.planEmitted = true
-	fmt.Fprintf(tw.w, "1..%d\n", tw.n)
+	fmt.Fprintf(tw.w, "1..%s\n", tw.formatNumber(tw.n))
 }
 
 func (tw *Writer) BailOut(reason string) {
@@ -255,7 +277,17 @@ func (tw *Writer) Subtest(name string) *Writer {
 	prefix := "    "
 	fmt.Fprintf(tw.w, "%s# Subtest: %s\n", prefix, name)
 	iw := &indentWriter{w: tw.w, prefix: prefix}
-	return &Writer{w: iw, depth: tw.depth + 1, color: tw.color}
+	child := &Writer{
+		w:       iw,
+		depth:   tw.depth + 1,
+		color:   tw.color,
+		locale:  tw.locale,
+		printer: tw.printer,
+	}
+	if tw.printer != nil {
+		fmt.Fprintf(iw, "pragma +locale-formatting:%s\n", tw.locale)
+	}
+	return child
 }
 
 type TestPoint struct {
@@ -282,12 +314,12 @@ func (tw *Writer) WriteAll(tests iter.Seq[TestPoint]) {
 			tw.Todo(tp.Description, tp.Todo)
 		} else if tp.Ok {
 			tw.n++
-			fmt.Fprintf(tw.w, "%s %d - %s\n", tw.colorOk(), tw.n, tp.Description)
+			fmt.Fprintf(tw.w, "%s %s - %s\n", tw.colorOk(), tw.formatNumber(tw.n), tp.Description)
 			writeDiagnostics(tw.w, tp.Diagnostics)
 		} else {
 			tw.n++
 			tw.failed = true
-			fmt.Fprintf(tw.w, "%s %d - %s\n", tw.colorNotOk(), tw.n, tp.Description)
+			fmt.Fprintf(tw.w, "%s %s - %s\n", tw.colorNotOk(), tw.formatNumber(tw.n), tp.Description)
 			writeDiagnostics(tw.w, tp.Diagnostics)
 		}
 	}
