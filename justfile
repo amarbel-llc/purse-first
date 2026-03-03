@@ -2,7 +2,7 @@
 cmd_nix_dev := "nix develop " + justfile_directory() + " --command "
 cmd_batman_bats := justfile_directory() + "/result-batman/bin/bats"
 
-default: && update build test
+default: build test
 
 # Build all packages (default = marketplace bundle)
 build:
