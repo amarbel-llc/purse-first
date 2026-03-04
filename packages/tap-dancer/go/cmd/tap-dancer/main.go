@@ -16,7 +16,7 @@ import (
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
-	tap "github.com/amarbel-llc/tap-dancer/go"
+	tap "github.com/amarbel-llc/purse-first/packages/tap-dancer/go"
 )
 
 func main() {

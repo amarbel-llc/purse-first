@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	tap "github.com/amarbel-llc/tap-dancer/go"
+	tap "github.com/amarbel-llc/purse-first/packages/tap-dancer/go"
 )
 
 type mockExecutor struct {

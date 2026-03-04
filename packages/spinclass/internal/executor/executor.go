@@ -1,7 +1,7 @@
 package executor
 
 import (
-	tap "github.com/amarbel-llc/tap-dancer/go"
+	tap "github.com/amarbel-llc/purse-first/packages/tap-dancer/go"
 )
 
 type Executor interface {

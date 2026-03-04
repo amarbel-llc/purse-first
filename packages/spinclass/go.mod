@@ -2,11 +2,11 @@ module github.com/amarbel-llc/spinclass
 
 go 1.24.2
 
-replace github.com/amarbel-llc/tap-dancer/go => ../tap-dancer/go
+replace github.com/amarbel-llc/purse-first/packages/tap-dancer/go => ../tap-dancer/go
 
 require (
 	github.com/BurntSushi/toml v1.6.0
-	github.com/amarbel-llc/tap-dancer/go v0.0.0-20260222022802-be680fd2b4ac
+	github.com/amarbel-llc/purse-first/packages/tap-dancer/go v0.0.0-20260222022802-be680fd2b4ac
 	github.com/charmbracelet/huh v0.8.0
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/log v0.4.2

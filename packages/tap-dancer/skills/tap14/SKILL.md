@@ -18,14 +18,14 @@ Use TAP-14 output when building:
 
 ## Go Library
 
-Import: `github.com/amarbel-llc/tap-dancer/go`
+Import: `github.com/amarbel-llc/purse-first/packages/tap-dancer/go`
 
 ### Basic Usage
 
 ```go
 import (
     "os"
-    tap "github.com/amarbel-llc/tap-dancer/go"
+    tap "github.com/amarbel-llc/purse-first/packages/tap-dancer/go"
 )
 
 func main() {

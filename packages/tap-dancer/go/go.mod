@@ -1,4 +1,4 @@
-module github.com/amarbel-llc/tap-dancer/go
+module github.com/amarbel-llc/purse-first/packages/tap-dancer/go
 
 go 1.24.0
 

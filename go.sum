@@ -1,7 +1,5 @@
 github.com/BurntSushi/toml v1.6.0 h1:dRaEfpa2VI55EwlIW72hMRHdWouJeRF7TPYhI+AUQjk=
 github.com/BurntSushi/toml v1.6.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
-github.com/amarbel-llc/tap-dancer/go v0.0.0-20260219125355-4699d88f934d h1:iMS2PY4RvrKxheAaCdRgVGsSwik5dgavy0r7f8LqmTM=
-github.com/amarbel-llc/tap-dancer/go v0.0.0-20260219125355-4699d88f934d/go.mod h1:TEfWGD1ubQbbCCdmrQN1rEJgSmqRUA7IO+uvd9kUQM4=
 github.com/aymanbagabas/go-osc52/v2 v2.0.1 h1:HwpRHbFMcZLEVr42D4p7XBqjyuxQH5SMiErDT4WkJ2k=
 github.com/aymanbagabas/go-osc52/v2 v2.0.1/go.mod h1:uYgXzlJ7ZpABp8OJ+exZzJJhRNQ2ASbcXHWsFqH8hp8=
 github.com/charmbracelet/colorprofile v0.4.1 h1:a1lO03qTrSIRaK8c3JRxJDZOvhvIeSco3ej+ngLk1kk=

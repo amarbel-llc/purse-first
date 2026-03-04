@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	tap "github.com/amarbel-llc/tap-dancer/go"
+	tap "github.com/amarbel-llc/purse-first/packages/tap-dancer/go"
 )
 
 func DiscoverSkills(root string) ([]string, error) {

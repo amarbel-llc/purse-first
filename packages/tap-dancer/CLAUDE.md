@@ -17,7 +17,7 @@ just deps           # Update Go dependencies (go mod tidy + gomod2nix)
 
 ## Code Style
 
-- Go: `gofumpt`, package name `tap`, module `github.com/amarbel-llc/tap-dancer/go`
+- Go: `gofumpt`, package name `tap`, module `github.com/amarbel-llc/purse-first/packages/tap-dancer/go`
 - Rust: `cargo fmt` + `cargo clippy`, crate name `tap-dancer`
 - Nix: `nixfmt-rfc-style`
 
