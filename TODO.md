@@ -7,6 +7,10 @@
 - [x] FDR: Merge & Close-Shop Lifecycle — `docs/features/0006-merge-close-shop-lifecycle.md`
 - [x] FDR: Lux Service Daemon — `docs/features/0007-lux-service-daemon.md`
 
+## P0
+
+- [ ] P0: PreToolUse hooks not firing — hooks exist on disk and binary works correctly, but Claude Code doesn't enforce them after `purse-first install`. Neither grit nor chix hooks deny Bash commands. Investigate plugin hook loading/registration.
+
 ## Other
 
 - [x] tap-dancer rust: add `write_pragma` support (needed for `pragma +streamed-output`)
@@ -19,8 +23,9 @@
 - [ ] separate libs and marketplace generation into new `bob` repo
 - [ ] migrate everything to latest MCP
 - [x] tap-dancer rust: add quiet/suppress-YAML-block mode for test points
-- [ ] add PreToolUse hook support to rust-mcp (parity with go-mcp's HandleHook, GenerateHooks, ToolMapping/MapsTools, GeneratePlugin)
-- [ ] add PreToolUse hooks to chix (depends on rust-mcp hook support) — map nix/fh/cachix CLI tools to MCP equivalents
+- [x] add PreToolUse hook support to rust-mcp (parity with go-mcp's HandleHook, GenerateHooks, ToolMapping/MapsTools, GeneratePlugin)
+- [x] add PreToolUse hooks to chix (depends on rust-mcp hook support) — map nix/fh/cachix CLI tools to MCP equivalents
+- [ ] FDR: single-package local test flow — `purse-first test-local .#chix` or similar that installs one package's hooks+MCP into an isolated Claude Code project config without touching global state
 - [ ] explore purse-first neovim plugin packaging (ftplugins, lux config fragments, auto-discovery)
 - [ ] pivot hook matching to delegation: let packages provide custom matchers (e.g. a `MatchHook` callback on `Command`) instead of the framework owning all matching logic via static `CommandPrefixes`/`Extensions`
 - [x] migrate grit to `bats_load_library bats-island`

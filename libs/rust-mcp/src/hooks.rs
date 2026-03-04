@@ -96,10 +96,11 @@ impl HookHandler {
         Ok(None)
     }
 
-    /// Write hooks/hooks.json and hooks/pre-tool-use into `dir`.
+    /// Merge PreToolUse hooks into an existing plugin.json and write the
+    /// pre-tool-use hook script into the hooks/ directory next to it.
     pub fn generate_hooks(
         &self,
-        dir: &Path,
+        plugin_json_path: &Path,
         binary_path: &Path,
     ) -> Result<(), anyhow::Error> {
         let mut replaces_set = BTreeSet::new();
@@ -113,24 +114,37 @@ impl HookHandler {
 
         let matcher: String = replaces_set.into_iter().collect::<Vec<_>>().join("|");
 
-        let hooks_dir = dir.join("hooks");
-        fs::create_dir_all(&hooks_dir)?;
+        let data = fs::read_to_string(plugin_json_path)?;
+        let mut plugin: Value = serde_json::from_str(&data)?;
 
-        let manifest = json!({
-            "hooks": {
-                "PreToolUse": [{
-                    "matcher": matcher,
-                    "hooks": [{
-                        "type": "command",
-                        "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use'",
-                        "timeout": 5,
-                    }]
+        let hooks = plugin
+            .as_object_mut()
+            .ok_or_else(|| anyhow::anyhow!("plugin.json is not an object"))?
+            .entry("hooks")
+            .or_insert_with(|| json!({}));
+
+        let hooks_obj = hooks
+            .as_object_mut()
+            .ok_or_else(|| anyhow::anyhow!("hooks is not an object"))?;
+
+        hooks_obj.insert(
+            "PreToolUse".into(),
+            json!([{
+                "matcher": matcher,
+                "hooks": [{
+                    "type": "command",
+                    "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use'",
+                    "timeout": 5,
                 }]
-            }
-        });
+            }]),
+        );
 
-        let data = serde_json::to_string_pretty(&manifest)? + "\n";
-        fs::write(hooks_dir.join("hooks.json"), data)?;
+        let out = serde_json::to_string_pretty(&plugin)? + "\n";
+        fs::write(plugin_json_path, out)?;
+
+        // Write the hook script
+        let hooks_dir = plugin_json_path.parent().unwrap().join("hooks");
+        fs::create_dir_all(&hooks_dir)?;
 
         let script = format!("#!/bin/sh\nexec '{}' hook\n", binary_path.display());
         let script_path = hooks_dir.join("pre-tool-use");
@@ -400,27 +414,47 @@ mod tests {
     }
 
     #[test]
-    fn generate_hooks_writes_files() {
+    fn generate_hooks_merges_into_plugin_json() {
         let dir = tempfile::tempdir().unwrap();
+        let plugin_json_path = dir.path().join("plugin.json");
+
+        // Start with an existing plugin.json that has PostToolUse hooks
+        let existing = json!({
+            "name": "chix",
+            "hooks": {
+                "PostToolUse": [{
+                    "matcher": "Edit|Write",
+                    "hooks": [{"type": "command", "command": "format-nix", "timeout": 30}]
+                }]
+            }
+        });
+        fs::write(&plugin_json_path, serde_json::to_string_pretty(&existing).unwrap()).unwrap();
+
         let handler = test_handler();
         let binary = Path::new("/nix/store/fake-hash-chix/bin/chix");
-        handler.generate_hooks(dir.path(), binary).unwrap();
+        handler.generate_hooks(&plugin_json_path, binary).unwrap();
 
-        let hooks_json_path = dir.path().join("hooks/hooks.json");
-        assert!(hooks_json_path.exists());
-        let hooks_json: Value =
-            serde_json::from_str(&fs::read_to_string(&hooks_json_path).unwrap()).unwrap();
-        let matcher = hooks_json["hooks"]["PreToolUse"][0]["matcher"]
+        let result: Value =
+            serde_json::from_str(&fs::read_to_string(&plugin_json_path).unwrap()).unwrap();
+
+        // PreToolUse was added
+        let matcher = result["hooks"]["PreToolUse"][0]["matcher"]
             .as_str()
             .unwrap();
         assert_eq!(matcher, "Bash|Read");
 
+        // PostToolUse was preserved
+        assert_eq!(
+            result["hooks"]["PostToolUse"][0]["matcher"],
+            "Edit|Write"
+        );
+
+        // pre-tool-use script was written
         let script_path = dir.path().join("hooks/pre-tool-use");
         assert!(script_path.exists());
         let script = fs::read_to_string(&script_path).unwrap();
         assert!(script.starts_with("#!/bin/sh\n"));
         assert!(script.contains("chix"));
-        assert!(script.contains("hook"));
     }
 
     #[test]

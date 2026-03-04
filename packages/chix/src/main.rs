@@ -29,10 +29,10 @@ enum Commands {
     /// Handle PreToolUse hook (reads JSON from stdin)
     #[command(hide = true)]
     Hook,
-    /// Generate PreToolUse hook files into output directory
+    /// Merge PreToolUse hooks into plugin.json and write hook script
     #[command(hide = true)]
     GenerateHooks {
-        output_dir: PathBuf,
+        plugin_json: PathBuf,
         #[arg(long)]
         binary: PathBuf,
     },
@@ -53,9 +53,9 @@ async fn main() -> anyhow::Result<()> {
             Ok(())
         }
         Some(Commands::GenerateHooks {
-            output_dir,
+            plugin_json,
             binary,
-        }) => hooks::make_hook_handler().generate_hooks(&output_dir, &binary),
+        }) => hooks::make_hook_handler().generate_hooks(&plugin_json, &binary),
         None => run_server().await,
     }
 }
