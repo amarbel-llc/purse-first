@@ -2,10 +2,10 @@
 ## Feature Design Records
 
 - [x] FDR: Sweatfile Configuration & Apply — `docs/features/0002-sweatfile-configuration.md`
-- [ ] FDR: Worktree Boundary Enforcement — deny→notify design reversal, boundary rules undocumented
-- [ ] FDR: Per-Package Hook Architecture — central→per-package pivot, fail-open model, MapsTools/CommandPrefixes matching
-- [ ] FDR: Merge & Close-Shop Lifecycle — complex state machine, silent error swallowing, --merge-on-close semantics
-- [ ] FDR: Lux Service Daemon — session/workspace/pool hierarchy, socket activation, notification broadcasting
+- [x] FDR: Worktree Boundary Enforcement — `docs/features/0004-worktree-boundary-enforcement.md`
+- [x] FDR: Per-Package Hook Architecture — `docs/features/0005-per-package-hook-architecture.md`
+- [x] FDR: Merge & Close-Shop Lifecycle — `docs/features/0006-merge-close-shop-lifecycle.md`
+- [x] FDR: Lux Service Daemon — `docs/features/0007-lux-service-daemon.md`
 
 ## Other
 
