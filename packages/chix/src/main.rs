@@ -1,5 +1,6 @@
 mod background;
 mod config;
+mod hooks;
 mod lsp_client;
 mod nix_runner;
 mod output;
@@ -9,6 +10,8 @@ mod validators;
 
 use clap::{Parser, Subcommand};
 use mcp_server::server::{McpServerBuilder, run_stdio_server};
+use std::io::Read as _;
+use std::path::PathBuf;
 use std::process::Command;
 
 #[derive(Parser)]
@@ -23,6 +26,16 @@ struct Cli {
 enum Commands {
     /// Install chix as MCP server in Claude Code
     InstallClaude,
+    /// Handle PreToolUse hook (reads JSON from stdin)
+    #[command(hide = true)]
+    Hook,
+    /// Generate PreToolUse hook files into output directory
+    #[command(hide = true)]
+    GenerateHooks {
+        output_dir: PathBuf,
+        #[arg(long)]
+        binary: PathBuf,
+    },
 }
 
 #[tokio::main]
@@ -31,6 +44,18 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Some(Commands::InstallClaude) => install_claude(),
+        Some(Commands::Hook) => {
+            let mut input = Vec::new();
+            std::io::stdin().read_to_end(&mut input)?;
+            if let Some(output) = hooks::make_hook_handler().handle_hook(&input)? {
+                std::io::Write::write_all(&mut std::io::stdout(), &output)?;
+            }
+            Ok(())
+        }
+        Some(Commands::GenerateHooks {
+            output_dir,
+            binary,
+        }) => hooks::make_hook_handler().generate_hooks(&output_dir, &binary),
         None => run_server().await,
     }
 }

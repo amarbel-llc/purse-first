@@ -81,6 +81,7 @@ pub mod executor;
 #[cfg(feature = "command")]
 pub mod command;
 
+pub mod hooks;
 pub mod validation;
 
 // Re-export main types
@@ -116,3 +117,5 @@ pub use executor::{CommandExecutor, CommandOutput, ExecuteArgs, ExecutorError, T
 
 #[cfg(feature = "command")]
 pub use command::{App, Command as CliCommand, Description, Param, ParamType};
+
+pub use hooks::{HookHandler, ToolMapping};

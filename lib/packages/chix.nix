@@ -41,4 +41,8 @@ pkgs.runCommand "chix"
 
     mkdir -p $out/share/purse-first/chix/hooks
     install -m 755 ${formatNixHook} $out/share/purse-first/chix/hooks/format-nix
+
+    ${chix-unwrapped}/bin/chix generate-hooks \
+      $out/share/purse-first/chix \
+      --binary $out/bin/chix
   ''
