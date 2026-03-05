@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"net"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/amarbel-llc/lux/internal/subprocess"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 )
 
@@ -88,6 +91,92 @@ func TestIntegration_FullRoundTrip(t *testing.T) {
 	}
 	if status2.SessionCount != 0 {
 		t.Errorf("expected 0 sessions after deregister, got %d", status2.SessionCount)
+	}
+
+	cancel()
+	<-errCh
+}
+
+func TestIntegration_LSPRequestRoundTrip(t *testing.T) {
+	// Set up isolated config directory with filetype + LSP config
+	configDir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", configDir)
+
+	ftDir := filepath.Join(configDir, "lux", "filetype")
+	if err := os.MkdirAll(ftDir, 0o755); err != nil {
+		t.Fatalf("creating filetype dir: %v", err)
+	}
+
+	// Filetype config: .go files → "fake" LSP
+	if err := os.WriteFile(filepath.Join(ftDir, "go.toml"), []byte("extensions = [\"go\"]\nlsp = \"fake\"\n"), 0o644); err != nil {
+		t.Fatalf("writing filetype config: %v", err)
+	}
+
+	// LSP config so LoadWithProject succeeds
+	luxDir := filepath.Join(configDir, "lux")
+	if err := os.WriteFile(filepath.Join(luxDir, "lsps.toml"), []byte("[[lsp]]\nname = \"fake\"\nflake = \"fake#lsp\"\nextensions = [\"go\"]\n"), 0o644); err != nil {
+		t.Fatalf("writing LSP config: %v", err)
+	}
+
+	socketPath := shortSocketPath(t, "lsp-roundtrip.sock")
+
+	d := NewDaemon(socketPath, nil, 0)
+	d.workspaces.executorFactory = func() subprocess.Executor {
+		return &fakeExecutor{}
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- d.Run(ctx)
+	}()
+
+	waitForListeningSocket(t, socketPath, 2*time.Second)
+
+	conn, err := net.Dial("unix", socketPath)
+	if err != nil {
+		t.Fatalf("dialing socket: %v", err)
+	}
+	defer conn.Close()
+
+	client := jsonrpc.NewConn(conn, conn, nil)
+	go client.Run(ctx)
+
+	// Register session
+	workDir := t.TempDir()
+	regResult, err := client.Call(ctx, MethodSessionRegister, RegisterParams{
+		WorkspaceRoot: workDir,
+		ClientType:    ClientTypeLSP,
+	})
+	if err != nil {
+		t.Fatalf("register: %v", err)
+	}
+
+	var reg RegisterResult
+	if err := json.Unmarshal(regResult, &reg); err != nil {
+		t.Fatalf("unmarshal register: %v", err)
+	}
+
+	// Send LSP request through the daemon
+	lspResult, err := client.Call(ctx, MethodLSPRequest, LSPRequestParams{
+		SessionID: reg.SessionID,
+		LSPMethod: "textDocument/hover",
+		LSPParams: json.RawMessage(`{"textDocument":{"uri":"file:///test.go"},"position":{"line":0,"character":0}}`),
+	})
+	if err != nil {
+		t.Fatalf("LSP request: %v", err)
+	}
+
+	// Verify we got a response from the fake LSP
+	var lspResp map[string]any
+	if err := json.Unmarshal(lspResult, &lspResp); err != nil {
+		t.Fatalf("unmarshal LSP response: %v", err)
+	}
+
+	if lspResp["echo"] != "textDocument/hover" {
+		t.Errorf("expected echo of method, got: %v", lspResp)
 	}
 
 	cancel()
