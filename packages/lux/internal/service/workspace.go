@@ -27,10 +27,11 @@ type Workspace struct {
 }
 
 type WorkspaceRegistry struct {
-	workspaces  map[string]*Workspace
-	baseCfg     *config.Config
-	broadcaster NotificationBroadcaster
-	mu          sync.RWMutex
+	workspaces      map[string]*Workspace
+	baseCfg         *config.Config
+	broadcaster     NotificationBroadcaster
+	executorFactory func() subprocess.Executor
+	mu              sync.RWMutex
 }
 
 func NewWorkspaceRegistry(baseCfg *config.Config) *WorkspaceRegistry {
@@ -65,7 +66,12 @@ func (r *WorkspaceRegistry) createWorkspace(root string) *Workspace {
 
 	router, _ := server.NewRouter(filetypes)
 
-	executor := subprocess.NewNixExecutor()
+	var executor subprocess.Executor
+	if r.executorFactory != nil {
+		executor = r.executorFactory()
+	} else {
+		executor = subprocess.NewNixExecutor()
+	}
 	pool := subprocess.NewPool(executor, func(lspName string) jsonrpc.Handler {
 		return func(ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {
 			r.mu.RLock()
