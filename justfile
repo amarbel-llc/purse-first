@@ -139,6 +139,10 @@ test-lifecycle: build-batman
     nix build
     {{cmd_nix_dev}} {{cmd_batman_bats}} zz-tests_bats/hook_lifecycle.bats
 
+test-lux-service: build-batman
+    nix build
+    {{cmd_nix_dev}} {{cmd_batman_bats}} --allow-unix-sockets zz-tests_bats/lux_service.bats
+
 # Validate own plugin manifest
 validate:
     {{cmd_nix_dev}} go run ./cmd/purse-first validate .claude-plugin/plugin.json
@@ -174,6 +178,7 @@ test: \
     test-integration \
     test-lifecycle \
     test-lux \
+    test-lux-service \
     test-rust-mcp \
     test-sandcastle-bats \
     test-spinclass \
