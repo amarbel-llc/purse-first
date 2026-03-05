@@ -158,19 +158,29 @@ func extractAbsolutePathsFromCommand(input hookInput) []string {
 	return paths
 }
 
-func evalOrClean(path string) string {
+func resolvePath(path string) string {
 	resolved, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		return filepath.Clean(path)
+	if err == nil {
+		return resolved
 	}
-	return resolved
+
+	// File may not exist yet — resolve the parent directory instead.
+	dir, base := filepath.Split(path)
+	if dir != "" {
+		if resolvedDir, dirErr := filepath.EvalSymlinks(dir); dirErr == nil {
+			return filepath.Join(resolvedDir, base)
+		}
+	}
+
+	return filepath.Clean(path)
+}
+
+func evalOrClean(path string) string {
+	return resolvePath(path)
 }
 
 func isInsideAllowed(path string, allowed []string) bool {
-	resolved, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		resolved = filepath.Clean(path)
-	}
+	resolved := resolvePath(path)
 
 	for _, a := range allowed {
 		if resolved == a || strings.HasPrefix(resolved, a+string(filepath.Separator)) {
@@ -181,10 +191,7 @@ func isInsideAllowed(path string, allowed []string) bool {
 }
 
 func isInsideBoundary(path, boundary string) bool {
-	resolved, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		resolved = filepath.Clean(path)
-	}
+	resolved := resolvePath(path)
 
 	return resolved == boundary || strings.HasPrefix(resolved, boundary+string(filepath.Separator))
 }
