@@ -244,7 +244,7 @@ package binary's `hook` subcommand.
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use'",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use",
             "timeout": 5
           }
         ]

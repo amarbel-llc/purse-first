@@ -65,7 +65,7 @@ func (a *App) GenerateHooks(dir string) error {
 			Hooks: []hookEntry{
 				{
 					Type:    "command",
-					Command: "'${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use'",
+					Command: "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use",
 					Timeout: 5,
 				},
 			},

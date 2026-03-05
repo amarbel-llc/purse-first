@@ -177,7 +177,7 @@ The `hooks/hooks.json` uses `${CLAUDE_PLUGIN_ROOT}` for portable path resolution
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use'",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use",
             "timeout": 5
           }
         ]

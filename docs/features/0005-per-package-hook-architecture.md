@@ -39,7 +39,7 @@ calls `GenerateHooks()`. This writes two files under `<dir>/<app.Name>/hooks/`:
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use'",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use",
             "timeout": 5
           }
         ]

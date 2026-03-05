@@ -71,8 +71,8 @@ func TestGenerateHooksCreatesHooksJSON(t *testing.T) {
 	if hook.Type != "command" {
 		t.Errorf("hook type = %q, want command", hook.Type)
 	}
-	if hook.Command != "'${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use'" {
-		t.Errorf("hook command = %q, want '${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use'", hook.Command)
+	if hook.Command != "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use" {
+		t.Errorf("hook command = %q, want ${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use", hook.Command)
 	}
 	if hook.Timeout != 5 {
 		t.Errorf("hook timeout = %d, want 5", hook.Timeout)

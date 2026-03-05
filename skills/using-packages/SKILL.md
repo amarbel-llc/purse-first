@@ -40,7 +40,7 @@ share/purse-first/<name>/hooks/
 └── pre-tool-use    # Wrapper script calling `<binary> hook`
 ```
 
-The `hooks.json` uses `${CLAUDE_PLUGIN_ROOT}` for portable path resolution. The `pre-tool-use` script uses an absolute Nix store path to the package binary (resolved at build time via `os.Executable()`).
+The `hooks.json` uses `${CLAUDE_PLUGIN_ROOT}` (without shell quoting) for portable path resolution. The `pre-tool-use` script uses an absolute Nix store path to the package binary (resolved at build time via `os.Executable()`).
 
 Hooks are registered with Claude Code automatically when the package is installed — no manual `purse-first install --hooks` step is needed.
 
