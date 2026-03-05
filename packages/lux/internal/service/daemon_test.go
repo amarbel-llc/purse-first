@@ -12,6 +12,19 @@ import (
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 )
 
+// shortSocketPath creates a Unix socket path short enough to stay under the
+// 108-byte sun_path limit. t.TempDir() can produce very long paths when TMPDIR
+// is set (e.g. inside nix-shell), which causes bind to fail.
+func shortSocketPath(t *testing.T, name string) string {
+	t.Helper()
+	dir, err := os.MkdirTemp("/tmp", "lux-test-*")
+	if err != nil {
+		t.Fatalf("creating short temp dir: %v", err)
+	}
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	return dir + "/" + name
+}
+
 func waitForSocket(t *testing.T, path string, timeout time.Duration) {
 	t.Helper()
 	deadline := time.Now().Add(timeout)
@@ -39,9 +52,7 @@ func waitForListeningSocket(t *testing.T, path string, timeout time.Duration) {
 }
 
 func TestDaemon_AcceptAndRegister(t *testing.T) {
-	t.Skip()
-
-	socketPath := t.TempDir() + "/lux.sock"
+	socketPath := shortSocketPath(t, "lux.sock")
 	d := NewDaemon(socketPath, nil, 0)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -88,9 +99,7 @@ func TestDaemon_AcceptAndRegister(t *testing.T) {
 }
 
 func TestDaemon_DeregisterOnDisconnect(t *testing.T) {
-	t.Skip()
-
-	socketPath := t.TempDir() + "/lux.sock"
+	socketPath := shortSocketPath(t, "lux.sock")
 	d := NewDaemon(socketPath, nil, 0)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -150,9 +159,7 @@ func TestDaemon_DeregisterOnDisconnect(t *testing.T) {
 }
 
 func TestDaemon_MultipleClients(t *testing.T) {
-	t.Skip()
-
-	socketPath := t.TempDir() + "/lux.sock"
+	socketPath := shortSocketPath(t, "lux.sock")
 	d := NewDaemon(socketPath, nil, 0)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -249,9 +256,7 @@ func TestDaemon_IdleTimeout(t *testing.T) {
 }
 
 func TestDaemon_RemovesStaleSocket(t *testing.T) {
-	t.Skip()
-
-	socketPath := t.TempDir() + "/lux.sock"
+	socketPath := shortSocketPath(t, "lux.sock")
 
 	// Create a stale socket file
 	if err := os.WriteFile(socketPath, []byte{}, 0o600); err != nil {
@@ -338,10 +343,8 @@ func TestSocketActivationFD_InvalidFDs(t *testing.T) {
 }
 
 func TestDaemon_SocketActivationInheritsListener(t *testing.T) {
-	t.Skip()
-
 	// Create a Unix socket listener to simulate what launchd/systemd would pass
-	socketPath := t.TempDir() + "/activated.sock"
+	socketPath := shortSocketPath(t, "activated.sock")
 	preListener, err := net.Listen("unix", socketPath)
 	if err != nil {
 		t.Fatalf("creating pre-listener: %v", err)
@@ -379,7 +382,7 @@ func TestDaemon_SocketActivationInheritsListener(t *testing.T) {
 	_ = actualFD
 
 	// Verify the daemon still works via the fallback path (no activation vars)
-	daemonSocketPath := t.TempDir() + "/daemon.sock"
+	daemonSocketPath := shortSocketPath(t, "daemon.sock")
 	d := NewDaemon(daemonSocketPath, nil, 0)
 
 	ctx, cancel := context.WithCancel(context.Background())
