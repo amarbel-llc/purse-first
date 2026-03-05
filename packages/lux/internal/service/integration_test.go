@@ -11,9 +11,7 @@ import (
 )
 
 func TestIntegration_FullRoundTrip(t *testing.T) {
-	t.Skip()
-
-	socketPath := t.TempDir() + "/lux.sock"
+	socketPath := shortSocketPath(t, "roundtrip.sock")
 	d := NewDaemon(socketPath, nil, 0)
 
 	ctx, cancel := context.WithCancel(context.Background())
