@@ -141,7 +141,7 @@ test-lifecycle: build-batman
 
 test-lux-service: build-batman
     nix build
-    {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} --allow-unix-sockets zz-tests_bats/lux_service.bats
+    {{cmd_nix_dev}} {{cmd_batman_bats}} --allow-unix-sockets --jobs {{num_cpus()}} zz-tests_bats/lux_service.bats
 
 # Validate own plugin manifest
 validate:
