@@ -59,7 +59,7 @@ func (ow *OperationWriter) EndOperation(depth int, op *operation.OperationEvent)
 		tw.Ok(op.Description)
 
 		if op.Diagnostic != nil {
-			writeDiagnostics(tw.w, opDiagToTap(op.Diagnostic))
+			writeDiagnostics(tw.w, opDiagToTap(op.Diagnostic), tw.color)
 		}
 
 	case operation.Failure:

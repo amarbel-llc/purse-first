@@ -28,11 +28,19 @@ var (
 	// csiRegexp matches all CSI escape sequences (ESC [ ... <final byte>),
 	// not just SGR, per the ANSI Display Hints amendment security guidance.
 	csiRegexp = regexp.MustCompile("\x1b\\[[0-9;]*[A-Za-z]")
+	// nonSGRRegexp matches CSI sequences whose final byte is anything except
+	// 'm' (SGR), per the ANSI in YAML Output Blocks amendment.
+	nonSGRRegexp = regexp.MustCompile("\x1b\\[[0-9;]*[A-Za-ln-z]")
 )
 
 // stripANSI removes all CSI escape sequences from a string.
 func stripANSI(s string) string {
 	return csiRegexp.ReplaceAllString(s, "")
+}
+
+// stripNonSGR removes non-SGR CSI sequences, preserving SGR (ESC[...m) color codes.
+func stripNonSGR(s string) string {
+	return nonSGRRegexp.ReplaceAllString(s, "")
 }
 
 func classifyLine(line string) lineKind {

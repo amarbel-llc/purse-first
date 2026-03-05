@@ -129,6 +129,30 @@ func TestStripANSI(t *testing.T) {
 	}
 }
 
+func TestStripNonSGR(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		// SGR sequences preserved
+		{"\033[32mok\033[0m", "\033[32mok\033[0m"},
+		{"\033[31;1mbold red\033[0m", "\033[31;1mbold red\033[0m"},
+		// Non-SGR CSI sequences stripped
+		{"\033[2Jcleared", "cleared"},
+		{"\033[Hcursor home", "cursor home"},
+		{"\033[3Aup three", "up three"},
+		// Mixed: SGR preserved, non-SGR stripped
+		{"\033[2J\033[31merror\033[0m text", "\033[31merror\033[0m text"},
+		// Plain text unchanged
+		{"no escapes", "no escapes"},
+	}
+	for _, tt := range tests {
+		if got := stripNonSGR(tt.input); got != tt.want {
+			t.Errorf("stripNonSGR(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
+
 func TestClassifyComment(t *testing.T) {
 	tests := []struct {
 		line string

@@ -515,6 +515,58 @@ func TestReaderNoLocaleRejectsFormattedNumbers(t *testing.T) {
 	}
 }
 
+func TestReaderYAMLPreservesANSI(t *testing.T) {
+	input := "TAP version 14\n1..1\nnot ok 1 - fail\n  ---\n  message: \033[31merror\033[0m text\n  ...\n"
+	events, diags, _ := collectEvents(input)
+
+	for _, d := range diags {
+		if d.Severity == SeverityError {
+			t.Errorf("unexpected error: %s: %s", d.Rule, d.Message)
+		}
+	}
+
+	for _, ev := range events {
+		if ev.Type == EventYAMLDiagnostic {
+			msg := ev.YAML["message"]
+			if msg != "\033[31merror\033[0m text" {
+				t.Errorf("expected ANSI preserved in YAML value, got %q", msg)
+			}
+			return
+		}
+	}
+	t.Error("expected YAML diagnostic event")
+}
+
+func TestReaderYAMLStripsANSIFromProtocolButNotContent(t *testing.T) {
+	// ANSI on protocol lines (test point) is stripped for classification,
+	// but ANSI in YAML values is preserved.
+	input := "TAP version 14\n1..1\n\033[31mnot ok\033[0m 1 - fail\n  ---\n  output: \033[33mwarning\033[0m here\n  ...\n"
+	events, diags, summary := collectEvents(input)
+
+	for _, d := range diags {
+		if d.Severity == SeverityError {
+			t.Errorf("unexpected error: %s: %s", d.Rule, d.Message)
+		}
+	}
+	if !summary.Valid {
+		t.Error("expected valid TAP")
+	}
+
+	for _, ev := range events {
+		if ev.Type == EventTestPoint {
+			if ev.TestPoint.OK {
+				t.Error("expected not ok test point")
+			}
+		}
+		if ev.Type == EventYAMLDiagnostic {
+			output := ev.YAML["output"]
+			if output != "\033[33mwarning\033[0m here" {
+				t.Errorf("expected ANSI preserved in YAML output value, got %q", output)
+			}
+		}
+	}
+}
+
 func TestReaderLocaleRoundTrip(t *testing.T) {
 	var buf bytes.Buffer
 	tw := NewLocaleWriter(&buf, language.MustParse("en-US"))

@@ -86,12 +86,12 @@ func (r *Reader) addDiag(severity Severity, rule, message string) {
 func (r *Reader) Next() (Event, error) {
 	for r.scanner.Scan() {
 		r.lineNum++
-		raw := r.scanner.Text()
+		original := r.scanner.Text()
 
 		// Strip ANSI CSI escape sequences before parsing, per the
 		// ANSI Display Hints amendment. This ensures colored TAP
 		// streams parse identically to uncolored streams.
-		raw = stripANSI(raw)
+		raw := stripANSI(original)
 
 		// Determine indentation depth
 		trimmed := strings.TrimLeft(raw, " ")
@@ -113,8 +113,10 @@ func (r *Reader) Next() (Event, error) {
 					YAML:  yaml,
 				}, nil
 			}
-			// Accumulate YAML content
-			content := raw
+			// Accumulate YAML content using the original line to
+			// preserve ANSI SGR sequences in values, per the ANSI
+			// in YAML Output Blocks amendment.
+			content := original
 			if len(content) >= expectedIndent {
 				content = content[expectedIndent:]
 			}

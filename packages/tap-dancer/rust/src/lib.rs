@@ -146,7 +146,7 @@ impl<'a> TapWriter<'a> {
         self.failed = true;
         let num = self.format_number(self.counter);
         writeln!(self.w, "{} {} - {}", status_not_ok(self.color), num, desc)?;
-        write_diagnostics_block(self.w, diagnostics)?;
+        write_diagnostics_block(self.w, diagnostics, self.color)?;
         Ok(self.counter)
     }
 
@@ -234,7 +234,7 @@ impl<'a> TapWriter<'a> {
         if !result.suppress_yaml && has_yaml_block(result) {
             writeln!(self.w, "  ---")?;
             if let Some(ref message) = result.error_message {
-                write_yaml_field(&mut *self.w, "message", message)?;
+                write_yaml_field(&mut *self.w, "message", message, self.color)?;
             }
             if !result.ok {
                 writeln!(self.w, "  severity: fail")?;
@@ -243,7 +243,7 @@ impl<'a> TapWriter<'a> {
                 writeln!(self.w, "  exitcode: {code}")?;
             }
             if let Some(ref output) = result.output {
-                write_yaml_field(&mut *self.w, "output", output)?;
+                write_yaml_field(&mut *self.w, "output", output, self.color)?;
             }
             writeln!(self.w, "  ...")?;
         }
@@ -307,13 +307,17 @@ impl Write for IndentWriter<'_> {
     }
 }
 
-fn write_diagnostics_block(w: &mut dyn Write, diagnostics: &[(&str, &str)]) -> io::Result<()> {
+fn write_diagnostics_block(
+    w: &mut dyn Write,
+    diagnostics: &[(&str, &str)],
+    color: bool,
+) -> io::Result<()> {
     if diagnostics.is_empty() {
         return Ok(());
     }
     writeln!(w, "  ---")?;
     for (key, value) in diagnostics {
-        write_yaml_field(w, key, value)?;
+        write_yaml_field(w, key, value, color)?;
     }
     writeln!(w, "  ...")
 }
@@ -341,17 +345,56 @@ fn strip_ansi(s: &str) -> String {
     result
 }
 
+fn strip_non_sgr_csi(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    let bytes = s.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'\x1b' && i + 1 < bytes.len() && bytes[i + 1] == b'[' {
+            // Found CSI sequence start, collect the whole sequence
+            let start = i;
+            i += 2; // skip ESC [
+            // Skip parameter bytes (digits and semicolons)
+            while i < bytes.len() && (bytes[i].is_ascii_digit() || bytes[i] == b';') {
+                i += 1;
+            }
+            // Check the final byte
+            if i < bytes.len() && bytes[i].is_ascii_alphabetic() {
+                if bytes[i] == b'm' {
+                    // SGR sequence — preserve it
+                    result.push_str(&s[start..=i]);
+                }
+                // Non-SGR — drop the sequence
+                i += 1;
+            }
+        } else {
+            result.push(s[i..].chars().next().unwrap());
+            i += s[i..].chars().next().unwrap().len_utf8();
+        }
+    }
+    result
+}
+
 fn normalize_line_endings(s: &str) -> String {
     s.replace("\r\n", "\n").replace('\r', "\n")
 }
 
-fn sanitize_yaml_value(value: &str) -> String {
+fn sanitize_yaml_value(value: &str, color: bool) -> String {
     let value = normalize_line_endings(value);
-    strip_ansi(&value)
+    if color {
+        strip_non_sgr_csi(&value)
+    } else {
+        strip_ansi(&value)
+    }
 }
 
-fn write_yaml_field(w: &mut (impl Write + ?Sized), key: &str, value: &str) -> io::Result<()> {
-    let value = sanitize_yaml_value(value);
+fn write_yaml_field(
+    w: &mut (impl Write + ?Sized),
+    key: &str,
+    value: &str,
+    color: bool,
+) -> io::Result<()> {
+    let value = sanitize_yaml_value(value, color);
     if value.contains('\n') {
         writeln!(w, "  {key}: |")?;
         for line in value.lines() {
@@ -388,7 +431,7 @@ pub fn write_test_point(w: &mut impl Write, result: &TestResult) -> io::Result<(
     if !result.suppress_yaml && has_yaml_block(result) {
         writeln!(w, "  ---")?;
         if let Some(ref message) = result.error_message {
-            write_yaml_field(w, "message", message)?;
+            write_yaml_field(w, "message", message, false)?;
         }
         if !result.ok {
             writeln!(w, "  severity: fail")?;
@@ -397,7 +440,7 @@ pub fn write_test_point(w: &mut impl Write, result: &TestResult) -> io::Result<(
             writeln!(w, "  exitcode: {code}")?;
         }
         if let Some(ref output) = result.output {
-            write_yaml_field(w, "output", output)?;
+            write_yaml_field(w, "output", output, false)?;
         }
         writeln!(w, "  ...")?;
     }
@@ -912,7 +955,7 @@ mod tests {
     #[test]
     fn yaml_field_strips_cr_lf() {
         let mut buf = Vec::new();
-        write_yaml_field(&mut buf, "output", "line one\r\nline two\r\n").unwrap();
+        write_yaml_field(&mut buf, "output", "line one\r\nline two\r\n", false).unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(!out.contains('\r'));
         assert!(out.contains("  output: |\n"));
@@ -923,7 +966,7 @@ mod tests {
     #[test]
     fn yaml_field_strips_bare_cr() {
         let mut buf = Vec::new();
-        write_yaml_field(&mut buf, "message", "hello\rworld").unwrap();
+        write_yaml_field(&mut buf, "message", "hello\rworld", false).unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(!out.contains('\r'));
         assert!(out.contains("  message: |\n"));
@@ -936,7 +979,7 @@ mod tests {
     #[test]
     fn yaml_field_strips_ansi_sgr() {
         let mut buf = Vec::new();
-        write_yaml_field(&mut buf, "message", "\x1b[31merror\x1b[0m happened").unwrap();
+        write_yaml_field(&mut buf, "message", "\x1b[31merror\x1b[0m happened", false).unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert_eq!(out, "  message: \"error happened\"\n");
     }
@@ -944,7 +987,7 @@ mod tests {
     #[test]
     fn yaml_field_strips_ansi_csi_non_sgr() {
         let mut buf = Vec::new();
-        write_yaml_field(&mut buf, "output", "\x1b[2Jcleared screen").unwrap();
+        write_yaml_field(&mut buf, "output", "\x1b[2Jcleared screen", false).unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert_eq!(out, "  output: \"cleared screen\"\n");
     }
@@ -952,7 +995,7 @@ mod tests {
     #[test]
     fn yaml_field_preserves_plain_text() {
         let mut buf = Vec::new();
-        write_yaml_field(&mut buf, "message", "no escapes here").unwrap();
+        write_yaml_field(&mut buf, "message", "no escapes here", false).unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert_eq!(out, "  message: \"no escapes here\"\n");
     }
@@ -1230,5 +1273,103 @@ mod tests {
         let formatter = DecimalFormatter::try_new(locale.into(), Default::default()).unwrap();
         write_plan_locale(&mut buf, 10000, &formatter).unwrap();
         assert_eq!(String::from_utf8(buf).unwrap(), "1..10,000\n");
+    }
+
+    // --- ANSI in YAML Output Blocks amendment tests ---
+
+    #[test]
+    fn strip_non_sgr_csi_preserves_sgr() {
+        assert_eq!(
+            strip_non_sgr_csi("\x1b[32mok\x1b[0m"),
+            "\x1b[32mok\x1b[0m"
+        );
+        assert_eq!(
+            strip_non_sgr_csi("\x1b[31;1mbold red\x1b[0m"),
+            "\x1b[31;1mbold red\x1b[0m"
+        );
+    }
+
+    #[test]
+    fn strip_non_sgr_csi_removes_non_sgr() {
+        assert_eq!(strip_non_sgr_csi("\x1b[2Jcleared"), "cleared");
+        assert_eq!(strip_non_sgr_csi("\x1b[Hcursor home"), "cursor home");
+        assert_eq!(strip_non_sgr_csi("\x1b[3Aup three"), "up three");
+    }
+
+    #[test]
+    fn strip_non_sgr_csi_handles_mixed() {
+        assert_eq!(
+            strip_non_sgr_csi("\x1b[2J\x1b[31merror\x1b[0m text"),
+            "\x1b[31merror\x1b[0m text"
+        );
+    }
+
+    #[test]
+    fn strip_non_sgr_csi_plain_text() {
+        assert_eq!(strip_non_sgr_csi("no escapes"), "no escapes");
+    }
+
+    #[test]
+    fn yaml_field_preserves_sgr_when_color_enabled() {
+        let mut buf = Vec::new();
+        write_yaml_field(&mut buf, "message", "\x1b[31merror\x1b[0m text", true).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(
+            out.contains("\x1b[31merror\x1b[0m text"),
+            "expected SGR preserved, got: {out}"
+        );
+    }
+
+    #[test]
+    fn yaml_field_strips_non_sgr_csi_when_color_enabled() {
+        let mut buf = Vec::new();
+        write_yaml_field(&mut buf, "output", "\x1b[2J\x1b[31merror\x1b[0m", true).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(
+            !out.contains("\x1b[2J"),
+            "expected non-SGR stripped, got: {out}"
+        );
+        assert!(
+            out.contains("\x1b[31merror\x1b[0m"),
+            "expected SGR preserved, got: {out}"
+        );
+    }
+
+    #[test]
+    fn yaml_field_strips_all_ansi_when_color_disabled() {
+        let mut buf = Vec::new();
+        write_yaml_field(&mut buf, "message", "\x1b[31merror\x1b[0m text", false).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(
+            !out.contains("\x1b["),
+            "expected all ANSI stripped, got: {out}"
+        );
+        assert!(out.contains("error text"), "expected clean text, got: {out}");
+    }
+
+    #[test]
+    fn writer_test_point_preserves_sgr_in_yaml_when_color() {
+        let mut buf = Vec::new();
+        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        let result = TestResult {
+            number: 1,
+            name: "test".into(),
+            ok: false,
+            directive: None,
+            error_message: Some("\x1b[31mfatal error\x1b[0m".into()),
+            exit_code: Some(1),
+            output: Some("\x1b[33mwarning\x1b[0m: details".into()),
+            suppress_yaml: false,
+        };
+        tw.test_point(&result).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(
+            out.contains("\x1b[31mfatal error\x1b[0m"),
+            "expected SGR in message, got:\n{out}"
+        );
+        assert!(
+            out.contains("\x1b[33mwarning\x1b[0m"),
+            "expected SGR in output, got:\n{out}"
+        );
     }
 }

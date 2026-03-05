@@ -324,7 +324,7 @@ func TestWriteDiagnosticsNamedFields(t *testing.T) {
 		Severity: "fail",
 		File:     "main.go",
 		Line:     42,
-	})
+	}, false)
 	out := buf.String()
 	expected := "  ---\n  file: main.go\n  line: 42\n  message: something broke\n  severity: fail\n  ...\n"
 	if out != expected {
@@ -336,7 +336,7 @@ func TestWriteDiagnosticsOmitsZeroValues(t *testing.T) {
 	var buf bytes.Buffer
 	writeDiagnostics(&buf, &Diagnostics{
 		Message: "only message",
-	})
+	}, false)
 	out := buf.String()
 	if strings.Contains(out, "severity:") || strings.Contains(out, "file:") || strings.Contains(out, "line:") {
 		t.Errorf("expected zero-value fields omitted, got:\n%s", out)
@@ -354,7 +354,7 @@ func TestWriteDiagnosticsExtras(t *testing.T) {
 			"exitcode": 1,
 			"context":  "test run",
 		},
-	})
+	}, false)
 	out := buf.String()
 	if !strings.Contains(out, "  context: test run\n") {
 		t.Errorf("expected context extra, got:\n%s", out)
@@ -370,7 +370,7 @@ func TestWriteDiagnosticsMultilineExtra(t *testing.T) {
 		Extras: map[string]any{
 			"output": "line one\nline two",
 		},
-	})
+	}, false)
 	out := buf.String()
 	if !strings.Contains(out, "  output: |\n    line one\n    line two\n") {
 		t.Errorf("expected block scalar for multiline extra, got:\n%s", out)
@@ -379,7 +379,7 @@ func TestWriteDiagnosticsMultilineExtra(t *testing.T) {
 
 func TestWriteDiagnosticsNil(t *testing.T) {
 	var buf bytes.Buffer
-	writeDiagnostics(&buf, nil)
+	writeDiagnostics(&buf, nil, false)
 	if buf.Len() != 0 {
 		t.Errorf("expected no output for nil diagnostics, got: %q", buf.String())
 	}
@@ -723,6 +723,87 @@ func TestLocaleWriterSmallNumbersUnformatted(t *testing.T) {
 	out := buf.String()
 	if !strings.Contains(out, "ok 1 - test\n") {
 		t.Errorf("expected plain number for small values, got:\n%s", out)
+	}
+}
+
+func TestNotOkStripsANSIWhenNoColor(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewWriter(&buf)
+	tw.NotOk("test", map[string]string{
+		"message": "\033[31merror\033[0m happened",
+	})
+	out := buf.String()
+	if strings.Contains(out, "\033[") {
+		t.Errorf("expected ANSI stripped in no-color mode, got:\n%s", out)
+	}
+	if !strings.Contains(out, "  message: error happened\n") {
+		t.Errorf("expected clean message, got:\n%s", out)
+	}
+}
+
+func TestNotOkPreservesSGRWhenColor(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewColorWriter(&buf, true)
+	tw.NotOk("test", map[string]string{
+		"message": "\033[31merror\033[0m happened",
+	})
+	out := buf.String()
+	if !strings.Contains(out, "  message: \033[31merror\033[0m happened\n") {
+		t.Errorf("expected SGR preserved in color mode, got:\n%s", out)
+	}
+}
+
+func TestNotOkStripsNonSGRInColorMode(t *testing.T) {
+	var buf bytes.Buffer
+	tw := NewColorWriter(&buf, true)
+	tw.NotOk("test", map[string]string{
+		"output": "\033[2J\033[31merror\033[0m text",
+	})
+	out := buf.String()
+	if strings.Contains(out, "\033[2J") {
+		t.Errorf("expected non-SGR stripped even in color mode, got:\n%s", out)
+	}
+	if !strings.Contains(out, "\033[31merror\033[0m") {
+		t.Errorf("expected SGR preserved in color mode, got:\n%s", out)
+	}
+}
+
+func TestWriteDiagnosticsPreservesSGRWhenColor(t *testing.T) {
+	var buf bytes.Buffer
+	writeDiagnostics(&buf, &Diagnostics{
+		File:    "main.go",
+		Line:    42,
+		Message: "\033[31merror\033[0m text",
+		Extras: map[string]any{
+			"output": "\033[33mwarning\033[0m details",
+		},
+	}, true)
+	out := buf.String()
+	// Message should preserve SGR
+	if !strings.Contains(out, "\033[31merror\033[0m text") {
+		t.Errorf("expected SGR in message, got:\n%s", out)
+	}
+	// Extras should preserve SGR
+	if !strings.Contains(out, "\033[33mwarning\033[0m details") {
+		t.Errorf("expected SGR in extras, got:\n%s", out)
+	}
+	// File should NOT be sanitized (structured field)
+	if !strings.Contains(out, "  file: main.go\n") {
+		t.Errorf("expected file unchanged, got:\n%s", out)
+	}
+}
+
+func TestWriteDiagnosticsStripsANSIWhenNoColor(t *testing.T) {
+	var buf bytes.Buffer
+	writeDiagnostics(&buf, &Diagnostics{
+		Message: "\033[31merror\033[0m text",
+	}, false)
+	out := buf.String()
+	if strings.Contains(out, "\033[") {
+		t.Errorf("expected ANSI stripped when color=false, got:\n%s", out)
+	}
+	if !strings.Contains(out, "  message: error text\n") {
+		t.Errorf("expected clean message, got:\n%s", out)
 	}
 }
 

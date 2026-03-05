@@ -102,7 +102,7 @@ func (tw *Writer) Ok(description string) int {
 func (tw *Writer) OkDiag(description string, diagnostics *Diagnostics) int {
 	tw.n++
 	fmt.Fprintf(tw.w, "%s %s - %s\n", tw.colorOk(), tw.formatNumber(tw.n), description)
-	writeDiagnostics(tw.w, diagnostics)
+	writeDiagnostics(tw.w, diagnostics, tw.color)
 	return tw.n
 }
 
@@ -122,7 +122,7 @@ func (tw *Writer) NotOk(description string, diagnostics map[string]string) int {
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
-			v := diagnostics[k]
+			v := sanitizeYAMLValue(diagnostics[k], tw.color)
 			if strings.Contains(v, "\n") {
 				fmt.Fprintf(tw.w, "  %s: |\n", k)
 				lines := strings.Split(v, "\n")
@@ -150,7 +150,7 @@ func (tw *Writer) Skip(description, reason string) int {
 func (tw *Writer) SkipDiag(description, reason string, diagnostics *Diagnostics) int {
 	tw.n++
 	fmt.Fprintf(tw.w, "%s %s - %s %s %s\n", tw.colorOk(), tw.formatNumber(tw.n), description, tw.colorSkip(), reason)
-	writeDiagnostics(tw.w, diagnostics)
+	writeDiagnostics(tw.w, diagnostics, tw.color)
 	return tw.n
 }
 
@@ -201,7 +201,14 @@ type Diagnostics struct {
 	Extras   map[string]any
 }
 
-func writeDiagnostics(w io.Writer, d *Diagnostics) {
+func sanitizeYAMLValue(value string, color bool) string {
+	if color {
+		return stripNonSGR(value)
+	}
+	return stripANSI(value)
+}
+
+func writeDiagnostics(w io.Writer, d *Diagnostics, color bool) {
 	if d == nil {
 		return
 	}
@@ -215,7 +222,7 @@ func writeDiagnostics(w io.Writer, d *Diagnostics) {
 		entries = append(entries, struct{ k, v string }{"line", fmt.Sprintf("%d", d.Line)})
 	}
 	if d.Message != "" {
-		entries = append(entries, struct{ k, v string }{"message", d.Message})
+		entries = append(entries, struct{ k, v string }{"message", sanitizeYAMLValue(d.Message, color)})
 	}
 	if d.Severity != "" {
 		entries = append(entries, struct{ k, v string }{"severity", d.Severity})
@@ -228,7 +235,7 @@ func writeDiagnostics(w io.Writer, d *Diagnostics) {
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
-			entries = append(entries, struct{ k, v string }{k, fmt.Sprintf("%v", d.Extras[k])})
+			entries = append(entries, struct{ k, v string }{k, sanitizeYAMLValue(fmt.Sprintf("%v", d.Extras[k]), color)})
 		}
 	}
 
@@ -315,12 +322,12 @@ func (tw *Writer) WriteAll(tests iter.Seq[TestPoint]) {
 		} else if tp.Ok {
 			tw.n++
 			fmt.Fprintf(tw.w, "%s %s - %s\n", tw.colorOk(), tw.formatNumber(tw.n), tp.Description)
-			writeDiagnostics(tw.w, tp.Diagnostics)
+			writeDiagnostics(tw.w, tp.Diagnostics, tw.color)
 		} else {
 			tw.n++
 			tw.failed = true
 			fmt.Fprintf(tw.w, "%s %s - %s\n", tw.colorNotOk(), tw.formatNumber(tw.n), tp.Description)
-			writeDiagnostics(tw.w, tp.Diagnostics)
+			writeDiagnostics(tw.w, tp.Diagnostics, tw.color)
 		}
 	}
 	if !tw.planEmitted {
