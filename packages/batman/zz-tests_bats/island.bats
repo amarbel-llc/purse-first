@@ -7,16 +7,18 @@ setup() {
 
 function set_xdg_creates_directories { # @test
   set_xdg "$BATS_TEST_TMPDIR"
+  local resolved
+  resolved="$(realpath "$BATS_TEST_TMPDIR")"
   [[ -d "$XDG_DATA_HOME" ]]
   [[ -d "$XDG_CONFIG_HOME" ]]
   [[ -d "$XDG_STATE_HOME" ]]
   [[ -d "$XDG_CACHE_HOME" ]]
   [[ -d "$XDG_RUNTIME_HOME" ]]
-  [[ "$XDG_DATA_HOME" == "$BATS_TEST_TMPDIR/.xdg/data" ]]
-  [[ "$XDG_CONFIG_HOME" == "$BATS_TEST_TMPDIR/.xdg/config" ]]
-  [[ "$XDG_STATE_HOME" == "$BATS_TEST_TMPDIR/.xdg/state" ]]
-  [[ "$XDG_CACHE_HOME" == "$BATS_TEST_TMPDIR/.xdg/cache" ]]
-  [[ "$XDG_RUNTIME_HOME" == "$BATS_TEST_TMPDIR/.xdg/runtime" ]]
+  [[ "$XDG_DATA_HOME" == "$resolved/.xdg/data" ]]
+  [[ "$XDG_CONFIG_HOME" == "$resolved/.xdg/config" ]]
+  [[ "$XDG_STATE_HOME" == "$resolved/.xdg/state" ]]
+  [[ "$XDG_CACHE_HOME" == "$resolved/.xdg/cache" ]]
+  [[ "$XDG_RUNTIME_HOME" == "$resolved/.xdg/runtime" ]]
 }
 
 function set_xdg_fails_on_empty_arg { # @test
