@@ -44,12 +44,23 @@ function service_status_returns_json { # @test
   assert_output --partial '"session_count"'
 }
 
+function service_cleans_up_socket_on_shutdown { # @test
+  start_daemon
+  local socket="$XDG_RUNTIME_DIR/lux.sock"
+  [[ -S "$socket" ]]
+  # SIGTERM triggers graceful shutdown via signal handler
+  kill "$daemon_pid"
+  wait "$daemon_pid" 2>/dev/null || true
+  daemon_pid=""
+  [[ ! -e "$socket" ]]
+}
+
 function service_removes_stale_socket_on_restart { # @test
   start_daemon
   local socket="$XDG_RUNTIME_DIR/lux.sock"
   [[ -S "$socket" ]]
-  # Kill daemon (no signal handler yet, so socket is left behind)
-  kill "$daemon_pid"
+  # SIGKILL bypasses signal handler — socket left behind
+  kill -9 "$daemon_pid"
   wait "$daemon_pid" 2>/dev/null || true
   daemon_pid=""
   [[ -e "$socket" ]]

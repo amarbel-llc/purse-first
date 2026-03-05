@@ -39,3 +39,11 @@
 - [x] fix sandcastle/batman socket permission failures: use `--allow-unix-sockets` in bats wrapper tests and sandcastle tests
 - [x] P0: flaky timeout in `bats_wrapper_hide_passing_preserves_plan_and_version` (test 12) — 10s BATS_TEST_TIMEOUT too tight under parallel load
 - [ ] lux service daemon: add SIGTERM/SIGINT signal handler to cancel context for graceful shutdown (socket cleanup on kill)
+- [ ] lux service tests: add notification broadcast test — multiple sessions per workspace, verify LSP notification fans out to all clients
+- [ ] lux service tests: add handleLSPNotification unit test
+- [ ] lux service tests: add handlePoolStart / handlePoolStop unit tests
+- [ ] lux service tests: add pool failure mode tests — build error, execute error, init error transitions
+- [ ] lux service tests: add concurrent GetOrStart stress test for pool state machine races
+- [ ] lux service tests: add config loading error path tests — missing files, invalid TOML, multiple LSPs
+- [ ] lux service tests: add LSPClient connection failure / reconnection tests
+- [ ] lux service BATS: add service-stop and service-start CLI tests
