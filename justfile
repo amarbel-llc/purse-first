@@ -120,28 +120,28 @@ vendor-hash:
 # Run integration tests
 test-integration: build-batman
     nix build
-    {{cmd_nix_dev}} {{cmd_batman_bats}} \
+    {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} \
       zz-tests_bats/validate_marketplace.bats \
       zz-tests_bats/validate_documents.bats \
       zz-tests_bats/validate_plugin_repos.bats
 
 # Validate plugin repos have correct .claude-plugin/plugin.json
 test-validate-repos: build-batman
-    {{cmd_nix_dev}} {{cmd_batman_bats}} zz-tests_bats/validate_plugin_repos.bats
+    {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/validate_plugin_repos.bats
 
 # Run validate-specific BATS tests
 test-validate: build-batman
     nix build
-    {{cmd_nix_dev}} {{cmd_batman_bats}} zz-tests_bats/validate_documents.bats
+    {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/validate_documents.bats
 
 # Run lifecycle tests
 test-lifecycle: build-batman
     nix build
-    {{cmd_nix_dev}} {{cmd_batman_bats}} zz-tests_bats/hook_lifecycle.bats
+    {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/hook_lifecycle.bats
 
 test-lux-service: build-batman
     nix build
-    {{cmd_nix_dev}} {{cmd_batman_bats}} --allow-unix-sockets zz-tests_bats/lux_service.bats
+    {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} --allow-unix-sockets zz-tests_bats/lux_service.bats
 
 # Validate own plugin manifest
 validate:
@@ -150,7 +150,7 @@ validate:
 # Run Homebrew tap BATS tests
 test-brew: build-batman
     nix build .#homebrew-tap
-    {{cmd_nix_dev}} {{cmd_batman_bats}} zz-tests_bats/homebrew_tap.bats
+    {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/homebrew_tap.bats
 
 test-spinclass-bats: build-batman
     nix build .#spinclass
@@ -217,7 +217,7 @@ check-template:
 
 # Run template tests
 test-template: build-batman
-    {{cmd_nix_dev}} {{cmd_batman_bats}} zz-tests_bats/marketplace_template.bats
+    {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/marketplace_template.bats
 
 # Build dummy Go MCP servers
 build-dummies-go:
