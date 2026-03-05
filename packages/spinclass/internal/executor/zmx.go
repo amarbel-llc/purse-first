@@ -16,7 +16,7 @@ func (z ZmxExecutor) Attach(dir string, key string, command []string, dryRun boo
 		command = []string{os.Getenv("SHELL")}
 	}
 
-	args := []string{"-g", "spinclass", "attach", key}
+	args := []string{"-g", "sc", "attach", key}
 	args = append(args, command...)
 
 	if dryRun {
@@ -45,7 +45,7 @@ func (z ZmxExecutor) Attach(dir string, key string, command []string, dryRun boo
 }
 
 func (z ZmxExecutor) Detach() error {
-	cmd := exec.Command("zmx", "-g", "spinclass", "detach")
+	cmd := exec.Command("zmx", "-g", "sc", "detach")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
