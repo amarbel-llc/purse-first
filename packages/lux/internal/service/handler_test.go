@@ -273,6 +273,72 @@ func TestWorkspaceRegistry_BroadcasterWiredToPool(t *testing.T) {
 	}
 }
 
+func TestHandler_LSPRequestUnknownSession(t *testing.T) {
+	h := newTestHandler(t)
+
+	params := LSPRequestParams{
+		SessionID: "nonexistent",
+		LSPMethod: "textDocument/hover",
+		LSPParams: json.RawMessage(`{"textDocument":{"uri":"file:///test.go"}}`),
+	}
+	paramsJSON, _ := json.Marshal(params)
+	id := jsonrpc.NewNumberID(10)
+	msg := &jsonrpc.Message{
+		JSONRPC: jsonrpc.Version,
+		ID:      &id,
+		Method:  MethodLSPRequest,
+		Params:  paramsJSON,
+	}
+
+	resp, err := h.Handle(context.Background(), msg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp == nil {
+		t.Fatal("expected error response")
+	}
+	if resp.Error == nil {
+		t.Fatal("expected error for unknown session")
+	}
+	if resp.Error.Code != jsonrpc.InvalidParams {
+		t.Errorf("expected InvalidParams code %d, got %d", jsonrpc.InvalidParams, resp.Error.Code)
+	}
+}
+
+func TestHandler_LSPRequestNoMatchingLSP(t *testing.T) {
+	h := newTestHandler(t)
+	sessionID := registerTestSession(t, h, "/proj/c", ClientTypeLSP)
+
+	// Request with a URI that won't match any LSP (no filetype configs loaded)
+	params := LSPRequestParams{
+		SessionID: sessionID,
+		LSPMethod: "textDocument/hover",
+		LSPParams: json.RawMessage(`{"textDocument":{"uri":"file:///unknown.xyz"}}`),
+	}
+	paramsJSON, _ := json.Marshal(params)
+	id := jsonrpc.NewNumberID(11)
+	msg := &jsonrpc.Message{
+		JSONRPC: jsonrpc.Version,
+		ID:      &id,
+		Method:  MethodLSPRequest,
+		Params:  paramsJSON,
+	}
+
+	resp, err := h.Handle(context.Background(), msg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp == nil {
+		t.Fatal("expected error response")
+	}
+	if resp.Error == nil {
+		t.Fatal("expected error for no matching LSP")
+	}
+	if resp.Error.Code != jsonrpc.InternalError {
+		t.Errorf("expected InternalError code %d, got %d", jsonrpc.InternalError, resp.Error.Code)
+	}
+}
+
 func newTestHandler(t *testing.T) *Handler {
 	t.Helper()
 	return NewHandler(NewSessionRegistry(), NewWorkspaceRegistry(nil))
