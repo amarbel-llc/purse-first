@@ -44,6 +44,13 @@ func (z ZmxExecutor) Attach(dir string, key string, command []string, dryRun boo
 	return cmd.Run()
 }
 
+func (z ZmxExecutor) List() error {
+	cmd := exec.Command("zmx", "-g", "sc", "list")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
 func (z ZmxExecutor) Detach() error {
 	cmd := exec.Command("zmx", "-g", "sc", "detach")
 	cmd.Stdout = os.Stdout

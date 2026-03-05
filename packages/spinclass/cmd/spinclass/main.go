@@ -186,6 +186,15 @@ var cleanCmd = &cobra.Command{
 	},
 }
 
+var listCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List active zmx sessions",
+	Long:  `List all active zmx sessions in the sc group.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return executor.ZmxExecutor{}.List()
+	},
+}
+
 var completionsCmd = &cobra.Command{
 	Use:    "completions",
 	Short:  "Generate tab-separated completions",
@@ -305,6 +314,7 @@ func init() {
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(mergeCmd)
 	rootCmd.AddCommand(cleanCmd)
+	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(completionsCmd)
 	pullCmd.Flags().BoolVarP(&pullDirty, "dirty", "d", false, "include dirty repos and worktrees")
 	rootCmd.AddCommand(pullCmd)
