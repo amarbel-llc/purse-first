@@ -11,7 +11,7 @@ promotion-criteria: >
 ## Motivation
 
 Every batman bats lib consumer that needs test isolation must copy-paste
-`set_xdg`, `setup_test_home`, `chflags_and_rm`, and `setup_test_repo` into
+`set_xdg`, `setup_test_home`, `chflags_nouchg`, and `setup_test_repo` into
 their own `common.bash`. This duplication is error-prone: implementers may
 forget to call `set_xdg`, omit the `GIT_CONFIG_GLOBAL` override, skip
 `GIT_CEILING_DIRECTORIES`, or diverge from the canonical implementation over
@@ -37,7 +37,7 @@ problem is worse than the two known duplication sites suggest:
 | batman | Yes (via sandcastle) | Yes | None |
 
 Beyond isolation, the audit found two helpers duplicated across 5+ consumers
-(`chflags_and_rm`, `setup_test_repo`) that belong alongside isolation in a
+(`chflags_nouchg`, `setup_test_repo`) that belong alongside isolation in a
 single library.
 
 Key findings:
@@ -75,7 +75,7 @@ Key findings:
    leak to real HOME. A library providing `setup_test_home` in `setup()` would
    eliminate this entire class of bug.
 
-7. **`chflags_and_rm` is the most duplicated helper after `set_xdg`.** It
+7. **`chflags_nouchg` is the most duplicated helper after `set_xdg`.** It
    appears in 5+ consumers and is critical for macOS teardown — dodder and git
    can set immutable flags that prevent `rm -rf`. Every consumer using
    `BATS_TEST_TMPDIR` on macOS needs it.
@@ -140,16 +140,16 @@ if `$REAL_HOME` is not already set (i.e., isolation hasn't been established).
 Exported variable `$TEST_REPO` points to the repo root for use in test
 assertions.
 
-#### `chflags_and_rm`
+#### `chflags_nouchg`
 
 Teardown helper for macOS compatibility. Removes immutable flags (`nouchg`)
-recursively on `$BATS_TEST_TMPDIR` before deleting it. No-ops gracefully on
+recursively on `$BATS_TEST_TMPDIR` so BATS can clean it up. No-ops gracefully on
 Linux where `chflags` is unavailable. Call in `teardown()` for any test suite
 where the binary under test may set immutable file flags.
 
 #### `teardown_test_home`
 
-Convenience teardown that calls `chflags_and_rm`. Pairs with `setup_test_home`
+Convenience teardown that calls `chflags_nouchg`. Pairs with `setup_test_home`
 for symmetry in `setup()`/`teardown()`.
 
 ### Approach B: wrapper-level automatic isolation (future consideration)
@@ -211,7 +211,7 @@ consumers who need per-test granularity.
 - Each consumer opts in individually. If the interface turns out wrong,
   consumers revert one `bats_load_library` line and go back to their
   copy-pasted functions. No other test suite is affected.
-- The code being consolidated (`set_xdg`, `setup_test_home`, `chflags_and_rm`,
+- The code being consolidated (`set_xdg`, `setup_test_home`, `chflags_nouchg`,
   `setup_test_repo`) is already battle-tested across multiple consumers — the
   library just gives it an address.
 - Does not solve the "forgettable" problem: consumers who don't know about the
@@ -259,9 +259,9 @@ library, that is real evidence for Approach B — and by then there is a stable
 
 | Consumer | Action with Approach A |
 |---|---|
-| grit | Replace copy-pasted functions with `bats_load_library bats-island`; remove `set_xdg`, `setup_test_home`, `setup_test_repo`, `chflags_and_rm` definitions |
-| dodder | Replace divergent `set_xdg` with library version for the 3 direct callers; replace `chflags_and_rm`; fix 12 broken tests separately (app-level bug) |
-| pivy | Add `bats_load_library bats-island` + `setup_test_home` in setup(); remove ad-hoc `HOME=` overrides; adopt `chflags_and_rm` from library |
+| grit | Replace copy-pasted functions with `bats_load_library bats-island`; remove `set_xdg`, `setup_test_home`, `setup_test_repo`, `chflags_nouchg` definitions |
+| dodder | Replace divergent `set_xdg` with library version for the 3 direct callers; replace `chflags_nouchg`; fix 12 broken tests separately (app-level bug) |
+| pivy | Add `bats_load_library bats-island` + `setup_test_home` in setup(); remove ad-hoc `HOME=` overrides; adopt `chflags_nouchg` from library |
 | purse-first (root) | Add `bats_load_library bats-island` + `setup_test_home` for hook_lifecycle and validate tests |
 | batman example | Update template to use library instead of inline functions |
 
@@ -407,10 +407,10 @@ setup() {
 - Batman bats-testing skill: `packages/batman/skills/bats-testing/SKILL.md`
 - XDG isolation patterns reference: `packages/batman/skills/bats-testing/references/patterns.md`
 - Duplication sites (to be replaced by library):
-  - `packages/grit/zz-tests_bats/common.bash` — `set_xdg`, `setup_test_home`, `setup_test_repo`, `chflags_and_rm`
+  - `packages/grit/zz-tests_bats/common.bash` — `set_xdg`, `setup_test_home`, `setup_test_repo`, `chflags_nouchg`
   - `packages/batman/skills/bats-testing/examples/common.bash` — template copy
 - Consumers with isolation gaps (to adopt library):
-  - `~/eng/repos/dodder/zz-tests_bats/common.bash` — divergent `set_xdg`, duplicated `chflags_and_rm`
-  - `~/eng/repos/pivy/zz-tests_bats/common.bash` — duplicated `chflags_and_rm`
+  - `~/eng/repos/dodder/zz-tests_bats/common.bash` — divergent `set_xdg`, duplicated `chflags_nouchg`
+  - `~/eng/repos/pivy/zz-tests_bats/common.bash` — duplicated `chflags_nouchg`
   - `~/eng/repos/pivy/zz-tests_bats/pivy_agent.bats` — ad-hoc `HOME=` overrides
   - `zz-tests_bats/hook_lifecycle.bats` — reads `$HOME/.claude/` without isolation

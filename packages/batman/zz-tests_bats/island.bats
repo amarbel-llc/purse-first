@@ -69,9 +69,8 @@ function setup_test_repo_accepts_custom_dir { # @test
   [[ -d "$TEST_REPO/.git" ]]
 }
 
-function chflags_and_rm_removes_tmpdir { # @test
+function chflags_nouchg_clears_flags { # @test
   echo "marker" > "$BATS_TEST_TMPDIR/marker.txt"
+  chflags_nouchg
   [[ -f "$BATS_TEST_TMPDIR/marker.txt" ]]
-  chflags_and_rm
-  [[ ! -d "$BATS_TEST_TMPDIR" ]]
 }
