@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -67,6 +68,10 @@ func (d *Daemon) Run(ctx context.Context) error {
 	} else {
 		if err := removeExistingSocket(d.socketPath); err != nil {
 			return fmt.Errorf("removing existing socket: %w", err)
+		}
+
+		if err := os.MkdirAll(filepath.Dir(d.socketPath), 0700); err != nil {
+			return fmt.Errorf("creating socket directory: %w", err)
 		}
 
 		listener, err = net.Listen("unix", d.socketPath)

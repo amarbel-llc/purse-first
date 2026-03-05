@@ -69,7 +69,11 @@ func runtimeDir() string {
 	if xdg := os.Getenv("XDG_RUNTIME_DIR"); xdg != "" {
 		return xdg
 	}
-	return os.TempDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return filepath.Join(".", ".local", "state", "lux")
+	}
+	return filepath.Join(home, ".local", "state", "lux")
 }
 
 func ConfigPath() string {
