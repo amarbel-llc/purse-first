@@ -283,8 +283,6 @@ func TestDaemon_RemovesStaleSocket(t *testing.T) {
 }
 
 func TestSocketActivationFD_NotSet(t *testing.T) {
-	t.Skip()
-
 	t.Setenv("LISTEN_PID", "")
 	t.Setenv("LISTEN_FDS", "")
 
@@ -294,8 +292,6 @@ func TestSocketActivationFD_NotSet(t *testing.T) {
 }
 
 func TestSocketActivationFD_WrongPID(t *testing.T) {
-	t.Skip()
-
 	t.Setenv("LISTEN_PID", "99999")
 	t.Setenv("LISTEN_FDS", "1")
 
@@ -305,8 +301,6 @@ func TestSocketActivationFD_WrongPID(t *testing.T) {
 }
 
 func TestSocketActivationFD_Detected(t *testing.T) {
-	t.Skip()
-
 	t.Setenv("LISTEN_PID", strconv.Itoa(os.Getpid()))
 	t.Setenv("LISTEN_FDS", "1")
 
@@ -317,8 +311,6 @@ func TestSocketActivationFD_Detected(t *testing.T) {
 }
 
 func TestSocketActivationFD_ZeroFDs(t *testing.T) {
-	t.Skip()
-
 	t.Setenv("LISTEN_PID", strconv.Itoa(os.Getpid()))
 	t.Setenv("LISTEN_FDS", "0")
 
@@ -328,8 +320,6 @@ func TestSocketActivationFD_ZeroFDs(t *testing.T) {
 }
 
 func TestSocketActivationFD_InvalidPID(t *testing.T) {
-	t.Skip()
-
 	t.Setenv("LISTEN_PID", "notanumber")
 	t.Setenv("LISTEN_FDS", "1")
 
@@ -339,8 +329,6 @@ func TestSocketActivationFD_InvalidPID(t *testing.T) {
 }
 
 func TestSocketActivationFD_InvalidFDs(t *testing.T) {
-	t.Skip()
-
 	t.Setenv("LISTEN_PID", strconv.Itoa(os.Getpid()))
 	t.Setenv("LISTEN_FDS", "notanumber")
 
