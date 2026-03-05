@@ -225,9 +225,7 @@ func TestDaemon_MultipleClients(t *testing.T) {
 }
 
 func TestDaemon_IdleTimeout(t *testing.T) {
-	t.Skip()
-
-	socketPath := t.TempDir() + "/lux.sock"
+	socketPath := shortSocketPath(t, "idle.sock")
 	d := NewDaemon(socketPath, nil, 200*time.Millisecond)
 	d.idleCheckInterval = 30 * time.Millisecond
 
