@@ -10,6 +10,55 @@ import (
 	"text/template"
 )
 
+const systemdServiceTemplate = `[Unit]
+Description=Lux LSP Multiplexer
+Requires=lux.socket
+After=lux.socket
+
+[Service]
+Type=simple
+ExecStart={{.BinaryPath}} service run
+Environment=PATH={{.Path}}
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+`
+
+const systemdSocketTemplate = `[Unit]
+Description=Lux LSP Multiplexer Socket
+
+[Socket]
+ListenStream={{.SocketPath}}
+
+[Install]
+WantedBy=sockets.target
+`
+
+type systemdConfig struct {
+	BinaryPath string
+	SocketPath string
+	Path       string
+}
+
+func GenerateSystemdUnits(binaryPath, socketPath string) (service string, socket string) {
+	cfg := systemdConfig{
+		BinaryPath: binaryPath,
+		SocketPath: socketPath,
+		Path:       os.Getenv("PATH"),
+	}
+
+	serviceTmpl := template.Must(template.New("service").Parse(systemdServiceTemplate))
+	var serviceBuf strings.Builder
+	serviceTmpl.Execute(&serviceBuf, cfg)
+
+	socketTmpl := template.Must(template.New("socket").Parse(systemdSocketTemplate))
+	var socketBuf strings.Builder
+	socketTmpl.Execute(&socketBuf, cfg)
+
+	return serviceBuf.String(), socketBuf.String()
+}
+
 const launchdPlistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -107,9 +156,48 @@ func uninstallLaunchd() error {
 }
 
 func installSystemd(binaryPath, socketPath string) error {
-	return fmt.Errorf("systemd install not yet implemented")
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("getting home directory: %w", err)
+	}
+
+	unitDir := filepath.Join(homeDir, ".config", "systemd", "user")
+	if err := os.MkdirAll(unitDir, 0o755); err != nil {
+		return fmt.Errorf("creating unit directory: %w", err)
+	}
+
+	serviceContent, socketContent := GenerateSystemdUnits(binaryPath, socketPath)
+
+	servicePath := filepath.Join(unitDir, "lux.service")
+	if err := os.WriteFile(servicePath, []byte(serviceContent), 0o644); err != nil {
+		return fmt.Errorf("writing service unit: %w", err)
+	}
+
+	socketPath_ := filepath.Join(unitDir, "lux.socket")
+	if err := os.WriteFile(socketPath_, []byte(socketContent), 0o644); err != nil {
+		return fmt.Errorf("writing socket unit: %w", err)
+	}
+
+	if err := exec.Command("systemctl", "--user", "daemon-reload").Run(); err != nil {
+		return fmt.Errorf("daemon-reload: %w", err)
+	}
+
+	return exec.Command("systemctl", "--user", "enable", "--now", "lux.socket").Run()
 }
 
 func uninstallSystemd() error {
-	return fmt.Errorf("systemd uninstall not yet implemented")
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("getting home directory: %w", err)
+	}
+
+	unitDir := filepath.Join(homeDir, ".config", "systemd", "user")
+
+	exec.Command("systemctl", "--user", "disable", "--now", "lux.socket").Run()
+	exec.Command("systemctl", "--user", "stop", "lux.service").Run()
+
+	os.Remove(filepath.Join(unitDir, "lux.socket"))
+	os.Remove(filepath.Join(unitDir, "lux.service"))
+
+	return exec.Command("systemctl", "--user", "daemon-reload").Run()
 }
