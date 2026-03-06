@@ -100,16 +100,19 @@ func (s *SSE) handleSSE(w http.ResponseWriter, r *http.Request) {
 	s.sessionID = hex.EncodeToString(b)
 	s.sseWriter = w
 	s.sseFlusher = flusher
-	close(s.sseReady)
-	s.mu.Unlock()
 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
 	// Send the endpoint event so the client knows where to POST.
+	// This must complete before signaling sseReady to prevent races
+	// between this flush and Write() flushes on the shared bufio.Writer.
 	fmt.Fprintf(w, "event: endpoint\ndata: /message?sessionId=%s\n\n", s.sessionID)
 	flusher.Flush()
+
+	close(s.sseReady)
+	s.mu.Unlock()
 
 	// Block until shutdown or client disconnect.
 	select {
