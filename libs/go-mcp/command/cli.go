@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -37,7 +38,19 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 	cmdArgs := remaining[1:]
 
 	cmd, ok := a.GetCommand(name)
-	if !ok {
+	if ok {
+		// Resolve deeper prefix subcommands: "mcp stdio" → "mcp-stdio"
+		for len(cmdArgs) > 0 && !strings.HasPrefix(cmdArgs[0], "-") {
+			deeper := name + "-" + cmdArgs[0]
+			if deeperCmd, found := a.GetCommand(deeper); found {
+				name = deeper
+				cmd = deeperCmd
+				cmdArgs = cmdArgs[1:]
+			} else {
+				break
+			}
+		}
+	} else {
 		// Try joining with subsequent args for prefix subcommands:
 		// "perms check" → "perms-check"
 		for i := 1; i < len(remaining); i++ {
@@ -107,6 +120,15 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 		return nil
 	}
 
+	// Commands with subcommands but no handler show usage.
+	prefix := name + "-"
+	for n := range a.commands {
+		if strings.HasPrefix(n, prefix) {
+			a.printCommandUsage(name, cmd)
+			return nil
+		}
+	}
+
 	return fmt.Errorf("command %s has no handler", name)
 }
 
@@ -136,7 +158,8 @@ func hasHelpFlag(args []string) bool {
 }
 
 func (a *App) printCommandUsage(name string, cmd *Command) {
-	fmt.Printf("%s %s — %s\n\n", a.Name, name, cmd.Description.Short)
+	displayName := strings.ReplaceAll(name, "-", " ")
+	fmt.Printf("%s %s — %s\n\n", a.Name, displayName, cmd.Description.Short)
 	if cmd.Description.Long != "" {
 		fmt.Printf("%s\n\n", cmd.Description.Long)
 	}
@@ -150,6 +173,27 @@ func (a *App) printCommandUsage(name string, cmd *Command) {
 			fmt.Printf("  %-24s %s\n", flag, p.Description)
 		}
 	}
+
+	// List subcommands (commands starting with name-)
+	prefix := name + "-"
+	var subs []sortedCommand
+	for n, c := range a.VisibleCommands() {
+		if strings.HasPrefix(n, prefix) {
+			subs = append(subs, sortedCommand{strings.TrimPrefix(n, prefix), c})
+		}
+	}
+	if len(subs) > 0 {
+		sort.Slice(subs, func(i, j int) bool {
+			return subs[i].name < subs[j].name
+		})
+		if len(cmd.Params) > 0 {
+			fmt.Println()
+		}
+		fmt.Println("Subcommands:")
+		for _, s := range subs {
+			fmt.Printf("  %-16s %s\n", s.name, s.cmd.Description.Short)
+		}
+	}
 }
 
 func (a *App) printUsage() {
@@ -157,9 +201,34 @@ func (a *App) printUsage() {
 	if a.Description.Long != "" {
 		fmt.Printf("%s\n\n", a.Description.Long)
 	}
+
+	cmds := a.sortedVisibleCommands()
+
+	// Identify group prefixes: commands whose name is a prefix of other commands.
+	groups := make(map[string]bool)
+	for _, e := range cmds {
+		for _, other := range cmds {
+			if strings.HasPrefix(other.name, e.name+"-") {
+				groups[e.name] = true
+				break
+			}
+		}
+	}
+
 	fmt.Println("Commands:")
-	for name, cmd := range a.VisibleCommands() {
-		fmt.Printf("  %-16s %s\n", name, cmd.Description.Short)
+	for _, e := range cmds {
+		// Hide children of group commands from top-level listing.
+		isChild := false
+		for g := range groups {
+			if strings.HasPrefix(e.name, g+"-") {
+				isChild = true
+				break
+			}
+		}
+		if isChild {
+			continue
+		}
+		fmt.Printf("  %-16s %s\n", e.name, e.cmd.Description.Short)
 	}
 }
 

@@ -49,15 +49,6 @@ func buildApp() *command.App {
 			Short: "Run as MCP server",
 			Long:  "Run Lux as an MCP server, exposing LSP capabilities as MCP tools.",
 		},
-		RunCLI: func(ctx context.Context, args json.RawMessage) error {
-			fmt.Println("Run Lux as an MCP server, exposing LSP capabilities as MCP tools.")
-			fmt.Println()
-			fmt.Println("Available transports:")
-			fmt.Println("  lux mcp stdio    MCP over stdin/stdout")
-			fmt.Println("  lux mcp sse      MCP over Server-Sent Events")
-			fmt.Println("  lux mcp http     MCP over streamable HTTP")
-			return nil
-		},
 	})
 
 	app.AddCommand(&command.Command{
@@ -65,17 +56,6 @@ func buildApp() *command.App {
 		Description: command.Description{
 			Short: "Manage the lux background service",
 			Long:  "Commands for managing the lux background service daemon.",
-		},
-		RunCLI: func(ctx context.Context, args json.RawMessage) error {
-			fmt.Println("Manage the lux background service daemon.")
-			fmt.Println()
-			fmt.Println("Available subcommands:")
-			fmt.Println("  lux service run         Run the service daemon in the foreground")
-			fmt.Println("  lux service install      Install the service for automatic startup")
-			fmt.Println("  lux service uninstall    Remove the service from automatic startup")
-			fmt.Println("  lux service status       Show service and LSP pool status")
-			fmt.Println("  lux service logs         Show service logs")
-			return nil
 		},
 	})
 
