@@ -73,17 +73,19 @@ func registerResources(
 		}
 	}
 
-	registry.RegisterResource(
-		protocol.Resource{
-			URI:         "lux://status",
-			Name:        "LSP Status",
-			Description: "Current status of configured language servers including which are running",
-			MimeType:    "application/json",
-		},
-		func(ctx context.Context, uri string) (*protocol.ResourceReadResult, error) {
-			return readStatus(pool, cfg, ftConfigs)
-		},
-	)
+	if pool != nil {
+		registry.RegisterResource(
+			protocol.Resource{
+				URI:         "lux://status",
+				Name:        "LSP Status",
+				Description: "Current status of configured language servers including which are running",
+				MimeType:    "application/json",
+			},
+			func(ctx context.Context, uri string) (*protocol.ResourceReadResult, error) {
+				return readStatus(pool, cfg, ftConfigs)
+			},
+		)
+	}
 
 	registry.RegisterResource(
 		protocol.Resource{

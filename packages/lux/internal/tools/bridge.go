@@ -13,10 +13,11 @@ import (
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 	"github.com/amarbel-llc/lux/internal/config"
-	"github.com/amarbel-llc/lux/internal/logfile"
 	"github.com/amarbel-llc/lux/internal/formatter"
+	"github.com/amarbel-llc/lux/internal/logfile"
 	"github.com/amarbel-llc/lux/internal/lsp"
 	"github.com/amarbel-llc/lux/internal/server"
+	"github.com/amarbel-llc/lux/internal/service"
 	"github.com/amarbel-llc/lux/internal/subprocess"
 )
 
@@ -33,12 +34,28 @@ type Bridge struct {
 	executor         subprocess.Executor
 	docMgr           DocumentTracker
 	progressReporter func(lspName, message string)
+
+	// Service mode: route LSP operations through the daemon socket.
+	serviceConn *jsonrpc.Conn
+	sessionID   string
 }
 
 func NewBridge(pool *subprocess.Pool, router *server.Router, fmtRouter *formatter.Router, executor subprocess.Executor, progressReporter func(lspName, message string)) *Bridge {
 	return &Bridge{
 		pool:             pool,
 		router:           router,
+		fmtRouter:        fmtRouter,
+		executor:         executor,
+		progressReporter: progressReporter,
+	}
+}
+
+// NewServiceBridge creates a Bridge that routes all LSP operations through
+// the daemon socket instead of managing a local subprocess pool.
+func NewServiceBridge(serviceConn *jsonrpc.Conn, sessionID string, fmtRouter *formatter.Router, executor subprocess.Executor, progressReporter func(lspName, message string)) *Bridge {
+	return &Bridge{
+		serviceConn:      serviceConn,
+		sessionID:        sessionID,
 		fmtRouter:        fmtRouter,
 		executor:         executor,
 		progressReporter: progressReporter,
@@ -98,12 +115,12 @@ func isRetryableLSPError(err error) bool {
 	return false
 }
 
-func (b *Bridge) callWithRetry(ctx context.Context, inst *subprocess.LSPInstance, fn func(*subprocess.LSPInstance) (json.RawMessage, error)) (json.RawMessage, error) {
+func (b *Bridge) callWithRetry(ctx context.Context, fn func() (json.RawMessage, error)) (json.RawMessage, error) {
 	const maxAttempts = 8
 	delay := 500 * time.Millisecond
 
 	for attempt := 1; ; attempt++ {
-		result, err := fn(inst)
+		result, err := fn()
 		if err == nil || !isRetryableLSPError(err) || attempt >= maxAttempts {
 			return result, err
 		}
@@ -123,7 +140,14 @@ func (b *Bridge) callWithRetry(ctx context.Context, inst *subprocess.LSPInstance
 	}
 }
 
-func (b *Bridge) withDocument(ctx context.Context, uri lsp.DocumentURI, fn func(*subprocess.LSPInstance) (json.RawMessage, error)) (json.RawMessage, error) {
+func (b *Bridge) withDocument(ctx context.Context, uri lsp.DocumentURI, method string, params any) (json.RawMessage, error) {
+	if b.serviceConn != nil {
+		return b.withDocumentRemote(ctx, uri, method, params)
+	}
+	return b.withDocumentLocal(ctx, uri, method, params)
+}
+
+func (b *Bridge) withDocumentLocal(ctx context.Context, uri lsp.DocumentURI, method string, params any) (json.RawMessage, error) {
 	lspName := b.router.RouteByURI(uri)
 	if lspName == "" {
 		return nil, fmt.Errorf("no LSP configured for %s", uri)
@@ -152,7 +176,9 @@ func (b *Bridge) withDocument(ctx context.Context, uri lsp.DocumentURI, fn func(
 				return nil, fmt.Errorf("opening document: %w", err)
 			}
 		}
-		return b.callWithRetry(ctx, inst, fn)
+		return b.callWithRetry(ctx, func() (json.RawMessage, error) {
+			return inst.Call(ctx, method, params)
+		})
 	}
 
 	// Fallback: ephemeral open/close when no DocumentManager
@@ -180,15 +206,38 @@ func (b *Bridge) withDocument(ctx context.Context, uri lsp.DocumentURI, fn func(
 		})
 	}()
 
-	return b.callWithRetry(ctx, inst, fn)
+	return b.callWithRetry(ctx, func() (json.RawMessage, error) {
+		return inst.Call(ctx, method, params)
+	})
+}
+
+func (b *Bridge) withDocumentRemote(ctx context.Context, uri lsp.DocumentURI, method string, params any) (json.RawMessage, error) {
+	if b.docMgr != nil {
+		if !b.docMgr.IsOpen(uri) {
+			if err := b.docMgr.Open(ctx, uri); err != nil {
+				return nil, fmt.Errorf("opening document: %w", err)
+			}
+		}
+	}
+
+	paramsJSON, err := json.Marshal(params)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling params: %w", err)
+	}
+
+	return b.callWithRetry(ctx, func() (json.RawMessage, error) {
+		return b.serviceConn.Call(ctx, service.MethodLSPRequest, service.LSPRequestParams{
+			SessionID: b.sessionID,
+			LSPMethod: method,
+			LSPParams: paramsJSON,
+		})
+	})
 }
 
 func (b *Bridge) Hover(ctx context.Context, uri lsp.DocumentURI, line, character int) (*command.Result, error) {
-	result, err := b.withDocument(ctx, uri, func(inst *subprocess.LSPInstance) (json.RawMessage, error) {
-		return inst.Call(ctx, lsp.MethodTextDocumentHover, lsp.TextDocumentPositionParams{
-			TextDocument: lsp.TextDocumentIdentifier{URI: uri},
-			Position:     lsp.Position{Line: line, Character: character},
-		})
+	result, err := b.withDocument(ctx, uri, lsp.MethodTextDocumentHover, lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{URI: uri},
+		Position:     lsp.Position{Line: line, Character: character},
 	})
 	if err != nil {
 		return command.TextErrorResult(err.Error()), nil
@@ -210,11 +259,9 @@ func (b *Bridge) Hover(ctx context.Context, uri lsp.DocumentURI, line, character
 }
 
 func (b *Bridge) Definition(ctx context.Context, uri lsp.DocumentURI, line, character int) (*command.Result, error) {
-	result, err := b.withDocument(ctx, uri, func(inst *subprocess.LSPInstance) (json.RawMessage, error) {
-		return inst.Call(ctx, lsp.MethodTextDocumentDefinition, lsp.TextDocumentPositionParams{
-			TextDocument: lsp.TextDocumentIdentifier{URI: uri},
-			Position:     lsp.Position{Line: line, Character: character},
-		})
+	result, err := b.withDocument(ctx, uri, lsp.MethodTextDocumentDefinition, lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{URI: uri},
+		Position:     lsp.Position{Line: line, Character: character},
 	})
 	if err != nil {
 		return command.TextErrorResult(err.Error()), nil
@@ -230,12 +277,10 @@ func (b *Bridge) Definition(ctx context.Context, uri lsp.DocumentURI, line, char
 }
 
 func (b *Bridge) References(ctx context.Context, uri lsp.DocumentURI, line, character int, includeDecl bool) (*command.Result, error) {
-	result, err := b.withDocument(ctx, uri, func(inst *subprocess.LSPInstance) (json.RawMessage, error) {
-		return inst.Call(ctx, lsp.MethodTextDocumentReferences, map[string]any{
-			"textDocument": lsp.TextDocumentIdentifier{URI: uri},
-			"position":     lsp.Position{Line: line, Character: character},
-			"context":      map[string]any{"includeDeclaration": includeDecl},
-		})
+	result, err := b.withDocument(ctx, uri, lsp.MethodTextDocumentReferences, map[string]any{
+		"textDocument": lsp.TextDocumentIdentifier{URI: uri},
+		"position":     lsp.Position{Line: line, Character: character},
+		"context":      map[string]any{"includeDeclaration": includeDecl},
 	})
 	if err != nil {
 		return command.TextErrorResult(err.Error()), nil
@@ -251,11 +296,9 @@ func (b *Bridge) References(ctx context.Context, uri lsp.DocumentURI, line, char
 }
 
 func (b *Bridge) Completion(ctx context.Context, uri lsp.DocumentURI, line, character int) (*command.Result, error) {
-	result, err := b.withDocument(ctx, uri, func(inst *subprocess.LSPInstance) (json.RawMessage, error) {
-		return inst.Call(ctx, lsp.MethodTextDocumentCompletion, lsp.TextDocumentPositionParams{
-			TextDocument: lsp.TextDocumentIdentifier{URI: uri},
-			Position:     lsp.Position{Line: line, Character: character},
-		})
+	result, err := b.withDocument(ctx, uri, lsp.MethodTextDocumentCompletion, lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{URI: uri},
+		Position:     lsp.Position{Line: line, Character: character},
 	})
 	if err != nil {
 		return command.TextErrorResult(err.Error()), nil
@@ -275,14 +318,12 @@ func (b *Bridge) Format(ctx context.Context, uri lsp.DocumentURI) (*command.Resu
 		return result, nil
 	}
 
-	result, err := b.withDocument(ctx, uri, func(inst *subprocess.LSPInstance) (json.RawMessage, error) {
-		return inst.Call(ctx, lsp.MethodTextDocumentFormatting, map[string]any{
-			"textDocument": lsp.TextDocumentIdentifier{URI: uri},
-			"options": map[string]any{
-				"tabSize":      4,
-				"insertSpaces": true,
-			},
-		})
+	result, err := b.withDocument(ctx, uri, lsp.MethodTextDocumentFormatting, map[string]any{
+		"textDocument": lsp.TextDocumentIdentifier{URI: uri},
+		"options": map[string]any{
+			"tabSize":      4,
+			"insertSpaces": true,
+		},
 	})
 	if err != nil {
 		return command.TextErrorResult(err.Error()), nil
@@ -356,10 +397,8 @@ func (b *Bridge) tryExternalFormat(ctx context.Context, uri lsp.DocumentURI) (*c
 }
 
 func (b *Bridge) DocumentSymbols(ctx context.Context, uri lsp.DocumentURI) (*command.Result, error) {
-	result, err := b.withDocument(ctx, uri, func(inst *subprocess.LSPInstance) (json.RawMessage, error) {
-		return inst.Call(ctx, lsp.MethodTextDocumentDocumentSymbol, map[string]any{
-			"textDocument": lsp.TextDocumentIdentifier{URI: uri},
-		})
+	result, err := b.withDocument(ctx, uri, lsp.MethodTextDocumentDocumentSymbol, map[string]any{
+		"textDocument": lsp.TextDocumentIdentifier{URI: uri},
 	})
 	if err != nil {
 		return command.TextErrorResult(err.Error()), nil
@@ -375,10 +414,8 @@ func (b *Bridge) DocumentSymbols(ctx context.Context, uri lsp.DocumentURI) (*com
 }
 
 func (b *Bridge) DocumentSymbolsRaw(ctx context.Context, uri lsp.DocumentURI) ([]Symbol, error) {
-	result, err := b.withDocument(ctx, uri, func(inst *subprocess.LSPInstance) (json.RawMessage, error) {
-		return inst.Call(ctx, lsp.MethodTextDocumentDocumentSymbol, map[string]any{
-			"textDocument": lsp.TextDocumentIdentifier{URI: uri},
-		})
+	result, err := b.withDocument(ctx, uri, lsp.MethodTextDocumentDocumentSymbol, map[string]any{
+		"textDocument": lsp.TextDocumentIdentifier{URI: uri},
 	})
 	if err != nil {
 		return nil, err
@@ -388,17 +425,15 @@ func (b *Bridge) DocumentSymbolsRaw(ctx context.Context, uri lsp.DocumentURI) ([
 }
 
 func (b *Bridge) CodeAction(ctx context.Context, uri lsp.DocumentURI, startLine, startChar, endLine, endChar int) (*command.Result, error) {
-	result, err := b.withDocument(ctx, uri, func(inst *subprocess.LSPInstance) (json.RawMessage, error) {
-		return inst.Call(ctx, lsp.MethodTextDocumentCodeAction, map[string]any{
-			"textDocument": lsp.TextDocumentIdentifier{URI: uri},
-			"range": lsp.Range{
-				Start: lsp.Position{Line: startLine, Character: startChar},
-				End:   lsp.Position{Line: endLine, Character: endChar},
-			},
-			"context": map[string]any{
-				"diagnostics": []any{},
-			},
-		})
+	result, err := b.withDocument(ctx, uri, lsp.MethodTextDocumentCodeAction, map[string]any{
+		"textDocument": lsp.TextDocumentIdentifier{URI: uri},
+		"range": lsp.Range{
+			Start: lsp.Position{Line: startLine, Character: startChar},
+			End:   lsp.Position{Line: endLine, Character: endChar},
+		},
+		"context": map[string]any{
+			"diagnostics": []any{},
+		},
 	})
 	if err != nil {
 		return command.TextErrorResult(err.Error()), nil
@@ -414,12 +449,10 @@ func (b *Bridge) CodeAction(ctx context.Context, uri lsp.DocumentURI, startLine,
 }
 
 func (b *Bridge) Rename(ctx context.Context, uri lsp.DocumentURI, line, character int, newName string) (*command.Result, error) {
-	result, err := b.withDocument(ctx, uri, func(inst *subprocess.LSPInstance) (json.RawMessage, error) {
-		return inst.Call(ctx, lsp.MethodTextDocumentRename, map[string]any{
-			"textDocument": lsp.TextDocumentIdentifier{URI: uri},
-			"position":     lsp.Position{Line: line, Character: character},
-			"newName":      newName,
-		})
+	result, err := b.withDocument(ctx, uri, lsp.MethodTextDocumentRename, map[string]any{
+		"textDocument": lsp.TextDocumentIdentifier{URI: uri},
+		"position":     lsp.Position{Line: line, Character: character},
+		"newName":      newName,
 	})
 	if err != nil {
 		return command.TextErrorResult(err.Error()), nil
@@ -435,10 +468,8 @@ func (b *Bridge) Rename(ctx context.Context, uri lsp.DocumentURI, line, characte
 }
 
 func (b *Bridge) WorkspaceSymbols(ctx context.Context, uri lsp.DocumentURI, query string) (*command.Result, error) {
-	result, err := b.withDocument(ctx, uri, func(inst *subprocess.LSPInstance) (json.RawMessage, error) {
-		return inst.Call(ctx, lsp.MethodWorkspaceSymbol, map[string]any{
-			"query": query,
-		})
+	result, err := b.withDocument(ctx, uri, lsp.MethodWorkspaceSymbol, map[string]any{
+		"query": query,
 	})
 	if err != nil {
 		return command.TextErrorResult(err.Error()), nil
@@ -454,10 +485,8 @@ func (b *Bridge) WorkspaceSymbols(ctx context.Context, uri lsp.DocumentURI, quer
 }
 
 func (b *Bridge) Diagnostics(ctx context.Context, uri lsp.DocumentURI) (*command.Result, error) {
-	result, err := b.withDocument(ctx, uri, func(inst *subprocess.LSPInstance) (json.RawMessage, error) {
-		return inst.Call(ctx, lsp.MethodTextDocumentDiagnostic, map[string]any{
-			"textDocument": lsp.TextDocumentIdentifier{URI: uri},
-		})
+	result, err := b.withDocument(ctx, uri, lsp.MethodTextDocumentDiagnostic, map[string]any{
+		"textDocument": lsp.TextDocumentIdentifier{URI: uri},
 	})
 	if err != nil {
 		return command.TextErrorResult(err.Error()), nil

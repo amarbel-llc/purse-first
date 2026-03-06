@@ -15,17 +15,19 @@ import (
 	"github.com/amarbel-llc/lux/internal/formatter"
 	"github.com/amarbel-llc/lux/internal/lsp"
 	"github.com/amarbel-llc/lux/internal/server"
+	"github.com/amarbel-llc/lux/internal/service"
 	"github.com/amarbel-llc/lux/internal/subprocess"
 	"github.com/amarbel-llc/lux/internal/tools"
 	"github.com/amarbel-llc/lux/internal/warmup"
 )
 
 type Server struct {
-	inner     *mcpserver.Server
-	pool      *subprocess.Pool
-	docMgr    *DocumentManager
-	diagStore *DiagnosticsStore
-	transport transport.Transport
+	inner         *mcpserver.Server
+	pool          *subprocess.Pool
+	docMgr        *DocumentManager
+	serviceDocMgr *service.ServiceDocumentManager
+	diagStore     *DiagnosticsStore
+	transport     transport.Transport
 }
 
 func New(cfg *config.Config, t transport.Transport) (*Server, error) {
@@ -126,10 +128,97 @@ func New(cfg *config.Config, t transport.Transport) (*Server, error) {
 	return s, nil
 }
 
+// NewWithService creates an MCP server that routes all LSP operations through
+// the daemon socket instead of managing a local subprocess pool. The daemon
+// handles LSP lifecycle, routing, and readiness.
+func NewWithService(t transport.Transport, serviceConn *jsonrpc.Conn, sessionID string) (*Server, error) {
+	ftConfigs, err := filetype.LoadMerged()
+	if err != nil {
+		fmt.Fprintf(logfile.Writer(), "warning: could not load filetype config: %v\n", err)
+		ftConfigs = []*filetype.Config{}
+	}
+
+	var fmtRouter *formatter.Router
+	fmtCfg, err := config.LoadMergedFormatters()
+	if err != nil {
+		fmt.Fprintf(logfile.Writer(), "warning: could not load formatter config: %v\n", err)
+	} else {
+		fmtMap := make(map[string]*config.Formatter)
+		for i := range fmtCfg.Formatters {
+			f := &fmtCfg.Formatters[i]
+			if !f.Disabled {
+				fmtMap[f.Name] = f
+			}
+		}
+
+		fmtRouter, err = formatter.NewRouter(ftConfigs, fmtMap)
+		if err != nil {
+			fmt.Fprintf(logfile.Writer(), "warning: could not create formatter router: %v\n", err)
+			fmtRouter = nil
+		}
+	}
+
+	executor := subprocess.NewNixExecutor()
+
+	bridge := tools.NewServiceBridge(serviceConn, sessionID, fmtRouter, executor, func(lspName, message string) {
+		notification, err := jsonrpc.NewNotification("notifications/message", map[string]any{
+			"level": "info",
+			"data":  fmt.Sprintf("%s: %s", lspName, message),
+		})
+		if err == nil {
+			t.Write(notification)
+		}
+	})
+
+	serviceDocMgr := service.NewServiceDocumentManager(serviceConn, sessionID, bridge.InferLanguageID)
+	bridge.SetDocumentManager(serviceDocMgr)
+
+	app := command.NewApp("lux", "MCP server exposing LSP capabilities as tools")
+	app.Version = "0.1.0"
+	app.MCPArgs = []string{"mcp", "stdio"}
+	tools.RegisterAll(app, bridge)
+
+	toolRegistry := mcpserver.NewToolRegistry()
+	app.RegisterMCPTools(toolRegistry)
+
+	s := &Server{
+		serviceDocMgr: serviceDocMgr,
+		transport:     t,
+		diagStore:     NewDiagnosticsStore(),
+	}
+
+	resourceRegistry := mcpserver.NewResourceRegistry()
+	registerResources(resourceRegistry, nil, bridge, nil, ftConfigs, s.diagStore)
+
+	promptRegistry := mcpserver.NewPromptRegistry()
+	registerPrompts(promptRegistry)
+
+	inner, err := mcpserver.New(t, mcpserver.Options{
+		ServerName:    app.Name,
+		ServerVersion: app.Version,
+		Tools:         toolRegistry,
+		Resources:     newResourceProvider(resourceRegistry, bridge, s.diagStore),
+		Prompts:       promptRegistry,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating MCP server: %w", err)
+	}
+
+	s.inner = inner
+	return s, nil
+}
+
 func (s *Server) Run(ctx context.Context) error {
 	defer func() {
-		s.docMgr.CloseAll()
-		s.pool.StopAll()
+		if s.serviceDocMgr != nil {
+			s.serviceDocMgr.CloseAll()
+		}
+		if s.docMgr != nil {
+			s.docMgr.CloseAll()
+		}
+		if s.pool != nil {
+			s.pool.StopAll()
+		}
 	}()
 	return s.inner.Run(ctx)
 }

@@ -591,14 +591,26 @@ func buildMCPTransportApp() *command.App {
 			Long:  "Run MCP server reading from stdin and writing to stdout.",
 		},
 		RunCLI: func(ctx context.Context, args json.RawMessage) error {
-			// TODO: Convert to proxy through service daemon (MCP proxy is a later task).
 			cfg, err := config.Load()
 			if err != nil {
 				return fmt.Errorf("loading config: %w", err)
 			}
 
 			t := transport.NewStdio(os.Stdin, os.Stdout)
-			srv, err := mcp.New(cfg, t)
+
+			serviceConn, sessionID, rawConn, err := connectToService(ctx, cfg.SocketPath())
+			if err != nil {
+				fmt.Fprintf(logfile.Writer(), "[lux] service unavailable, falling back to in-process: %v\n", err)
+				srv, err := mcp.New(cfg, t)
+				if err != nil {
+					return fmt.Errorf("creating MCP server: %w", err)
+				}
+				return srv.Run(ctx)
+			}
+			defer rawConn.Close()
+			defer deregisterSession(ctx, serviceConn, sessionID)
+
+			srv, err := mcp.NewWithService(t, serviceConn, sessionID)
 			if err != nil {
 				return fmt.Errorf("creating MCP server: %w", err)
 			}
@@ -698,6 +710,48 @@ func buildMCPTransportApp() *command.App {
 	})
 
 	return mcpApp
+}
+
+// connectToService dials the daemon socket, registers an MCP session, and
+// returns the JSON-RPC connection, session ID, and raw net.Conn for cleanup.
+func connectToService(ctx context.Context, socketPath string) (*jsonrpc.Conn, string, net.Conn, error) {
+	workspaceRoot, err := os.Getwd()
+	if err != nil {
+		return nil, "", nil, fmt.Errorf("getting working directory: %w", err)
+	}
+
+	conn, err := net.Dial("unix", socketPath)
+	if err != nil {
+		return nil, "", nil, fmt.Errorf("connecting to service: %w", err)
+	}
+
+	serviceConn := jsonrpc.NewConn(conn, conn, nil)
+	go serviceConn.Run(ctx)
+
+	result, err := serviceConn.Call(ctx, service.MethodSessionRegister, service.RegisterParams{
+		WorkspaceRoot: workspaceRoot,
+		ClientType:    service.ClientTypeMCP,
+	})
+	if err != nil {
+		conn.Close()
+		return nil, "", nil, fmt.Errorf("registering session: %w", err)
+	}
+
+	var reg service.RegisterResult
+	if err := json.Unmarshal(result, &reg); err != nil {
+		conn.Close()
+		return nil, "", nil, fmt.Errorf("unmarshaling register result: %w", err)
+	}
+
+	fmt.Fprintf(logfile.Writer(), "[lux] MCP session registered: %s (workspace: %s)\n", reg.SessionID, workspaceRoot)
+
+	return serviceConn, reg.SessionID, conn, nil
+}
+
+func deregisterSession(ctx context.Context, serviceConn *jsonrpc.Conn, sessionID string) {
+	serviceConn.Call(ctx, service.MethodSessionDeregister, service.DeregisterParams{
+		SessionID: sessionID,
+	})
 }
 
 func callService(ctx context.Context, socketPath string, method string, params any, verbose io.Writer) (json.RawMessage, error) {

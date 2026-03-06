@@ -182,3 +182,142 @@ func TestIntegration_LSPRequestRoundTrip(t *testing.T) {
 	cancel()
 	<-errCh
 }
+
+func TestIntegration_MCPSessionRoundTrip(t *testing.T) {
+	configDir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", configDir)
+
+	ftDir := filepath.Join(configDir, "lux", "filetype")
+	if err := os.MkdirAll(ftDir, 0o755); err != nil {
+		t.Fatalf("creating filetype dir: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(ftDir, "go.toml"), []byte("extensions = [\"go\"]\nlsp = \"fake\"\n"), 0o644); err != nil {
+		t.Fatalf("writing filetype config: %v", err)
+	}
+
+	luxDir := filepath.Join(configDir, "lux")
+	if err := os.WriteFile(filepath.Join(luxDir, "lsps.toml"), []byte("[[lsp]]\nname = \"fake\"\nflake = \"fake#lsp\"\nextensions = [\"go\"]\n"), 0o644); err != nil {
+		t.Fatalf("writing LSP config: %v", err)
+	}
+
+	socketPath := shortSocketPath(t, "mcp-roundtrip.sock")
+
+	d := NewDaemon(socketPath, nil, 0)
+	d.workspaces.executorFactory = func() subprocess.Executor {
+		return &fakeExecutor{}
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- d.Run(ctx)
+	}()
+
+	waitForListeningSocket(t, socketPath, 2*time.Second)
+
+	conn, err := net.Dial("unix", socketPath)
+	if err != nil {
+		t.Fatalf("dialing socket: %v", err)
+	}
+	defer conn.Close()
+
+	client := jsonrpc.NewConn(conn, conn, nil)
+	go client.Run(ctx)
+
+	// Register as MCP client
+	workDir := t.TempDir()
+	regResult, err := client.Call(ctx, MethodSessionRegister, RegisterParams{
+		WorkspaceRoot: workDir,
+		ClientType:    ClientTypeMCP,
+	})
+	if err != nil {
+		t.Fatalf("register: %v", err)
+	}
+
+	var reg RegisterResult
+	if err := json.Unmarshal(regResult, &reg); err != nil {
+		t.Fatalf("unmarshal register: %v", err)
+	}
+
+	if reg.SessionID == "" {
+		t.Fatal("expected non-empty session ID")
+	}
+
+	// Verify pool status shows 1 MCP session
+	statusResult, err := client.Call(ctx, MethodPoolStatus, nil)
+	if err != nil {
+		t.Fatalf("pool status: %v", err)
+	}
+
+	var status poolStatusResult
+	if err := json.Unmarshal(statusResult, &status); err != nil {
+		t.Fatalf("unmarshal status: %v", err)
+	}
+
+	if status.SessionCount != 1 {
+		t.Errorf("expected 1 session, got %d", status.SessionCount)
+	}
+
+	// Send document lifecycle notification (didOpen) via lux/lsp.notification
+	didOpenParams, _ := json.Marshal(map[string]any{
+		"textDocument": map[string]any{
+			"uri":        "file:///test.go",
+			"languageId": "go",
+			"version":    1,
+			"text":       "package main\n",
+		},
+	})
+
+	client.Notify(MethodLSPNotification, LSPNotificationParams{
+		SessionID: reg.SessionID,
+		LSPMethod: "textDocument/didOpen",
+		LSPParams: didOpenParams,
+	})
+
+	// Small delay for notification to propagate through daemon to fake LSP
+	time.Sleep(50 * time.Millisecond)
+
+	// Send LSP request via lux/lsp.request — should route to fake LSP
+	lspResult, err := client.Call(ctx, MethodLSPRequest, LSPRequestParams{
+		SessionID: reg.SessionID,
+		LSPMethod: "textDocument/hover",
+		LSPParams: json.RawMessage(`{"textDocument":{"uri":"file:///test.go"},"position":{"line":0,"character":0}}`),
+	})
+	if err != nil {
+		t.Fatalf("LSP request: %v", err)
+	}
+
+	var lspResp map[string]any
+	if err := json.Unmarshal(lspResult, &lspResp); err != nil {
+		t.Fatalf("unmarshal LSP response: %v", err)
+	}
+
+	if lspResp["echo"] != "textDocument/hover" {
+		t.Errorf("expected echo of method, got: %v", lspResp)
+	}
+
+	// Deregister and verify cleanup
+	_, err = client.Call(ctx, MethodSessionDeregister, DeregisterParams{
+		SessionID: reg.SessionID,
+	})
+	if err != nil {
+		t.Fatalf("deregister: %v", err)
+	}
+
+	statusResult2, err := client.Call(ctx, MethodPoolStatus, nil)
+	if err != nil {
+		t.Fatalf("pool status after deregister: %v", err)
+	}
+
+	var status2 poolStatusResult
+	json.Unmarshal(statusResult2, &status2)
+	if status2.SessionCount != 0 {
+		t.Errorf("expected 0 sessions after deregister, got %d", status2.SessionCount)
+	}
+
+	cancel()
+	<-errCh
+}
