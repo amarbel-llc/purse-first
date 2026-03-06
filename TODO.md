@@ -11,6 +11,32 @@
 
 - [ ] P0: PreToolUse hooks not firing — hooks exist on disk and binary works correctly, but Claude Code doesn't enforce them after `purse-first install`. Neither grit nor chix hooks deny Bash commands. Investigate plugin hook loading/registration.
 
+## RFC-0001: Package Binary Interface
+
+### go-mcp library
+- [ ] add built-in `generate-plugin` command to `command.App` with three modes: directory, PWD default, stdout (`-`)
+- [ ] wire `--skills-dir` flag on the built-in `generate-plugin` command
+
+### Per-package Go migrations
+- [ ] grit: remove manual `generate-plugin` dispatch from main.go (library command handles it)
+- [ ] get-hubbed: remove manual `generate-plugin` dispatch from main.go
+- [ ] mgp: remove manual `generate-plugin` dispatch from main.go
+- [ ] lux: remove `_generate` command, update `lux.nix` to call `generate-plugin`
+
+### rust-mcp library
+- [ ] add `generate-plugin` subcommand support to rust-mcp (plugin.json, mappings.json, hooks; all three output modes)
+
+### chix
+- [ ] add `generate-plugin` to chix using rust-mcp support, replacing `purse-first generate-plugin` + `chix generate-hooks` split
+- [ ] update `chix.nix` to use single `$out/bin/chix generate-plugin $out` call
+
+### purse-first CLI
+- [ ] implement `purse-first install-dev-mcp <binary>` — calls `<binary> generate-plugin -`, writes `.mcp.json` to PWD
+
+### Conformance tests
+- [ ] `zz-tests_bats/generate_plugin_interface.bats` — covers all RFC-0001 section 2.1 requirements
+- [ ] `zz-tests_bats/hook_interface.bats` — review overlap with existing `hook_io.bats`, cover RFC-0001 section 2.2
+
 ## Other
 
 - [x] tap-dancer rust: add `write_pragma` support (needed for `pragma +streamed-output`)
