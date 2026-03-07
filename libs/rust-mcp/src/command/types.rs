@@ -57,6 +57,13 @@ pub struct Command {
     pub maps_tools: Vec<ToolMapping>,
 }
 
+#[derive(Debug, Clone)]
+pub struct PostToolUseHook {
+    pub matcher: String,
+    pub command: String,
+    pub timeout: u32,
+}
+
 pub struct App {
     pub name: String,
     pub description: Description,
@@ -67,6 +74,7 @@ pub struct App {
     pub mcp_args: Vec<String>,
     plugin_skills: Vec<String>,
     commands: Vec<Command>,
+    pub post_tool_use_hooks: Vec<PostToolUseHook>,
 }
 
 impl App {
@@ -81,6 +89,7 @@ impl App {
             mcp_args: Vec::new(),
             plugin_skills: Vec::new(),
             commands: Vec::new(),
+            post_tool_use_hooks: Vec::new(),
         }
     }
 
@@ -106,6 +115,11 @@ impl App {
 
     pub fn mcp_args(mut self, args: Vec<String>) -> Self {
         self.mcp_args = args;
+        self
+    }
+
+    pub fn add_post_tool_use_hook(&mut self, hook: PostToolUseHook) -> &mut Self {
+        self.post_tool_use_hooks.push(hook);
         self
     }
 

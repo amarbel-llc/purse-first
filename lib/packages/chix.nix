@@ -1,4 +1,4 @@
-{ pkgs, src, craneLib, fhPkg, rustWorkspaceSrc, rustCargoArtifacts, purse-first-cli }:
+{ pkgs, src, craneLib, fhPkg, rustWorkspaceSrc, rustCargoArtifacts }:
 
 let
   chix-unwrapped = craneLib.buildPackage {
@@ -34,15 +34,6 @@ pkgs.runCommand "chix"
         ]
       }
 
-    ${purse-first-cli}/bin/purse-first generate-plugin \
-      --root ${src} \
-      --output $out \
-      --skills-dir ${src}/skills
-
-    mkdir -p $out/share/purse-first/chix/hooks
+    $out/bin/chix generate-plugin $out --skills-dir ${src}/skills
     install -m 755 ${formatNixHook} $out/share/purse-first/chix/hooks/format-nix
-
-    ${chix-unwrapped}/bin/chix generate-hooks \
-      $out/share/purse-first/chix/plugin.json \
-      --binary $out/bin/chix
   ''

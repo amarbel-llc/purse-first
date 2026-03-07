@@ -1,6 +1,6 @@
+mod app;
 mod background;
 mod config;
-mod hooks;
 mod lsp_client;
 mod nix_runner;
 mod output;
@@ -8,55 +8,32 @@ mod resources;
 mod tools;
 mod validators;
 
-use clap::{Parser, Subcommand};
 use mcp_server::server::{McpServerBuilder, run_stdio_server};
 use std::io::Read as _;
-use std::path::PathBuf;
 use std::process::Command;
-
-#[derive(Parser)]
-#[command(name = "chix")]
-#[command(about = "Nix MCP server and skills for Claude Code")]
-struct Cli {
-    #[command(subcommand)]
-    command: Option<Commands>,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    /// Install chix as MCP server in Claude Code
-    InstallClaude,
-    /// Handle PreToolUse hook (reads JSON from stdin)
-    #[command(hide = true)]
-    Hook,
-    /// Merge PreToolUse hooks into plugin.json and write hook script
-    #[command(hide = true)]
-    GenerateHooks {
-        plugin_json: PathBuf,
-        #[arg(long)]
-        binary: PathBuf,
-    },
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let cli = Cli::parse();
+    let args: Vec<String> = std::env::args().collect();
 
-    match cli.command {
-        Some(Commands::InstallClaude) => install_claude(),
-        Some(Commands::Hook) => {
+    match args.get(1).map(|s| s.as_str()) {
+        Some("generate-plugin") => {
+            let mut app = app::make_app();
+            let remaining: Vec<String> = args[2..].to_vec();
+            app.handle_generate_plugin(&remaining, &mut std::io::stdout())?;
+            Ok(())
+        }
+        Some("hook") => {
             let mut input = Vec::new();
             std::io::stdin().read_to_end(&mut input)?;
-            if let Some(output) = hooks::make_hook_handler().handle_hook(&input)? {
+            let app = app::make_app();
+            if let Some(output) = app.handle_hook(&input)? {
                 std::io::Write::write_all(&mut std::io::stdout(), &output)?;
             }
             Ok(())
         }
-        Some(Commands::GenerateHooks {
-            plugin_json,
-            binary,
-        }) => hooks::make_hook_handler().generate_hooks(&plugin_json, &binary),
-        None => run_server().await,
+        Some("install-claude") => install_claude(),
+        _ => run_server().await,
     }
 }
 

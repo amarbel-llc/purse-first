@@ -144,7 +144,6 @@
               pkgs
               craneLib
               fhPkg
-              purse-first-cli
               rustWorkspaceSrc
               rustCargoArtifacts
               ;

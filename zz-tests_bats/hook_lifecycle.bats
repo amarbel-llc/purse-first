@@ -57,8 +57,6 @@ function marketplace_json_validates { # @test
 }
 
 function chix_has_mappings { # @test
-  skip "TODO: chix does not ship mappings.json yet (issue #7)"
-
   local mappings="$result_path/share/purse-first/chix/mappings.json"
   [[ -f "$mappings" ]]
 

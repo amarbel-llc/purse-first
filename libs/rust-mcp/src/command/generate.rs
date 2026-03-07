@@ -70,9 +70,17 @@ struct PreToolUseEntry {
 }
 
 #[derive(Serialize)]
+struct PostToolUseEntry {
+    matcher: String,
+    hooks: Vec<HookCommand>,
+}
+
+#[derive(Serialize)]
 struct HooksInner {
     #[serde(rename = "PreToolUse")]
     pre_tool_use: Vec<PreToolUseEntry>,
+    #[serde(rename = "PostToolUse", skip_serializing_if = "Vec::is_empty")]
+    post_tool_use: Vec<PostToolUseEntry>,
 }
 
 #[derive(Serialize)]
@@ -196,6 +204,19 @@ impl App {
         let hooks_dir = dir.join(&self.name).join("hooks");
         fs::create_dir_all(&hooks_dir)?;
 
+        let post_tool_use: Vec<PostToolUseEntry> = self
+            .post_tool_use_hooks
+            .iter()
+            .map(|h| PostToolUseEntry {
+                matcher: h.matcher.clone(),
+                hooks: vec![HookCommand {
+                    hook_type: "command".to_string(),
+                    command: h.command.clone(),
+                    timeout: h.timeout,
+                }],
+            })
+            .collect();
+
         let manifest = HooksManifest {
             hooks: HooksInner {
                 pre_tool_use: vec![PreToolUseEntry {
@@ -206,6 +227,7 @@ impl App {
                         timeout: 5,
                     }],
                 }],
+                post_tool_use,
             },
         };
 

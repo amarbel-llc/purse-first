@@ -116,6 +116,6 @@ pub use completions::{CompletionError, CompletionProvider, CompletionRegistry};
 pub use executor::{CommandExecutor, CommandOutput, ExecuteArgs, ExecutorError, TokioExecutor};
 
 #[cfg(feature = "command")]
-pub use command::{App, Command as CliCommand, Description, Param, ParamType};
+pub use command::{App, Command as CliCommand, Description, Param, ParamType, PostToolUseHook};
 
 pub use hooks::{HookHandler, ToolMapping};
