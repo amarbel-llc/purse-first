@@ -28,8 +28,8 @@
 - [x] add `generate-plugin` subcommand support to rust-mcp (plugin.json, mappings.json, hooks; all three output modes)
 
 ### chix
-- [ ] add `generate-plugin` to chix using rust-mcp support, replacing `purse-first generate-plugin` + `chix generate-hooks` split
-- [ ] update `chix.nix` to use single `$out/bin/chix generate-plugin $out` call
+- [x] add `generate-plugin` to chix using rust-mcp support, replacing `purse-first generate-plugin` + `chix generate-hooks` split
+- [x] update `chix.nix` to use single `$out/bin/chix generate-plugin $out` call
 
 ### purse-first CLI
 - [x] implement `purse-first install-dev-mcp <binary>` — calls `<binary> generate-plugin -`, writes `.mcp.json` to PWD
