@@ -104,3 +104,9 @@
 - [ ] sub-agent exploration: instruct "use Glob/Grep tools, never bash grep/ls/find; use Glob before Read on directories, never Read a directory path"
 - [ ] sub-agent delegation: include explicit stop conditions for error recovery ("if X fails, STOP and report back")
 - [ ] sub-agent-driven-development skill: add guidance to keep sequential dependent tasks in main context rather than spawning sub-agents
+
+# OTHER
+
+- [ ] enable conformance tests to be exposed as commands that can be run in
+  recipes / pipelines in downstream projects (like the rfc-0001 conformance
+  tests)
