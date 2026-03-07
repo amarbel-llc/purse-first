@@ -73,31 +73,6 @@ func buildApp() *command.App {
 		},
 	})
 
-	// Hidden command for artifact generation during nix build
-	app.AddCommand(&command.Command{
-		Name:   "_generate",
-		Hidden: true,
-		Description: command.Description{
-			Short: "Generate plugin artifacts",
-		},
-		Params: []command.Param{
-			{Name: "dir", Type: command.String, Description: "Output directory", Required: true},
-		},
-		RunCLI: func(ctx context.Context, args json.RawMessage) error {
-			var p struct {
-				Dir string `json:"dir"`
-			}
-			if err := json.Unmarshal(args, &p); err != nil {
-				return fmt.Errorf("invalid arguments: %w", err)
-			}
-
-			// Register MCP tools onto the app so GenerateAll includes them
-			tools.RegisterAll(app, nil)
-
-			return app.GenerateAll(p.Dir)
-		},
-	})
-
 	return app
 }
 
