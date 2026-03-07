@@ -81,3 +81,6 @@
   point
 - [ ] update go-cli-framework skill: import paths reference `amarbel-llc/go-lib-mcp` but library moved to `amarbel-llc/purse-first/libs/go-mcp`; API reference and examples are stale
 - [ ] FDR: skill/docs freshness verification skill — a skill that audits all skills and docs against the current codebase, flags stale references (import paths, API signatures, examples), and produces a report of what needs updating
+- [ ] chix `develop_run`: false positive on Go test `-run` regex patterns — `|` and `()` in args like `-run "TestA|TestB"` are Go regex, not shell operators. Metacharacter validation should only reject metacharacters in shell-interpreted positions, not inside arbitrary arg values
+- [ ] chix `develop_run`: add `env` command examples to error message — when rejecting metacharacters, show the `env` pattern: `command: "env", args: ["VAR=val", "actual-cmd", "arg1"]`
+- [ ] chix hook: when agents use `Bash` with `nix develop -c`/`nix develop --command`, redirect to `develop_run` with a corrected invocation rather than just blocking — agents fall back to Bash 3/4 times after `develop_run` metacharacter rejections, bypassing the tool entirely
