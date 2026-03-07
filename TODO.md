@@ -79,3 +79,5 @@
 - [ ] spinclass: `list-agent-sessions` command — parse `~/.claude/projects/` to find session IDs for the current repo; if running inside a worktree, scope results to that worktree only
 - [ ] add new `/commit` skill that includes the prompt transcript up until that
   point
+- [ ] update go-cli-framework skill: import paths reference `amarbel-llc/go-lib-mcp` but library moved to `amarbel-llc/purse-first/libs/go-mcp`; API reference and examples are stale
+- [ ] FDR: skill/docs freshness verification skill — a skill that audits all skills and docs against the current codebase, flags stale references (import paths, API signatures, examples), and produces a report of what needs updating
