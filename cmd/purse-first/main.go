@@ -155,6 +155,19 @@ func main() {
 	genPluginCmd.Flags().StringVar(&genPluginOutput, "output", "", "output directory (defaults to root)")
 	genPluginCmd.Flags().StringVar(&genPluginSkillsDir, "skills-dir", "", "directory containing skills to discover and copy")
 
+	installDevMCPCmd := &cobra.Command{
+		Use:   "install-dev-mcp <binary>",
+		Short: "Generate .mcp.json from a locally-built package binary",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("getting working directory: %w", err)
+			}
+			return localplugin.InstallDevMCP(os.Stderr, args[0], cwd)
+		},
+	}
+
 	var (
 		validateType   string
 		validateStrict bool
@@ -202,7 +215,7 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 	validateCmd.Flags().StringVar(&validateType, "type", "", "document type: plugin, mapping, marketplace")
 	validateCmd.Flags().BoolVar(&validateStrict, "strict", false, "promote warnings to errors")
 
-	root.AddCommand(installCmd, genMarketplaceCmd, installLocalCmd, genPluginCmd, validateCmd)
+	root.AddCommand(installCmd, genMarketplaceCmd, installLocalCmd, installDevMCPCmd, genPluginCmd, validateCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)

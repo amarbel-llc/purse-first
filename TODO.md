@@ -32,7 +32,7 @@
 - [ ] update `chix.nix` to use single `$out/bin/chix generate-plugin $out` call
 
 ### purse-first CLI
-- [ ] implement `purse-first install-dev-mcp <binary>` — calls `<binary> generate-plugin -`, writes `.mcp.json` to PWD
+- [x] implement `purse-first install-dev-mcp <binary>` — calls `<binary> generate-plugin -`, writes `.mcp.json` to PWD
 
 ### Conformance tests
 - [x] `zz-tests_bats/rfc-0001/generate_plugin_interface.bats` — covers all RFC-0001 section 2.1 requirements
