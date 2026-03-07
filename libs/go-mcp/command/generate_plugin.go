@@ -28,8 +28,7 @@ type pluginManifest struct {
 	Skills      []string                   `json:"skills,omitempty"`
 }
 
-// GeneratePlugin writes a plugin.json manifest to {dir}/{app.Name}/plugin.json.
-func (a *App) GeneratePlugin(dir string) error {
+func (a *App) buildPluginManifest() pluginManifest {
 	cmdName := a.Name
 	if a.MCPBinary != "" {
 		cmdName = a.MCPBinary
@@ -51,6 +50,28 @@ func (a *App) GeneratePlugin(dir string) error {
 	if a.PluginAuthor != "" {
 		manifest.Author = &pluginAuthor{Name: a.PluginAuthor}
 	}
+
+	return manifest
+}
+
+// WritePluginJSON marshals the plugin manifest as indented JSON to w.
+// No files are written; no side effects beyond the write.
+func (a *App) WritePluginJSON(w io.Writer) error {
+	manifest := a.buildPluginManifest()
+
+	data, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		return err
+	}
+	data = append(data, '\n')
+
+	_, err = w.Write(data)
+	return err
+}
+
+// GeneratePlugin writes a plugin.json manifest to {dir}/{app.Name}/plugin.json.
+func (a *App) GeneratePlugin(dir string) error {
+	manifest := a.buildPluginManifest()
 
 	pluginDir := filepath.Join(dir, a.Name)
 	if err := os.MkdirAll(pluginDir, 0o755); err != nil {

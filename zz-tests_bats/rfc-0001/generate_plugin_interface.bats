@@ -78,8 +78,6 @@ function directory_mode_is_idempotent { # @test
 
 # RFC-0001 section 2.1: PWD default writes to cwd
 function pwd_default_writes_to_cwd { # @test
-  skip "not implemented: PWD-default mode requires go-mcp library changes"
-
   local workdir="$BATS_TEST_TMPDIR/pwd-test"
   mkdir -p "$workdir"
 
@@ -93,8 +91,6 @@ function pwd_default_writes_to_cwd { # @test
 
 # RFC-0001 section 2.1: stdout mode outputs valid JSON
 function stdout_mode_outputs_valid_json { # @test
-  skip "not implemented: stdout mode requires go-mcp library changes"
-
   run_package_bin generate-plugin -
   assert_success
 
@@ -103,8 +99,6 @@ function stdout_mode_outputs_valid_json { # @test
 
 # RFC-0001 section 2.1: stdout mode must not write files
 function stdout_mode_writes_no_files { # @test
-  skip "not implemented: stdout mode requires go-mcp library changes"
-
   local workdir="$BATS_TEST_TMPDIR/stdout-test"
   mkdir -p "$workdir"
 

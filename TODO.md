@@ -14,14 +14,14 @@
 ## RFC-0001: Package Binary Interface
 
 ### go-mcp library
-- [ ] add built-in `generate-plugin` command to `command.App` with three modes: directory, PWD default, stdout (`-`)
-- [ ] wire `--skills-dir` flag on the built-in `generate-plugin` command
+- [x] add built-in `generate-plugin` command to `command.App` with three modes: directory, PWD default, stdout (`-`)
+- [x] wire `--skills-dir` flag on the built-in `generate-plugin` command
 - [x] `HandleHook` must swallow decode errors (return nil, log to stderr) — RFC-0001 section 2.2 requires exit 0 on any error
 
 ### Per-package Go migrations
-- [ ] grit: remove manual `generate-plugin` dispatch from main.go (library command handles it)
-- [ ] get-hubbed: remove manual `generate-plugin` dispatch from main.go
-- [ ] mgp: remove manual `generate-plugin` dispatch from main.go
+- [x] grit: remove manual `generate-plugin` dispatch from main.go (library command handles it)
+- [x] get-hubbed: remove manual `generate-plugin` dispatch from main.go
+- [x] mgp: remove manual `generate-plugin` dispatch from main.go
 - [ ] lux: remove `_generate` command, update `lux.nix` to call `generate-plugin`
 
 ### rust-mcp library

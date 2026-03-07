@@ -1,7 +1,9 @@
 package command
 
 import (
+	"flag"
 	"fmt"
+	"io"
 	"path/filepath"
 )
 
@@ -61,4 +63,34 @@ func (a *App) GenerateAllWithSkills(dir, skillsDir string) error {
 	}
 
 	return a.GenerateCompletions(dir)
+}
+
+// HandleGeneratePlugin dispatches generate-plugin based on args:
+//   - 0 args: write all artifacts to the current working directory
+//   - 1 arg "-": write plugin.json as JSON to stdout (no files)
+//   - 1 arg other: write all artifacts to the given directory
+//   - >1 args: error
+//
+// The --skills-dir flag is parsed from args when present.
+func (a *App) HandleGeneratePlugin(args []string, stdout io.Writer) error {
+	fs := flag.NewFlagSet("generate-plugin", flag.ContinueOnError)
+	skillsDir := fs.String("skills-dir", "", "path to skills directory")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	remaining := fs.Args()
+
+	switch len(remaining) {
+	case 0:
+		return a.GenerateAllWithSkills(".", *skillsDir)
+	case 1:
+		if remaining[0] == "-" {
+			return a.WritePluginJSON(stdout)
+		}
+		return a.GenerateAllWithSkills(remaining[0], *skillsDir)
+	default:
+		return fmt.Errorf("generate-plugin: expected 0 or 1 arguments, got %d", len(remaining))
+	}
 }

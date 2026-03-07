@@ -35,8 +35,8 @@ func main() {
 
 	app := tools.RegisterAll()
 
-	if flag.NArg() == 2 && flag.Arg(0) == "generate-plugin" {
-		if err := app.GenerateAll(flag.Arg(1)); err != nil {
+	if flag.NArg() >= 1 && flag.Arg(0) == "generate-plugin" {
+		if err := app.HandleGeneratePlugin(flag.Args()[1:], os.Stdout); err != nil {
 			log.Fatalf("generating plugin: %v", err)
 		}
 		return

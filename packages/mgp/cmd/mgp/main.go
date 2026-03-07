@@ -33,10 +33,10 @@ func main() {
 	flag.Parse()
 
 	// generate-plugin and hook subcommands work with an empty catalog
-	if flag.NArg() == 2 && flag.Arg(0) == "generate-plugin" {
+	if flag.NArg() >= 1 && flag.Arg(0) == "generate-plugin" {
 		cat := catalog.NewCatalog()
 		app := tools.RegisterAll(cat)
-		if err := app.GenerateAll(flag.Arg(1)); err != nil {
+		if err := app.HandleGeneratePlugin(flag.Args()[1:], os.Stdout); err != nil {
 			log.Fatalf("generating plugin: %v", err)
 		}
 		return
