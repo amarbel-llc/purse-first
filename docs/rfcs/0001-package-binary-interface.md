@@ -289,27 +289,27 @@ requests. All metadata MUST be derivable from the binary's compiled-in state.
 
 ## Conformance Testing
 
-Conformance tests for this specification live in `zz-tests_bats/`.
+Conformance tests for this specification live in `zz-tests_bats/rfc-0001/`.
 
 Tests use binary injection via `bats-emo`:
 
-    require_bin PACKAGE_BIN <binary-name>
+    require_bin PACKAGE_BIN
 
 ### Covered Requirements
 
 | Requirement | Test File | Description |
 |-------------|-----------|-------------|
-| 2.1, directory mode MUST write plugin.json | `generate_plugin_interface.bats` | Runs `generate-plugin <tmpdir>` and checks plugin.json exists |
-| 2.1, directory mode MUST match name to dirname | `generate_plugin_interface.bats` | Validates plugin.name equals directory name |
-| 2.1, MUST have mcpServers | `generate_plugin_interface.bats` | Validates at least one MCP server entry |
-| 2.1, MUST use bare command name | `generate_plugin_interface.bats` | Validates command field contains no `/` |
-| 2.1, directory mode MUST be idempotent | `generate_plugin_interface.bats` | Runs generate-plugin twice, checks identical output |
-| 2.1, PWD default MUST write to cwd | `generate_plugin_interface.bats` | Runs `generate-plugin` with no args from a tmpdir, checks output there |
-| 2.1, stdout mode MUST output valid JSON | `generate_plugin_interface.bats` | Runs `generate-plugin -`, parses stdout as JSON |
-| 2.1, stdout mode MUST NOT write files | `generate_plugin_interface.bats` | Runs `generate-plugin -` from an empty tmpdir, checks no files created |
-| 2.2, MUST exit 0 on error | `hook_interface.bats` | Sends malformed stdin, checks exit code 0 |
-| 2.2, MUST NOT deny on error | `hook_interface.bats` | Sends malformed stdin, checks empty or allow stdout |
-| 3, MUST detect subcommand as first arg | `generate_plugin_interface.bats` | Verifies `<binary> generate-plugin <dir>` works |
+| 2.1, directory mode MUST write plugin.json | `rfc-0001/generate_plugin_interface.bats` | Runs `generate-plugin <tmpdir>` and checks plugin.json exists |
+| 2.1, directory mode MUST match name to dirname | `rfc-0001/generate_plugin_interface.bats` | Validates plugin.name equals directory name |
+| 2.1, MUST have mcpServers | `rfc-0001/generate_plugin_interface.bats` | Validates at least one MCP server entry |
+| 2.1, MUST use bare command name | `rfc-0001/generate_plugin_interface.bats` | Validates command field contains no `/` |
+| 2.1, directory mode MUST be idempotent | `rfc-0001/generate_plugin_interface.bats` | Runs generate-plugin twice, checks identical output |
+| 2.1, PWD default MUST write to cwd | `rfc-0001/generate_plugin_interface.bats` | Runs `generate-plugin` with no args from a tmpdir, checks output there |
+| 2.1, stdout mode MUST output valid JSON | `rfc-0001/generate_plugin_interface.bats` | Runs `generate-plugin -`, parses stdout as JSON |
+| 2.1, stdout mode MUST NOT write files | `rfc-0001/generate_plugin_interface.bats` | Runs `generate-plugin -` from an empty tmpdir, checks no files created |
+| 2.2, MUST exit 0 on error | `rfc-0001/hook_interface.bats` | Sends malformed stdin, checks exit code 0 |
+| 2.2, MUST NOT deny on error | `rfc-0001/hook_interface.bats` | Sends malformed stdin, checks empty or allow stdout |
+| 3, MUST detect subcommand as first arg | `rfc-0001/generate_plugin_interface.bats` | Verifies `<binary> generate-plugin <dir>` works |
 
 ## Compatibility
 

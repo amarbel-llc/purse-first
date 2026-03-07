@@ -16,6 +16,7 @@
 ### go-mcp library
 - [ ] add built-in `generate-plugin` command to `command.App` with three modes: directory, PWD default, stdout (`-`)
 - [ ] wire `--skills-dir` flag on the built-in `generate-plugin` command
+- [x] `HandleHook` must swallow decode errors (return nil, log to stderr) — RFC-0001 section 2.2 requires exit 0 on any error
 
 ### Per-package Go migrations
 - [ ] grit: remove manual `generate-plugin` dispatch from main.go (library command handles it)
@@ -34,8 +35,8 @@
 - [ ] implement `purse-first install-dev-mcp <binary>` — calls `<binary> generate-plugin -`, writes `.mcp.json` to PWD
 
 ### Conformance tests
-- [ ] `zz-tests_bats/generate_plugin_interface.bats` — covers all RFC-0001 section 2.1 requirements
-- [ ] `zz-tests_bats/hook_interface.bats` — review overlap with existing `hook_io.bats`, cover RFC-0001 section 2.2
+- [x] `zz-tests_bats/rfc-0001/generate_plugin_interface.bats` — covers all RFC-0001 section 2.1 requirements
+- [x] `zz-tests_bats/rfc-0001/hook_interface.bats` — covers RFC-0001 section 2.2
 
 ## Other
 

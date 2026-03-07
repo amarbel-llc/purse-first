@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 )
 
 // hookInput is the JSON sent by Claude Code to PreToolUse hooks via stdin.
@@ -48,10 +49,15 @@ func (a *App) allToolMappings() []commandMapping {
 // HandleHook reads a hookInput from r, checks it against all registered
 // ToolMappings, and writes a deny hookOutput to w when a match is found.
 // If no mapping matches the tool invocation, nothing is written (implicit allow).
+//
+// Follows RFC-0001 section 2.2 fail-open: on any error (I/O failure, parse
+// error, unexpected input), returns nil so the caller exits 0. Errors are
+// logged to stderr but never surfaced as non-zero exit codes.
 func (a *App) HandleHook(r io.Reader, w io.Writer) error {
 	var hi hookInput
 	if err := json.NewDecoder(r).Decode(&hi); err != nil {
-		return fmt.Errorf("decoding hook input: %w", err)
+		log.Printf("hook: ignoring decode error (fail-open): %v", err)
+		return nil
 	}
 
 	filePath := extractString(hi.ToolInput, "file_path", "path", "pattern")

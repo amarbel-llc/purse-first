@@ -167,6 +167,25 @@ test-sandcastle-bats: build-batman
     nix build .#sandcastle
     PATH="{{justfile_directory()}}/result-batman/bin:{{justfile_directory()}}/result/bin:$PATH" {{cmd_nix_dev}} just packages/sandcastle/zz-tests_bats/test
 
+# RFC-0001 conformance tests (not in test: aggregate — PWD-default and stdout-mode tests will fail until go-mcp implements those modes)
+test-grit-conformance: build-batman
+    nix build .#grit
+    PACKAGE_BIN={{justfile_directory()}}/result/bin/grit \
+      PATH="{{justfile_directory()}}/result-batman/bin:$PATH" \
+      {{cmd_nix_dev}} just zz-tests_bats/rfc-0001/test
+
+test-get-hubbed-conformance: build-batman
+    nix build .#get-hubbed
+    PACKAGE_BIN={{justfile_directory()}}/result/bin/get-hubbed \
+      PATH="{{justfile_directory()}}/result-batman/bin:$PATH" \
+      {{cmd_nix_dev}} just zz-tests_bats/rfc-0001/test
+
+test-mgp-conformance: build-batman
+    nix build .#mgp
+    PACKAGE_BIN={{justfile_directory()}}/result/bin/mgp \
+      PATH="{{justfile_directory()}}/result-batman/bin:$PATH" \
+      {{cmd_nix_dev}} just zz-tests_bats/rfc-0001/test
+
 test: \
     test-batman-bats \
     test-chix \
