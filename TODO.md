@@ -22,10 +22,10 @@
 - [x] grit: remove manual `generate-plugin` dispatch from main.go (library command handles it)
 - [x] get-hubbed: remove manual `generate-plugin` dispatch from main.go
 - [x] mgp: remove manual `generate-plugin` dispatch from main.go
-- [ ] lux: remove `_generate` command, update `lux.nix` to call `generate-plugin`
+- [x] lux: remove `_generate` command, update `lux.nix` to call `generate-plugin`
 
 ### rust-mcp library
-- [ ] add `generate-plugin` subcommand support to rust-mcp (plugin.json, mappings.json, hooks; all three output modes)
+- [x] add `generate-plugin` subcommand support to rust-mcp (plugin.json, mappings.json, hooks; all three output modes)
 
 ### chix
 - [ ] add `generate-plugin` to chix using rust-mcp support, replacing `purse-first generate-plugin` + `chix generate-hooks` split

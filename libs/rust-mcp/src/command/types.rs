@@ -1,3 +1,4 @@
+use crate::hooks::ToolMapping;
 use serde_json::Value;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -53,12 +54,18 @@ pub struct Command {
     pub params: Vec<Param>,
     pub hidden: bool,
     pub aliases: Vec<String>,
+    pub maps_tools: Vec<ToolMapping>,
 }
 
 pub struct App {
     pub name: String,
     pub description: Description,
     pub version: String,
+    pub plugin_description: String,
+    pub plugin_author: String,
+    pub mcp_binary: String,
+    pub mcp_args: Vec<String>,
+    plugin_skills: Vec<String>,
     commands: Vec<Command>,
 }
 
@@ -68,6 +75,11 @@ impl App {
             name: name.into(),
             description: Description::short(short_desc),
             version: String::new(),
+            plugin_description: String::new(),
+            plugin_author: String::new(),
+            mcp_binary: String::new(),
+            mcp_args: Vec::new(),
+            plugin_skills: Vec::new(),
             commands: Vec::new(),
         }
     }
@@ -77,8 +89,40 @@ impl App {
         self
     }
 
+    pub fn plugin_description(mut self, desc: impl Into<String>) -> Self {
+        self.plugin_description = desc.into();
+        self
+    }
+
+    pub fn plugin_author(mut self, author: impl Into<String>) -> Self {
+        self.plugin_author = author.into();
+        self
+    }
+
+    pub fn mcp_binary(mut self, binary: impl Into<String>) -> Self {
+        self.mcp_binary = binary.into();
+        self
+    }
+
+    pub fn mcp_args(mut self, args: Vec<String>) -> Self {
+        self.mcp_args = args;
+        self
+    }
+
     pub fn add_command(&mut self, cmd: Command) {
         self.commands.push(cmd);
+    }
+
+    pub fn commands(&self) -> &[Command] {
+        &self.commands
+    }
+
+    pub fn plugin_skills(&self) -> &[String] {
+        &self.plugin_skills
+    }
+
+    pub fn set_plugin_skills(&mut self, skills: Vec<String>) {
+        self.plugin_skills = skills;
     }
 
     pub fn visible_commands(&self) -> Vec<&Command> {
@@ -120,6 +164,7 @@ mod tests {
             }],
             hidden: false,
             aliases: vec![],
+            maps_tools: vec![],
         });
         app.add_command(Command {
             name: "hidden".to_string(),
@@ -127,6 +172,7 @@ mod tests {
             params: vec![],
             hidden: true,
             aliases: vec![],
+            maps_tools: vec![],
         });
 
         assert_eq!(app.visible_commands().len(), 1);
@@ -142,6 +188,7 @@ mod tests {
             params: vec![],
             hidden: false,
             aliases: vec![],
+            maps_tools: vec![],
         });
         app.add_command(Command {
             name: "alpha".to_string(),
@@ -149,6 +196,7 @@ mod tests {
             params: vec![],
             hidden: false,
             aliases: vec![],
+            maps_tools: vec![],
         });
 
         let visible = app.visible_commands();

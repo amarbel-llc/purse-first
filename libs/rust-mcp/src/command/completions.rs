@@ -157,6 +157,7 @@ mod tests {
             }],
             hidden: false,
             aliases: vec![],
+            maps_tools: vec![],
         });
         app.add_command(Command {
             name: "diff".to_string(),
@@ -164,6 +165,7 @@ mod tests {
             params: vec![],
             hidden: false,
             aliases: vec![],
+            maps_tools: vec![],
         });
         app.add_command(Command {
             name: "hidden".to_string(),
@@ -171,6 +173,7 @@ mod tests {
             params: vec![],
             hidden: true,
             aliases: vec![],
+            maps_tools: vec![],
         });
         app
     }
@@ -212,6 +215,7 @@ mod tests {
             }],
             hidden: false,
             aliases: vec![],
+            maps_tools: vec![],
         });
 
         let dir = tempfile::tempdir().unwrap();
@@ -288,6 +292,7 @@ mod tests {
             }],
             hidden: false,
             aliases: vec![],
+            maps_tools: vec![],
         });
 
         let dir = tempfile::tempdir().unwrap();
