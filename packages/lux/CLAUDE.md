@@ -53,7 +53,7 @@ Client (editor/Claude) sends JSON-RPC to Lux. The **Handler** (`internal/server/
 - User config: `~/.config/lux/lsps.toml` (TOML, `[[lsp]]` entries)
 - Formatter config: `~/.config/lux/formatters.toml`
 - Cached capabilities: `~/.local/share/lux/capabilities/`
-- Control socket: `$XDG_RUNTIME_DIR/lux.sock`
+- Control socket: `~/.local/state/lux/lux.sock`
 - Per-project overrides load from the project root directory
 
 ### LSP Config Fields

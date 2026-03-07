@@ -8,7 +8,7 @@ import (
 func TestGenerateSystemdUnits(t *testing.T) {
 	service, socket := GenerateSystemdUnits("/nix/store/xxx-lux/bin/lux", "/run/user/1000/lux.sock")
 
-	if !strings.Contains(service, "ExecStart=/nix/store/xxx-lux/bin/lux service run") {
+	if !strings.Contains(service, "ExecStart=/nix/store/xxx-lux/bin/lux service run-systemd") {
 		t.Error("expected ExecStart with binary path")
 	}
 	if !strings.Contains(service, "Requires=lux.socket") {

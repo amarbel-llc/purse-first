@@ -487,6 +487,56 @@ func buildServiceApp() *command.App {
 	})
 
 	serviceApp.AddCommand(&command.Command{
+		Name: "run-systemd",
+		Description: command.Description{
+			Short: "Run the daemon with systemd socket activation",
+			Long:  "Run the lux service daemon using a socket inherited from systemd. Called by the systemd service unit.",
+		},
+		RunCLI: func(ctx context.Context, args json.RawMessage) error {
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("loading config: %w", err)
+			}
+
+			listener, err := service.SystemdListener()
+			if err != nil {
+				return fmt.Errorf("systemd socket activation: %w", err)
+			}
+			if listener == nil {
+				return fmt.Errorf("LISTEN_PID/LISTEN_FDS not set (not launched by systemd?)")
+			}
+
+			d := service.NewDaemon(cfg.SocketPath(), cfg, 30*time.Minute)
+			return d.RunWithListener(ctx, listener)
+		},
+	})
+
+	serviceApp.AddCommand(&command.Command{
+		Name: "run-launchd",
+		Description: command.Description{
+			Short: "Run the daemon with launchd socket activation",
+			Long:  "Run the lux service daemon using a socket inherited from launchd. Called by the launchd plist.",
+		},
+		RunCLI: func(ctx context.Context, args json.RawMessage) error {
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("loading config: %w", err)
+			}
+
+			listener, err := service.LaunchdListener()
+			if err != nil {
+				return fmt.Errorf("launchd socket activation: %w", err)
+			}
+			if listener == nil {
+				return fmt.Errorf("launch_activate_socket failed (not launched by launchd?)")
+			}
+
+			d := service.NewDaemon(cfg.SocketPath(), cfg, 30*time.Minute)
+			return d.RunWithListener(ctx, listener)
+		},
+	})
+
+	serviceApp.AddCommand(&command.Command{
 		Name: "install",
 		Description: command.Description{
 			Short: "Install the service for automatic startup",

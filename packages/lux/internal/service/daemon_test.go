@@ -247,7 +247,7 @@ func TestDaemon_IdleTimeout(t *testing.T) {
 		t.Fatal("daemon did not shut down after idle timeout")
 	}
 
-	// Socket should be cleaned up
+	// Socket should be cleaned up (Run removes it on exit)
 	if _, err := os.Stat(socketPath); err == nil {
 		t.Error("expected socket to be removed after shutdown")
 	}
@@ -285,120 +285,106 @@ func TestDaemon_RemovesStaleSocket(t *testing.T) {
 	<-errCh
 }
 
-func TestSocketActivationFD_NotSet(t *testing.T) {
-	t.Setenv("LISTEN_PID", "")
-	t.Setenv("LISTEN_FDS", "")
+func TestRunWithListener(t *testing.T) {
+	socketPath := shortSocketPath(t, "inherited.sock")
 
-	if fd := socketActivationFD(); fd >= 0 {
-		t.Errorf("expected -1 when env vars not set, got %d", fd)
-	}
-}
-
-func TestSocketActivationFD_WrongPID(t *testing.T) {
-	t.Setenv("LISTEN_PID", "99999")
-	t.Setenv("LISTEN_FDS", "1")
-
-	if fd := socketActivationFD(); fd >= 0 {
-		t.Errorf("expected -1 when PID doesn't match, got %d", fd)
-	}
-}
-
-func TestSocketActivationFD_Detected(t *testing.T) {
-	t.Setenv("LISTEN_PID", strconv.Itoa(os.Getpid()))
-	t.Setenv("LISTEN_FDS", "1")
-
-	fd := socketActivationFD()
-	if fd != sdListenFDsStart {
-		t.Errorf("expected fd %d, got %d", sdListenFDsStart, fd)
-	}
-}
-
-func TestSocketActivationFD_ZeroFDs(t *testing.T) {
-	t.Setenv("LISTEN_PID", strconv.Itoa(os.Getpid()))
-	t.Setenv("LISTEN_FDS", "0")
-
-	if fd := socketActivationFD(); fd >= 0 {
-		t.Errorf("expected -1 when LISTEN_FDS is 0, got %d", fd)
-	}
-}
-
-func TestSocketActivationFD_InvalidPID(t *testing.T) {
-	t.Setenv("LISTEN_PID", "notanumber")
-	t.Setenv("LISTEN_FDS", "1")
-
-	if fd := socketActivationFD(); fd >= 0 {
-		t.Errorf("expected -1 when LISTEN_PID is invalid, got %d", fd)
-	}
-}
-
-func TestSocketActivationFD_InvalidFDs(t *testing.T) {
-	t.Setenv("LISTEN_PID", strconv.Itoa(os.Getpid()))
-	t.Setenv("LISTEN_FDS", "notanumber")
-
-	if fd := socketActivationFD(); fd >= 0 {
-		t.Errorf("expected -1 when LISTEN_FDS is invalid, got %d", fd)
-	}
-}
-
-func TestDaemon_SocketActivationInheritsListener(t *testing.T) {
-	// Create a Unix socket listener to simulate what launchd/systemd would pass
-	socketPath := shortSocketPath(t, "activated.sock")
-	preListener, err := net.Listen("unix", socketPath)
+	// Create a listener and disable automatic socket file cleanup. This
+	// simulates what happens with socket activation — the init system owns
+	// the socket file and the daemon should not remove it.
+	listener, err := net.Listen("unix", socketPath)
 	if err != nil {
-		t.Fatalf("creating pre-listener: %v", err)
+		t.Fatalf("creating listener: %v", err)
 	}
+	listener.(*net.UnixListener).SetUnlinkOnClose(false)
 
-	// Get the file descriptor from the listener
-	tcpL, ok := preListener.(*net.UnixListener)
-	if !ok {
-		t.Fatal("expected *net.UnixListener")
-	}
-
-	f, err := tcpL.File()
-	if err != nil {
-		t.Fatalf("getting listener fd: %v", err)
-	}
-	defer f.Close()
-	preListener.Close()
-
-	// Dup the fd to sdListenFDsStart (fd 3) so socketActivationFD() finds it
-	// The File() call gives us a dup, but its fd number is arbitrary.
-	// We need to set up the env vars to match.
-	// Since we cannot control which fd number File() returns, we test the
-	// full integration by verifying the daemon can accept connections
-	// when socket activation env vars are set and an appropriate fd exists.
-
-	// For this test, we set LISTEN_PID and LISTEN_FDS, and we dup our fd to
-	// fd 3 using Fd() from the file.
-	actualFD := int(f.Fd())
-
-	// We need fd 3 specifically. If our fd is already 3, great. Otherwise,
-	// we need to dup2 it there. Since Go doesn't expose dup2 easily and this
-	// is a unit test for the detection logic, we rely on the unit tests above
-	// for socketActivationFD() correctness and test the Run() fallback path
-	// behavior here instead.
-	_ = actualFD
-
-	// Verify the daemon still works via the fallback path (no activation vars)
-	daemonSocketPath := shortSocketPath(t, "daemon.sock")
-	d := NewDaemon(daemonSocketPath, nil, 0)
+	d := NewDaemon(socketPath, nil, 0)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- d.Run(ctx)
+		errCh <- d.RunWithListener(ctx, listener)
 	}()
 
-	waitForSocket(t, daemonSocketPath, 2*time.Second)
+	waitForListeningSocket(t, socketPath, 2*time.Second)
 
-	conn, err := net.Dial("unix", daemonSocketPath)
+	conn, err := net.Dial("unix", socketPath)
 	if err != nil {
-		t.Fatalf("dialing daemon socket: %v", err)
+		t.Fatalf("dialing socket: %v", err)
 	}
 	conn.Close()
 
 	cancel()
 	<-errCh
+
+	// RunWithListener should NOT remove the socket — caller owns it
+	if _, err := os.Stat(socketPath); err != nil {
+		t.Error("expected socket to still exist after RunWithListener shutdown")
+	}
+}
+
+func TestSystemdListener_NotSet(t *testing.T) {
+	t.Setenv("LISTEN_PID", "")
+	t.Setenv("LISTEN_FDS", "")
+
+	l, err := SystemdListener()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if l != nil {
+		t.Error("expected nil listener when env vars not set")
+	}
+}
+
+func TestSystemdListener_WrongPID(t *testing.T) {
+	t.Setenv("LISTEN_PID", "99999")
+	t.Setenv("LISTEN_FDS", "1")
+
+	l, err := SystemdListener()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if l != nil {
+		t.Error("expected nil listener when PID doesn't match")
+	}
+}
+
+func TestSystemdListener_ZeroFDs(t *testing.T) {
+	t.Setenv("LISTEN_PID", strconv.Itoa(os.Getpid()))
+	t.Setenv("LISTEN_FDS", "0")
+
+	l, err := SystemdListener()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if l != nil {
+		t.Error("expected nil listener when LISTEN_FDS is 0")
+	}
+}
+
+func TestSystemdListener_InvalidPID(t *testing.T) {
+	t.Setenv("LISTEN_PID", "notanumber")
+	t.Setenv("LISTEN_FDS", "1")
+
+	l, err := SystemdListener()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if l != nil {
+		t.Error("expected nil listener when LISTEN_PID is invalid")
+	}
+}
+
+func TestSystemdListener_InvalidFDs(t *testing.T) {
+	t.Setenv("LISTEN_PID", strconv.Itoa(os.Getpid()))
+	t.Setenv("LISTEN_FDS", "notanumber")
+
+	l, err := SystemdListener()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if l != nil {
+		t.Error("expected nil listener when LISTEN_FDS is invalid")
+	}
 }

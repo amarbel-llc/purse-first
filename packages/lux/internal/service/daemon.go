@@ -54,32 +54,32 @@ func NewDaemon(socketPath string, cfg *config.Config, idleTimeout time.Duration)
 	return d
 }
 
+// Run creates a socket and runs the daemon. The socket is cleaned up on
+// shutdown. This is the default entrypoint for manual daemon operation
+// (lux service run).
 func (d *Daemon) Run(ctx context.Context) error {
-	var listener net.Listener
-	var err error
-
-	if fd := socketActivationFD(); fd >= 0 {
-		f := os.NewFile(uintptr(fd), "listener")
-		listener, err = net.FileListener(f)
-		f.Close()
-		if err != nil {
-			return fmt.Errorf("inheriting socket from fd %d: %w", fd, err)
-		}
-	} else {
-		if err := removeExistingSocket(d.socketPath); err != nil {
-			return fmt.Errorf("removing existing socket: %w", err)
-		}
-
-		if err := os.MkdirAll(filepath.Dir(d.socketPath), 0700); err != nil {
-			return fmt.Errorf("creating socket directory: %w", err)
-		}
-
-		listener, err = net.Listen("unix", d.socketPath)
-		if err != nil {
-			return fmt.Errorf("listening on %s: %w", d.socketPath, err)
-		}
+	if _, err := os.Stat(d.socketPath); err == nil {
+		os.Remove(d.socketPath)
 	}
 
+	if err := os.MkdirAll(filepath.Dir(d.socketPath), 0700); err != nil {
+		return fmt.Errorf("creating socket directory: %w", err)
+	}
+
+	listener, err := net.Listen("unix", d.socketPath)
+	if err != nil {
+		return fmt.Errorf("listening on %s: %w", d.socketPath, err)
+	}
+
+	err = d.RunWithListener(ctx, listener)
+	os.Remove(d.socketPath)
+	return err
+}
+
+// RunWithListener runs the daemon using a pre-existing listener. The caller
+// owns the socket lifecycle — the daemon will not create or remove the socket
+// file. Used by socket-activated entrypoints (systemd, launchd).
+func (d *Daemon) RunWithListener(ctx context.Context, listener net.Listener) error {
 	d.mu.Lock()
 	d.listener = listener
 	d.mu.Unlock()
@@ -97,6 +97,29 @@ func (d *Daemon) Run(ctx context.Context) error {
 	case <-d.done:
 		return nil
 	}
+}
+
+// SystemdListener returns a net.Listener inherited from systemd socket
+// activation. Returns nil if the process was not socket-activated by systemd.
+func SystemdListener() (net.Listener, error) {
+	pid, err := strconv.Atoi(os.Getenv("LISTEN_PID"))
+	if err != nil || pid != os.Getpid() {
+		return nil, nil
+	}
+
+	nfds, err := strconv.Atoi(os.Getenv("LISTEN_FDS"))
+	if err != nil || nfds < 1 {
+		return nil, nil
+	}
+
+	f := os.NewFile(uintptr(sdListenFDsStart), "systemd-socket")
+	listener, err := net.FileListener(f)
+	f.Close()
+	if err != nil {
+		return nil, fmt.Errorf("inheriting socket from fd %d: %w", sdListenFDsStart, err)
+	}
+
+	return listener, nil
 }
 
 func (d *Daemon) acceptLoop(ctx context.Context, listener net.Listener) {
@@ -229,33 +252,10 @@ func (d *Daemon) shutdown() {
 		listener.Close()
 	}
 
-	os.Remove(d.socketPath)
-
 	select {
 	case <-d.done:
 		// Already closed
 	default:
 		close(d.done)
 	}
-}
-
-func socketActivationFD() int {
-	pid, err := strconv.Atoi(os.Getenv("LISTEN_PID"))
-	if err != nil || pid != os.Getpid() {
-		return -1
-	}
-
-	nfds, err := strconv.Atoi(os.Getenv("LISTEN_FDS"))
-	if err != nil || nfds < 1 {
-		return -1
-	}
-
-	return sdListenFDsStart
-}
-
-func removeExistingSocket(path string) error {
-	if _, err := os.Stat(path); err == nil {
-		return os.Remove(path)
-	}
-	return nil
 }

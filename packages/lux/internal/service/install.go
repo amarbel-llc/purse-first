@@ -17,7 +17,7 @@ After=lux.socket
 
 [Service]
 Type=simple
-ExecStart={{.BinaryPath}} service run
+ExecStart={{.BinaryPath}} service run-systemd
 Environment=PATH={{.Path}}
 Restart=on-failure
 
@@ -69,11 +69,11 @@ const launchdPlistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
   <array>
     <string>{{.BinaryPath}}</string>
     <string>service</string>
-    <string>run</string>
+    <string>run-launchd</string>
   </array>
   <key>Sockets</key>
   <dict>
-    <key>Listeners</key>
+    <key>lux</key>
     <dict>
       <key>SockPathName</key>
       <string>{{.SocketPath}}</string>

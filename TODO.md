@@ -65,6 +65,7 @@
 - [x] fix sandcastle/batman socket permission failures: use `--allow-unix-sockets` in bats wrapper tests and sandcastle tests
 - [x] P0: flaky timeout in `bats_wrapper_hide_passing_preserves_plan_and_version` (test 12) — 10s BATS_TEST_TIMEOUT too tight under parallel load
 - [ ] lux service daemon: add SIGTERM/SIGINT signal handler to cancel context for graceful shutdown (socket cleanup on kill)
+- [ ] ADR: assembly trampoline for launchd socket activation (go:cgo_import_dynamic pattern, why not cgo/dependency)
 - [ ] lux service tests: add notification broadcast test — multiple sessions per workspace, verify LSP notification fans out to all clients
 - [ ] lux service tests: add handleLSPNotification unit test
 - [ ] lux service tests: add handlePoolStart / handlePoolStop unit tests
