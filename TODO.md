@@ -82,6 +82,25 @@
   point
 - [ ] update go-cli-framework skill: import paths reference `amarbel-llc/go-lib-mcp` but library moved to `amarbel-llc/purse-first/libs/go-mcp`; API reference and examples are stale
 - [ ] FDR: skill/docs freshness verification skill — a skill that audits all skills and docs against the current codebase, flags stale references (import paths, API signatures, examples), and produces a report of what needs updating
+
+## CLAUDE.md improvements (from transcript analysis)
+
+- [ ] add instruction: use `/tmp/lux-test-*` for socket paths, not `t.TempDir()` — worktree paths exceed 108-byte `sun_path` limit
+- [ ] add instruction: BATS tests need `--allow-unix-sockets` for daemon tests in sandcastle
+- [ ] add instruction: `tools -> service` import OK; `service -> tools` creates cycle; use func types to break
+- [ ] add instruction: use polling-with-timeout for async test assertions, not `time.Sleep`
+- [ ] add instruction: use `-run TestName` or `just test-lux`, not full-package `nix develop` runs
+- [ ] default `log_tail: 50` on `chix build` calls to avoid token overflow
+
+## develop_run improvements (from transcript analysis)
+
 - [ ] chix `develop_run`: false positive on Go test `-run` regex patterns — `|` and `()` in args like `-run "TestA|TestB"` are Go regex, not shell operators. Metacharacter validation should only reject metacharacters in shell-interpreted positions, not inside arbitrary arg values
 - [ ] chix `develop_run`: add `env` command examples to error message — when rejecting metacharacters, show the `env` pattern: `command: "env", args: ["VAR=val", "actual-cmd", "arg1"]`
 - [ ] chix hook: when agents use `Bash` with `nix develop -c`/`nix develop --command`, redirect to `develop_run` with a corrected invocation rather than just blocking — agents fall back to Bash 3/4 times after `develop_run` metacharacter rejections, bypassing the tool entirely
+- [ ] chix hook: when agents use `Bash` with `nix search` against a remote nixpkgs SHA (2+ min eval), redirect to `chix search` tool instead
+
+## Skill improvements (from transcript analysis)
+
+- [ ] sub-agent exploration: instruct "use Glob/Grep tools, never bash grep/ls/find; use Glob before Read on directories, never Read a directory path"
+- [ ] sub-agent delegation: include explicit stop conditions for error recovery ("if X fails, STOP and report back")
+- [ ] sub-agent-driven-development skill: add guidance to keep sequential dependent tasks in main context rather than spawning sub-agents
