@@ -306,6 +306,41 @@ dev-lux:
     cd "$dir"
     "$SHELL"
 
+# Build lux from source, start daemon with user's full config
+dev-lux-open:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    root="$(cd "{{justfile_directory()}}" && pwd)"
+    build_dir="$root/build"
+
+    # Build lux from source
+    mkdir -p "$build_dir"
+    nix develop "$root" --command go build -o "$build_dir/lux" ./packages/lux/cmd/lux
+
+    # Create temp dir for socket and logs
+    dir=$(mktemp -d /tmp/lux-dev-XXXXXX)
+    trap 'kill "$daemon_pid" 2>/dev/null; wait "$daemon_pid" 2>/dev/null; rm -rf "$dir"' EXIT
+
+    socket="$dir/lux.sock"
+    state_dir="$dir/state"
+
+    # Start dev daemon in background
+    LUX_SOCKET="$socket" XDG_STATE_HOME="$state_dir" "$build_dir/lux" service run &
+    daemon_pid=$!
+
+    # Wait for socket
+    deadline=$((SECONDS + 5))
+    while [[ ! -S "$socket" ]] && [[ $SECONDS -lt $deadline ]]; do sleep 0.05; done
+    [[ -S "$socket" ]] || { echo "daemon failed to start" >&2; exit 1; }
+
+    echo "dev lux daemon running (pid $daemon_pid)"
+    echo "socket: $socket"
+    echo "log: $state_dir/lux/lux.log"
+    echo ""
+
+    # Drop into user's shell with dev overrides
+    PATH="$build_dir:$PATH" LUX_SOCKET="$socket" XDG_STATE_HOME="$state_dir" "$SHELL"
+
 # Clean build artifacts
 clean:
     rm -f purse-first
