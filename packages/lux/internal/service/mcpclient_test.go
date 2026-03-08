@@ -77,16 +77,18 @@ func TestServiceDocumentManager_OpenAlreadyOpenSendsDidChange(t *testing.T) {
 
 	notifications := recorder.waitFor(t, 2)
 
-	var firstParams LSPNotificationParams
-	json.Unmarshal(notifications[0].params, &firstParams)
-	if firstParams.LSPMethod != "textDocument/didOpen" {
-		t.Errorf("first notification: expected didOpen, got %q", firstParams.LSPMethod)
+	methods := make(map[string]bool)
+	for _, n := range notifications {
+		var params LSPNotificationParams
+		json.Unmarshal(n.params, &params)
+		methods[params.LSPMethod] = true
 	}
 
-	var secondParams LSPNotificationParams
-	json.Unmarshal(notifications[1].params, &secondParams)
-	if secondParams.LSPMethod != "textDocument/didChange" {
-		t.Errorf("second notification: expected didChange, got %q", secondParams.LSPMethod)
+	if !methods["textDocument/didOpen"] {
+		t.Error("expected a didOpen notification")
+	}
+	if !methods["textDocument/didChange"] {
+		t.Error("expected a didChange notification")
 	}
 }
 

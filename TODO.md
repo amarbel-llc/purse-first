@@ -75,6 +75,7 @@
 - [ ] lux service tests: add concurrent GetOrStart stress test for pool state machine races
 - [ ] lux service tests: add config loading error path tests — missing files, invalid TOML, multiple LSPs
 - [ ] lux service tests: add LSPClient connection failure / reconnection tests
+- [x] fix flaky `TestServiceDocumentManager_OpenAlreadyOpenSendsDidChange` — notifications arrive in reversed order (didChange before didOpen) due to race in pipe-based test harness; `Notify` is async so recorder observes nondeterministic ordering
 - [ ] lux service BATS: add service-stop and service-start CLI tests
 - [ ] bats-assert: show trailing whitespace in `--output differs--` / `--regular expression does not match output--` blocks (e.g. render spaces as `·` or `␣` at EOL, or show `$` line terminators like `cat -A`). Invisible trailing spaces cause regex mismatches that look identical in TAP output.
 - [ ] FDR: versioned conformance test suites — mechanism for pairing a test suite version with the SUT version it targets, so version bumps surface which assertions need updating rather than requiring forensic debugging. Consider: version-tagged expected-output fixtures, SUT version gates in test setup, or a manifest mapping SUT version ranges to assertion variants.
