@@ -9,7 +9,8 @@
 
 ## P0
 
-- [ ] P0: PreToolUse hooks not firing — hooks exist on disk and binary works correctly, but Claude Code doesn't enforce them after `purse-first install`. Neither grit nor chix hooks deny Bash commands. Investigate plugin hook loading/registration.
+- [ ] P0: Move `plugin.json` into `.claude-plugin/` subdirectory — Claude Code only discovers `hooks/hooks.json` when `.claude-plugin/plugin.json` exists in the plugin root. Confirmed by manually creating `.claude-plugin/plugin.json` in grit's cache dir: hooks started firing immediately. Fix: `generate-plugin` (Go: `generate_plugin.go`, `writer.go`; Rust: `generate.rs`; package.toml: `packagetoml/generate.go`) must write to `{name}/.claude-plugin/plugin.json` instead of `{name}/plugin.json`. All discovery globs need updating: `marketplace/generate.go`, `mcp/marketplace.go`, `mgp/catalog/discover.go`, `command/dev_mcp.go`, `localplugin/binary.go`, `mkMarketplace.nix`. Plus tests in `generate_test.go`, `generate_plugin_test.go`, `generate_plugin_interface.bats`, `validate_plugin_repos.bats`, and Rust `generate.rs` tests.
+- [ ] P0: Hook execution error after discovery fix — after adding `.claude-plugin/plugin.json`, hooks ARE discovered and fire, but Claude Code reports "PreToolUse:Bash hook error". The hook binary works correctly when called directly (`echo '{"tool_name":"Bash","tool_input":{"command":"git status"}}' | grit hook` returns proper deny JSON). Investigate: could be `${CLAUDE_PLUGIN_ROOT}` resolving incorrectly, symlink traversal issue (hook scripts are nix store symlinks), or output format mismatch. Test with a simple non-symlink hook script to isolate.
 
 ## RFC-0001: Package Binary Interface
 
