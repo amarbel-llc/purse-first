@@ -41,6 +41,8 @@
 
 ## Other
 
+- [ ] `purse-first validate` for hook output: validate hookSpecificOutput against Claude Code's expected schema (hookEventName required, permissionDecision enum, etc.) — could run as part of `just test-integration` or as a standalone `purse-first validate --hook-output` mode
+
 - [x] tap-dancer rust: add `write_pragma` support (needed for `pragma +streamed-output`)
 - [x] tap-dancer rust: add comment/description directive field to `TestResult` (`ok 1 - name # comment`)
 - [x] tap-dancer rust: add carriage return stripping for YAML output fields

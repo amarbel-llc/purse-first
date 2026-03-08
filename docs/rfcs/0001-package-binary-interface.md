@@ -147,6 +147,22 @@ to stdout. If the binary determines that the invoked built-in tool should be
 denied in favor of an MCP tool, it MUST write a deny response. Otherwise, it
 MUST write nothing to stdout (implicit allow) or an explicit allow response.
 
+**Deny response format:**
+
+```json
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "Use the MCP tool instead:\n- <tool_name>: <use_when>"
+  }
+}
+```
+
+The `hookEventName` field is REQUIRED. Claude Code validates hook output against
+a schema and rejects responses missing this discriminator field. The
+`permissionDecision` MUST be one of `"allow"`, `"deny"`, or `"ask"`.
+
 **Fail-open:** On any error (I/O failure, parse error, unexpected input), the
 binary MUST exit 0 and MUST NOT write a deny response. Hook errors MUST NOT
 block the agent.

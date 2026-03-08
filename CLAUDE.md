@@ -188,6 +188,21 @@ Nix builds output to `result`/`result-*` symlinks (managed by nix, already gitig
 
 See `docs/purse-first-protocol.md` for the full protocol specification.
 
+## Debugging Hooks
+
+When Claude Code reports a hook error (e.g., "PreToolUse:Bash hook error"):
+
+1. **Check `~/.claude/debug/<session-id>.txt` first** — it contains the full
+   validation error, the expected schema, and the actual hook output. This is
+   the fastest path to root cause.
+2. Claude Code caches `hooks.json` at session startup. Edits to files in
+   `~/.claude/plugins/cache/` have no effect on the running session's hook
+   config. You must reinstall (`purse-first install`) and restart the session.
+3. The pre-tool-use *script* is re-resolved at exec time (symlinks followed),
+   so replacing the script file works for diagnostics captured by other sessions.
+4. Hook output MUST include `hookEventName` inside `hookSpecificOutput` — see
+   RFC-0001 section 2.2 for the required schema.
+
 ## External Integrations (verify before committing)
 
 | Integration | How to verify |
