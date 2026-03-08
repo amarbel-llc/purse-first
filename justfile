@@ -341,6 +341,101 @@ dev-lux-open:
     # Drop into user's shell with dev overrides
     PATH="$build_dir:$PATH" LUX_SOCKET="$socket" XDG_STATE_HOME="$state_dir" "$SHELL"
 
+# Build lux, start daemon, run headless nvim to exercise LSP flow with visible logs
+test-lux-lsp:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    root="$(cd "{{justfile_directory()}}" && pwd)"
+    build_dir="$root/build"
+
+    # Build lux from source
+    mkdir -p "$build_dir"
+    nix develop "$root" --command go build -o "$build_dir/lux" ./packages/lux/cmd/lux
+
+    # Create temp dir for socket, logs, and test file
+    dir=$(mktemp -d /tmp/lux-test-XXXXXX)
+    trap 'kill "$daemon_pid" 2>/dev/null; wait "$daemon_pid" 2>/dev/null; rm -rf "$dir"' EXIT
+
+    socket="$dir/lux.sock"
+    state_dir="$dir/state"
+    log_file="$state_dir/lux/lux.log"
+
+    # Create a Go file to trigger gopls
+    mkdir -p "$dir/testproject"
+    cat > "$dir/testproject/go.mod" <<'EOF'
+    module testproject
+    go 1.22
+    EOF
+    cat > "$dir/testproject/main.go" <<'EOF'
+    package main
+    import "fmt"
+    func main() { fmt.Println("hello") }
+    EOF
+
+    # Start dev daemon in background
+    LUX_SOCKET="$socket" XDG_STATE_HOME="$state_dir" "$build_dir/lux" service run 2>"$dir/daemon-stderr.log" &
+    daemon_pid=$!
+
+    # Wait for socket
+    deadline=$((SECONDS + 5))
+    while [[ ! -S "$socket" ]] && [[ $SECONDS -lt $deadline ]]; do sleep 0.05; done
+    [[ -S "$socket" ]] || { echo "daemon failed to start" >&2; cat "$dir/daemon-stderr.log"; exit 1; }
+    echo "daemon running (pid $daemon_pid), socket: $socket"
+
+    # Tail the log in background so we see everything in real time
+    mkdir -p "$state_dir/lux"
+    touch "$log_file"
+    tail -f "$log_file" &
+    tail_pid=$!
+    trap 'kill "$tail_pid" 2>/dev/null; kill "$daemon_pid" 2>/dev/null; wait "$daemon_pid" 2>/dev/null; rm -rf "$dir"' EXIT
+
+    # Write a lua script that opens the file, waits, requests hover, then quits
+    cat > "$dir/test.lua" <<'LUAEOF'
+    vim.schedule(function()
+      -- Open the Go file
+      vim.cmd("edit " .. vim.fn.fnameescape(vim.g.test_file))
+
+      -- Wait for LSP to attach and be ready
+      vim.defer_fn(function()
+        local clients = vim.lsp.get_clients({ bufnr = 0 })
+        io.stderr:write("LSP clients attached: " .. #clients .. "\n")
+        for _, c in ipairs(clients) do
+          io.stderr:write("  " .. c.name .. " (id=" .. c.id .. ")\n")
+        end
+
+        -- Try hover at the "Println" call (line 3, col 24)
+        vim.api.nvim_win_set_cursor(0, {3, 24})
+        local ok, err = pcall(vim.lsp.buf.hover)
+        if not ok then
+          io.stderr:write("hover error: " .. tostring(err) .. "\n")
+        else
+          io.stderr:write("hover request sent\n")
+        end
+
+        -- Wait for response then quit
+        vim.defer_fn(function()
+          io.stderr:write("done, quitting\n")
+          vim.cmd("qa!")
+        end, 5000)
+      end, 10000)
+    end)
+    LUAEOF
+
+    echo "starting headless nvim..."
+    cd "$dir/testproject"
+    PATH="$build_dir:$PATH" LUX_SOCKET="$socket" XDG_STATE_HOME="$state_dir" \
+      nvim --headless \
+        --cmd "let g:test_file='$dir/testproject/main.go'" \
+        -S "$dir/test.lua" \
+        2>&1 || true
+
+    echo ""
+    echo "=== daemon log ==="
+    cat "$log_file"
+    echo ""
+    echo "=== daemon stderr ==="
+    cat "$dir/daemon-stderr.log"
+
 # Clean build artifacts
 clean:
     rm -f purse-first

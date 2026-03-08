@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/amarbel-llc/lux/internal/logfile"
+	"github.com/amarbel-llc/lux/internal/lsp"
 	"github.com/amarbel-llc/lux/internal/subprocess"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 )
@@ -93,7 +95,7 @@ func (h *Handler) handleLSPRequest(ctx context.Context, msg *jsonrpc.Message) (*
 		return h.errorResponse(msg, jsonrpc.InternalError, "no LSP matched for method")
 	}
 
-	inst, err := ws.Pool.GetOrStart(ctx, lspName, nil)
+	inst, err := ws.Pool.GetOrStart(ctx, lspName, initParamsForWorkspace(ws.Root))
 	if err != nil {
 		return h.errorResponse(msg, jsonrpc.InternalError, fmt.Sprintf("starting LSP %s: %v", lspName, err))
 	}
@@ -139,6 +141,37 @@ func (h *Handler) callWithRetry(ctx context.Context, inst *subprocess.LSPInstanc
 	}
 }
 
+func initParamsForWorkspace(root string) *lsp.InitializeParams {
+	rootURI := lsp.URIFromPath(root)
+	pid := os.Getpid()
+	return &lsp.InitializeParams{
+		ProcessID: &pid,
+		RootURI:   &rootURI,
+		RootPath:  &root,
+		ClientInfo: &lsp.ClientInfo{
+			Name:    "lux-daemon",
+			Version: "0.1.0",
+		},
+		Capabilities: lsp.ClientCapabilities{
+			Workspace: &lsp.WorkspaceClientCapabilities{
+				WorkspaceFolders: true,
+			},
+			TextDocument: &lsp.TextDocumentClientCapabilities{
+				Hover:          &lsp.HoverClientCaps{},
+				Definition:     &lsp.DefinitionClientCaps{},
+				References:     &lsp.ReferencesClientCaps{},
+				Completion:     &lsp.CompletionClientCaps{},
+				DocumentSymbol: &lsp.DocumentSymbolClientCaps{},
+				CodeAction:     &lsp.CodeActionClientCaps{},
+				Formatting:     &lsp.FormattingClientCaps{},
+			},
+		},
+		WorkspaceFolders: []lsp.WorkspaceFolder{
+			{URI: rootURI, Name: root},
+		},
+	}
+}
+
 func (h *Handler) handleLSPNotification(_ context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {
 	var params LSPNotificationParams
 	if err := json.Unmarshal(msg.Params, &params); err != nil {
@@ -161,7 +194,7 @@ func (h *Handler) handleLSPNotification(_ context.Context, msg *jsonrpc.Message)
 		return nil, nil
 	}
 
-	inst, err := ws.Pool.GetOrStart(context.Background(), lspName, nil)
+	inst, err := ws.Pool.GetOrStart(context.Background(), lspName, initParamsForWorkspace(ws.Root))
 	if err != nil {
 		return nil, nil
 	}
@@ -211,7 +244,7 @@ func (h *Handler) handlePoolStart(ctx context.Context, msg *jsonrpc.Message) (*j
 	h.workspaces.mu.RLock()
 	var startErrors []string
 	for _, ws := range h.workspaces.workspaces {
-		if _, err := ws.Pool.GetOrStart(ctx, params.Name, nil); err != nil {
+		if _, err := ws.Pool.GetOrStart(ctx, params.Name, initParamsForWorkspace(ws.Root)); err != nil {
 			startErrors = append(startErrors, fmt.Sprintf("%s: %v", ws.Root, err))
 		}
 	}
