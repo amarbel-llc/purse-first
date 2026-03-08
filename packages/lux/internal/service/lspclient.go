@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"github.com/amarbel-llc/lux/internal/lsp"
 )
 
 type LSPClient struct {
@@ -69,6 +71,19 @@ func (c *LSPClient) registerSession(ctx context.Context) (string, error) {
 }
 
 func (c *LSPClient) handleClientMessage(ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {
+	switch msg.Method {
+	case lsp.MethodInitialize:
+		return c.handleInitialize(msg)
+	case lsp.MethodInitialized, lsp.MethodExit:
+		return nil, nil
+	case lsp.MethodShutdown:
+		return jsonrpc.NewResponse(*msg.ID, nil)
+	}
+
+	if strings.HasPrefix(msg.Method, "$/") {
+		return nil, nil
+	}
+
 	if msg.IsRequest() {
 		return c.proxyRequestToService(ctx, msg)
 	}
@@ -78,6 +93,36 @@ func (c *LSPClient) handleClientMessage(ctx context.Context, msg *jsonrpc.Messag
 	}
 
 	return nil, nil
+}
+
+func (c *LSPClient) handleInitialize(msg *jsonrpc.Message) (*jsonrpc.Message, error) {
+	result := lsp.InitializeResult{
+		Capabilities: lsp.ServerCapabilities{
+			TextDocumentSync: 1,
+			HoverProvider:    true,
+			CompletionProvider: &lsp.CompletionOptions{
+				TriggerCharacters: []string{"."},
+			},
+			DefinitionProvider:              true,
+			TypeDefinitionProvider:          true,
+			ImplementationProvider:          true,
+			ReferencesProvider:              true,
+			DocumentSymbolProvider:          true,
+			CodeActionProvider:              true,
+			DocumentFormattingProvider:      true,
+			DocumentRangeFormattingProvider: true,
+			RenameProvider:                  true,
+			FoldingRangeProvider:            true,
+			SelectionRangeProvider:          true,
+			WorkspaceSymbolProvider:         true,
+		},
+		ServerInfo: &lsp.ServerInfo{
+			Name:    "lux",
+			Version: "0.1.0",
+		},
+	}
+
+	return jsonrpc.NewResponse(*msg.ID, result)
 }
 
 func (c *LSPClient) proxyRequestToService(ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"github.com/amarbel-llc/lux/internal/lsp"
 )
 
 func TestLSPClient_WrapRequest(t *testing.T) {
@@ -148,5 +149,122 @@ func TestLSPClient_NewLSPClient(t *testing.T) {
 
 	if c.sessionID != "" {
 		t.Errorf("sessionID should be empty before Run, got %q", c.sessionID)
+	}
+}
+
+func TestLSPClient_InitializeReturnsCapabilities(t *testing.T) {
+	c := &LSPClient{}
+
+	id := jsonrpc.NewNumberID(1)
+	msg := &jsonrpc.Message{
+		JSONRPC: jsonrpc.Version,
+		ID:      &id,
+		Method:  lsp.MethodInitialize,
+		Params:  json.RawMessage(`{"capabilities":{}}`),
+	}
+
+	resp, err := c.handleClientMessage(context.Background(), msg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatal("expected response")
+	}
+
+	var result lsp.InitializeResult
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		t.Fatalf("unmarshaling result: %v", err)
+	}
+
+	if result.ServerInfo == nil {
+		t.Fatal("expected serverInfo")
+	}
+	if result.ServerInfo.Name != "lux" {
+		t.Errorf("serverInfo.name: got %q, want %q", result.ServerInfo.Name, "lux")
+	}
+	if result.Capabilities.DefinitionProvider != true {
+		t.Error("expected definitionProvider to be true")
+	}
+}
+
+func TestLSPClient_InitializedSwallowed(t *testing.T) {
+	c := &LSPClient{}
+
+	msg := &jsonrpc.Message{
+		JSONRPC: jsonrpc.Version,
+		Method:  lsp.MethodInitialized,
+		Params:  json.RawMessage(`{}`),
+	}
+
+	resp, err := c.handleClientMessage(context.Background(), msg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp != nil {
+		t.Errorf("expected nil response for initialized notification, got %+v", resp)
+	}
+}
+
+func TestLSPClient_ShutdownReturnsNull(t *testing.T) {
+	c := &LSPClient{}
+
+	id := jsonrpc.NewNumberID(2)
+	msg := &jsonrpc.Message{
+		JSONRPC: jsonrpc.Version,
+		ID:      &id,
+		Method:  lsp.MethodShutdown,
+	}
+
+	resp, err := c.handleClientMessage(context.Background(), msg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatal("expected response")
+	}
+	if resp.Error != nil {
+		t.Errorf("expected no error, got: %v", resp.Error)
+	}
+	if resp.Result != nil {
+		t.Errorf("expected nil result, got %s", resp.Result)
+	}
+}
+
+func TestLSPClient_ExitSwallowed(t *testing.T) {
+	c := &LSPClient{}
+
+	msg := &jsonrpc.Message{
+		JSONRPC: jsonrpc.Version,
+		Method:  lsp.MethodExit,
+	}
+
+	resp, err := c.handleClientMessage(context.Background(), msg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp != nil {
+		t.Errorf("expected nil response for exit notification, got %+v", resp)
+	}
+}
+
+func TestLSPClient_DollarPrefixedMethodsSwallowed(t *testing.T) {
+	c := &LSPClient{}
+
+	methods := []string{"$/cancelRequest", "$/setTrace", "$/logTrace"}
+	for _, method := range methods {
+		t.Run(method, func(t *testing.T) {
+			msg := &jsonrpc.Message{
+				JSONRPC: jsonrpc.Version,
+				Method:  method,
+			}
+
+			resp, err := c.handleClientMessage(context.Background(), msg)
+			if err != nil {
+				t.Fatalf("unexpected error for %s: %v", method, err)
+			}
+			if resp != nil {
+				t.Errorf("expected nil response for %s, got %+v", method, resp)
+			}
+		})
 	}
 }
