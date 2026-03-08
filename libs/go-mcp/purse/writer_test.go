@@ -63,7 +63,7 @@ func TestWritePlugin(t *testing.T) {
 		t.Fatalf("WritePlugin: %v", err)
 	}
 
-	path := filepath.Join(dir, "test-server", "plugin.json")
+	path := filepath.Join(dir, "test-server", ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("ReadFile: %v", err)
@@ -104,7 +104,7 @@ func TestWritePluginCreatesSubdir(t *testing.T) {
 		t.Fatalf("WritePlugin: %v", err)
 	}
 
-	path := filepath.Join(dir, "my-plugin", "plugin.json")
+	path := filepath.Join(dir, "my-plugin", ".claude-plugin", "plugin.json")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Error("expected plugin.json to exist")
 	}

@@ -35,7 +35,7 @@ func runGenerate(root string) (string, error) {
 
 // findGeneratedPlugin globs for plugin.json under the _generate output tree.
 func findGeneratedPlugin(outDir string) (string, error) {
-	pattern := filepath.Join(outDir, "share", "purse-first", "*", "plugin.json")
+	pattern := filepath.Join(outDir, "share", "purse-first", "*", ".claude-plugin", "plugin.json")
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
 		return "", fmt.Errorf("globbing for plugin.json: %w", err)

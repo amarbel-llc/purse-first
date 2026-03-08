@@ -27,7 +27,7 @@ type pluginMCPServer struct {
 func Discover(ctx context.Context, pluginsDir, binDir, selfName string) (*Catalog, error) {
 	cat := NewCatalog()
 
-	matches, err := filepath.Glob(filepath.Join(pluginsDir, "*", "plugin.json"))
+	matches, err := filepath.Glob(filepath.Join(pluginsDir, "*", ".claude-plugin", "plugin.json"))
 	if err != nil {
 		return nil, fmt.Errorf("globbing plugin manifests: %w", err)
 	}

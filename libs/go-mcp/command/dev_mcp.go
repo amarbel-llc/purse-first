@@ -34,12 +34,12 @@ func resolveBuildDir() (string, error) {
 
 func generateDevMCP(buildDir, projectDir, suffix string) error {
 	// Read plugin.json
-	pluginDirs, err := filepath.Glob(filepath.Join(buildDir, "share", "purse-first", "*", "plugin.json"))
+	pluginDirs, err := filepath.Glob(filepath.Join(buildDir, "share", "purse-first", "*", ".claude-plugin", "plugin.json"))
 	if err != nil {
 		return fmt.Errorf("finding plugin.json: %w", err)
 	}
 	if len(pluginDirs) == 0 {
-		return fmt.Errorf("no plugin.json found in %s/share/purse-first/*/", buildDir)
+		return fmt.Errorf("no plugin.json found in %s/share/purse-first/*/.claude-plugin/", buildDir)
 	}
 
 	pluginPath := pluginDirs[0]

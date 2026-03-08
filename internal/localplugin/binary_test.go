@@ -11,7 +11,7 @@ func TestFindGeneratedPlugin(t *testing.T) {
 	outDir := t.TempDir()
 
 	// Simulate _generate output structure
-	pluginDir := filepath.Join(outDir, "share", "purse-first", "lux")
+	pluginDir := filepath.Join(outDir, "share", "purse-first", "lux", ".claude-plugin")
 	os.MkdirAll(pluginDir, 0o755)
 	plugin := map[string]any{
 		"name": "lux",

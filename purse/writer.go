@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 )
 
-// WritePlugin writes a plugin manifest to {dir}/{p.Name}/plugin.json.
-// This is used during nix postInstall to generate share/purse-first/<name>/plugin.json.
+// WritePlugin writes a plugin manifest to {dir}/{p.Name}/.claude-plugin/plugin.json.
+// This is used during nix postInstall to generate share/purse-first/<name>/.claude-plugin/plugin.json.
 func WritePlugin(dir string, p Plugin) error {
-	pluginDir := filepath.Join(dir, p.Name)
+	pluginDir := filepath.Join(dir, p.Name, ".claude-plugin")
 	if err := os.MkdirAll(pluginDir, 0o755); err != nil {
 		return err
 	}

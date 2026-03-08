@@ -21,7 +21,7 @@ func TestGeneratePlugin(t *testing.T) {
 		t.Fatalf("GeneratePlugin: %v", err)
 	}
 
-	path := filepath.Join(dir, "grit", "plugin.json")
+	path := filepath.Join(dir, "grit", ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read plugin.json: %v", err)
@@ -55,7 +55,7 @@ func TestGeneratePluginWithArgs(t *testing.T) {
 		t.Fatalf("GeneratePlugin: %v", err)
 	}
 
-	data, _ := os.ReadFile(filepath.Join(dir, "lux", "plugin.json"))
+	data, _ := os.ReadFile(filepath.Join(dir, "lux", ".claude-plugin", "plugin.json"))
 	var plugin map[string]any
 	json.Unmarshal(data, &plugin)
 
@@ -76,7 +76,7 @@ func TestGeneratePluginUsesMCPBinary(t *testing.T) {
 		t.Fatalf("GeneratePlugin: %v", err)
 	}
 
-	data, _ := os.ReadFile(filepath.Join(dir, "sweatshop", "plugin.json"))
+	data, _ := os.ReadFile(filepath.Join(dir, "sweatshop", ".claude-plugin", "plugin.json"))
 	var plugin map[string]any
 	json.Unmarshal(data, &plugin)
 
@@ -95,7 +95,7 @@ func TestGeneratePluginDefaultsMCPBinaryToName(t *testing.T) {
 		t.Fatalf("GeneratePlugin: %v", err)
 	}
 
-	data, _ := os.ReadFile(filepath.Join(dir, "grit", "plugin.json"))
+	data, _ := os.ReadFile(filepath.Join(dir, "grit", ".claude-plugin", "plugin.json"))
 	var plugin map[string]any
 	json.Unmarshal(data, &plugin)
 
@@ -116,7 +116,7 @@ func TestGeneratePluginWithDescriptionAndAuthor(t *testing.T) {
 		t.Fatalf("GeneratePlugin: %v", err)
 	}
 
-	data, _ := os.ReadFile(filepath.Join(dir, "chix", "plugin.json"))
+	data, _ := os.ReadFile(filepath.Join(dir, "chix", ".claude-plugin", "plugin.json"))
 	var plugin map[string]any
 	json.Unmarshal(data, &plugin)
 
@@ -138,7 +138,7 @@ func TestGeneratePluginOmitsEmptyDescriptionAndAuthor(t *testing.T) {
 		t.Fatalf("GeneratePlugin: %v", err)
 	}
 
-	data, _ := os.ReadFile(filepath.Join(dir, "grit", "plugin.json"))
+	data, _ := os.ReadFile(filepath.Join(dir, "grit", ".claude-plugin", "plugin.json"))
 	var plugin map[string]any
 	json.Unmarshal(data, &plugin)
 

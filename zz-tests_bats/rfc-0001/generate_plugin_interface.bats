@@ -26,7 +26,7 @@ function plugin_name_equals_dirname { # @test
   dirname=$(basename "$pkg_dir")
 
   local name
-  name=$(jq -r '.name' "$pkg_dir/plugin.json")
+  name=$(jq -r '.name' "$pkg_dir/.claude-plugin/plugin.json")
   assert_equal "$name" "$dirname"
 }
 

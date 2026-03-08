@@ -12,42 +12,42 @@ teardown() {
 }
 
 function claude_validates_grit { # @test
-  run claude plugin validate "$(plugin_share_dir grit)/plugin.json"
+  run claude plugin validate "$(plugin_share_dir grit)/.claude-plugin/plugin.json"
   assert_success
 }
 
 function claude_validates_get_hubbed { # @test
-  run claude plugin validate "$(plugin_share_dir get-hubbed)/plugin.json"
+  run claude plugin validate "$(plugin_share_dir get-hubbed)/.claude-plugin/plugin.json"
   assert_success
 }
 
 function claude_validates_lux { # @test
-  run claude plugin validate "$(plugin_share_dir lux)/plugin.json"
+  run claude plugin validate "$(plugin_share_dir lux)/.claude-plugin/plugin.json"
   assert_success
 }
 
 function claude_validates_chix { # @test
-  run claude plugin validate "$(plugin_share_dir chix)/plugin.json"
+  run claude plugin validate "$(plugin_share_dir chix)/.claude-plugin/plugin.json"
   assert_success
 }
 
 function claude_validates_mgp { # @test
-  run claude plugin validate "$(plugin_share_dir mgp)/plugin.json"
+  run claude plugin validate "$(plugin_share_dir mgp)/.claude-plugin/plugin.json"
   assert_success
 }
 
 function claude_validates_bob { # @test
-  run claude plugin validate "$(plugin_share_dir bob)/plugin.json"
+  run claude plugin validate "$(plugin_share_dir bob)/.claude-plugin/plugin.json"
   assert_success
 }
 
 function claude_validates_robin { # @test
-  run claude plugin validate "$(plugin_share_dir robin)/plugin.json"
+  run claude plugin validate "$(plugin_share_dir robin)/.claude-plugin/plugin.json"
   assert_success
 }
 
 function claude_validates_tap_dancer { # @test
-  run claude plugin validate "$(plugin_share_dir tap-dancer)/plugin.json"
+  run claude plugin validate "$(plugin_share_dir tap-dancer)/.claude-plugin/plugin.json"
   assert_success
 }
 

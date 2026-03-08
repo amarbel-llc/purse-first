@@ -117,7 +117,7 @@ func TestInstallLocalWithBinaryPreCreated(t *testing.T) {
 	root := t.TempDir()
 
 	// Pre-create the _generate output structure (simulating what _generate produces)
-	pluginDir := filepath.Join(root, ".claude-plugin", "share", "purse-first", "test-mcp")
+	pluginDir := filepath.Join(root, ".claude-plugin", "share", "purse-first", "test-mcp", ".claude-plugin")
 	os.MkdirAll(pluginDir, 0o755)
 	plugin := map[string]any{
 		"name": "test-mcp",
@@ -138,8 +138,8 @@ func TestInstallLocalWithBinaryPreCreated(t *testing.T) {
 		t.Fatalf("findGeneratedPlugin: %v", err)
 	}
 
-	if filepath.Base(filepath.Dir(generatedPath)) != "test-mcp" {
-		t.Errorf("expected test-mcp dir, got %s", filepath.Dir(generatedPath))
+	if filepath.Base(filepath.Dir(filepath.Dir(generatedPath))) != "test-mcp" {
+		t.Errorf("expected test-mcp dir, got %s", filepath.Dir(filepath.Dir(generatedPath)))
 	}
 
 	// Test that installMCPServers works with the generated path

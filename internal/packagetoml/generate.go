@@ -47,7 +47,7 @@ type pluginManifest struct {
 
 // GeneratePluginJSON generates a plugin.json from a parsed Package, discovers
 // skills from skillsDir, copies them to the output, and writes plugin.json to
-// {outputDir}/share/purse-first/{pkg.Name}/plugin.json.
+// {outputDir}/share/purse-first/{pkg.Name}/.claude-plugin/plugin.json.
 func GeneratePluginJSON(pkg *Package, outputDir, skillsDir string) error {
 	manifest := pluginManifest{
 		Name:        pkg.Name,
@@ -107,7 +107,8 @@ func GeneratePluginJSON(pkg *Package, outputDir, skillsDir string) error {
 		}
 	}
 
-	if err := os.MkdirAll(packageDir, 0o755); err != nil {
+	claudePluginDir := filepath.Join(packageDir, ".claude-plugin")
+	if err := os.MkdirAll(claudePluginDir, 0o755); err != nil {
 		return fmt.Errorf("creating output directory: %w", err)
 	}
 
@@ -117,7 +118,7 @@ func GeneratePluginJSON(pkg *Package, outputDir, skillsDir string) error {
 	}
 	data = append(data, '\n')
 
-	pluginPath := filepath.Join(packageDir, "plugin.json")
+	pluginPath := filepath.Join(claudePluginDir, "plugin.json")
 	return os.WriteFile(pluginPath, data, 0o644)
 }
 

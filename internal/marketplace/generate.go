@@ -28,7 +28,7 @@ func ReadConfig(path string) (Config, error) {
 }
 
 func DiscoverPlugins(pluginsDir string) ([]DiscoveredPlugin, error) {
-	matches, err := filepath.Glob(filepath.Join(pluginsDir, "*", "plugin.json"))
+	matches, err := filepath.Glob(filepath.Join(pluginsDir, "*", ".claude-plugin", "plugin.json"))
 	if err != nil {
 		return nil, fmt.Errorf("globbing plugin manifests: %w", err)
 	}
@@ -45,7 +45,7 @@ func DiscoverPlugins(pluginsDir string) ([]DiscoveredPlugin, error) {
 			continue
 		}
 
-		pluginDir := filepath.Dir(path)
+		pluginDir := filepath.Dir(filepath.Dir(path))
 		pluginName := filepath.Base(pluginDir)
 		storePath := resolveStorePath(path)
 

@@ -12,7 +12,7 @@ import (
 //
 // Output layout:
 //
-//	{dir}/share/purse-first/{name}/plugin.json
+//	{dir}/share/purse-first/{name}/.claude-plugin/plugin.json
 //	{dir}/share/purse-first/{name}/mappings.json (if any commands have MapsTools)
 //	{dir}/share/purse-first/{name}/hooks/hooks.json (if any commands have MapsTools)
 //	{dir}/share/purse-first/{name}/hooks/pre-tool-use (if any commands have MapsTools)

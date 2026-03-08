@@ -195,7 +195,7 @@ func TestGenerateEmpty(t *testing.T) {
 func TestDiscoverPlugins(t *testing.T) {
 	dir := t.TempDir()
 
-	alphaDir := filepath.Join(dir, "alpha")
+	alphaDir := filepath.Join(dir, "alpha", ".claude-plugin")
 	os.MkdirAll(alphaDir, 0o755)
 
 	plugin := map[string]any{
@@ -238,6 +238,8 @@ func TestDiscoverPluginsWithSkills(t *testing.T) {
 	dir := t.TempDir()
 
 	alphaDir := filepath.Join(dir, "alpha")
+	claudePluginDir := filepath.Join(alphaDir, ".claude-plugin")
+	os.MkdirAll(claudePluginDir, 0o755)
 	skillDir := filepath.Join(alphaDir, "skills", "my-skill")
 	os.MkdirAll(skillDir, 0o755)
 
@@ -251,7 +253,7 @@ func TestDiscoverPluginsWithSkills(t *testing.T) {
 		},
 	}
 	data, _ := json.MarshalIndent(plugin, "", "  ")
-	os.WriteFile(filepath.Join(alphaDir, "plugin.json"), data, 0o644)
+	os.WriteFile(filepath.Join(claudePluginDir, "plugin.json"), data, 0o644)
 	os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte("# My Skill"), 0o644)
 
 	plugins, err := DiscoverPlugins(dir)

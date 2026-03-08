@@ -16,9 +16,10 @@ func TestDevMCPGeneratesArtifacts(t *testing.T) {
 	os.MkdirAll(binDir, 0o755)
 	os.WriteFile(filepath.Join(binDir, "lux"), []byte("#!/bin/sh\n"), 0o755)
 
-	// Create share/purse-first/lux/plugin.json
+	// Create share/purse-first/lux/.claude-plugin/plugin.json
 	pluginDir := filepath.Join(buildDir, "share", "purse-first", "lux")
-	os.MkdirAll(pluginDir, 0o755)
+	claudePluginDir := filepath.Join(pluginDir, ".claude-plugin")
+	os.MkdirAll(claudePluginDir, 0o755)
 
 	plugin := pluginManifest{
 		Name: "lux",
@@ -27,7 +28,7 @@ func TestDevMCPGeneratesArtifacts(t *testing.T) {
 		},
 	}
 	pluginData, _ := json.MarshalIndent(plugin, "", "  ")
-	os.WriteFile(filepath.Join(pluginDir, "plugin.json"), pluginData, 0o644)
+	os.WriteFile(filepath.Join(claudePluginDir, "plugin.json"), pluginData, 0o644)
 
 	// Create share/purse-first/lux/mappings.json
 	mappings := mappingFile{

@@ -69,11 +69,11 @@ func (a *App) WritePluginJSON(w io.Writer) error {
 	return err
 }
 
-// GeneratePlugin writes a plugin.json manifest to {dir}/{app.Name}/plugin.json.
+// GeneratePlugin writes a plugin.json manifest to {dir}/{app.Name}/.claude-plugin/plugin.json.
 func (a *App) GeneratePlugin(dir string) error {
 	manifest := a.buildPluginManifest()
 
-	pluginDir := filepath.Join(dir, a.Name)
+	pluginDir := filepath.Join(dir, a.Name, ".claude-plugin")
 	if err := os.MkdirAll(pluginDir, 0o755); err != nil {
 		return err
 	}

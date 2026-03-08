@@ -18,7 +18,7 @@ func TestWritePlugin(t *testing.T) {
 		t.Fatalf("WritePlugin: %v", err)
 	}
 
-	path := filepath.Join(dir, "test-server", "plugin.json")
+	path := filepath.Join(dir, "test-server", ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("ReadFile: %v", err)
@@ -66,7 +66,7 @@ func TestWritePluginCreatesSubdir(t *testing.T) {
 		t.Fatalf("WritePlugin: %v", err)
 	}
 
-	path := filepath.Join(dir, "my-plugin", "plugin.json")
+	path := filepath.Join(dir, "my-plugin", ".claude-plugin", "plugin.json")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Error("expected plugin.json to exist")
 	}
@@ -83,7 +83,7 @@ func TestWritePluginWithArgs(t *testing.T) {
 		t.Fatalf("WritePlugin: %v", err)
 	}
 
-	path := filepath.Join(dir, "lux", "plugin.json")
+	path := filepath.Join(dir, "lux", ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("ReadFile: %v", err)
@@ -182,8 +182,8 @@ func TestWritePluginAndMappingsTogether(t *testing.T) {
 		t.Fatalf("WriteMappings: %v", err)
 	}
 
-	// Both files should exist in the same directory
-	pluginPath := filepath.Join(dir, "grit", "plugin.json")
+	// plugin.json goes in .claude-plugin/, mappings.json stays at package root
+	pluginPath := filepath.Join(dir, "grit", ".claude-plugin", "plugin.json")
 	mappingPath := filepath.Join(dir, "grit", "mappings.json")
 
 	if _, err := os.Stat(pluginPath); os.IsNotExist(err) {

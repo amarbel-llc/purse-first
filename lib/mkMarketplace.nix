@@ -169,7 +169,7 @@ utils.lib.eachDefaultSystem (
       ];
       postBuild = ''
         # Replace plugin.json symlinks with hook-stripped copies.
-        for pj in $out/share/purse-first/*/plugin.json; do
+        for pj in $out/share/purse-first/*/.claude-plugin/plugin.json; do
           ${pkgs.jq}/bin/jq 'del(.hooks)' "$pj" > "$pj.tmp"
           rm "$pj"
           mv "$pj.tmp" "$pj"

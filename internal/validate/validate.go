@@ -46,7 +46,6 @@ func ValidateFile(path string, docType DocType, strict bool) (*Result, DocType, 
 var directoryTargets = []string{
 	".claude-plugin/plugin.json",
 	".claude-plugin/marketplace.json",
-	"plugin.json",
 	"mappings.json",
 }
 

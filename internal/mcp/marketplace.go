@@ -61,7 +61,7 @@ func resolvePluginsDir() (string, string, error) {
 }
 
 func discoverFromPluginDir(pluginsDir, root string) ([]ServerEntry, error) {
-	matches, err := filepath.Glob(filepath.Join(pluginsDir, "*", "plugin.json"))
+	matches, err := filepath.Glob(filepath.Join(pluginsDir, "*", ".claude-plugin", "plugin.json"))
 	if err != nil {
 		return nil, fmt.Errorf("globbing plugin manifests: %w", err)
 	}

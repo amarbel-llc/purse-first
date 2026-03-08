@@ -45,7 +45,7 @@ func TestGeneratePluginJSON(t *testing.T) {
 	}
 
 	// Read generated plugin.json
-	pluginPath := filepath.Join(outputDir, "share", "purse-first", "chix", "plugin.json")
+	pluginPath := filepath.Join(outputDir, "share", "purse-first", "chix", ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(pluginPath)
 	if err != nil {
 		t.Fatalf("reading plugin.json: %v", err)
@@ -181,7 +181,7 @@ func TestGenerateSkillOnlyPluginJSON(t *testing.T) {
 	}
 
 	// Read generated plugin.json
-	pluginPath := filepath.Join(outputDir, "share", "purse-first", "robin", "plugin.json")
+	pluginPath := filepath.Join(outputDir, "share", "purse-first", "robin", ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(pluginPath)
 	if err != nil {
 		t.Fatalf("reading plugin.json: %v", err)

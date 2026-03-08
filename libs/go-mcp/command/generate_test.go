@@ -29,7 +29,7 @@ func TestGenerateAll(t *testing.T) {
 	}
 
 	expected := []string{
-		filepath.Join("share", "purse-first", "grit", "plugin.json"),
+		filepath.Join("share", "purse-first", "grit", ".claude-plugin", "plugin.json"),
 		filepath.Join("share", "purse-first", "grit", "mappings.json"),
 		filepath.Join("share", "man", "man1", "grit.1"),
 		filepath.Join("share", "man", "man1", "grit-status.1"),
@@ -79,7 +79,7 @@ func TestGenerateAllWithSkills(t *testing.T) {
 	}
 
 	// Assert plugin.json contains skills array with 2 entries in sorted order
-	pluginPath := filepath.Join(dir, "share", "purse-first", "chix", "plugin.json")
+	pluginPath := filepath.Join(dir, "share", "purse-first", "chix", ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(pluginPath)
 	if err != nil {
 		t.Fatalf("read plugin.json: %v", err)
@@ -118,7 +118,7 @@ func TestGenerateAllWithSkills(t *testing.T) {
 
 	// Assert other standard artifacts still exist
 	standardFiles := []string{
-		filepath.Join("share", "purse-first", "chix", "plugin.json"),
+		filepath.Join("share", "purse-first", "chix", ".claude-plugin", "plugin.json"),
 		filepath.Join("share", "man", "man1", "chix.1"),
 		filepath.Join("share", "bash-completion", "completions", "chix"),
 		filepath.Join("share", "zsh", "site-functions", "_chix"),
@@ -153,7 +153,7 @@ func TestGenerateAllWithSkillsEmptySkillsDir(t *testing.T) {
 	}
 
 	// Should behave identically to GenerateAll — no skills in plugin.json
-	pluginPath := filepath.Join(dir, "share", "purse-first", "grit", "plugin.json")
+	pluginPath := filepath.Join(dir, "share", "purse-first", "grit", ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(pluginPath)
 	if err != nil {
 		t.Fatalf("read plugin.json: %v", err)
@@ -193,7 +193,7 @@ func TestHandleGeneratePluginDirectoryMode(t *testing.T) {
 		t.Fatalf("HandleGeneratePlugin directory mode: %v", err)
 	}
 
-	pluginPath := filepath.Join(dir, "share", "purse-first", "grit", "plugin.json")
+	pluginPath := filepath.Join(dir, "share", "purse-first", "grit", ".claude-plugin", "plugin.json")
 	if _, err := os.Stat(pluginPath); err != nil {
 		t.Errorf("expected plugin.json at %s", pluginPath)
 	}
@@ -217,7 +217,7 @@ func TestHandleGeneratePluginPWDDefault(t *testing.T) {
 		t.Fatalf("HandleGeneratePlugin PWD default: %v", err)
 	}
 
-	pluginPath := filepath.Join(dir, "share", "purse-first", "grit", "plugin.json")
+	pluginPath := filepath.Join(dir, "share", "purse-first", "grit", ".claude-plugin", "plugin.json")
 	if _, err := os.Stat(pluginPath); err != nil {
 		t.Errorf("expected plugin.json at %s", pluginPath)
 	}
@@ -296,7 +296,7 @@ func TestHandleGeneratePluginWithSkillsDir(t *testing.T) {
 		t.Fatalf("HandleGeneratePlugin with --skills-dir: %v", err)
 	}
 
-	pluginPath := filepath.Join(dir, "share", "purse-first", "chix", "plugin.json")
+	pluginPath := filepath.Join(dir, "share", "purse-first", "chix", ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(pluginPath)
 	if err != nil {
 		t.Fatalf("read plugin.json: %v", err)

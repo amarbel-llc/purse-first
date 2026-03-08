@@ -132,7 +132,7 @@ impl App {
     }
 
     pub fn generate_plugin(&self, dir: &Path) -> io::Result<()> {
-        let plugin_dir = dir.join(&self.name);
+        let plugin_dir = dir.join(&self.name).join(".claude-plugin");
         fs::create_dir_all(&plugin_dir)?;
 
         let manifest = self.build_plugin_manifest();
@@ -416,7 +416,7 @@ mod tests {
 
         app.generate_plugin(&purse_dir).unwrap();
 
-        let path = purse_dir.join("grit").join("plugin.json");
+        let path = purse_dir.join("grit").join(".claude-plugin").join("plugin.json");
         assert!(path.exists(), "plugin.json should exist");
 
         let content = fs::read_to_string(&path).unwrap();
@@ -535,6 +535,7 @@ mod tests {
             .join("share")
             .join("purse-first")
             .join("grit")
+            .join(".claude-plugin")
             .join("plugin.json");
         assert!(path.exists(), "plugin.json should exist in directory mode");
     }
@@ -578,6 +579,7 @@ mod tests {
             .join("share")
             .join("purse-first")
             .join("chix")
+            .join(".claude-plugin")
             .join("plugin.json");
         let content = fs::read_to_string(&plugin_path).unwrap();
         let v: serde_json::Value = serde_json::from_str(&content).unwrap();
