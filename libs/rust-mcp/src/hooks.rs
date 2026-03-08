@@ -83,6 +83,7 @@ impl HookHandler {
 
                     let output = json!({
                         "hookSpecificOutput": {
+                            "hookEventName": "PreToolUse",
                             "permissionDecision": "deny",
                             "permissionDecisionReason": reason,
                         }
@@ -340,6 +341,10 @@ mod tests {
         let result = handler.handle_hook(input).unwrap();
         assert!(result.is_some());
         let output: Value = serde_json::from_slice(&result.unwrap()).unwrap();
+        assert_eq!(
+            output["hookSpecificOutput"]["hookEventName"],
+            "PreToolUse"
+        );
         assert_eq!(
             output["hookSpecificOutput"]["permissionDecision"],
             "deny"

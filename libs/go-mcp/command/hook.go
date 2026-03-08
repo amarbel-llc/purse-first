@@ -18,6 +18,7 @@ type hookOutput struct {
 }
 
 type hookDecision struct {
+	HookEventName            string `json:"hookEventName"`
 	PermissionDecision       string `json:"permissionDecision"`
 	PermissionDecisionReason string `json:"permissionDecisionReason,omitempty"`
 }
@@ -94,6 +95,7 @@ func (a *App) HandleHook(r io.Reader, w io.Writer) error {
 
 	out := hookOutput{
 		HookSpecificOutput: hookDecision{
+			HookEventName:            "PreToolUse",
 			PermissionDecision:       "deny",
 			PermissionDecisionReason: reason,
 		},

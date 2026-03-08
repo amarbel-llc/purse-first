@@ -40,6 +40,11 @@ func TestHandleHookDeniesMatch(t *testing.T) {
 		t.Fatalf("unmarshal output: %v\nraw: %s", err, out.String())
 	}
 
+	if got.HookSpecificOutput.HookEventName != "PreToolUse" {
+		t.Errorf("hookEventName = %q, want %q",
+			got.HookSpecificOutput.HookEventName, "PreToolUse")
+	}
+
 	if got.HookSpecificOutput.PermissionDecision != "deny" {
 		t.Errorf("permissionDecision = %q, want %q",
 			got.HookSpecificOutput.PermissionDecision, "deny")
