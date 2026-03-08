@@ -257,6 +257,57 @@ bump-version package version:
   gum log --level info "{{package}}: version bumped to {{version}}"
   gum log --level warn "Remember to update Cargo.toml and SKILL.md frontmatter if applicable"
 
+# Build lux from source, start isolated daemon, drop into shell for nvim testing
+dev-lux:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    root="$(cd "{{justfile_directory()}}" && pwd)"
+    build_dir="$root/build"
+
+    # Build lux from source
+    mkdir -p "$build_dir"
+    nix develop "$root" --command go build -o "$build_dir/lux" ./packages/lux/cmd/lux
+
+    # Create isolated temp environment
+    dir=$(mktemp -d /tmp/lux-dev-XXXXXX)
+    trap 'kill "$daemon_pid" 2>/dev/null; wait "$daemon_pid" 2>/dev/null; rm -rf "$dir"' EXIT
+
+    runtime_dir="$dir/run"
+    mkdir -p "$runtime_dir"
+
+    # Write .envrc that sources the repo's envrc + adds overrides
+    cat > "$dir/.envrc" <<ENVRC
+    source_env "$root"
+    PATH_add "$build_dir"
+    export XDG_RUNTIME_DIR="$runtime_dir"
+    export XDG_CONFIG_HOME="$dir/config"
+    ENVRC
+    direnv allow "$dir"
+
+    # Create config dir: symlink real lux config, use minimal nvim config
+    mkdir -p "$dir/config"
+    ln -s "${XDG_CONFIG_HOME:-$HOME/.config}/lux" "$dir/config/lux"
+    ln -s "$root/dev/lux-nvim/nvim" "$dir/config/nvim"
+
+    # Start dev daemon in background
+    XDG_RUNTIME_DIR="$runtime_dir" "$build_dir/lux" service run &
+    daemon_pid=$!
+
+    # Wait for socket
+    socket="$runtime_dir/lux.sock"
+    deadline=$((SECONDS + 5))
+    while [[ ! -S "$socket" ]] && [[ $SECONDS -lt $deadline ]]; do sleep 0.05; done
+    [[ -S "$socket" ]] || { echo "daemon failed to start" >&2; exit 1; }
+
+    echo "dev lux daemon running (pid $daemon_pid)"
+    echo "socket: $socket"
+    echo "run 'nvim <file>' to test"
+    echo ""
+
+    # Drop into user's shell
+    cd "$dir"
+    "$SHELL"
+
 # Clean build artifacts
 clean:
     rm -f purse-first
