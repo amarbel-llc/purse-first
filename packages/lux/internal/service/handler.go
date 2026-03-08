@@ -3,8 +3,12 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
+	"time"
 
+	"github.com/amarbel-llc/lux/internal/logfile"
 	"github.com/amarbel-llc/lux/internal/subprocess"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 )
@@ -94,12 +98,45 @@ func (h *Handler) handleLSPRequest(ctx context.Context, msg *jsonrpc.Message) (*
 		return h.errorResponse(msg, jsonrpc.InternalError, fmt.Sprintf("starting LSP %s: %v", lspName, err))
 	}
 
-	result, err := inst.Call(ctx, params.LSPMethod, params.LSPParams)
+	result, err := h.callWithRetry(ctx, inst, params.LSPMethod, params.LSPParams)
 	if err != nil {
 		return h.errorResponse(msg, jsonrpc.InternalError, fmt.Sprintf("LSP call failed: %v", err))
 	}
 
 	return jsonrpc.NewResponse(*msg.ID, result)
+}
+
+func isRetryableLSPError(err error) bool {
+	var rpcErr *jsonrpc.Error
+	if errors.As(err, &rpcErr) {
+		return rpcErr.Code == 0 && strings.Contains(rpcErr.Message, "no views")
+	}
+	return false
+}
+
+func (h *Handler) callWithRetry(ctx context.Context, inst *subprocess.LSPInstance, method string, params json.RawMessage) (json.RawMessage, error) {
+	const maxAttempts = 8
+	delay := 500 * time.Millisecond
+
+	for attempt := 1; ; attempt++ {
+		result, err := inst.Call(ctx, method, params)
+		if err == nil || !isRetryableLSPError(err) || attempt >= maxAttempts {
+			return result, err
+		}
+
+		fmt.Fprintf(logfile.Writer(), "[lux] retrying LSP call (attempt %d/%d, waiting %v): %v\n", attempt, maxAttempts, delay, err)
+
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(delay):
+		}
+
+		delay *= 2
+		if delay > 5*time.Second {
+			delay = 5 * time.Second
+		}
+	}
 }
 
 func (h *Handler) handleLSPNotification(_ context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {
