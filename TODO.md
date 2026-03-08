@@ -67,6 +67,7 @@
 - [x] add ANSI color output to `tap-dancer *-test` for TTY's
 - [x] fix sandcastle/batman socket permission failures: use `--allow-unix-sockets` in bats wrapper tests and sandcastle tests
 - [x] P0: flaky timeout in `bats_wrapper_hide_passing_preserves_plan_and_version` (test 12) — 10s BATS_TEST_TIMEOUT too tight under parallel load
+- [ ] lux daemon: debug remaining "no views" error in dev-lux-open — test-lux-lsp passes clean but real nvim still triggers it; likely dev/prod env difference (nix-built lux vs go-built, production daemon vs dev daemon, or multi-LSP startup race). Check daemon log trace added in 3ab2c81
 - [ ] lux service daemon: add SIGTERM/SIGINT signal handler to cancel context for graceful shutdown (socket cleanup on kill)
 - [ ] ADR: assembly trampoline for launchd socket activation (go:cgo_import_dynamic pattern, why not cgo/dependency)
 - [ ] lux service tests: add notification broadcast test — multiple sessions per workspace, verify LSP notification fans out to all clients
