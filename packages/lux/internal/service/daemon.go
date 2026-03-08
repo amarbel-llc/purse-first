@@ -208,8 +208,13 @@ func (d *Daemon) broadcastNotification(workspace, lspName string, ctx context.Co
 	}
 	d.mu.Unlock()
 
+	wrapped := LSPNotificationParams{
+		LSPMethod: msg.Method,
+		LSPParams: msg.Params,
+	}
+
 	for _, rc := range conns {
-		rc.Notify(msg.Method, msg.Params)
+		rc.Notify(MethodLSPNotification, wrapped)
 	}
 
 	return nil, nil

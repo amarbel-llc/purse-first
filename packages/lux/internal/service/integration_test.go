@@ -183,6 +183,110 @@ func TestIntegration_LSPRequestRoundTrip(t *testing.T) {
 	<-errCh
 }
 
+func TestIntegration_LSPNotificationBroadcast(t *testing.T) {
+	configDir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", configDir)
+
+	ftDir := filepath.Join(configDir, "lux", "filetype")
+	if err := os.MkdirAll(ftDir, 0o755); err != nil {
+		t.Fatalf("creating filetype dir: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(ftDir, "go.toml"), []byte("extensions = [\"go\"]\nlsp = \"fake\"\n"), 0o644); err != nil {
+		t.Fatalf("writing filetype config: %v", err)
+	}
+
+	luxDir := filepath.Join(configDir, "lux")
+	if err := os.WriteFile(filepath.Join(luxDir, "lsps.toml"), []byte("[[lsp]]\nname = \"fake\"\nflake = \"fake#lsp\"\nextensions = [\"go\"]\n"), 0o644); err != nil {
+		t.Fatalf("writing LSP config: %v", err)
+	}
+
+	socketPath := shortSocketPath(t, "notify-broadcast.sock")
+
+	d := NewDaemon(socketPath, nil, 0)
+	d.workspaces.executorFactory = func() subprocess.Executor {
+		return &notifyingFakeExecutor{}
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- d.Run(ctx)
+	}()
+
+	waitForListeningSocket(t, socketPath, 2*time.Second)
+
+	conn, err := net.Dial("unix", socketPath)
+	if err != nil {
+		t.Fatalf("dialing socket: %v", err)
+	}
+	defer conn.Close()
+
+	received := make(chan LSPNotificationParams, 1)
+	client := jsonrpc.NewConn(conn, conn, func(_ context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {
+		if msg.Method == MethodLSPNotification {
+			var params LSPNotificationParams
+			if err := json.Unmarshal(msg.Params, &params); err == nil {
+				received <- params
+			}
+		}
+		return nil, nil
+	})
+	go client.Run(ctx)
+
+	workDir := t.TempDir()
+	regResult, err := client.Call(ctx, MethodSessionRegister, RegisterParams{
+		WorkspaceRoot: workDir,
+		ClientType:    ClientTypeLSP,
+	})
+	if err != nil {
+		t.Fatalf("register: %v", err)
+	}
+
+	var reg RegisterResult
+	if err := json.Unmarshal(regResult, &reg); err != nil {
+		t.Fatalf("unmarshal register: %v", err)
+	}
+
+	// Send didOpen — the notifying fake LSP responds with publishDiagnostics
+	didOpenParams, _ := json.Marshal(map[string]any{
+		"textDocument": map[string]any{
+			"uri":        "file:///test.go",
+			"languageId": "go",
+			"version":    1,
+			"text":       "package main\n",
+		},
+	})
+
+	client.Notify(MethodLSPNotification, LSPNotificationParams{
+		SessionID: reg.SessionID,
+		LSPMethod: "textDocument/didOpen",
+		LSPParams: didOpenParams,
+	})
+
+	select {
+	case notification := <-received:
+		if notification.LSPMethod != "textDocument/publishDiagnostics" {
+			t.Errorf("expected LSPMethod %q, got %q", "textDocument/publishDiagnostics", notification.LSPMethod)
+		}
+
+		var diagParams map[string]any
+		if err := json.Unmarshal(notification.LSPParams, &diagParams); err != nil {
+			t.Fatalf("unmarshal diagnostic params: %v", err)
+		}
+		if diagParams["uri"] != "file:///test.go" {
+			t.Errorf("expected diagnostic URI %q, got %v", "file:///test.go", diagParams["uri"])
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for publishDiagnostics notification")
+	}
+
+	cancel()
+	<-errCh
+}
+
 func TestIntegration_MCPSessionRoundTrip(t *testing.T) {
 	configDir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", configDir)
