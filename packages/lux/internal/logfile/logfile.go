@@ -9,20 +9,25 @@ import (
 
 var writer io.Writer = os.Stderr
 
-func Init() func() {
+func logDir() string {
+	if xdg := os.Getenv("XDG_STATE_HOME"); xdg != "" {
+		return filepath.Join(xdg, "lux")
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warning: could not determine home directory for log file: %v\n", err)
+		return filepath.Join(".", ".local", "state", "lux")
+	}
+	return filepath.Join(home, ".local", "state", "lux")
+}
+
+func Init() func() {
+	dir := logDir()
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "warning: could not create log directory %s: %v\n", dir, err)
 		return func() {}
 	}
 
-	logDir := filepath.Join(home, ".local", "log", "lux")
-	if err := os.MkdirAll(logDir, 0755); err != nil {
-		fmt.Fprintf(os.Stderr, "warning: could not create log directory %s: %v\n", logDir, err)
-		return func() {}
-	}
-
-	logPath := filepath.Join(logDir, "lux.log")
+	logPath := filepath.Join(dir, "lux.log")
 	f, err := os.Create(logPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warning: could not open log file %s: %v\n", logPath, err)

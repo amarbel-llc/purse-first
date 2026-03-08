@@ -89,6 +89,9 @@ func CapabilitiesDir() string {
 }
 
 func (c *Config) SocketPath() string {
+	if envSocket := os.Getenv("LUX_SOCKET"); envSocket != "" {
+		return envSocket
+	}
 	if c.Socket != "" {
 		return c.Socket
 	}

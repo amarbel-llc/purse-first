@@ -272,14 +272,13 @@ dev-lux:
     dir=$(mktemp -d /tmp/lux-dev-XXXXXX)
     trap 'kill "$daemon_pid" 2>/dev/null; wait "$daemon_pid" 2>/dev/null; rm -rf "$dir"' EXIT
 
-    runtime_dir="$dir/run"
-    mkdir -p "$runtime_dir"
+    socket="$dir/lux.sock"
 
     # Write .envrc that sources the repo's envrc + adds overrides
     cat > "$dir/.envrc" <<ENVRC
     source_env "$root"
     PATH_add "$build_dir"
-    export XDG_RUNTIME_DIR="$runtime_dir"
+    export LUX_SOCKET="$socket"
     export XDG_CONFIG_HOME="$dir/config"
     ENVRC
     direnv allow "$dir"
@@ -290,11 +289,10 @@ dev-lux:
     ln -s "$root/dev/lux-nvim/nvim" "$dir/config/nvim"
 
     # Start dev daemon in background
-    XDG_RUNTIME_DIR="$runtime_dir" "$build_dir/lux" service run &
+    LUX_SOCKET="$socket" "$build_dir/lux" service run &
     daemon_pid=$!
 
     # Wait for socket
-    socket="$runtime_dir/lux.sock"
     deadline=$((SECONDS + 5))
     while [[ ! -S "$socket" ]] && [[ $SECONDS -lt $deadline ]]; do sleep 0.05; done
     [[ -S "$socket" ]] || { echo "daemon failed to start" >&2; exit 1; }

@@ -9,6 +9,26 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+func TestSocketPath_EnvVarOverride(t *testing.T) {
+	t.Setenv("LUX_SOCKET", "/tmp/test-override.sock")
+
+	cfg := &Config{Socket: "/from/config.sock"}
+	got := cfg.SocketPath()
+	if got != "/tmp/test-override.sock" {
+		t.Errorf("SocketPath() = %q, want %q", got, "/tmp/test-override.sock")
+	}
+}
+
+func TestSocketPath_ConfigFallback(t *testing.T) {
+	t.Setenv("LUX_SOCKET", "")
+
+	cfg := &Config{Socket: "/from/config.sock"}
+	got := cfg.SocketPath()
+	if got != "/from/config.sock" {
+		t.Errorf("SocketPath() = %q, want %q", got, "/from/config.sock")
+	}
+}
+
 func TestLSP_BinaryField_TOML(t *testing.T) {
 	tests := []struct {
 		name     string
