@@ -54,6 +54,7 @@
 - [x] add PreToolUse hooks to chix (depends on rust-mcp hook support) — map nix/fh/cachix CLI tools to MCP equivalents
 - [ ] FDR: single-package local test flow — `purse-first test-local .#chix` or similar that installs one package's hooks+MCP into an isolated Claude Code project config without touching global state
 - [ ] explore purse-first neovim plugin packaging (ftplugins, lux config fragments, auto-discovery)
+- [ ] lux: address the tension between having to define lux.lua with explicit filetypes against lux's own config declaration (lux already knows its filetypes via filetype/*.toml but neovim requires a static list in lsp/lux.lua)
 - [ ] pivot hook matching to delegation: let packages provide custom matchers (e.g. a `MatchHook` callback on `Command`) instead of the framework owning all matching logic via static `CommandPrefixes`/`Extensions`
 - [x] migrate grit to `bats_load_library bats-island`
 - [x] migrate dodder to `bats_load_library bats-island` (moved to ~/eng/repos/dodder/TODO.md)
