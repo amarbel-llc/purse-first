@@ -95,16 +95,23 @@ func (h *Handler) handleLSPRequest(ctx context.Context, msg *jsonrpc.Message) (*
 		return h.errorResponse(msg, jsonrpc.InternalError, "no LSP matched for method")
 	}
 
+	fmt.Fprintf(logfile.Writer(), "[lux] request %s → %s (state: starting)\n", params.LSPMethod, lspName)
+
 	inst, err := ws.Pool.GetOrStart(ctx, lspName, initParamsForWorkspace(ws.Root))
 	if err != nil {
+		fmt.Fprintf(logfile.Writer(), "[lux] request %s → %s: start failed: %v\n", params.LSPMethod, lspName, err)
 		return h.errorResponse(msg, jsonrpc.InternalError, fmt.Sprintf("starting LSP %s: %v", lspName, err))
 	}
 
+	fmt.Fprintf(logfile.Writer(), "[lux] request %s → %s: forwarding\n", params.LSPMethod, lspName)
+
 	result, err := h.callWithRetry(ctx, inst, params.LSPMethod, params.LSPParams)
 	if err != nil {
+		fmt.Fprintf(logfile.Writer(), "[lux] request %s → %s: failed: %v\n", params.LSPMethod, lspName, err)
 		return h.errorResponse(msg, jsonrpc.InternalError, fmt.Sprintf("LSP call failed: %v", err))
 	}
 
+	fmt.Fprintf(logfile.Writer(), "[lux] request %s → %s: ok (%d bytes)\n", params.LSPMethod, lspName, len(result))
 	return jsonrpc.NewResponse(*msg.ID, result)
 }
 
@@ -194,12 +201,16 @@ func (h *Handler) handleLSPNotification(_ context.Context, msg *jsonrpc.Message)
 		return nil, nil
 	}
 
+	fmt.Fprintf(logfile.Writer(), "[lux] notification %s → %s\n", params.LSPMethod, lspName)
+
 	inst, err := ws.Pool.GetOrStart(context.Background(), lspName, initParamsForWorkspace(ws.Root))
 	if err != nil {
+		fmt.Fprintf(logfile.Writer(), "[lux] notification %s → %s: start failed: %v\n", params.LSPMethod, lspName, err)
 		return nil, nil
 	}
 
 	inst.Notify(params.LSPMethod, params.LSPParams)
+	fmt.Fprintf(logfile.Writer(), "[lux] notification %s → %s: sent\n", params.LSPMethod, lspName)
 
 	return nil, nil
 }

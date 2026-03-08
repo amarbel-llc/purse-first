@@ -395,7 +395,7 @@ test-lux-lsp:
       -- Open the Go file
       vim.cmd("edit " .. vim.fn.fnameescape(vim.g.test_file))
 
-      -- Wait for LSP to attach and be ready
+      -- Wait for LSP to attach (short delay to match real nvim behavior)
       vim.defer_fn(function()
         local clients = vim.lsp.get_clients({ bufnr = 0 })
         io.stderr:write("LSP clients attached: " .. #clients .. "\n")
@@ -416,8 +416,8 @@ test-lux-lsp:
         vim.defer_fn(function()
           io.stderr:write("done, quitting\n")
           vim.cmd("qa!")
-        end, 5000)
-      end, 10000)
+        end, 15000)
+      end, 2000)
     end)
     LUAEOF
 
