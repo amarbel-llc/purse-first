@@ -3,22 +3,8 @@ complete \
   --command spinclass \
   --no-files \
   --condition __fish_use_subcommand \
-  --arguments "open" \
-  --description "open a worktree shop"
-
-complete \
-  --command spinclass \
-  --no-files \
-  --condition __fish_use_subcommand \
-  --arguments "attach" \
-  --description "attach to a worktree session"
-
-complete \
-  --command spinclass \
-  --no-files \
-  --condition __fish_use_subcommand \
-  --arguments "create" \
-  --description "create a worktree without attaching"
+  --arguments "new" \
+  --description "create a worktree and attach"
 
 complete \
   --command spinclass \
@@ -45,6 +31,13 @@ complete \
   --command spinclass \
   --no-files \
   --condition __fish_use_subcommand \
+  --arguments "list" \
+  --description "list worktrees"
+
+complete \
+  --command spinclass \
+  --no-files \
+  --condition __fish_use_subcommand \
   --arguments "pull" \
   --description "pull repos and rebase worktrees"
 
@@ -55,6 +48,20 @@ complete \
   --arguments "perms" \
   --description "manage Claude Code permission tiers"
 
+complete \
+  --command spinclass \
+  --no-files \
+  --condition __fish_use_subcommand \
+  --arguments "fork" \
+  --description "fork current worktree into a new branch"
+
+complete \
+  --command spinclass \
+  --no-files \
+  --condition __fish_use_subcommand \
+  --arguments "validate" \
+  --description "validate worktree configuration"
+
 # Global flags
 complete \
   --command spinclass \
@@ -64,22 +71,46 @@ complete \
   --arguments "tap table" \
   --description "output format"
 
-# Dynamic target completions for open/attach/create
+# Dynamic target completions for new/merge
 complete \
   --command spinclass \
   --no-files \
   --keep-order \
-  --condition "__fish_seen_subcommand_from open attach create merge" \
+  --condition "__fish_seen_subcommand_from new merge" \
   --arguments "(spinclass completions)"
 
-# create flags
+# new flags
 complete \
   --command spinclass \
   --no-files \
-  --condition "__fish_seen_subcommand_from create" \
-  --short-option v \
-  --long-option verbose \
-  --description "print sweatfile loading details"
+  --condition "__fish_seen_subcommand_from new" \
+  --long-option merge-on-close \
+  --description "merge worktree on session close"
+
+complete \
+  --command spinclass \
+  --no-files \
+  --condition "__fish_seen_subcommand_from new" \
+  --long-option no-attach \
+  --description "create worktree without attaching"
+
+complete \
+  --command spinclass \
+  --no-files \
+  --condition "__fish_seen_subcommand_from new" \
+  --short-option b \
+  --long-option branch \
+  --require-parameter \
+  --arguments "(git branch --format='%(refname:short)')" \
+  --description "use an existing branch"
+
+# merge flags
+complete \
+  --command spinclass \
+  --no-files \
+  --condition "__fish_seen_subcommand_from merge" \
+  --long-option git-sync \
+  --description "sync with remote before merging"
 
 # clean flags
 complete \

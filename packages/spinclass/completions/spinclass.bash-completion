@@ -4,7 +4,7 @@ _spinclass_complete() {
   COMPREPLY=()
 
   if [[ "$COMP_CWORD" -eq 1 ]]; then
-    COMPREPLY=($(compgen -W "open attach create status merge clean pull perms" -- "$cur"))
+    COMPREPLY=($(compgen -W "new status merge clean list pull perms fork validate" -- "$cur"))
     return
   fi
 
@@ -16,15 +16,21 @@ _spinclass_complete() {
     return
   fi
 
+  # Handle --branch/-b value
+  if [[ "$prev" == "--branch" || "$prev" == "-b" ]]; then
+    COMPREPLY=($(compgen -W "$(git branch --format='%(refname:short)' 2>/dev/null)" -- "$cur"))
+    return
+  fi
+
   case "$subcommand" in
-    open|attach|create|merge)
+    new|merge)
       if [[ "$cur" == -* ]]; then
         case "$subcommand" in
-          create)
-            COMPREPLY=($(compgen -W "--verbose -v --format" -- "$cur"))
+          new)
+            COMPREPLY=($(compgen -W "--merge-on-close --no-attach --branch -b --format" -- "$cur"))
             ;;
-          *)
-            COMPREPLY=($(compgen -W "--format" -- "$cur"))
+          merge)
+            COMPREPLY=($(compgen -W "--git-sync --format" -- "$cur"))
             ;;
         esac
       else
@@ -33,14 +39,17 @@ _spinclass_complete() {
         done < <(spinclass completions 2>/dev/null)
       fi
       ;;
-    status)
+    status|list|validate)
+      [[ "$cur" == -* ]] && COMPREPLY=($(compgen -W "--format" -- "$cur"))
+      ;;
+    fork)
       [[ "$cur" == -* ]] && COMPREPLY=($(compgen -W "--format" -- "$cur"))
       ;;
     clean)
       [[ "$cur" == -* ]] && COMPREPLY=($(compgen -W "--interactive -i --format" -- "$cur"))
       ;;
     pull)
-      [[ "$cur" == -* ]] && COMPREPLY=($(compgen -W "--dirty -d" -- "$cur"))
+      [[ "$cur" == -* ]] && COMPREPLY=($(compgen -W "--dirty -d --format" -- "$cur"))
       ;;
     perms)
       if [[ "$COMP_CWORD" -eq 2 ]]; then
