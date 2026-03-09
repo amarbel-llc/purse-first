@@ -155,10 +155,10 @@ func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format s
 
 	interactive := isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd())
 
-	return closeShop(w, exec, rp, format, mergeOnClose, verbose, tw, interactive, nil, noAttach)
+	return closeShop(w, exec, rp, format, mergeOnClose, verbose, tw, interactive, noAttach)
 }
 
-func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, mergeOnClose bool, verbose bool, tw *tap.Writer, interactive bool, command []string, noAttach bool) error {
+func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, mergeOnClose bool, verbose bool, tw *tap.Writer, interactive bool, noAttach bool) error {
 	if rp.Branch == "" {
 		if err := rp.FillBranchFromGit(); err != nil {
 			log.Warn("could not determine current branch")
@@ -224,7 +224,7 @@ func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, fo
 					Description: "reattach " + rp.Branch,
 					Ok:          true,
 				}
-				if attachErr := exec.Attach(rp.AbsPath, rp.SessionKey, command, noAttach, &tp); attachErr != nil {
+				if attachErr := exec.Attach(rp.AbsPath, rp.SessionKey, nil, noAttach, &tp); attachErr != nil {
 					return fmt.Errorf("reattach failed: %w", attachErr)
 				}
 				worktreeStatus = git.StatusPorcelain(rp.AbsPath)

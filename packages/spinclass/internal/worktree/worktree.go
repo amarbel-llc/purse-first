@@ -47,6 +47,9 @@ func ResolvePath(
 	}
 
 	rawName := SanitizeBranchName(args)
+	if rawName == "" {
+		return ResolvedPath{}, fmt.Errorf("branch name is empty after sanitization of %q", args)
+	}
 
 	transformedName, err := sf.CreateBranchName(rawName)
 	if err != nil {
