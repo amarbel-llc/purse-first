@@ -23,9 +23,9 @@ func SanitizeBranchName(parts []string) string {
 
 	name := strings.Join(transformed, "-")
 	name = strings.ToLower(name)
-	name = stripGitInvalidChars(name)
 	name = strings.ReplaceAll(name, "@{", "")
-	name = collapseDoubleDots(name)
+	name = stripGitInvalidChars(name)
+	name = collapseConsecutive(name, '.')
 	name = collapseConsecutive(name, '-')
 	name = collapseConsecutive(name, '_')
 	name = stripTrailingLockSuffix(name)
@@ -52,14 +52,6 @@ func stripGitInvalidChars(s string) string {
 	}
 
 	return b.String()
-}
-
-func collapseDoubleDots(s string) string {
-	for strings.Contains(s, "..") {
-		s = strings.ReplaceAll(s, "..", ".")
-	}
-
-	return s
 }
 
 func collapseConsecutive(s string, ch byte) string {
