@@ -48,6 +48,8 @@
 - [x] tap-dancer rust: add carriage return stripping for YAML output fields
 - [x] tap-dancer rust: add ANSI escape code stripping in YAML output
 - [x] bootstrap root Cargo workspace — add root Cargo.toml with members [packages/chix, packages/tap-dancer/rust, libs/rust-mcp], delete per-crate Cargo.lock files, remove chix.nix vendor workaround, verify: `nix build .#chix`, `nix build .#tap-dancer`, `cargo test --workspace`
+- [ ] grit: add `--amend` support to `commit` tool (git commit --amend)
+- [ ] grit: add `soft_reset` tool (git reset --soft HEAD~N) — needed for amend workaround and squash flows
 - [ ] update tap-dancer with latest tap amendments
 - [ ] verify install-local skill path resolution (./skills/<name> in .claude-plugin/plugin.json may not resolve correctly — needs manual test)
 - [ ] separate libs and marketplace generation into new `bob` repo
