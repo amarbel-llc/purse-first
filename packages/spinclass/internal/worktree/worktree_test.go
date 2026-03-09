@@ -13,17 +13,17 @@ func TestResolvePathBranchName(t *testing.T) {
 	home := t.TempDir()
 	repoPath := filepath.Join(home, "repos", "myrepo")
 
-	rp, err := ResolvePath(sweatfile.Sweatfile{}, repoPath, "feature-x")
+	rp, err := ResolvePath(sweatfile.Sweatfile{}, repoPath, []string{"feature-x"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	wantAbs := filepath.Join(repoPath, WorktreesDir, "feature-x")
+	wantAbs := filepath.Join(repoPath, WorktreesDir, "feature_x")
 	if rp.AbsPath != wantAbs {
 		t.Errorf("AbsPath = %q, want %q", rp.AbsPath, wantAbs)
 	}
-	if rp.Branch != "feature-x" {
-		t.Errorf("Branch = %q, want %q", rp.Branch, "feature-x")
+	if rp.Branch != "feature_x" {
+		t.Errorf("Branch = %q, want %q", rp.Branch, "feature_x")
 	}
 	if rp.RepoPath != repoPath {
 		t.Errorf("RepoPath = %q, want %q", rp.RepoPath, repoPath)
@@ -34,12 +34,12 @@ func TestResolvePathSessionKey(t *testing.T) {
 	home := t.TempDir()
 	repoPath := filepath.Join(home, "repos", "myrepo")
 
-	rp, err := ResolvePath(sweatfile.Sweatfile{}, repoPath, "feature-x")
+	rp, err := ResolvePath(sweatfile.Sweatfile{}, repoPath, []string{"feature-x"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	wantKey := "myrepo/feature-x"
+	wantKey := "myrepo/feature_x"
 	if rp.SessionKey != wantKey {
 		t.Errorf("SessionKey = %q, want %q", rp.SessionKey, wantKey)
 	}
@@ -338,6 +338,74 @@ func TestForkName(t *testing.T) {
 	got = ForkName(dir, "my-feature")
 	if got != "my-feature-3" {
 		t.Errorf("ForkName() = %q, want %q", got, "my-feature-3")
+	}
+}
+
+func TestResolvePathMultipleArgs(t *testing.T) {
+	home := t.TempDir()
+	repoPath := filepath.Join(home, "repos", "myrepo")
+
+	rp, err := ResolvePath(sweatfile.Sweatfile{}, repoPath, []string{"this", "is", "the", "branch-name"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if rp.Branch != "this-is-the-branch_name" {
+		t.Errorf("Branch = %q, want %q", rp.Branch, "this-is-the-branch_name")
+	}
+	if rp.ExistingBranch != "" {
+		t.Errorf("ExistingBranch = %q, want empty for new branch", rp.ExistingBranch)
+	}
+}
+
+func TestResolvePathDetectsLocalBranch(t *testing.T) {
+	root := t.TempDir()
+	repoDir := filepath.Join(root, "myrepo")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	runGit := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	runGit(repoDir, "init")
+	runGit(repoDir, "config", "user.email", "test@test.com")
+	runGit(repoDir, "config", "user.name", "Test")
+	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
+	runGit(repoDir, "branch", "existing_branch")
+
+	rp, err := ResolvePath(sweatfile.Sweatfile{}, repoDir, []string{"existing-branch"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if rp.ExistingBranch != "existing_branch" {
+		t.Errorf("ExistingBranch = %q, want %q", rp.ExistingBranch, "existing_branch")
+	}
+	if rp.Branch != "existing_branch" {
+		t.Errorf("Branch = %q, want %q", rp.Branch, "existing_branch")
+	}
+}
+
+func TestResolvePathRandomNameWhenNoArgs(t *testing.T) {
+	home := t.TempDir()
+	repoPath := filepath.Join(home, "repos", "myrepo")
+
+	rp, err := ResolvePath(sweatfile.Sweatfile{}, repoPath, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if rp.Branch == "" {
+		t.Error("expected non-empty random branch name")
+	}
+	if rp.ExistingBranch != "" {
+		t.Errorf("ExistingBranch = %q, want empty for random name", rp.ExistingBranch)
 	}
 }
 

@@ -15,42 +15,73 @@ import (
 const WorktreesDir = ".worktrees"
 
 type ResolvedPath struct {
-	AbsPath    string // absolute filesystem path to the worktree
-	RepoPath   string // absolute path to the parent git repo
-	SessionKey string // key for zmx/executor sessions (<repo-dirname>/<branch>)
-	Branch     string // branch name
+	AbsPath        string // absolute filesystem path to the worktree
+	RepoPath       string // absolute path to the parent git repo
+	SessionKey     string // key for zmx/executor sessions (<repo-dirname>/<branch>)
+	Branch         string // branch name
+	ExistingBranch string // non-empty when an existing branch was detected
 }
 
 // ResolvePath resolves a worktree target relative to a git repo.
 //
-// target interpretation:
-//   - bare branch name (no "/" or ".") -> <repoPath>/.worktrees/<branch>
+// When args is empty a random name is generated. Otherwise the args are
+// sanitised into a branch name and checked against local and remote refs
+// to detect existing branches.
 //
 // SessionKey is always <repo-dirname>/<branch>.
 func ResolvePath(
-	sweatfile sweatfile.Sweatfile,
-	repoPath,
-	branch string,
+	sf sweatfile.Sweatfile,
+	repoPath string,
+	args []string,
 ) (ResolvedPath, error) {
-	{
-		var err error
-
-		if branch, err = sweatfile.CreateBranchName(branch); err != nil {
-			return ResolvedPath{}, err
-		}
+	if len(args) == 0 {
+		branch := RandomName(repoPath)
+		absPath := filepath.Join(repoPath, WorktreesDir, branch)
+		repoDirname := filepath.Base(repoPath)
+		return ResolvedPath{
+			AbsPath:    absPath,
+			RepoPath:   repoPath,
+			SessionKey: repoDirname + "/" + branch,
+			Branch:     branch,
+		}, nil
 	}
 
-	absPath := filepath.Join(repoPath, WorktreesDir, branch)
+	rawName := SanitizeBranchName(args)
 
+	transformedName, err := sf.CreateBranchName(rawName)
+	if err != nil {
+		return ResolvedPath{}, err
+	}
+
+	branch, existingBranch := detectBranch(repoPath, rawName, transformedName)
+
+	absPath := filepath.Join(repoPath, WorktreesDir, branch)
 	repoDirname := filepath.Base(repoPath)
 	sessionKey := repoDirname + "/" + branch
 
 	return ResolvedPath{
-		AbsPath:    absPath,
-		RepoPath:   repoPath,
-		SessionKey: sessionKey,
-		Branch:     branch,
+		AbsPath:        absPath,
+		RepoPath:       repoPath,
+		SessionKey:     sessionKey,
+		Branch:         branch,
+		ExistingBranch: existingBranch,
 	}, nil
+}
+
+func detectBranch(repoPath, rawName, transformedName string) (string, string) {
+	if git.BranchExists(repoPath, rawName) {
+		return rawName, rawName
+	}
+	if transformedName != rawName && git.BranchExists(repoPath, transformedName) {
+		return transformedName, transformedName
+	}
+	if git.RemoteBranchExists(repoPath, rawName) {
+		return rawName, rawName
+	}
+	if transformedName != rawName && git.RemoteBranchExists(repoPath, transformedName) {
+		return transformedName, transformedName
+	}
+	return transformedName, ""
 }
 
 // DetectRepo walks up from dir looking for a .git directory (must be a
