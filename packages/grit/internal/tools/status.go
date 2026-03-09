@@ -72,6 +72,11 @@ func handleGitStatus(ctx context.Context, args json.RawMessage, _ command.Prompt
 
 	result := git.ParseStatus(out)
 
+	state, err := git.DetectInProgressState(ctx, params.RepoPath)
+	if err == nil && state != nil {
+		result.State = state
+	}
+
 	return command.JSONResult(result), nil
 }
 

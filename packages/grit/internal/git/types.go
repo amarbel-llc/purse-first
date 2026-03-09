@@ -15,8 +15,9 @@ type StatusEntry struct {
 }
 
 type StatusResult struct {
-	Branch  BranchStatus  `json:"branch"`
-	Entries []StatusEntry `json:"entries"`
+	Branch  BranchStatus     `json:"branch"`
+	Entries []StatusEntry    `json:"entries"`
+	State   *InProgressState `json:"state,omitempty"`
 }
 
 type DiffStat struct {
