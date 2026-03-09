@@ -41,27 +41,23 @@ func TestParseDirtyStatusMixed(t *testing.T) {
 }
 
 func TestRenderProducesOutput(t *testing.T) {
-	rows := []BranchStatus{
+	repos := []RepoStatus{
 		{
-			Repo:         "eng/repos/myrepo",
-			Branch:       "main",
-			Dirty:        "clean",
-			Remote:       "≡ origin/main",
-			LastCommit:   "2025-01-01",
-			LastModified: "2025-01-01",
-		},
-		{
-			Repo:         "eng/repos/myrepo",
-			Branch:       "feature-x",
-			Dirty:        "2M 1?",
-			Remote:       "↑3 origin/feature-x",
-			LastCommit:   "2025-01-02",
-			LastModified: "2025-01-02",
-			IsWorktree:   true,
+			Main: BranchStatus{
+				Repo: "eng/repos/myrepo", Branch: "main", Dirty: "clean",
+				Remote: "≡ origin/main", LastCommit: "2025-01-01", LastModified: "2025-01-01",
+			},
+			Worktrees: []BranchStatus{
+				{
+					Repo: "eng/repos/myrepo", Branch: "feature-x", Dirty: "2M 1?",
+					Remote: "↑3 origin/feature-x", LastCommit: "2025-01-02",
+					LastModified: "2025-01-02", IsWorktree: true,
+				},
+			},
 		},
 	}
 
-	output := Render(rows)
+	output := Render(repos)
 	if output == "" {
 		t.Error("expected non-empty render output")
 	}
@@ -74,31 +70,28 @@ func TestRenderProducesOutput(t *testing.T) {
 }
 
 func TestRenderSectionHeaders(t *testing.T) {
-	rows := []BranchStatus{
+	repos := []RepoStatus{
 		{
-			Repo:       "eng/repos/dirty-repo",
-			Branch:     "main",
-			Dirty:      "1M",
-			Remote:     "↑1 origin/main",
-			IsWorktree: false,
+			Main: BranchStatus{
+				Repo: "eng/repos/dirty-repo", Branch: "main", Dirty: "1M",
+				Remote: "↑1 origin/main",
+			},
+			Worktrees: []BranchStatus{
+				{
+					Repo: "eng/repos/dirty-repo", Branch: "feature", Dirty: "2M",
+					Remote: "↑2 origin/feature", IsWorktree: true,
+				},
+			},
 		},
 		{
-			Repo:       "eng/repos/dirty-repo",
-			Branch:     "feature",
-			Dirty:      "2M",
-			Remote:     "↑2 origin/feature",
-			IsWorktree: true,
-		},
-		{
-			Repo:       "eng/repos/clean-repo",
-			Branch:     "main",
-			Dirty:      "clean",
-			Remote:     "≡ origin/main",
-			IsWorktree: false,
+			Main: BranchStatus{
+				Repo: "eng/repos/clean-repo", Branch: "main", Dirty: "clean",
+				Remote: "≡ origin/main",
+			},
 		},
 	}
 
-	output := Render(rows)
+	output := Render(repos)
 	if !strings.Contains(output, "Repos") {
 		t.Error("expected 'Repos' section header")
 	}
@@ -111,24 +104,22 @@ func TestRenderSectionHeaders(t *testing.T) {
 }
 
 func TestRenderCleanGrouping(t *testing.T) {
-	rows := []BranchStatus{
+	repos := []RepoStatus{
 		{
-			Repo:       "eng/repos/repo-a",
-			Branch:     "main",
-			Dirty:      "clean",
-			Remote:     "≡ origin/main",
-			IsWorktree: false,
-		},
-		{
-			Repo:       "eng/repos/repo-a",
-			Branch:     "feature",
-			Dirty:      "clean",
-			Remote:     "",
-			IsWorktree: true,
+			Main: BranchStatus{
+				Repo: "eng/repos/repo-a", Branch: "main", Dirty: "clean",
+				Remote: "≡ origin/main",
+			},
+			Worktrees: []BranchStatus{
+				{
+					Repo: "eng/repos/repo-a", Branch: "feature", Dirty: "clean",
+					Remote: "", IsWorktree: true,
+				},
+			},
 		},
 	}
 
-	output := Render(rows)
+	output := Render(repos)
 	if !strings.Contains(output, "Clean") {
 		t.Error("expected 'Clean' section header")
 	}

@@ -110,16 +110,16 @@ var statusCmd = &cobra.Command{
 			format = "table"
 		}
 
-		rows := status.CollectStatus(cwd)
-		if len(rows) == 0 {
+		repos := status.CollectStatus(cwd)
+		if len(repos) == 0 {
 			log.Info("no repos found")
 			return nil
 		}
 
 		if format == "tap" {
-			status.RenderTap(rows, os.Stdout)
+			status.RenderTap(repos, os.Stdout)
 		} else {
-			fmt.Println(status.Render(rows))
+			fmt.Println(status.Render(repos))
 		}
 		return nil
 	},

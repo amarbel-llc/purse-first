@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 
+	"github.com/amarbel-llc/spinclass/internal/executor"
 	"github.com/amarbel-llc/spinclass/internal/git"
 	tap "github.com/amarbel-llc/purse-first/packages/tap-dancer/go"
 	"github.com/amarbel-llc/spinclass/internal/worktree"
@@ -23,6 +24,12 @@ type BranchStatus struct {
 	LastCommit   string
 	LastModified string
 	IsWorktree   bool
+	Session      bool
+}
+
+type RepoStatus struct {
+	Main      BranchStatus
+	Worktrees []BranchStatus
 }
 
 func CollectBranchStatus(repoLabel, branchPath, branchName string) BranchStatus {
@@ -110,32 +117,35 @@ func parseDirtyStatus(porcelain string) string {
 	return strings.Join(parts, " ")
 }
 
-func CollectRepoStatus(repoPath string) []BranchStatus {
+func CollectRepoStatus(repoPath string, sessions map[string]bool) RepoStatus {
 	repoLabel := filepath.Base(repoPath)
-	var rows []BranchStatus
+	var rs RepoStatus
 
 	mainBranch, err := git.BranchCurrent(repoPath)
 	if err == nil && mainBranch != "" {
-		rows = append(rows, CollectBranchStatus(repoLabel, repoPath, mainBranch))
+		rs.Main = CollectBranchStatus(repoLabel, repoPath, mainBranch)
+		rs.Main.Session = sessions[repoLabel+"/"+mainBranch]
 	}
 
 	for _, wtPath := range worktree.ListWorktrees(repoPath) {
 		branch := filepath.Base(wtPath)
 		bs := CollectBranchStatus(repoLabel, wtPath, branch)
 		bs.IsWorktree = true
-		rows = append(rows, bs)
+		bs.Session = sessions[repoLabel+"/"+branch]
+		rs.Worktrees = append(rs.Worktrees, bs)
 	}
 
-	return rows
+	return rs
 }
 
-func CollectStatus(startDir string) []BranchStatus {
-	var all []BranchStatus
+func CollectStatus(startDir string) []RepoStatus {
+	sessions := executor.ListSessions()
+	var all []RepoStatus
 
 	repos := worktree.ScanRepos(startDir)
 	for _, repoPath := range repos {
-		rows := CollectRepoStatus(repoPath)
-		all = append(all, rows...)
+		rs := CollectRepoStatus(repoPath, sessions)
+		all = append(all, rs)
 	}
 
 	return all
@@ -184,14 +194,16 @@ func renderTable(data [][]string) string {
 	return t.Render()
 }
 
-var (
-	styleHeader = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("15"))
-	styleCode   = lipgloss.NewStyle().Foreground(lipgloss.Color("#E88388")).Background(lipgloss.Color("#1D1F21")).Padding(0, 1)
-)
+var styleHeader = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("15"))
 
-func Render(rows []BranchStatus) string {
+func Render(repos []RepoStatus) string {
+	var rows []BranchStatus
+	for _, rs := range repos {
+		rows = append(rows, rs.Main)
+		rows = append(rows, rs.Worktrees...)
+	}
+
 	var repoRows, worktreeRows, cleanRows [][]string
-
 	for _, r := range rows {
 		row := []string{r.Repo, r.Branch, r.Dirty, r.Remote, r.LastCommit, r.LastModified}
 		if r.isClean() {
@@ -204,7 +216,6 @@ func Render(rows []BranchStatus) string {
 	}
 
 	var sections []string
-
 	if len(repoRows) > 0 {
 		sections = append(sections, styleHeader.Render("Repos")+"\n"+renderTable(repoRows))
 	}
@@ -218,11 +229,13 @@ func Render(rows []BranchStatus) string {
 	return strings.Join(sections, "\n\n")
 }
 
-func RenderTap(rows []BranchStatus, w io.Writer) {
+func RenderTap(repos []RepoStatus, w io.Writer) {
 	tw := tap.NewWriter(w)
-	for _, r := range rows {
-		desc := r.Repo + " " + styleCode.Render(r.Branch)
-		tw.Ok(desc)
+	for _, rs := range repos {
+		tw.Ok(rs.Main.Repo + " " + rs.Main.Branch)
+		for _, wt := range rs.Worktrees {
+			tw.Ok(wt.Repo + " " + wt.Branch)
+		}
 	}
 	tw.Plan()
 }
