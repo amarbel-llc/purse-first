@@ -12,19 +12,37 @@ import (
 	"github.com/google/shlex"
 )
 
+type Hooks struct {
+	Create *string `toml:"create"`
+	Stop   *string `toml:"stop"`
+}
+
 type Experimental struct {
 	BoundaryNotify *bool `toml:"boundary-notify"`
 }
 
 type Sweatfile struct {
-	SystemPrompt       *string  `toml:"system-prompt"`        // TODO replace with PathOrString struct
-	SystemPromptAppend *string  `toml:"system-prompt-append"` // TODO replace with PathOrString struct
-	BranchNameCommand  string   `toml:"branch-name-command"`  // TODO add tests
-	GitSkipIndex []string `toml:"git-excludes"`
+	SystemPrompt       *string       `toml:"system-prompt"`        // TODO replace with PathOrString struct
+	SystemPromptAppend *string       `toml:"system-prompt-append"` // TODO replace with PathOrString struct
+	BranchNameCommand  string        `toml:"branch-name-command"`  // TODO add tests
+	GitSkipIndex       []string      `toml:"git-excludes"`
+	ClaudeAllow        []string      `toml:"claude-allow"`
+	Hooks              *Hooks        `toml:"hooks"`
+	Experimental       *Experimental `toml:"experimental"`
+}
 
-	ClaudeAllow  []string      `toml:"claude-allow"`
-	StopHook     *string       `toml:"stop-hook"`
-	Experimental *Experimental `toml:"experimental"`
+func (sf Sweatfile) StopHookCommand() *string {
+	if sf.Hooks == nil {
+		return nil
+	}
+	return sf.Hooks.Stop
+}
+
+func (sf Sweatfile) CreateHookCommand() *string {
+	if sf.Hooks == nil {
+		return nil
+	}
+	return sf.Hooks.Create
 }
 
 func (sf Sweatfile) BoundaryNotifyEnabled() bool {

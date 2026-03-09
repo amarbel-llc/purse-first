@@ -145,7 +145,7 @@ func TestStopHookBlocksOnFailure(t *testing.T) {
 
 	// Create a sweatfile with a failing stop-hook
 	cwd := t.TempDir()
-	os.WriteFile(filepath.Join(cwd, "sweatfile"), []byte(`stop-hook = "false"`), 0o644)
+	os.WriteFile(filepath.Join(cwd, "sweatfile"), []byte("[hooks]\nstop = \"false\""), 0o644)
 
 	input, _ := json.Marshal(map[string]any{
 		"hook_event_name": "Stop",
@@ -181,7 +181,7 @@ func TestStopHookApprovesOnSecondInvocation(t *testing.T) {
 	t.Setenv("TMPDIR", tmpDir)
 
 	cwd := t.TempDir()
-	os.WriteFile(filepath.Join(cwd, "sweatfile"), []byte(`stop-hook = "false"`), 0o644)
+	os.WriteFile(filepath.Join(cwd, "sweatfile"), []byte("[hooks]\nstop = \"false\""), 0o644)
 
 	// Create sentinel file (simulating first invocation already happened)
 	sentinel := filepath.Join(tmpDir, "stop-hook-approve-test-session")
@@ -210,7 +210,7 @@ func TestStopHookApprovesOnSuccess(t *testing.T) {
 	t.Setenv("TMPDIR", tmpDir)
 
 	cwd := t.TempDir()
-	os.WriteFile(filepath.Join(cwd, "sweatfile"), []byte(`stop-hook = "true"`), 0o644)
+	os.WriteFile(filepath.Join(cwd, "sweatfile"), []byte("[hooks]\nstop = \"true\""), 0o644)
 
 	input, _ := json.Marshal(map[string]any{
 		"hook_event_name": "Stop",

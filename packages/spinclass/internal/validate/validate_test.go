@@ -129,12 +129,14 @@ claude-allow = ["Read"]
 	}
 }
 
-func TestCheckUnknownFieldsStopHook(t *testing.T) {
+func TestCheckUnknownFieldsHooksTable(t *testing.T) {
 	data := []byte(`
-stop-hook = "just build test"
+[hooks]
+create = "npm install"
+stop = "just build test"
 `)
 	issues := CheckUnknownFields(data)
 	if len(issues) != 0 {
-		t.Errorf("expected no issues for stop-hook, got %v", issues)
+		t.Errorf("expected no issues for [hooks] table, got %v", issues)
 	}
 }

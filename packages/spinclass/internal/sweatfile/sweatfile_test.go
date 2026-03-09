@@ -325,56 +325,143 @@ func TestLoadHierarchyNoSweatfiles(t *testing.T) {
 	}
 }
 
-func TestParseStopHook(t *testing.T) {
-	input := `stop-hook = "just test"`
+func TestParseHooksCreate(t *testing.T) {
+	input := `
+[hooks]
+create = "composer install"
+`
 	sf, err := Parse([]byte(input))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if sf.StopHook == nil || *sf.StopHook != "just test" {
-		t.Errorf("stop-hook: got %v", sf.StopHook)
+	if sf.Hooks == nil || sf.Hooks.Create == nil || *sf.Hooks.Create != "composer install" {
+		t.Errorf("hooks.create: got %v", sf.Hooks)
 	}
 }
 
-func TestParseStopHookAbsent(t *testing.T) {
+func TestParseHooksStop(t *testing.T) {
+	input := `
+[hooks]
+stop = "just test"
+`
+	sf, err := Parse([]byte(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sf.Hooks == nil || sf.Hooks.Stop == nil || *sf.Hooks.Stop != "just test" {
+		t.Errorf("hooks.stop: got %v", sf.Hooks)
+	}
+}
+
+func TestParseHooksBoth(t *testing.T) {
+	input := `
+[hooks]
+create = "npm install"
+stop = "just lint"
+`
+	sf, err := Parse([]byte(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sf.Hooks == nil {
+		t.Fatal("expected non-nil hooks")
+	}
+	if sf.Hooks.Create == nil || *sf.Hooks.Create != "npm install" {
+		t.Errorf("hooks.create: got %v", sf.Hooks.Create)
+	}
+	if sf.Hooks.Stop == nil || *sf.Hooks.Stop != "just lint" {
+		t.Errorf("hooks.stop: got %v", sf.Hooks.Stop)
+	}
+}
+
+func TestParseHooksAbsent(t *testing.T) {
 	sf, err := Parse([]byte(`git-excludes = [".claude/"]`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if sf.StopHook != nil {
-		t.Errorf("expected nil stop-hook, got %v", sf.StopHook)
+	if sf.Hooks != nil {
+		t.Errorf("expected nil hooks, got %v", sf.Hooks)
 	}
 }
 
-func TestMergeStopHookInherit(t *testing.T) {
-	cmd := "just test"
-	base := Sweatfile{StopHook: &cmd}
+func TestMergeHooksCreateInherit(t *testing.T) {
+	cmd := "npm install"
+	base := Sweatfile{Hooks: &Hooks{Create: &cmd}}
 	repo := Sweatfile{}
 	merged := Merge(base, repo)
-	if merged.StopHook == nil || *merged.StopHook != "just test" {
-		t.Errorf("expected inherited stop-hook, got %v", merged.StopHook)
+	if merged.Hooks == nil || merged.Hooks.Create == nil || *merged.Hooks.Create != "npm install" {
+		t.Errorf("expected inherited hooks.create, got %v", merged.Hooks)
 	}
 }
 
-func TestMergeStopHookOverride(t *testing.T) {
+func TestMergeHooksCreateOverride(t *testing.T) {
+	baseCmd := "npm install"
+	repoCmd := "composer install"
+	base := Sweatfile{Hooks: &Hooks{Create: &baseCmd}}
+	repo := Sweatfile{Hooks: &Hooks{Create: &repoCmd}}
+	merged := Merge(base, repo)
+	if merged.Hooks == nil || merged.Hooks.Create == nil || *merged.Hooks.Create != "composer install" {
+		t.Errorf("expected overridden hooks.create, got %v", merged.Hooks)
+	}
+}
+
+func TestMergeHooksCreateClear(t *testing.T) {
+	baseCmd := "npm install"
+	empty := ""
+	base := Sweatfile{Hooks: &Hooks{Create: &baseCmd}}
+	repo := Sweatfile{Hooks: &Hooks{Create: &empty}}
+	merged := Merge(base, repo)
+	if merged.Hooks == nil || merged.Hooks.Create == nil || *merged.Hooks.Create != "" {
+		t.Errorf("expected cleared hooks.create, got %v", merged.Hooks)
+	}
+}
+
+func TestMergeHooksStopInherit(t *testing.T) {
+	cmd := "just test"
+	base := Sweatfile{Hooks: &Hooks{Stop: &cmd}}
+	repo := Sweatfile{}
+	merged := Merge(base, repo)
+	if merged.Hooks == nil || merged.Hooks.Stop == nil || *merged.Hooks.Stop != "just test" {
+		t.Errorf("expected inherited hooks.stop, got %v", merged.Hooks)
+	}
+}
+
+func TestMergeHooksStopOverride(t *testing.T) {
 	baseCmd := "just test"
 	repoCmd := "just lint"
-	base := Sweatfile{StopHook: &baseCmd}
-	repo := Sweatfile{StopHook: &repoCmd}
+	base := Sweatfile{Hooks: &Hooks{Stop: &baseCmd}}
+	repo := Sweatfile{Hooks: &Hooks{Stop: &repoCmd}}
 	merged := Merge(base, repo)
-	if merged.StopHook == nil || *merged.StopHook != "just lint" {
-		t.Errorf("expected overridden stop-hook, got %v", merged.StopHook)
+	if merged.Hooks == nil || merged.Hooks.Stop == nil || *merged.Hooks.Stop != "just lint" {
+		t.Errorf("expected overridden hooks.stop, got %v", merged.Hooks)
 	}
 }
 
-func TestMergeStopHookClear(t *testing.T) {
+func TestMergeHooksStopClear(t *testing.T) {
 	baseCmd := "just test"
 	empty := ""
-	base := Sweatfile{StopHook: &baseCmd}
-	repo := Sweatfile{StopHook: &empty}
+	base := Sweatfile{Hooks: &Hooks{Stop: &baseCmd}}
+	repo := Sweatfile{Hooks: &Hooks{Stop: &empty}}
 	merged := Merge(base, repo)
-	if merged.StopHook == nil || *merged.StopHook != "" {
-		t.Errorf("expected cleared stop-hook, got %v", merged.StopHook)
+	if merged.Hooks == nil || merged.Hooks.Stop == nil || *merged.Hooks.Stop != "" {
+		t.Errorf("expected cleared hooks.stop, got %v", merged.Hooks)
+	}
+}
+
+func TestMergeHooksIndependentFields(t *testing.T) {
+	createCmd := "npm install"
+	stopCmd := "just test"
+	base := Sweatfile{Hooks: &Hooks{Create: &createCmd}}
+	repo := Sweatfile{Hooks: &Hooks{Stop: &stopCmd}}
+	merged := Merge(base, repo)
+	if merged.Hooks == nil {
+		t.Fatal("expected non-nil hooks")
+	}
+	if merged.Hooks.Create == nil || *merged.Hooks.Create != "npm install" {
+		t.Errorf("expected inherited hooks.create, got %v", merged.Hooks.Create)
+	}
+	if merged.Hooks.Stop == nil || *merged.Hooks.Stop != "just test" {
+		t.Errorf("expected overridden hooks.stop, got %v", merged.Hooks.Stop)
 	}
 }
 
@@ -412,21 +499,21 @@ claude-allow = []
 	}
 }
 
-func TestLoadHierarchyStopHookInherited(t *testing.T) {
+func TestLoadHierarchyHooksStopInherited(t *testing.T) {
 	home := t.TempDir()
 	repoDir := filepath.Join(home, "eng", "repos", "myrepo")
 	os.MkdirAll(repoDir, 0o755)
 
 	globalPath := filepath.Join(home, ".config", "spinclass", "sweatfile")
-	writeSweatfile(t, globalPath, `stop-hook = "just test"`)
+	writeSweatfile(t, globalPath, "[hooks]\nstop = \"just test\"")
 
 	result, err := LoadHierarchy(home, repoDir)
 	if err != nil {
 		t.Fatalf("LoadHierarchy returned error: %v", err)
 	}
 
-	if result.Merged.StopHook == nil || *result.Merged.StopHook != "just test" {
-		t.Errorf("expected inherited stop-hook, got %v", result.Merged.StopHook)
+	if result.Merged.StopHookCommand() == nil || *result.Merged.StopHookCommand() != "just test" {
+		t.Errorf("expected inherited hooks.stop, got %v", result.Merged.Hooks)
 	}
 }
 
@@ -556,23 +643,23 @@ func TestMergeSystemPromptAppendClear(t *testing.T) {
 	}
 }
 
-func TestLoadHierarchyStopHookOverriddenByRepo(t *testing.T) {
+func TestLoadHierarchyHooksStopOverriddenByRepo(t *testing.T) {
 	home := t.TempDir()
 	repoDir := filepath.Join(home, "eng", "repos", "myrepo")
 	os.MkdirAll(repoDir, 0o755)
 
 	globalPath := filepath.Join(home, ".config", "spinclass", "sweatfile")
-	writeSweatfile(t, globalPath, `stop-hook = "just test"`)
+	writeSweatfile(t, globalPath, "[hooks]\nstop = \"just test\"")
 
 	repoSweatfile := filepath.Join(repoDir, "sweatfile")
-	writeSweatfile(t, repoSweatfile, `stop-hook = "just lint"`)
+	writeSweatfile(t, repoSweatfile, "[hooks]\nstop = \"just lint\"")
 
 	result, err := LoadHierarchy(home, repoDir)
 	if err != nil {
 		t.Fatalf("LoadHierarchy returned error: %v", err)
 	}
 
-	if result.Merged.StopHook == nil || *result.Merged.StopHook != "just lint" {
-		t.Errorf("expected overridden stop-hook, got %v", result.Merged.StopHook)
+	if result.Merged.StopHookCommand() == nil || *result.Merged.StopHookCommand() != "just lint" {
+		t.Errorf("expected overridden hooks.stop, got %v", result.Merged.Hooks)
 	}
 }

@@ -130,8 +130,16 @@ func Merge(base, repo Sweatfile) Sweatfile {
 		}
 	}
 
-	if repo.StopHook != nil {
-		merged.StopHook = repo.StopHook
+	if repo.Hooks != nil {
+		if merged.Hooks == nil {
+			merged.Hooks = &Hooks{}
+		}
+		if repo.Hooks.Create != nil {
+			merged.Hooks.Create = repo.Hooks.Create
+		}
+		if repo.Hooks.Stop != nil {
+			merged.Hooks.Stop = repo.Hooks.Stop
+		}
 	}
 
 	if repo.Experimental != nil {

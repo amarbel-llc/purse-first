@@ -154,7 +154,7 @@ func ApplyClaudeSettings(worktreePath string, sweatfile Sweatfile) error {
 			},
 		}
 
-		if sweatfile.StopHook != nil && *sweatfile.StopHook != "" {
+		if cmd := sweatfile.StopHookCommand(); cmd != nil && *cmd != "" {
 			hooksMap["Stop"] = []any{
 				map[string]any{
 					"matcher": "*",

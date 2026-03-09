@@ -1,4 +1,5 @@
 # vim: ft=toml
 
 system-prompt = ""
-# stop-hook = "just build test"
+# [hooks]
+# stop = "just build test"

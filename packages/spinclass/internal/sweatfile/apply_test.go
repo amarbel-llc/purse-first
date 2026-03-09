@@ -227,7 +227,7 @@ func TestApplyClaudeSettingsWritesStopHookWhenConfigured(t *testing.T) {
 	os.WriteFile(filepath.Join(dir, ".git"), []byte("gitdir: /tmp/fake"), 0o644)
 
 	cmd := "just test"
-	err := ApplyClaudeSettings(dir, Sweatfile{StopHook: &cmd})
+	err := ApplyClaudeSettings(dir, Sweatfile{Hooks: &Hooks{Stop: &cmd}})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
