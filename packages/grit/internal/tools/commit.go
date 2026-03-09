@@ -24,6 +24,7 @@ func registerCommitCommands(app *command.App) {
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "message", Type: command.String, Description: "Commit message", Required: true},
+			{Name: "amend", Type: command.Bool, Description: "Amend the previous commit instead of creating a new one"},
 		},
 		MapsTools: []command.ToolMapping{
 			{Replaces: "Bash", CommandPrefixes: []string{"git commit"}, UseWhen: "creating a new commit"},
@@ -36,13 +37,22 @@ func handleGitCommit(ctx context.Context, args json.RawMessage, _ command.Prompt
 	var params struct {
 		RepoPath string `json:"repo_path"`
 		Message  string `json:"message"`
+		Amend    bool   `json:"amend"`
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
 		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
 	}
 
-	out, err := git.Run(ctx, params.RepoPath, "commit", "-m", params.Message)
+	gitArgs := []string{"commit"}
+
+	if params.Amend {
+		gitArgs = append(gitArgs, "--amend")
+	}
+
+	gitArgs = append(gitArgs, "-m", params.Message)
+
+	out, err := git.Run(ctx, params.RepoPath, gitArgs...)
 	if err != nil {
 		return command.TextErrorResult(fmt.Sprintf("git commit: %v", err)), nil
 	}

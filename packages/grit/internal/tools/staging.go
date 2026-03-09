@@ -43,7 +43,9 @@ func registerStagingCommands(app *command.App) {
 		},
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
-			{Name: "paths", Type: command.Array, Description: "File paths to unstage (relative to repo root)", Required: true},
+			{Name: "paths", Type: command.Array, Description: "File paths to unstage (relative to repo root)"},
+			{Name: "soft", Type: command.Bool, Description: "Soft reset: move HEAD back without changing index or working tree (use with ref)"},
+			{Name: "ref", Type: command.String, Description: "Target ref for soft reset (e.g. HEAD~1, HEAD~3, a branch). Defaults to HEAD~1"},
 		},
 		MapsTools: []command.ToolMapping{
 			{Replaces: "Bash", CommandPrefixes: []string{"git reset"}, UseWhen: "unstaging files"},
@@ -79,10 +81,32 @@ func handleGitReset(ctx context.Context, args json.RawMessage, _ command.Prompte
 	var params struct {
 		RepoPath string   `json:"repo_path"`
 		Paths    []string `json:"paths"`
+		Soft     bool     `json:"soft"`
+		Ref      string   `json:"ref"`
 	}
 
 	if err := json.Unmarshal(args, &params); err != nil {
 		return command.TextErrorResult(fmt.Sprintf("invalid arguments: %v", err)), nil
+	}
+
+	if params.Soft {
+		ref := params.Ref
+		if ref == "" {
+			ref = "HEAD~1"
+		}
+
+		if _, err := git.Run(ctx, params.RepoPath, "reset", "--soft", ref); err != nil {
+			return command.TextErrorResult(fmt.Sprintf("git reset --soft: %v", err)), nil
+		}
+
+		return command.JSONResult(git.MutationResult{
+			Status: "soft_reset",
+			Ref:    ref,
+		}), nil
+	}
+
+	if len(params.Paths) == 0 {
+		return command.TextErrorResult("paths is required when not using soft reset"), nil
 	}
 
 	gitArgs := []string{"reset", "HEAD", "--"}
