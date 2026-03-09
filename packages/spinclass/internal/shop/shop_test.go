@@ -110,7 +110,7 @@ func TestCreateTapNewWorktreeErrorPath(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := Create(&buf, rp, false, "tap", nil)
+	err := Create(&buf, rp, "", false, "tap", nil)
 	if err == nil {
 		t.Error("expected error when creating worktree in non-git dir, got nil")
 	}
@@ -126,7 +126,7 @@ func TestCreateTapSkipExisting(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := Create(&buf, rp, false, "tap", nil); err != nil {
+	if err := Create(&buf, rp, "", false, "tap", nil); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
 
@@ -167,7 +167,7 @@ func TestCreateTapNewWorktree(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := Create(&buf, rp, false, "tap", nil); err != nil {
+	if err := Create(&buf, rp, "", false, "tap", nil); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
 
@@ -193,7 +193,7 @@ func TestCreateSharedWriter(t *testing.T) {
 	tw := tap.NewWriter(&buf)
 	tw.PlanAhead(2)
 
-	if err := Create(&buf, rp, false, "tap", tw); err != nil {
+	if err := Create(&buf, rp, "", false, "tap", tw); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
 
@@ -271,7 +271,7 @@ func TestNewTapExistingWorktree(t *testing.T) {
 
 	mock := &mockExecutor{}
 	var buf bytes.Buffer
-	err := New(&buf, mock, rp, "tap", nil, false, false, false)
+	err := New(&buf, mock, rp, "tap", nil, "", false, false, false)
 	if err != nil {
 		t.Fatalf("New returned error: %v", err)
 	}
@@ -343,7 +343,7 @@ func TestNewNoAttach(t *testing.T) {
 
 	mock := &mockExecutor{}
 	var buf bytes.Buffer
-	err := New(&buf, mock, rp, "tap", nil, true, true, false)
+	err := New(&buf, mock, rp, "tap", nil, "", true, true, false)
 	if err != nil {
 		t.Fatalf("New returned error: %v", err)
 	}
@@ -464,7 +464,7 @@ func TestAttachCallsExecutorWithCorrectArgs(t *testing.T) {
 
 	mock := &mockExecutor{}
 	var buf bytes.Buffer
-	err := New(&buf, mock, rp, "tap", nil, false, true, false)
+	err := New(&buf, mock, rp, "tap", nil, "", false, true, false)
 	if err != nil {
 		t.Fatalf("New returned error: %v", err)
 	}
@@ -528,7 +528,7 @@ func TestNewMergeOnCloseCleanWorktree(t *testing.T) {
 	var buf bytes.Buffer
 
 	// mergeOnClose=true, noAttach=false (Attach returns immediately from mock)
-	err := New(&buf, mock, rp, "tap", nil, true, false, false)
+	err := New(&buf, mock, rp, "tap", nil, "", true, false, false)
 	if err != nil {
 		t.Fatalf("New returned error: %v", err)
 	}

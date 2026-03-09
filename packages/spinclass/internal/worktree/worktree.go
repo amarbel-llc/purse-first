@@ -100,7 +100,9 @@ func isCeiling(dir string, ceilings []string) bool {
 }
 
 // Create creates a new git worktree and applies sweatfile configuration.
-func Create(repoPath, worktreePath string) (sweatfile.Hierarchy, error) {
+// If existingBranch is non-empty, the worktree checks out that branch
+// instead of creating a new one from the directory name.
+func Create(repoPath, worktreePath, existingBranch string) (sweatfile.Hierarchy, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return sweatfile.Hierarchy{}, fmt.Errorf("getting home directory: %w", err)
@@ -111,8 +113,14 @@ func Create(repoPath, worktreePath string) (sweatfile.Hierarchy, error) {
 		return sweetfile, fmt.Errorf("loading sweatfile: %w", err)
 	}
 
-	if err := git.RunPassthrough(repoPath, "worktree", "add", worktreePath); err != nil {
-		return sweatfile.Hierarchy{}, fmt.Errorf("git worktree add: %w", err)
+	if existingBranch != "" {
+		if err := git.RunPassthrough(repoPath, "worktree", "add", worktreePath, existingBranch); err != nil {
+			return sweatfile.Hierarchy{}, fmt.Errorf("git worktree add: %w", err)
+		}
+	} else {
+		if err := git.RunPassthrough(repoPath, "worktree", "add", worktreePath); err != nil {
+			return sweatfile.Hierarchy{}, fmt.Errorf("git worktree add: %w", err)
+		}
 	}
 
 	return sweetfile, applyWorktreeConfig(home, sweetfile, repoPath, worktreePath)

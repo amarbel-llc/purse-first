@@ -28,6 +28,7 @@ var (
 	verbose         bool
 	newMergeOnClose bool
 	newNoAttach     bool
+	newBranch       string
 	mergeGitSync    bool
 )
 
@@ -63,7 +64,9 @@ var newCmd = &cobra.Command{
 		var target string
 		var claudeArgs []string
 
-		if len(args) == 0 {
+		if newBranch != "" {
+			target = newBranch
+		} else if len(args) == 0 {
 			target = worktree.RandomName(repoPath)
 		} else {
 			target = args[0]
@@ -88,6 +91,7 @@ var newCmd = &cobra.Command{
 			resolvedPath,
 			format,
 			claudeArgs,
+			newBranch,
 			newMergeOnClose,
 			newNoAttach,
 			verbose,
@@ -308,6 +312,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "show detailed output (YAML diagnostics on passing test points)")
 	newCmd.Flags().BoolVar(&newMergeOnClose, "merge-on-close", false, "auto-merge worktree into default branch on session close")
 	newCmd.Flags().BoolVar(&newNoAttach, "no-attach", false, "create worktree but skip attaching (show command that would run)")
+	newCmd.Flags().StringVarP(&newBranch, "branch", "b", "", "use an existing branch for the session")
 	mergeCmd.Flags().BoolVar(&mergeGitSync, "git-sync", false, "pull and push after merge")
 	cleanCmd.Flags().BoolVarP(&cleanInteractive, "interactive", "i", false, "interactively discard changes in dirty merged worktrees")
 	rootCmd.AddCommand(newCmd)

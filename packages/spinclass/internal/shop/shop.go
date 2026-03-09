@@ -22,11 +22,12 @@ import (
 func Create(
 	writer io.Writer,
 	worktreePath worktree.ResolvedPath,
+	existingBranch string,
 	verbose bool,
 	format string,
 	tapWriter *tap.Writer,
 ) error {
-	existed, err := createWorktree(worktreePath, verbose)
+	existed, err := createWorktree(worktreePath, existingBranch, verbose)
 	if err != nil {
 		return err
 	}
@@ -48,12 +49,12 @@ func Create(
 	return nil
 }
 
-func createWorktree(worktreePath worktree.ResolvedPath, verbose bool) (bool, error) {
+func createWorktree(worktreePath worktree.ResolvedPath, existingBranch string, verbose bool) (bool, error) {
 	existed := true
 
 	if _, err := os.Stat(worktreePath.AbsPath); os.IsNotExist(err) {
 		existed = false
-		result, err := worktree.Create(worktreePath.RepoPath, worktreePath.AbsPath)
+		result, err := worktree.Create(worktreePath.RepoPath, worktreePath.AbsPath, existingBranch)
 		if err != nil {
 			return false, err
 		}
@@ -122,7 +123,7 @@ func pullMainWorktree(rp worktree.ResolvedPath, tw *tap.Writer) error {
 	return nil
 }
 
-func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, mergeOnClose bool, noAttach bool, verbose bool) error {
+func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, existingBranch string, mergeOnClose bool, noAttach bool, verbose bool) error {
 	var tw *tap.Writer
 	if format == "tap" {
 		tw = tap.NewWriter(w)
@@ -132,7 +133,7 @@ func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format s
 		return err
 	}
 
-	if err := Create(w, rp, verbose, format, tw); err != nil {
+	if err := Create(w, rp, existingBranch, verbose, format, tw); err != nil {
 		return err
 	}
 
