@@ -40,96 +40,104 @@ func TestParseDirtyStatusMixed(t *testing.T) {
 	}
 }
 
-func TestRenderProducesOutput(t *testing.T) {
+func TestRenderTreeStructure(t *testing.T) {
 	repos := []RepoStatus{
 		{
 			Main: BranchStatus{
-				Repo: "eng/repos/myrepo", Branch: "main", Dirty: "clean",
-				Remote: "≡ origin/main", LastCommit: "2025-01-01", LastModified: "2025-01-01",
+				Repo: "myrepo", Branch: "main", Dirty: "clean",
+				Remote: "≡ origin/main", LastCommit: "2025-01-01",
+				LastModified: "2025-01-01",
 			},
 			Worktrees: []BranchStatus{
 				{
-					Repo: "eng/repos/myrepo", Branch: "feature-x", Dirty: "2M 1?",
+					Repo: "myrepo", Branch: "feature-x", Dirty: "2M 1?",
 					Remote: "↑3 origin/feature-x", LastCommit: "2025-01-02",
-					LastModified: "2025-01-02", IsWorktree: true,
+					LastModified: "2025-01-02", IsWorktree: true, Session: true,
 				},
 			},
 		},
 	}
 
 	output := Render(repos)
-	if output == "" {
-		t.Error("expected non-empty render output")
-	}
-	if !strings.Contains(output, "Repo") {
-		t.Error("expected header 'Repo' in output")
-	}
 	if !strings.Contains(output, "myrepo") {
-		t.Error("expected 'myrepo' in output")
+		t.Error("expected repo name in output")
+	}
+	if !strings.Contains(output, "feature-x") {
+		t.Error("expected worktree branch in output")
+	}
+	if !strings.Contains(output, "└") {
+		t.Error("expected tree connector └ for last worktree")
+	}
+	if !strings.Contains(output, "● zmx") {
+		t.Error("expected zmx indicator for active session")
 	}
 }
 
-func TestRenderSectionHeaders(t *testing.T) {
+func TestRenderMultipleWorktrees(t *testing.T) {
 	repos := []RepoStatus{
 		{
 			Main: BranchStatus{
-				Repo: "eng/repos/dirty-repo", Branch: "main", Dirty: "1M",
-				Remote: "↑1 origin/main",
+				Repo: "myrepo", Branch: "main", Dirty: "clean",
+				Remote: "≡ origin/main",
 			},
 			Worktrees: []BranchStatus{
 				{
-					Repo: "eng/repos/dirty-repo", Branch: "feature", Dirty: "2M",
-					Remote: "↑2 origin/feature", IsWorktree: true,
+					Repo: "myrepo", Branch: "wt-a", Dirty: "1M",
+					IsWorktree: true,
 				},
-			},
-		},
-		{
-			Main: BranchStatus{
-				Repo: "eng/repos/clean-repo", Branch: "main", Dirty: "clean",
-				Remote: "≡ origin/main",
-			},
-		},
-	}
-
-	output := Render(repos)
-	if !strings.Contains(output, "Repos") {
-		t.Error("expected 'Repos' section header")
-	}
-	if !strings.Contains(output, "Worktrees") {
-		t.Error("expected 'Worktrees' section header")
-	}
-	if !strings.Contains(output, "Clean") {
-		t.Error("expected 'Clean' section header")
-	}
-}
-
-func TestRenderCleanGrouping(t *testing.T) {
-	repos := []RepoStatus{
-		{
-			Main: BranchStatus{
-				Repo: "eng/repos/repo-a", Branch: "main", Dirty: "clean",
-				Remote: "≡ origin/main",
-			},
-			Worktrees: []BranchStatus{
 				{
-					Repo: "eng/repos/repo-a", Branch: "feature", Dirty: "clean",
-					Remote: "", IsWorktree: true,
+					Repo: "myrepo", Branch: "wt-b", Dirty: "clean",
+					IsWorktree: true, Session: true,
 				},
 			},
 		},
 	}
 
 	output := Render(repos)
-	if !strings.Contains(output, "Clean") {
-		t.Error("expected 'Clean' section header")
+	if !strings.Contains(output, "├") {
+		t.Error("expected tree connector ├ for non-last worktree")
 	}
-	if strings.Contains(output, "Repos") {
-		t.Error("did not expect 'Repos' section when all rows are clean")
+	if !strings.Contains(output, "└") {
+		t.Error("expected tree connector └ for last worktree")
 	}
-	if strings.Contains(output, "Worktrees") {
-		t.Error("did not expect 'Worktrees' section when all rows are clean")
+}
+
+func TestRenderNoWorktrees(t *testing.T) {
+	repos := []RepoStatus{
+		{
+			Main: BranchStatus{
+				Repo: "solo", Branch: "main", Dirty: "clean",
+				Remote: "≡ origin/main",
+			},
+		},
 	}
-	if !strings.Contains(output, "repo-a") {
-		t.Error("expected 'repo-a' in clean section")
+
+	output := Render(repos)
+	if !strings.Contains(output, "solo") {
+		t.Error("expected repo name")
+	}
+	if strings.Contains(output, "├") || strings.Contains(output, "└") {
+		t.Error("did not expect tree connectors with no worktrees")
+	}
+}
+
+func TestRenderNoSession(t *testing.T) {
+	repos := []RepoStatus{
+		{
+			Main: BranchStatus{
+				Repo: "myrepo", Branch: "main", Dirty: "clean",
+			},
+			Worktrees: []BranchStatus{
+				{
+					Repo: "myrepo", Branch: "wt", Dirty: "clean",
+					IsWorktree: true, Session: false,
+				},
+			},
+		},
+	}
+
+	output := Render(repos)
+	if strings.Contains(output, "● zmx") {
+		t.Error("did not expect zmx indicator when session is false")
 	}
 }

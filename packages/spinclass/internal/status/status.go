@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
 
 	"github.com/amarbel-llc/spinclass/internal/executor"
 	"github.com/amarbel-llc/spinclass/internal/git"
@@ -151,82 +150,133 @@ func CollectStatus(startDir string) []RepoStatus {
 	return all
 }
 
-func (bs BranchStatus) isClean() bool {
-	return bs.Dirty == "clean" && (strings.HasPrefix(bs.Remote, "≡") || bs.Remote == "")
+var (
+	styleRepo        = lipgloss.NewStyle().Bold(true)
+	styleDirty       = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
+	styleClean       = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
+	styleRemoteSync  = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
+	styleRemoteDrift = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
+	styleRemoteNone  = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+	styleSession     = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
+	styleDim         = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+)
+
+type renderRow struct {
+	prefix   string
+	branch   string
+	dirty    string
+	remote   string
+	commit   string
+	modified string
+	session  string
 }
 
-func renderTable(data [][]string) string {
-	headers := []string{"Repo", "Branch", "Status", "Remote", "Commit", "Modified"}
-
-	t := table.New().
-		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("15"))).
-		Headers(headers...).
-		Rows(data...).
-		StyleFunc(func(row, col int) lipgloss.Style {
-			base := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
-
-			if row == table.HeaderRow {
-				return base.Bold(true)
-			}
-
-			switch col {
-			case 2: // Status
-				val := data[row][col]
-				if val == "clean" {
-					return base.Foreground(lipgloss.Color("2"))
-				}
-				return base.Foreground(lipgloss.Color("1"))
-			case 3: // Remote
-				val := data[row][col]
-				if strings.HasPrefix(val, "≡") {
-					return base.Foreground(lipgloss.Color("2"))
-				}
-				if strings.Contains(val, "↑") || strings.Contains(val, "↓") {
-					return base.Foreground(lipgloss.Color("3"))
-				}
-				return base.Foreground(lipgloss.Color("8"))
-			}
-
-			return base
+func collectRenderRows(repos []RepoStatus) []renderRow {
+	var rows []renderRow
+	for _, rs := range repos {
+		mainSession := ""
+		if rs.Main.Session {
+			mainSession = "● zmx"
+		}
+		rows = append(rows, renderRow{
+			prefix:   rs.Main.Repo,
+			branch:   rs.Main.Branch,
+			dirty:    rs.Main.Dirty,
+			remote:   rs.Main.Remote,
+			commit:   rs.Main.LastCommit,
+			modified: rs.Main.LastModified,
+			session:  mainSession,
 		})
 
-	return t.Render()
+		for i, wt := range rs.Worktrees {
+			connector := "├"
+			if i == len(rs.Worktrees)-1 {
+				connector = "└"
+			}
+			session := ""
+			if wt.Session {
+				session = "● zmx"
+			}
+			rows = append(rows, renderRow{
+				prefix:   "  " + connector + " ",
+				branch:   wt.Branch,
+				dirty:    wt.Dirty,
+				remote:   wt.Remote,
+				commit:   wt.LastCommit,
+				modified: wt.LastModified,
+				session:  session,
+			})
+		}
+	}
+	return rows
 }
 
-var styleHeader = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("15"))
-
 func Render(repos []RepoStatus) string {
-	var rows []BranchStatus
-	for _, rs := range repos {
-		rows = append(rows, rs.Main)
-		rows = append(rows, rs.Worktrees...)
+	rows := collectRenderRows(repos)
+	if len(rows) == 0 {
+		return ""
 	}
 
-	var repoRows, worktreeRows, cleanRows [][]string
+	// Calculate column widths
+	widths := [7]int{}
 	for _, r := range rows {
-		row := []string{r.Repo, r.Branch, r.Dirty, r.Remote, r.LastCommit, r.LastModified}
-		if r.isClean() {
-			cleanRows = append(cleanRows, row)
-		} else if r.IsWorktree {
-			worktreeRows = append(worktreeRows, row)
-		} else {
-			repoRows = append(repoRows, row)
+		cols := [7]string{r.prefix, r.branch, r.dirty, r.remote, r.commit, r.modified, r.session}
+		for i, c := range cols {
+			if len(c) > widths[i] {
+				widths[i] = len(c)
+			}
 		}
 	}
 
-	var sections []string
-	if len(repoRows) > 0 {
-		sections = append(sections, styleHeader.Render("Repos")+"\n"+renderTable(repoRows))
-	}
-	if len(worktreeRows) > 0 {
-		sections = append(sections, styleHeader.Render("Worktrees")+"\n"+renderTable(worktreeRows))
-	}
-	if len(cleanRows) > 0 {
-		sections = append(sections, styleHeader.Render("Clean")+"\n"+renderTable(cleanRows))
+	var lines []string
+	for _, r := range rows {
+		prefix := fmt.Sprintf("%-*s", widths[0], r.prefix)
+		branch := fmt.Sprintf("%-*s", widths[1], r.branch)
+		commit := fmt.Sprintf("%-*s", widths[4], r.commit)
+		modified := fmt.Sprintf("%-*s", widths[5], r.modified)
+
+		dirtyPad := fmt.Sprintf("%-*s", widths[2], r.dirty)
+		var styledDirty string
+		if r.dirty == "clean" {
+			styledDirty = styleClean.Render(dirtyPad)
+		} else {
+			styledDirty = styleDirty.Render(dirtyPad)
+		}
+
+		remotePad := fmt.Sprintf("%-*s", widths[3], r.remote)
+		var styledRemote string
+		if strings.HasPrefix(r.remote, "≡") {
+			styledRemote = styleRemoteSync.Render(remotePad)
+		} else if strings.Contains(r.remote, "↑") || strings.Contains(r.remote, "↓") {
+			styledRemote = styleRemoteDrift.Render(remotePad)
+		} else {
+			styledRemote = styleRemoteNone.Render(remotePad)
+		}
+
+		sessionPad := fmt.Sprintf("%-*s", widths[6], r.session)
+		var styledSession string
+		if r.session != "" {
+			styledSession = styleSession.Render(sessionPad)
+		} else {
+			styledSession = sessionPad
+		}
+
+		var styledPrefix string
+		if strings.Contains(r.prefix, "├") || strings.Contains(r.prefix, "└") {
+			styledPrefix = styleDim.Render(prefix)
+		} else {
+			styledPrefix = styleRepo.Render(prefix)
+		}
+
+		line := styledPrefix + "  " + branch + "  " + styledDirty + "  " +
+			styledRemote + "  " + commit + "  " + modified
+		if r.session != "" {
+			line += "  " + styledSession
+		}
+		lines = append(lines, strings.TrimRight(line, " "))
 	}
 
-	return strings.Join(sections, "\n\n")
+	return strings.Join(lines, "\n")
 }
 
 func RenderTap(repos []RepoStatus, w io.Writer) {
