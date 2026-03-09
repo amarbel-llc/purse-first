@@ -22,12 +22,11 @@ import (
 func Create(
 	writer io.Writer,
 	worktreePath worktree.ResolvedPath,
-	existingBranch string,
 	verbose bool,
 	format string,
 	tapWriter *tap.Writer,
 ) error {
-	existed, err := createWorktree(worktreePath, existingBranch, verbose)
+	existed, err := createWorktree(worktreePath, verbose)
 	if err != nil {
 		return err
 	}
@@ -49,12 +48,12 @@ func Create(
 	return nil
 }
 
-func createWorktree(worktreePath worktree.ResolvedPath, existingBranch string, verbose bool) (bool, error) {
+func createWorktree(worktreePath worktree.ResolvedPath, verbose bool) (bool, error) {
 	existed := true
 
 	if _, err := os.Stat(worktreePath.AbsPath); os.IsNotExist(err) {
 		existed = false
-		result, err := worktree.Create(worktreePath.RepoPath, worktreePath.AbsPath, existingBranch)
+		result, err := worktree.Create(worktreePath.RepoPath, worktreePath.AbsPath, worktreePath.ExistingBranch)
 		if err != nil {
 			return false, err
 		}
@@ -123,7 +122,7 @@ func pullMainWorktree(rp worktree.ResolvedPath, tw *tap.Writer) error {
 	return nil
 }
 
-func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, claudeArgs []string, existingBranch string, mergeOnClose bool, noAttach bool, verbose bool) error {
+func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, mergeOnClose bool, noAttach bool, verbose bool) error {
 	var tw *tap.Writer
 	if format == "tap" {
 		tw = tap.NewWriter(w)
@@ -133,13 +132,8 @@ func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format s
 		return err
 	}
 
-	if err := Create(w, rp, existingBranch, verbose, format, tw); err != nil {
+	if err := Create(w, rp, verbose, format, tw); err != nil {
 		return err
-	}
-
-	var command []string
-	if len(claudeArgs) > 0 {
-		command = append([]string{"claude"}, claudeArgs...)
 	}
 
 	tp := tap.TestPoint{
@@ -147,7 +141,7 @@ func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format s
 		Ok:          true,
 	}
 
-	if err := exec.Attach(rp.AbsPath, rp.SessionKey, command, noAttach, &tp); err != nil {
+	if err := exec.Attach(rp.AbsPath, rp.SessionKey, nil, noAttach, &tp); err != nil {
 		return fmt.Errorf("attach failed: %w", err)
 	}
 
@@ -161,7 +155,7 @@ func New(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format s
 
 	interactive := isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd())
 
-	return closeShop(w, exec, rp, format, mergeOnClose, verbose, tw, interactive, command, noAttach)
+	return closeShop(w, exec, rp, format, mergeOnClose, verbose, tw, interactive, nil, noAttach)
 }
 
 func closeShop(w io.Writer, exec executor.Executor, rp worktree.ResolvedPath, format string, mergeOnClose bool, verbose bool, tw *tap.Writer, interactive bool, command []string, noAttach bool) error {
