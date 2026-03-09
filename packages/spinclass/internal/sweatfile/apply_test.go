@@ -285,7 +285,7 @@ func TestPrepareDirenvWritesEnvrcWithoutUseFlakeWhenNoFlakeNix(t *testing.T) {
 	t.Setenv("PATH", fakeBin)
 	defer os.Setenv("PATH", origPath)
 
-	err := prepareDirenv(dir)
+	err := Sweatfile{}.prepareDirenv(dir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -315,7 +315,7 @@ func TestPrepareDirenvSkipsWhenDirenvNotInPath(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 	defer os.Setenv("PATH", origPath)
 
-	err := prepareDirenv(dir)
+	err := Sweatfile{}.prepareDirenv(dir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -339,7 +339,7 @@ func TestPrepareDirenvWritesEnvrc(t *testing.T) {
 	t.Setenv("PATH", fakeBin)
 	defer os.Setenv("PATH", origPath)
 
-	err := prepareDirenv(dir)
+	err := Sweatfile{}.prepareDirenv(dir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -370,7 +370,7 @@ func TestPrepareDirenvOverwritesExistingEnvrc(t *testing.T) {
 	t.Setenv("PATH", fakeBin)
 	defer os.Setenv("PATH", origPath)
 
-	err := prepareDirenv(dir)
+	err := Sweatfile{}.prepareDirenv(dir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -385,5 +385,78 @@ func TestPrepareDirenvOverwritesExistingEnvrc(t *testing.T) {
 	want := "source_up\nuse flake\n" + wantPathAdd
 	if string(data) != want {
 		t.Errorf(".envrc content: got %q, want %q (old content should be replaced)", string(data), want)
+	}
+}
+
+func TestWriteEnvrcWithDirectives(t *testing.T) {
+	dir := t.TempDir()
+
+	fakeBin := t.TempDir()
+	os.WriteFile(filepath.Join(fakeBin, "direnv"), []byte("#!/bin/sh\nexit 0\n"), 0o755)
+	t.Setenv("PATH", fakeBin)
+
+	sf := Sweatfile{EnvrcDirectives: []string{"source_up", "dotenv_if_exists"}}
+	err := sf.prepareDirenv(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, _ := os.ReadFile(filepath.Join(dir, ".envrc"))
+	content := string(data)
+
+	binAbs, _ := filepath.Abs(".git/spinclass/bin")
+	wantPathAdd := fmt.Sprintf("PATH_add \"%s\"\n", binAbs)
+	want := "source_up\ndotenv_if_exists\n" + wantPathAdd
+	if content != want {
+		t.Errorf(".envrc content:\ngot  %q\nwant %q", content, want)
+	}
+}
+
+func TestWriteEnvrcDefaultFallbackWithFlake(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "flake.nix"), []byte("{}"), 0o644)
+
+	fakeBin := t.TempDir()
+	os.WriteFile(filepath.Join(fakeBin, "direnv"), []byte("#!/bin/sh\nexit 0\n"), 0o755)
+	t.Setenv("PATH", fakeBin)
+
+	sf := Sweatfile{}
+	err := sf.prepareDirenv(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, _ := os.ReadFile(filepath.Join(dir, ".envrc"))
+	content := string(data)
+
+	binAbs, _ := filepath.Abs(".git/spinclass/bin")
+	wantPathAdd := fmt.Sprintf("PATH_add \"%s\"\n", binAbs)
+	want := "source_up\nuse flake\n" + wantPathAdd
+	if content != want {
+		t.Errorf(".envrc content:\ngot  %q\nwant %q", content, want)
+	}
+}
+
+func TestWriteEnvrcDefaultFallbackWithoutFlake(t *testing.T) {
+	dir := t.TempDir()
+
+	fakeBin := t.TempDir()
+	os.WriteFile(filepath.Join(fakeBin, "direnv"), []byte("#!/bin/sh\nexit 0\n"), 0o755)
+	t.Setenv("PATH", fakeBin)
+
+	sf := Sweatfile{}
+	err := sf.prepareDirenv(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, _ := os.ReadFile(filepath.Join(dir, ".envrc"))
+	content := string(data)
+
+	binAbs, _ := filepath.Abs(".git/spinclass/bin")
+	wantPathAdd := fmt.Sprintf("PATH_add \"%s\"\n", binAbs)
+	want := "source_up\n" + wantPathAdd
+	if content != want {
+		t.Errorf(".envrc content:\ngot  %q\nwant %q", content, want)
 	}
 }

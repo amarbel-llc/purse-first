@@ -643,6 +643,56 @@ func TestMergeSystemPromptAppendClear(t *testing.T) {
 	}
 }
 
+func TestParseEnvrcDirectives(t *testing.T) {
+	input := `envrc-directives = ["source_up", "dotenv_if_exists"]`
+	sf, err := Parse([]byte(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(sf.EnvrcDirectives) != 2 {
+		t.Fatalf("expected 2 envrc-directives, got %v", sf.EnvrcDirectives)
+	}
+	if sf.EnvrcDirectives[0] != "source_up" || sf.EnvrcDirectives[1] != "dotenv_if_exists" {
+		t.Errorf("envrc-directives: got %v", sf.EnvrcDirectives)
+	}
+}
+
+func TestParseEnvrcDirectivesAbsent(t *testing.T) {
+	sf, err := Parse([]byte(`git-excludes = [".claude/"]`))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sf.EnvrcDirectives != nil {
+		t.Errorf("expected nil envrc-directives, got %v", sf.EnvrcDirectives)
+	}
+}
+
+func TestMergeEnvrcDirectivesAppend(t *testing.T) {
+	base := Sweatfile{EnvrcDirectives: []string{"source_up"}}
+	repo := Sweatfile{EnvrcDirectives: []string{"dotenv_if_exists"}}
+	merged := Merge(base, repo)
+	if len(merged.EnvrcDirectives) != 2 {
+		t.Fatalf("expected 2 envrc-directives, got %v", merged.EnvrcDirectives)
+	}
+}
+
+func TestMergeEnvrcDirectivesClear(t *testing.T) {
+	base := Sweatfile{EnvrcDirectives: []string{"source_up"}}
+	repo := Sweatfile{EnvrcDirectives: []string{}}
+	merged := Merge(base, repo)
+	if len(merged.EnvrcDirectives) != 0 {
+		t.Errorf("expected cleared envrc-directives, got %v", merged.EnvrcDirectives)
+	}
+}
+
+func TestMergeEnvrcDirectivesInherit(t *testing.T) {
+	base := Sweatfile{EnvrcDirectives: []string{"source_up"}}
+	merged := Merge(base, Sweatfile{})
+	if len(merged.EnvrcDirectives) != 1 || merged.EnvrcDirectives[0] != "source_up" {
+		t.Errorf("expected inherited envrc-directives, got %v", merged.EnvrcDirectives)
+	}
+}
+
 func TestLoadHierarchyHooksStopOverriddenByRepo(t *testing.T) {
 	home := t.TempDir()
 	repoDir := filepath.Join(home, "eng", "repos", "myrepo")

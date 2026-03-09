@@ -129,6 +129,13 @@ func Merge(base, repo Sweatfile) Sweatfile {
 			merged.ClaudeAllow = append(base.ClaudeAllow, repo.ClaudeAllow...)
 		}
 	}
+	if repo.EnvrcDirectives != nil {
+		if len(repo.EnvrcDirectives) == 0 {
+			merged.EnvrcDirectives = []string{}
+		} else {
+			merged.EnvrcDirectives = append(base.EnvrcDirectives, repo.EnvrcDirectives...)
+		}
+	}
 
 	if repo.Hooks != nil {
 		if merged.Hooks == nil {

@@ -23,7 +23,7 @@ func (sweatfile Sweatfile) Apply(worktreePath string) error {
 		return err
 	}
 
-	if err := prepareDirenv(worktreePath); err != nil {
+	if err := sweatfile.prepareDirenv(worktreePath); err != nil {
 		return err
 	}
 
@@ -56,7 +56,7 @@ exec spinclass exec-claude "$@"`,
 	return nil
 }
 
-func writeEnvrc(worktreePath string) error {
+func (sf Sweatfile) writeEnvrc(worktreePath string) error {
 	file, err := os.OpenFile(
 		filepath.Join(worktreePath, ".envrc"),
 		os.O_TRUNC|os.O_CREATE|os.O_WRONLY,
@@ -69,12 +69,16 @@ func writeEnvrc(worktreePath string) error {
 
 	bufferedWriter := bufio.NewWriter(file)
 
-	if _, err := fmt.Fprintln(bufferedWriter, "source_up"); err != nil {
-		return err
+	directives := sf.EnvrcDirectives
+	if directives == nil {
+		directives = []string{"source_up"}
+		if _, ok := fileExists(filepath.Join(worktreePath, "flake.nix")); ok {
+			directives = append(directives, "use flake")
+		}
 	}
 
-	if _, ok := fileExists(filepath.Join(worktreePath, "flake.nix")); ok {
-		if _, err := fmt.Fprintln(bufferedWriter, "use flake"); err != nil {
+	for _, directive := range directives {
+		if _, err := fmt.Fprintln(bufferedWriter, directive); err != nil {
 			return err
 		}
 	}
@@ -95,14 +99,13 @@ func writeEnvrc(worktreePath string) error {
 	return bufferedWriter.Flush()
 }
 
-func prepareDirenv(worktreePath string) error {
+func (sf Sweatfile) prepareDirenv(worktreePath string) error {
 	direnvPath, err := exec.LookPath("direnv")
 	if err != nil {
-		// TODO output skip
 		return nil
 	}
 
-	if err := writeEnvrc(worktreePath); err != nil {
+	if err := sf.writeEnvrc(worktreePath); err != nil {
 		return err
 	}
 
