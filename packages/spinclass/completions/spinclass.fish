@@ -94,16 +94,6 @@ complete \
   --long-option no-attach \
   --description "create worktree without attaching"
 
-complete \
-  --command spinclass \
-  --no-files \
-  --condition "__fish_seen_subcommand_from new" \
-  --short-option b \
-  --long-option branch \
-  --require-parameter \
-  --arguments "(git branch --format='%(refname:short)')" \
-  --description "use an existing branch"
-
 # merge flags
 complete \
   --command spinclass \
