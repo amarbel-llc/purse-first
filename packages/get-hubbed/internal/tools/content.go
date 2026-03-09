@@ -32,7 +32,7 @@ func registerContentCommands(app *command.App) {
 			{Name: "offset", Type: command.Int, Description: "Number of entries to skip for pagination"},
 		},
 		MapsTools: []command.ToolMapping{
-			{Replaces: "Bash", CommandPrefixes: []string{"gh api"}, UseWhen: "listing repository directory contents"},
+			{Replaces: "Bash", CommandPrefixes: []string{"gh api repos"}, UseWhen: "listing repository directory contents"},
 		},
 		Run: handleContentTree,
 	})
@@ -50,12 +50,12 @@ func registerContentCommands(app *command.App) {
 		Params: []command.Param{
 			{Name: "repo", Type: command.String, Description: "Repository in OWNER/REPO format", Required: true},
 			{Name: "path", Type: command.String, Description: "File path within the repo (e.g. 'src/main.go')", Required: true},
-			{Name: "ref", Type: command.String, Description: "Git ref (branch, tag, or SHA). Defaults to the repo's default branch"},
+			{Name: "ref", Type: command.String, Description: "Git ref (branch, tag, or SHA). Defaults to the repo's default branch. Verify exact tag names with api_get(endpoint: \"repos/OWNER/REPO/tags\") if unsure"},
 			{Name: "line_offset", Type: command.Int, Description: "Start reading from this line number (1-based). Defaults to 1"},
 			{Name: "line_limit", Type: command.Int, Description: "Maximum number of lines to return. Defaults to all lines"},
 		},
 		MapsTools: []command.ToolMapping{
-			{Replaces: "Bash", CommandPrefixes: []string{"gh api"}, UseWhen: "reading file contents from a repository"},
+			{Replaces: "Bash", CommandPrefixes: []string{"gh api repos"}, UseWhen: "reading file contents from a repository"},
 		},
 		Run: handleContentRead,
 	})
@@ -101,7 +101,7 @@ func registerContentCommands(app *command.App) {
 			{Name: "page", Type: command.Int, Description: "Page number for pagination (default 1)"},
 		},
 		MapsTools: []command.ToolMapping{
-			{Replaces: "Bash", CommandPrefixes: []string{"gh api"}, UseWhen: "listing commits for a file or directory"},
+			{Replaces: "Bash", CommandPrefixes: []string{"gh api repos"}, UseWhen: "listing commits for a file or directory"},
 		},
 		Run: handleContentCommits,
 	})
@@ -124,7 +124,7 @@ func registerContentCommands(app *command.App) {
 			{Name: "page", Type: command.Int, Description: "Page number for pagination (default 1)"},
 		},
 		MapsTools: []command.ToolMapping{
-			{Replaces: "Bash", CommandPrefixes: []string{"gh api"}, UseWhen: "comparing two refs in a repository"},
+			{Replaces: "Bash", CommandPrefixes: []string{"gh api repos"}, UseWhen: "comparing two refs in a repository"},
 		},
 		Run: handleContentCompare,
 	})
@@ -257,6 +257,22 @@ func handleContentRead(ctx context.Context, args json.RawMessage, _ command.Prom
 
 	out, err := gh.Run(ctx, ghArgs...)
 	if err != nil {
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "404") || strings.Contains(errMsg, "Not Found") {
+			hint := fmt.Sprintf(
+				"404 Not Found: %s at path %q",
+				params.Repo, params.Path,
+			)
+			if params.Ref != "" {
+				hint += fmt.Sprintf(
+					" (ref %q). The ref may not exist. "+
+						"To verify tag names, use api_get(endpoint: \"repos/%s/tags\") "+
+						"or api_get(endpoint: \"repos/%s/branches\")",
+					params.Ref, params.Repo, params.Repo,
+				)
+			}
+			return command.TextErrorResult(hint), nil
+		}
 		return command.TextErrorResult(fmt.Sprintf("gh api contents: %v", err)), nil
 	}
 

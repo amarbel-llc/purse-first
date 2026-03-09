@@ -68,7 +68,11 @@ func (a *App) HandleHook(r io.Reader, w io.Writer) error {
 
 	commands := []string{command}
 	if hi.ToolName == "Bash" && command != "" {
-		commands = extractSimpleCommands(command)
+		extracted := extractSimpleCommands(command)
+		commands = make([]string, len(extracted))
+		for i, cmd := range extracted {
+			commands[i] = normalizeGitCommand(cmd)
+		}
 	}
 
 	var matchedCM *commandMapping
