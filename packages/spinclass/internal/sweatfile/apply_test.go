@@ -269,7 +269,7 @@ func TestApplyClaudeSettingsNoStopHookWhenNotConfigured(t *testing.T) {
 
 	hooks := doc["hooks"].(map[string]any)
 	if _, ok := hooks["Stop"]; ok {
-		t.Error("expected no Stop key when stop_hook is not configured")
+		t.Error("expected no Stop key when stop-hook is not configured")
 	}
 }
 

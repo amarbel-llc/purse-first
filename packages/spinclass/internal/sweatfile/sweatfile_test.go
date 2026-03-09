@@ -8,14 +8,14 @@ import (
 
 func TestParseMinimal(t *testing.T) {
 	input := `
-git_excludes = [".claude/"]
+git-excludes = [".claude/"]
 `
 	sf, err := Parse([]byte(input))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(sf.GitSkipIndex) != 1 || sf.GitSkipIndex[0] != ".claude/" {
-		t.Errorf("git_excludes: got %v", sf.GitSkipIndex)
+		t.Errorf("git-excludes: got %v", sf.GitSkipIndex)
 	}
 }
 
@@ -25,21 +25,21 @@ func TestParseEmpty(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if sf.GitSkipIndex != nil {
-		t.Errorf("expected nil git_excludes, got %v", sf.GitSkipIndex)
+		t.Errorf("expected nil git-excludes, got %v", sf.GitSkipIndex)
 	}
 }
 
 func TestLoadFromPath(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "sweatfile")
-	os.WriteFile(path, []byte(`git_excludes = [".direnv/"]`), 0o644)
+	os.WriteFile(path, []byte(`git-excludes = [".direnv/"]`), 0o644)
 
 	sf, err := Load(path)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(sf.GitSkipIndex) != 1 || sf.GitSkipIndex[0] != ".direnv/" {
-		t.Errorf("git_excludes: got %v", sf.GitSkipIndex)
+		t.Errorf("git-excludes: got %v", sf.GitSkipIndex)
 	}
 }
 
@@ -49,7 +49,7 @@ func TestLoadMissing(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if sf.GitSkipIndex != nil {
-		t.Errorf("expected nil git_excludes, got %v", sf.GitSkipIndex)
+		t.Errorf("expected nil git-excludes, got %v", sf.GitSkipIndex)
 	}
 }
 
@@ -62,10 +62,10 @@ func TestMergeConcatenatesArrays(t *testing.T) {
 	}
 	merged := Merge(base, repo)
 	if len(merged.GitSkipIndex) != 2 {
-		t.Fatalf("expected 2 git_excludes, got %v", merged.GitSkipIndex)
+		t.Fatalf("expected 2 git-excludes, got %v", merged.GitSkipIndex)
 	}
 	if merged.GitSkipIndex[0] != ".claude/" || merged.GitSkipIndex[1] != ".direnv/" {
-		t.Errorf("git_excludes: got %v", merged.GitSkipIndex)
+		t.Errorf("git-excludes: got %v", merged.GitSkipIndex)
 	}
 }
 
@@ -78,7 +78,7 @@ func TestMergeClearSentinel(t *testing.T) {
 	}
 	merged := Merge(base, repo)
 	if len(merged.GitSkipIndex) != 0 {
-		t.Errorf("expected cleared git_excludes, got %v", merged.GitSkipIndex)
+		t.Errorf("expected cleared git-excludes, got %v", merged.GitSkipIndex)
 	}
 }
 
@@ -86,7 +86,7 @@ func TestMergeBaseOnly(t *testing.T) {
 	base := Sweatfile{GitSkipIndex: []string{".claude/"}}
 	merged := Merge(base, Sweatfile{})
 	if len(merged.GitSkipIndex) != 1 || merged.GitSkipIndex[0] != ".claude/" {
-		t.Errorf("expected inherited git_excludes, got %v", merged.GitSkipIndex)
+		t.Errorf("expected inherited git-excludes, got %v", merged.GitSkipIndex)
 	}
 }
 
@@ -108,23 +108,23 @@ func TestSaveRoundTrip(t *testing.T) {
 		t.Fatalf("unexpected error loading: %v", err)
 	}
 	if len(loaded.GitSkipIndex) != 1 || loaded.GitSkipIndex[0] != ".claude/" {
-		t.Errorf("git_excludes roundtrip: got %v", loaded.GitSkipIndex)
+		t.Errorf("git-excludes roundtrip: got %v", loaded.GitSkipIndex)
 	}
 }
 
 func TestParseClaudeAllow(t *testing.T) {
 	input := `
-claude_allow = ["Read", "Bash(git *)"]
+claude-allow = ["Read", "Bash(git *)"]
 `
 	sf, err := Parse([]byte(input))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(sf.ClaudeAllow) != 2 {
-		t.Fatalf("expected 2 claude_allow rules, got %v", sf.ClaudeAllow)
+		t.Fatalf("expected 2 claude-allow rules, got %v", sf.ClaudeAllow)
 	}
 	if sf.ClaudeAllow[0] != "Read" || sf.ClaudeAllow[1] != "Bash(git *)" {
-		t.Errorf("claude_allow: got %v", sf.ClaudeAllow)
+		t.Errorf("claude-allow: got %v", sf.ClaudeAllow)
 	}
 }
 
@@ -133,7 +133,7 @@ func TestMergeClaudeAllowAppends(t *testing.T) {
 	repo := Sweatfile{ClaudeAllow: []string{"Bash(go test:*)"}}
 	merged := Merge(base, repo)
 	if len(merged.ClaudeAllow) != 3 {
-		t.Fatalf("expected 3 claude_allow rules, got %v", merged.ClaudeAllow)
+		t.Fatalf("expected 3 claude-allow rules, got %v", merged.ClaudeAllow)
 	}
 	if merged.ClaudeAllow[2] != "Bash(go test:*)" {
 		t.Errorf("expected appended rule, got %v", merged.ClaudeAllow)
@@ -145,7 +145,7 @@ func TestMergeClaudeAllowClear(t *testing.T) {
 	repo := Sweatfile{ClaudeAllow: []string{}}
 	merged := Merge(base, repo)
 	if len(merged.ClaudeAllow) != 0 {
-		t.Errorf("expected cleared claude_allow, got %v", merged.ClaudeAllow)
+		t.Errorf("expected cleared claude-allow, got %v", merged.ClaudeAllow)
 	}
 }
 
@@ -168,8 +168,8 @@ func TestLoadHierarchyGlobalOnly(t *testing.T) {
 
 	globalPath := filepath.Join(home, ".config", "spinclass", "sweatfile")
 	writeSweatfile(t, globalPath, `
-git_excludes = [".DS_Store"]
-claude_allow = ["/docs"]
+git-excludes = [".DS_Store"]
+claude-allow = ["/docs"]
 `)
 
 	result, err := LoadHierarchy(home, repoDir)
@@ -209,13 +209,13 @@ func TestLoadHierarchyGlobalAndRepo(t *testing.T) {
 
 	globalPath := filepath.Join(home, ".config", "spinclass", "sweatfile")
 	writeSweatfile(t, globalPath, `
-git_excludes = [".DS_Store"]
+git-excludes = [".DS_Store"]
 `)
 
 	repoSweatfile := filepath.Join(repoDir, "sweatfile")
 	writeSweatfile(t, repoSweatfile, `
-git_excludes = [".idea"]
-claude_allow = ["/src"]
+git-excludes = [".idea"]
+claude-allow = ["/src"]
 `)
 
 	result, err := LoadHierarchy(home, repoDir)
@@ -223,7 +223,7 @@ claude_allow = ["/src"]
 		t.Fatalf("LoadHierarchy returned error: %v", err)
 	}
 
-	// Merged should have both git_excludes appended
+	// Merged should have both git-excludes appended
 	if len(result.Merged.GitSkipIndex) != 2 {
 		t.Fatalf("expected 2 GitExcludes, got %v", result.Merged.GitSkipIndex)
 	}
@@ -246,18 +246,18 @@ func TestLoadHierarchyParentDir(t *testing.T) {
 
 	globalPath := filepath.Join(home, ".config", "spinclass", "sweatfile")
 	writeSweatfile(t, globalPath, `
-git_excludes = [".DS_Store"]
+git-excludes = [".DS_Store"]
 `)
 
 	parentPath := filepath.Join(home, "eng", "sweatfile")
 	writeSweatfile(t, parentPath, `
-git_excludes = [".envrc"]
-claude_allow = ["/eng-docs"]
+git-excludes = [".envrc"]
+claude-allow = ["/eng-docs"]
 `)
 
 	repoSweatfile := filepath.Join(repoDir, "sweatfile")
 	writeSweatfile(t, repoSweatfile, `
-claude_allow = ["/src"]
+claude-allow = ["/src"]
 `)
 
 	result, err := LoadHierarchy(home, repoDir)
@@ -265,8 +265,8 @@ claude_allow = ["/src"]
 		t.Fatalf("LoadHierarchy returned error: %v", err)
 	}
 
-	// git_excludes: global .DS_Store + parent .envrc = [.DS_Store, .envrc]
-	// repo has nil git_excludes so inherits
+	// git-excludes: global .DS_Store + parent .envrc = [.DS_Store, .envrc]
+	// repo has nil git-excludes so inherits
 	if len(result.Merged.GitSkipIndex) != 2 {
 		t.Fatalf("expected 2 GitExcludes, got %v", result.Merged.GitSkipIndex)
 	}
@@ -274,7 +274,7 @@ claude_allow = ["/src"]
 		t.Errorf("expected GitExcludes=[.DS_Store, .envrc], got %v", result.Merged.GitSkipIndex)
 	}
 
-	// claude_allow: parent /eng-docs + repo /src = [/eng-docs, /src]
+	// claude-allow: parent /eng-docs + repo /src = [/eng-docs, /src]
 	if len(result.Merged.ClaudeAllow) != 2 {
 		t.Fatalf("expected 2 ClaudeAllow, got %v", result.Merged.ClaudeAllow)
 	}
@@ -326,23 +326,23 @@ func TestLoadHierarchyNoSweatfiles(t *testing.T) {
 }
 
 func TestParseStopHook(t *testing.T) {
-	input := `stop_hook = "just test"`
+	input := `stop-hook = "just test"`
 	sf, err := Parse([]byte(input))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if sf.StopHook == nil || *sf.StopHook != "just test" {
-		t.Errorf("stop_hook: got %v", sf.StopHook)
+		t.Errorf("stop-hook: got %v", sf.StopHook)
 	}
 }
 
 func TestParseStopHookAbsent(t *testing.T) {
-	sf, err := Parse([]byte(`git_excludes = [".claude/"]`))
+	sf, err := Parse([]byte(`git-excludes = [".claude/"]`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if sf.StopHook != nil {
-		t.Errorf("expected nil stop_hook, got %v", sf.StopHook)
+		t.Errorf("expected nil stop-hook, got %v", sf.StopHook)
 	}
 }
 
@@ -352,7 +352,7 @@ func TestMergeStopHookInherit(t *testing.T) {
 	repo := Sweatfile{}
 	merged := Merge(base, repo)
 	if merged.StopHook == nil || *merged.StopHook != "just test" {
-		t.Errorf("expected inherited stop_hook, got %v", merged.StopHook)
+		t.Errorf("expected inherited stop-hook, got %v", merged.StopHook)
 	}
 }
 
@@ -363,7 +363,7 @@ func TestMergeStopHookOverride(t *testing.T) {
 	repo := Sweatfile{StopHook: &repoCmd}
 	merged := Merge(base, repo)
 	if merged.StopHook == nil || *merged.StopHook != "just lint" {
-		t.Errorf("expected overridden stop_hook, got %v", merged.StopHook)
+		t.Errorf("expected overridden stop-hook, got %v", merged.StopHook)
 	}
 }
 
@@ -374,7 +374,7 @@ func TestMergeStopHookClear(t *testing.T) {
 	repo := Sweatfile{StopHook: &empty}
 	merged := Merge(base, repo)
 	if merged.StopHook == nil || *merged.StopHook != "" {
-		t.Errorf("expected cleared stop_hook, got %v", merged.StopHook)
+		t.Errorf("expected cleared stop-hook, got %v", merged.StopHook)
 	}
 }
 
@@ -387,15 +387,15 @@ func TestLoadHierarchyRepoOverridesParent(t *testing.T) {
 
 	parentPath := filepath.Join(home, "eng", "sweatfile")
 	writeSweatfile(t, parentPath, `
-git_excludes = [".DS_Store", ".envrc"]
-claude_allow = ["/docs"]
+git-excludes = [".DS_Store", ".envrc"]
+claude-allow = ["/docs"]
 `)
 
 	// Repo sweatfile with empty arrays clears parent values
 	repoSweatfile := filepath.Join(repoDir, "sweatfile")
 	writeSweatfile(t, repoSweatfile, `
-git_excludes = []
-claude_allow = []
+git-excludes = []
+claude-allow = []
 `)
 
 	result, err := LoadHierarchy(home, repoDir)
@@ -418,7 +418,7 @@ func TestLoadHierarchyStopHookInherited(t *testing.T) {
 	os.MkdirAll(repoDir, 0o755)
 
 	globalPath := filepath.Join(home, ".config", "spinclass", "sweatfile")
-	writeSweatfile(t, globalPath, `stop_hook = "just test"`)
+	writeSweatfile(t, globalPath, `stop-hook = "just test"`)
 
 	result, err := LoadHierarchy(home, repoDir)
 	if err != nil {
@@ -426,7 +426,7 @@ func TestLoadHierarchyStopHookInherited(t *testing.T) {
 	}
 
 	if result.Merged.StopHook == nil || *result.Merged.StopHook != "just test" {
-		t.Errorf("expected inherited stop_hook, got %v", result.Merged.StopHook)
+		t.Errorf("expected inherited stop-hook, got %v", result.Merged.StopHook)
 	}
 }
 
@@ -456,7 +456,7 @@ func TestParseSystemPromptEmpty(t *testing.T) {
 }
 
 func TestParseSystemPromptAbsent(t *testing.T) {
-	sf, err := Parse([]byte(`git_excludes = [".claude/"]`))
+	sf, err := Parse([]byte(`git-excludes = [".claude/"]`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -477,7 +477,7 @@ func TestParseSystemPromptAppend(t *testing.T) {
 }
 
 func TestParseSystemPromptAppendAbsent(t *testing.T) {
-	sf, err := Parse([]byte(`git_excludes = [".claude/"]`))
+	sf, err := Parse([]byte(`git-excludes = [".claude/"]`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -562,10 +562,10 @@ func TestLoadHierarchyStopHookOverriddenByRepo(t *testing.T) {
 	os.MkdirAll(repoDir, 0o755)
 
 	globalPath := filepath.Join(home, ".config", "spinclass", "sweatfile")
-	writeSweatfile(t, globalPath, `stop_hook = "just test"`)
+	writeSweatfile(t, globalPath, `stop-hook = "just test"`)
 
 	repoSweatfile := filepath.Join(repoDir, "sweatfile")
-	writeSweatfile(t, repoSweatfile, `stop_hook = "just lint"`)
+	writeSweatfile(t, repoSweatfile, `stop-hook = "just lint"`)
 
 	result, err := LoadHierarchy(home, repoDir)
 	if err != nil {
@@ -573,6 +573,6 @@ func TestLoadHierarchyStopHookOverriddenByRepo(t *testing.T) {
 	}
 
 	if result.Merged.StopHook == nil || *result.Merged.StopHook != "just lint" {
-		t.Errorf("expected overridden stop_hook, got %v", result.Merged.StopHook)
+		t.Errorf("expected overridden stop-hook, got %v", result.Merged.StopHook)
 	}
 }

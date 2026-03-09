@@ -71,7 +71,7 @@ func CheckClaudeAllow(sf sweatfile.Sweatfile) []Issue {
 			issues = append(issues, Issue{
 				Message:  err.Error(),
 				Severity: SeverityError,
-				Field:    "claude_allow",
+				Field:    "claude-allow",
 				Value:    rule,
 			})
 			continue
@@ -80,7 +80,7 @@ func CheckClaudeAllow(sf sweatfile.Sweatfile) []Issue {
 			issues = append(issues, Issue{
 				Message:  fmt.Sprintf("unknown tool name %q", toolName),
 				Severity: SeverityWarning,
-				Field:    "claude_allow",
+				Field:    "claude-allow",
 				Value:    rule,
 			})
 		}
@@ -95,13 +95,13 @@ func CheckGitExcludes(sf sweatfile.Sweatfile) []Issue {
 			issues = append(issues, Issue{
 				Message:  "empty exclude pattern",
 				Severity: SeverityError,
-				Field:    "git_excludes",
+				Field:    "git-excludes",
 			})
 		} else if filepath.IsAbs(exc) {
 			issues = append(issues, Issue{
-				Message:  fmt.Sprintf("absolute path %q in git_excludes", exc),
+				Message:  fmt.Sprintf("absolute path %q in git-excludes", exc),
 				Severity: SeverityError,
-				Field:    "git_excludes",
+				Field:    "git-excludes",
 				Value:    exc,
 			})
 		}
@@ -114,17 +114,17 @@ func CheckMerged(sf sweatfile.Sweatfile) []Issue {
 
 	if dups := findDuplicates(sf.GitSkipIndex); len(dups) > 0 {
 		issues = append(issues, Issue{
-			Message:  fmt.Sprintf("duplicate git_excludes: %s", strings.Join(dups, ", ")),
+			Message:  fmt.Sprintf("duplicate git-excludes: %s", strings.Join(dups, ", ")),
 			Severity: SeverityWarning,
-			Field:    "git_excludes",
+			Field:    "git-excludes",
 		})
 	}
 
 	if dups := findDuplicates(sf.ClaudeAllow); len(dups) > 0 {
 		issues = append(issues, Issue{
-			Message:  fmt.Sprintf("duplicate claude_allow: %s", strings.Join(dups, ", ")),
+			Message:  fmt.Sprintf("duplicate claude-allow: %s", strings.Join(dups, ", ")),
 			Severity: SeverityWarning,
-			Field:    "claude_allow",
+			Field:    "claude-allow",
 		})
 	}
 
@@ -228,13 +228,13 @@ func Run(w io.Writer, home, repoDir string) int {
 						if iss.Value != "" {
 							diag["rule"] = iss.Value
 						}
-						sub.NotOk("claude_allow valid", diag)
+						sub.NotOk("claude-allow valid", diag)
 					} else {
-						sub.Ok(fmt.Sprintf("claude_allow valid # warning: %s", iss.Message))
+						sub.Ok(fmt.Sprintf("claude-allow valid # warning: %s", iss.Message))
 					}
 				}
 			} else {
-				sub.Ok("claude_allow valid")
+				sub.Ok("claude-allow valid")
 			}
 		}
 
@@ -248,10 +248,10 @@ func Run(w io.Writer, home, repoDir string) int {
 					if iss.Value != "" {
 						diag["value"] = iss.Value
 					}
-					sub.NotOk("git_excludes valid", diag)
+					sub.NotOk("git-excludes valid", diag)
 				}
 			} else {
-				sub.Ok("git_excludes valid")
+				sub.Ok("git-excludes valid")
 			}
 		}
 

@@ -9,10 +9,10 @@ setup() {
 }
 
 function apply_writes_claude_settings { # @test
-  # Create a sweatfile with claude_allow rules
+  # Create a sweatfile with claude-allow rules
   mkdir -p "$TEST_REPO"
   cat > "$TEST_REPO/sweatfile" <<'EOF'
-claude_allow = ["Bash(git *)"]
+claude-allow = ["Bash(git *)"]
 EOF
 
   cd "$TEST_REPO"
@@ -22,7 +22,7 @@ EOF
   local settings="$TEST_REPO/.worktrees/test-settings/.claude/settings.local.json"
   assert [ -f "$settings" ]
 
-  # Check that claude_allow rules appear in the settings
+  # Check that claude-allow rules appear in the settings
   run cat "$settings"
   assert_output --partial '"Bash(git *)"'
   # Should also have the default Read rule
@@ -33,12 +33,12 @@ function apply_merges_hierarchy { # @test
   # Global sweatfile (hierarchy loads from $HOME/.config, not XDG_CONFIG_HOME)
   mkdir -p "$HOME/.config/spinclass"
   cat > "$HOME/.config/spinclass/sweatfile" <<'EOF'
-claude_allow = ["Bash(git *)"]
+claude-allow = ["Bash(git *)"]
 EOF
 
   # Repo sweatfile
   cat > "$TEST_REPO/sweatfile" <<'EOF'
-claude_allow = ["Bash(nix *)"]
+claude-allow = ["Bash(nix *)"]
 EOF
 
   cd "$TEST_REPO"

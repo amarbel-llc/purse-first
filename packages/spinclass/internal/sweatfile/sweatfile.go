@@ -20,11 +20,10 @@ type Sweatfile struct {
 	SystemPrompt       *string  `toml:"system-prompt"`        // TODO replace with PathOrString struct
 	SystemPromptAppend *string  `toml:"system-prompt-append"` // TODO replace with PathOrString struct
 	BranchNameCommand  string   `toml:"branch-name-command"`  // TODO add tests
-	GitSkipIndex       []string `toml:"git_excludes"`         // TODO rename toml to git-skip-index
+	GitSkipIndex []string `toml:"git-excludes"`
 
-	// TODO turn ClaudeAllows into struct
-	ClaudeAllow  []string      `toml:"claude_allow"` // TODO rename toml to claude-allow
-	StopHook     *string       `toml:"stop_hook"`    // TODO rename toml to stop-hook
+	ClaudeAllow  []string      `toml:"claude-allow"`
+	StopHook     *string       `toml:"stop-hook"`
 	Experimental *Experimental `toml:"experimental"`
 }
 

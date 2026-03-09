@@ -49,7 +49,7 @@ func runStopHook(input hookInput, w io.Writer) error {
 
 	result, err := sweatfile.LoadHierarchy(home, input.CWD)
 	if err != nil || result.Merged.StopHook == nil || *result.Merged.StopHook == "" {
-		return nil // no stop_hook -> approve
+		return nil // no stop-hook -> approve
 	}
 
 	cmd := exec.Command("sh", "-c", *result.Merged.StopHook)
@@ -63,7 +63,7 @@ func runStopHook(input hookInput, w io.Writer) error {
 	// Command failed -> write output to sentinel and block
 	os.WriteFile(sentinelPath, output, 0o644)
 
-	reason := fmt.Sprintf("stop_hook failed: %s", *result.Merged.StopHook)
+	reason := fmt.Sprintf("stop-hook failed: %s", *result.Merged.StopHook)
 	systemMsg := fmt.Sprintf(
 		"Stop hook failed. Output written to %s. Review the failures and address them before completing.",
 		sentinelPath,

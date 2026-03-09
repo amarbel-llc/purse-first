@@ -106,7 +106,7 @@ func TestCheckMergedDuplicates(t *testing.T) {
 
 func TestCheckUnknownFields(t *testing.T) {
 	data := []byte(`
-git_excludes = [".claude/"]
+git-excludes = [".claude/"]
 unknown_field = "bad"
 `)
 	issues := CheckUnknownFields(data)
@@ -120,8 +120,8 @@ unknown_field = "bad"
 
 func TestCheckUnknownFieldsClean(t *testing.T) {
 	data := []byte(`
-git_excludes = [".claude/"]
-claude_allow = ["Read"]
+git-excludes = [".claude/"]
+claude-allow = ["Read"]
 `)
 	issues := CheckUnknownFields(data)
 	if len(issues) != 0 {
@@ -131,10 +131,10 @@ claude_allow = ["Read"]
 
 func TestCheckUnknownFieldsStopHook(t *testing.T) {
 	data := []byte(`
-stop_hook = "just build test"
+stop-hook = "just build test"
 `)
 	issues := CheckUnknownFields(data)
 	if len(issues) != 0 {
-		t.Errorf("expected no issues for stop_hook, got %v", issues)
+		t.Errorf("expected no issues for stop-hook, got %v", issues)
 	}
 }

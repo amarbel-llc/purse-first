@@ -26,10 +26,10 @@ func TestRunValidHierarchy(t *testing.T) {
 	}
 
 	globalPath := filepath.Join(home, ".config", "spinclass", "sweatfile")
-	writeSweatfile(t, globalPath, `claude_allow = ["Read", "Bash(git *)"]`)
+	writeSweatfile(t, globalPath, `claude-allow = ["Read", "Bash(git *)"]`)
 
 	repoSweatfile := filepath.Join(repoDir, "sweatfile")
-	writeSweatfile(t, repoSweatfile, `git_excludes = [".direnv/"]`)
+	writeSweatfile(t, repoSweatfile, `git-excludes = [".direnv/"]`)
 
 	var buf bytes.Buffer
 	exitCode := Run(&buf, home, repoDir)
@@ -54,7 +54,7 @@ func TestRunInvalidSyntax(t *testing.T) {
 	}
 
 	repoSweatfile := filepath.Join(repoDir, "sweatfile")
-	writeSweatfile(t, repoSweatfile, `claude_allow = ["Bash(git *"]`)
+	writeSweatfile(t, repoSweatfile, `claude-allow = ["Bash(git *"]`)
 
 	var buf bytes.Buffer
 	exitCode := Run(&buf, home, repoDir)
@@ -114,10 +114,10 @@ func TestRunDuplicatesInMerged(t *testing.T) {
 	}
 
 	globalPath := filepath.Join(home, ".config", "spinclass", "sweatfile")
-	writeSweatfile(t, globalPath, `claude_allow = ["Read"]`)
+	writeSweatfile(t, globalPath, `claude-allow = ["Read"]`)
 
 	repoSweatfile := filepath.Join(repoDir, "sweatfile")
-	writeSweatfile(t, repoSweatfile, `claude_allow = ["Read"]`)
+	writeSweatfile(t, repoSweatfile, `claude-allow = ["Read"]`)
 
 	var buf bytes.Buffer
 	exitCode := Run(&buf, home, repoDir)

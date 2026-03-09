@@ -9,8 +9,8 @@ setup() {
 
 function validate_valid_sweatfile { # @test
   cat > "$TEST_REPO/sweatfile" <<'EOF'
-claude_allow = ["Bash(git *)"]
-git_excludes = [".worktrees"]
+claude-allow = ["Bash(git *)"]
+git-excludes = [".worktrees"]
 EOF
 
   cd "$TEST_REPO"
@@ -30,7 +30,7 @@ EOF
 
 function validate_invalid_claude_allow { # @test
   cat > "$TEST_REPO/sweatfile" <<'EOF'
-claude_allow = ["(unclosed"]
+claude-allow = ["(unclosed"]
 EOF
 
   cd "$TEST_REPO"
