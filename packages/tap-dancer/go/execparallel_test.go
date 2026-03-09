@@ -1,7 +1,9 @@
 package tap
 
 import (
+	"bytes"
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -82,5 +84,93 @@ func TestGoroutineExecutorSubstitution(t *testing.T) {
 
 	if results[0].Command != "echo prefix-mid-suffix" {
 		t.Errorf("command: expected %q, got %q", "echo prefix-mid-suffix", results[0].Command)
+	}
+}
+
+func TestConvertExecParallelAllPass(t *testing.T) {
+	results := []ExecResult{
+		{Arg: "a", Command: "echo a", ExitCode: 0, Stdout: []byte("a\n")},
+		{Arg: "b", Command: "echo b", ExitCode: 0, Stdout: []byte("b\n")},
+	}
+
+	var buf bytes.Buffer
+	exitCode := ConvertExecParallel(results, &buf, false, false)
+
+	if exitCode != 0 {
+		t.Errorf("expected exit code 0, got %d", exitCode)
+	}
+
+	out := buf.String()
+	reader := NewReader(strings.NewReader(out))
+	summary := reader.Summary()
+	if !summary.Valid {
+		for _, d := range reader.Diagnostics() {
+			t.Errorf("diagnostic: line %d: %s: %s", d.Line, d.Severity, d.Message)
+		}
+		t.Fatalf("output is not valid TAP-14:\n%s", out)
+	}
+
+	if summary.Passed != 2 {
+		t.Errorf("expected 2 passed, got %d", summary.Passed)
+	}
+}
+
+func TestConvertExecParallelWithFailure(t *testing.T) {
+	results := []ExecResult{
+		{Arg: "a", Command: "echo a", ExitCode: 0, Stdout: []byte("a\n")},
+		{Arg: "b", Command: "false", ExitCode: 1, Stdout: []byte(""), Stderr: []byte("something broke\n")},
+	}
+
+	var buf bytes.Buffer
+	exitCode := ConvertExecParallel(results, &buf, false, false)
+
+	if exitCode != 1 {
+		t.Errorf("expected exit code 1, got %d", exitCode)
+	}
+
+	out := buf.String()
+
+	if !strings.Contains(out, "ok 1 - echo a") {
+		t.Errorf("expected ok for first command, got:\n%s", out)
+	}
+	if !strings.Contains(out, "not ok 2 - false") {
+		t.Errorf("expected not ok for second command, got:\n%s", out)
+	}
+	if !strings.Contains(out, "exit-code: 1") {
+		t.Errorf("expected exit-code diagnostic, got:\n%s", out)
+	}
+	if !strings.Contains(out, "something broke") {
+		t.Errorf("expected stderr in diagnostics, got:\n%s", out)
+	}
+}
+
+func TestConvertExecParallelNoDiagOnSuccess(t *testing.T) {
+	results := []ExecResult{
+		{Arg: "a", Command: "echo a", ExitCode: 0, Stdout: []byte("output\n")},
+	}
+
+	var buf bytes.Buffer
+	ConvertExecParallel(results, &buf, false, false)
+
+	out := buf.String()
+	if strings.Contains(out, "---") {
+		t.Errorf("verbose=false should not include diagnostics on success, got:\n%s", out)
+	}
+}
+
+func TestConvertExecParallelVerboseIncludesDiagOnSuccess(t *testing.T) {
+	results := []ExecResult{
+		{Arg: "a", Command: "echo a", ExitCode: 0, Stdout: []byte("output\n")},
+	}
+
+	var buf bytes.Buffer
+	ConvertExecParallel(results, &buf, true, false)
+
+	out := buf.String()
+	if !strings.Contains(out, "---") {
+		t.Errorf("verbose=true should include diagnostics on success, got:\n%s", out)
+	}
+	if !strings.Contains(out, "output") {
+		t.Errorf("verbose=true should include stdout, got:\n%s", out)
 	}
 }
