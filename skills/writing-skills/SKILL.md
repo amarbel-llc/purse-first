@@ -165,7 +165,7 @@ description: Use when executing plans - dispatches subagent per task with code r
 description: Use for TDD - write test first, watch it fail, write minimal code, refactor
 
 # ✅ GOOD: Just triggering conditions, no workflow summary
-description: Use when executing implementation plans with independent tasks in the current session
+description: Use when executing implementation plans with independent tasks
 
 # ✅ GOOD: Triggering conditions only
 description: Use when implementing any feature or bugfix, before writing implementation code
