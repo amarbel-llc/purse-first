@@ -211,31 +211,40 @@ func collectRenderRows(repos []RepoStatus) []renderRow {
 	return rows
 }
 
+func padRight(s string, displayWidth int) string {
+	w := lipgloss.Width(s)
+	if w >= displayWidth {
+		return s
+	}
+	return s + strings.Repeat(" ", displayWidth-w)
+}
+
 func Render(repos []RepoStatus) string {
 	rows := collectRenderRows(repos)
 	if len(rows) == 0 {
 		return ""
 	}
 
-	// Calculate column widths
+	// Calculate column widths using display width (not byte length)
+	// to handle multi-byte Unicode characters like ├, └, ≡, ↑, ↓, ●
 	widths := [7]int{}
 	for _, r := range rows {
 		cols := [7]string{r.prefix, r.branch, r.dirty, r.remote, r.commit, r.modified, r.session}
 		for i, c := range cols {
-			if len(c) > widths[i] {
-				widths[i] = len(c)
+			if w := lipgloss.Width(c); w > widths[i] {
+				widths[i] = w
 			}
 		}
 	}
 
 	var lines []string
 	for _, r := range rows {
-		prefix := fmt.Sprintf("%-*s", widths[0], r.prefix)
-		branch := fmt.Sprintf("%-*s", widths[1], r.branch)
-		commit := fmt.Sprintf("%-*s", widths[4], r.commit)
-		modified := fmt.Sprintf("%-*s", widths[5], r.modified)
+		prefix := padRight(r.prefix, widths[0])
+		branch := padRight(r.branch, widths[1])
+		commit := padRight(r.commit, widths[4])
+		modified := padRight(r.modified, widths[5])
 
-		dirtyPad := fmt.Sprintf("%-*s", widths[2], r.dirty)
+		dirtyPad := padRight(r.dirty, widths[2])
 		var styledDirty string
 		if r.dirty == "clean" {
 			styledDirty = styleClean.Render(dirtyPad)
@@ -243,7 +252,7 @@ func Render(repos []RepoStatus) string {
 			styledDirty = styleDirty.Render(dirtyPad)
 		}
 
-		remotePad := fmt.Sprintf("%-*s", widths[3], r.remote)
+		remotePad := padRight(r.remote, widths[3])
 		var styledRemote string
 		if strings.HasPrefix(r.remote, "≡") {
 			styledRemote = styleRemoteSync.Render(remotePad)
@@ -253,7 +262,7 @@ func Render(repos []RepoStatus) string {
 			styledRemote = styleRemoteNone.Render(remotePad)
 		}
 
-		sessionPad := fmt.Sprintf("%-*s", widths[6], r.session)
+		sessionPad := padRight(r.session, widths[6])
 		var styledSession string
 		if r.session != "" {
 			styledSession = styleSession.Render(sessionPad)
