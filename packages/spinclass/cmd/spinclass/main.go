@@ -98,7 +98,7 @@ var newCmd = &cobra.Command{
 var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show status of all repos and worktrees",
-	Long:  `Scan the current directory (or repo) for worktrees and display a styled table showing branch status, dirty state, remote tracking, and modification dates.`,
+	Long:  `Scan the current directory (or repo) for worktrees and display a tree showing branch status, dirty state, remote tracking, modification dates, and active zmx sessions.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cwd, err := os.Getwd()
 		if err != nil {
