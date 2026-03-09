@@ -28,7 +28,6 @@ var (
 	verbose         bool
 	newMergeOnClose bool
 	newNoAttach     bool
-	newBranch       string
 	mergeGitSync    bool
 )
 
@@ -39,9 +38,9 @@ var rootCmd = &cobra.Command{
 }
 
 var newCmd = &cobra.Command{
-	Use:   "new [target] [claude args...]",
+	Use:   "new [name parts...]",
 	Short: "Create (if needed) and attach to a worktree session",
-	Long:  `Create a worktree if it doesn't exist, then attach to a session. Target is a branch name or path, resolved relative to the current git repository. If target is omitted, a random name is generated. If additional arguments are provided, claude is launched with those arguments instead of a shell.`,
+	Long:  `Create a worktree if it doesn't exist, then attach to a session. Name parts are joined into a sanitized branch name (snob-case). If an existing branch matches, it is checked out. If no name is provided, a random name is generated.`,
 	Args:  cobra.MinimumNArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		format := outputFormat
@@ -61,26 +60,12 @@ var newCmd = &cobra.Command{
 			return err
 		}
 
-		var target string
-		var claudeArgs []string
-
-		if newBranch != "" {
-			target = newBranch
-		} else if len(args) == 0 {
-			target = worktree.RandomName(repoPath)
-		} else {
-			target = args[0]
-			if len(args) >= 2 {
-				claudeArgs = args[1:]
-			}
-		}
-
 		hierarchy, err := sweatfile.LoadDefaultHierarchy()
 		if err != nil {
 			return err
 		}
 
-		resolvedPath, err := worktree.ResolvePath(hierarchy.Merged, repoPath, target)
+		resolvedPath, err := worktree.ResolvePath(hierarchy.Merged, repoPath, args)
 		if err != nil {
 			return err
 		}
@@ -90,8 +75,6 @@ var newCmd = &cobra.Command{
 			exec,
 			resolvedPath,
 			format,
-			claudeArgs,
-			newBranch,
 			newMergeOnClose,
 			newNoAttach,
 			verbose,
@@ -312,7 +295,6 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "show detailed output (YAML diagnostics on passing test points)")
 	newCmd.Flags().BoolVar(&newMergeOnClose, "merge-on-close", false, "auto-merge worktree into default branch on session close")
 	newCmd.Flags().BoolVar(&newNoAttach, "no-attach", false, "create worktree but skip attaching (show command that would run)")
-	newCmd.Flags().StringVarP(&newBranch, "branch", "b", "", "use an existing branch for the session")
 	mergeCmd.Flags().BoolVar(&mergeGitSync, "git-sync", false, "pull and push after merge")
 	cleanCmd.Flags().BoolVarP(&cleanInteractive, "interactive", "i", false, "interactively discard changes in dirty merged worktrees")
 	rootCmd.AddCommand(newCmd)
