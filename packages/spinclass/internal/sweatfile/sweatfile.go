@@ -61,16 +61,16 @@ func (sweatfile Sweatfile) CreateBranchName(
 		return "", err
 	}
 
+	cmdComponents = append(cmdComponents, base)
 	cmd := exec.Command(cmdComponents[0], cmdComponents[1:]...)
-	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
 
-	if replacementBytes, err := cmd.Output(); err != nil {
+	replacementBytes, err := cmd.Output()
+	if err != nil {
 		return "", err
-	} else {
-		return string(bytes.TrimSpace(replacementBytes)), nil
 	}
+
+	return string(bytes.TrimSpace(replacementBytes)), nil
 }
 
 func (sweatfile Sweatfile) ExecClaude(
