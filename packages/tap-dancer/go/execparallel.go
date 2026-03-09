@@ -30,6 +30,8 @@ type Executor interface {
 // GoroutineExecutor runs commands concurrently using goroutines.
 type GoroutineExecutor struct{}
 
+// expandTemplate replaces {} with arg. Arguments are interpolated as-is
+// into the shell command, mirroring GNU parallel's ::: semantics.
 func expandTemplate(template, arg string) string {
 	return strings.ReplaceAll(template, "{}", arg)
 }
@@ -123,23 +125,18 @@ func execResultDiagnostics(r ExecResult) *Diagnostics {
 		d.Extras["stderr"] = stderr
 	}
 
+	if r.Err != nil && stdout == "" && stderr == "" {
+		d.Extras["error"] = r.Err.Error()
+	}
+
 	return d
 }
 
 func execResultDiagnosticsMap(r ExecResult) map[string]string {
-	diags := map[string]string{
-		"exit-code": fmt.Sprintf("%d", r.ExitCode),
+	d := execResultDiagnostics(r)
+	m := make(map[string]string, len(d.Extras))
+	for k, v := range d.Extras {
+		m[k] = fmt.Sprintf("%v", v)
 	}
-
-	stdout := strings.TrimRight(string(r.Stdout), "\n")
-	if stdout != "" {
-		diags["stdout"] = stdout
-	}
-
-	stderr := strings.TrimRight(string(r.Stderr), "\n")
-	if stderr != "" {
-		diags["stderr"] = stderr
-	}
-
-	return diags
+	return m
 }

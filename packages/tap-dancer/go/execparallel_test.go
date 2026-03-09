@@ -174,3 +174,24 @@ func TestConvertExecParallelVerboseIncludesDiagOnSuccess(t *testing.T) {
 		t.Errorf("verbose=true should include stdout, got:\n%s", out)
 	}
 }
+
+func TestGoroutineExecutorContextCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately
+
+	executor := &GoroutineExecutor{}
+	results := executor.Run(ctx, "sleep 10", []string{"a"})
+
+	if results[0].Err == nil {
+		t.Error("expected error from cancelled context")
+	}
+}
+
+func TestGoroutineExecutorEmptyArgs(t *testing.T) {
+	executor := &GoroutineExecutor{}
+	results := executor.Run(context.Background(), "echo {}", []string{})
+
+	if len(results) != 0 {
+		t.Errorf("expected 0 results, got %d", len(results))
+	}
+}
