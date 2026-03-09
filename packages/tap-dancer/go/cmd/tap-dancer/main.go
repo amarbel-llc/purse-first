@@ -29,6 +29,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  go-test [args...]     Run go test and convert output to TAP-14\n")
 		fmt.Fprintf(os.Stderr, "  cargo-test [args...]  Run cargo test and convert output to TAP-14\n")
 		fmt.Fprintf(os.Stderr, "  reformat              Read TAP from stdin and emit TAP-14 with ANSI colors\n")
+		fmt.Fprintf(os.Stderr, "  exec-parallel         Run commands in parallel and emit TAP-14\n")
 		fmt.Fprintf(os.Stderr, "  generate-plugin DIR   Generate MCP plugin (for Nix postInstall)\n")
 		fmt.Fprintf(os.Stderr, "\nWhen run with no args and no TTY, starts MCP server mode\n")
 	}
@@ -117,6 +118,15 @@ func registerCommands() *command.App {
 		Name:        "reformat",
 		Description: command.Description{Short: "Read TAP from stdin and emit TAP-14 with optional ANSI colors"},
 		RunCLI:      handleReformat,
+	})
+
+	app.AddCommand(&command.Command{
+		Name:        "exec-parallel",
+		Description: command.Description{Short: "Run commands in parallel and emit TAP-14 test points"},
+		Params: []command.Param{
+			{Name: "verbose", Type: command.Bool, Description: "Include stdout/stderr diagnostics on successful test points", Required: false},
+		},
+		RunCLI: handleExecParallel,
 	})
 
 	return app
@@ -359,6 +369,66 @@ func handleValidate(ctx context.Context, args json.RawMessage, _ command.Prompte
 
 func handleReformat(_ context.Context, _ json.RawMessage) error {
 	tap.ReformatTAP(os.Stdin, os.Stdout, stdoutIsTerminal())
+	return nil
+}
+
+func handleExecParallel(ctx context.Context, args json.RawMessage) error {
+	var params struct {
+		Verbose bool `json:"verbose"`
+	}
+	if err := json.Unmarshal(args, &params); err != nil {
+		return fmt.Errorf("invalid arguments: %w", err)
+	}
+
+	// Parse CLI args: everything after "exec-parallel", excluding our flags,
+	// split on ":::" into template and args.
+	var cliArgs []string
+	for i, arg := range os.Args {
+		if arg == "exec-parallel" {
+			rest := os.Args[i+1:]
+			for _, a := range rest {
+				if a == "-v" || a == "--verbose" {
+					continue
+				}
+				cliArgs = append(cliArgs, a)
+			}
+			break
+		}
+	}
+
+	// Find ::: separator
+	sepIdx := -1
+	for i, a := range cliArgs {
+		if a == ":::" {
+			sepIdx = i
+			break
+		}
+	}
+
+	if sepIdx < 0 {
+		return fmt.Errorf("missing ::: separator\nusage: tap-dancer exec-parallel [--verbose] <template> ::: <arg1> <arg2> ...")
+	}
+
+	if sepIdx == 0 {
+		return fmt.Errorf("missing command template before :::\nusage: tap-dancer exec-parallel [--verbose] <template> ::: <arg1> <arg2> ...")
+	}
+
+	template := strings.Join(cliArgs[:sepIdx], " ")
+	execArgs := cliArgs[sepIdx+1:]
+
+	if len(execArgs) == 0 {
+		return fmt.Errorf("no arguments after :::\nusage: tap-dancer exec-parallel [--verbose] <template> ::: <arg1> <arg2> ...")
+	}
+
+	color := stdoutIsTerminal()
+	executor := &tap.GoroutineExecutor{}
+	results := executor.Run(ctx, template, execArgs)
+	exitCode := tap.ConvertExecParallel(results, os.Stdout, params.Verbose, color)
+
+	if exitCode != 0 {
+		os.Exit(exitCode)
+	}
+
 	return nil
 }
 
