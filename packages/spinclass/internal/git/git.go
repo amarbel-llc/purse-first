@@ -143,6 +143,11 @@ func BranchExists(repoPath, branch string) bool {
 	return err == nil
 }
 
+func RemoteBranchExists(repoPath, branch string) bool {
+	_, err := Run(repoPath, "rev-parse", "--verify", "refs/remotes/origin/"+branch)
+	return err == nil
+}
+
 func DefaultBranch(repoPath string) (string, error) {
 	hasMain := BranchExists(repoPath, "main")
 	hasMaster := BranchExists(repoPath, "master")
