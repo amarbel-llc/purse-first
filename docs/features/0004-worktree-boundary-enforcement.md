@@ -1,12 +1,12 @@
 ---
-status: experimental
+status: superseded
 date: 2026-03-04
-promotion-criteria: >
-  default boundary-notify to true after at least two weeks of real-world use
-  without reports of false positives that broke a legitimate workflow
+superseded-by: docs/superpowers/specs/2026-03-10-disallow-main-worktree-hook-design.md
 ---
 
 # Worktree Boundary Enforcement
+
+> **Superseded:** This feature has been replaced by `hooks.disallow-main-worktree`. See `docs/superpowers/specs/2026-03-10-disallow-main-worktree-hook-design.md`.
 
 ## Motivation
 
