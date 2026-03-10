@@ -156,6 +156,9 @@ func Merge(base, repo Sweatfile) Sweatfile {
 		if repo.Hooks.Stop != nil {
 			merged.Hooks.Stop = repo.Hooks.Stop
 		}
+		if repo.Hooks.DisallowMainWorktree != nil {
+			merged.Hooks.DisallowMainWorktree = repo.Hooks.DisallowMainWorktree
+		}
 	}
 
 	return merged

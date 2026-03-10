@@ -795,3 +795,24 @@ func TestParseHooksDisallowMainWorktreeAbsent(t *testing.T) {
 		t.Error("expected disallow-main-worktree to be disabled when absent")
 	}
 }
+
+func TestMergeDisallowMainWorktreeInherit(t *testing.T) {
+	enabled := true
+	base := Sweatfile{Hooks: &Hooks{DisallowMainWorktree: &enabled}}
+	repo := Sweatfile{}
+	merged := Merge(base, repo)
+	if !merged.DisallowMainWorktreeEnabled() {
+		t.Error("expected inherited disallow-main-worktree")
+	}
+}
+
+func TestMergeDisallowMainWorktreeOverride(t *testing.T) {
+	enabled := true
+	disabled := false
+	base := Sweatfile{Hooks: &Hooks{DisallowMainWorktree: &enabled}}
+	repo := Sweatfile{Hooks: &Hooks{DisallowMainWorktree: &disabled}}
+	merged := Merge(base, repo)
+	if merged.DisallowMainWorktreeEnabled() {
+		t.Error("expected overridden disallow-main-worktree to be disabled")
+	}
+}
