@@ -121,3 +121,6 @@
 - [ ] enable conformance tests to be exposed as commands that can be run in
   recipes / pipelines in downstream projects (like the rfc-0001 conformance
   tests)
+
+- [ ] add claude-mcp-tool annotation modes to sweatfile (so read-only mode means
+  all mcp's that support sweatfiles operate in read-only mode, etc)
