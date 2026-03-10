@@ -8,8 +8,7 @@ setup() {
   # Use /tmp to keep paths short (108-byte sun_path limit) and avoid sandcastle restrictions.
   runtime_dir="$(mktemp -d /tmp/lux-bats-XXXXXX)"
   export XDG_RUNTIME_DIR="$runtime_dir"
-  result_path="${PURSE_FIRST_RESULT:-$BATS_CWD/result}"
-  lux="$result_path/bin/lux"
+  lux="$(result_dir)/bin/lux"
 }
 
 teardown() {

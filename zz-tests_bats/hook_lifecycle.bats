@@ -5,7 +5,7 @@ setup() {
   setup_test_home
   export output
   purse_first="$(purse_first_bin)"
-  result_path="${PURSE_FIRST_RESULT:-$BATS_CWD/result}"
+  result_path="$(result_dir)"
 }
 
 teardown() {

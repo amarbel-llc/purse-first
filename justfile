@@ -120,28 +120,28 @@ vendor-hash:
 # Run integration tests
 test-integration: build-batman
     nix build
-    {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} \
+    PURSE_FIRST_BIN={{justfile_directory()}}/result/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} \
       zz-tests_bats/validate_marketplace.bats \
       zz-tests_bats/validate_documents.bats \
       zz-tests_bats/validate_plugin_repos.bats
 
 # Validate plugin repos have correct .claude-plugin/plugin.json
 test-validate-repos: build-batman
-    {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/validate_plugin_repos.bats
+    PURSE_FIRST_BIN={{justfile_directory()}}/result/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/validate_plugin_repos.bats
 
 # Run validate-specific BATS tests
 test-validate: build-batman
     nix build
-    {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/validate_documents.bats
+    PURSE_FIRST_BIN={{justfile_directory()}}/result/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/validate_documents.bats
 
 # Run lifecycle tests
 test-lifecycle: build-batman
     nix build
-    {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/hook_lifecycle.bats
+    PURSE_FIRST_BIN={{justfile_directory()}}/result/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/hook_lifecycle.bats
 
 test-lux-service: build-batman
     nix build
-    {{cmd_nix_dev}} {{cmd_batman_bats}} --allow-unix-sockets --jobs {{num_cpus()}} zz-tests_bats/lux_service.bats
+    PURSE_FIRST_BIN={{justfile_directory()}}/result/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --allow-unix-sockets --jobs {{num_cpus()}} zz-tests_bats/lux_service.bats
 
 # Validate own plugin manifest
 validate:

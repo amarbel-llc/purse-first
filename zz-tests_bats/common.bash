@@ -9,20 +9,25 @@ bats_load_library "bats-support"
 bats_load_library "bats-assert"
 bats_load_library "bats-assert-additions"
 bats_load_library "bats-island"
+bats_load_library "bats-emo"
+
+require_bin PURSE_FIRST_BIN purse-first
+
+result_dir() {
+  local result_path="${PURSE_FIRST_RESULT:-$BATS_CWD/result}"
+  echo "${result_path}"
+}
 
 marketplace_result() {
-  local result_path="${PURSE_FIRST_RESULT:-$BATS_CWD/result}"
-  echo "${result_path}/.claude-plugin/marketplace.json"
+  echo "$(result_dir)/.claude-plugin/marketplace.json"
 }
 
 purse_first_bin() {
-  local result_path="${PURSE_FIRST_RESULT:-$BATS_CWD/result}"
-  echo "${result_path}/bin/purse-first"
+  echo "${PURSE_FIRST_BIN:-purse-first}"
 }
 
 plugin_share_dir() {
-  local result_path="${PURSE_FIRST_RESULT:-$BATS_CWD/result}"
-  echo "${result_path}/share/purse-first/$1"
+  echo "$(result_dir)/share/purse-first/$1"
 }
 
 hook_payload() {
