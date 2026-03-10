@@ -10,45 +10,48 @@ setup() {
 
 function fork_creates_new_branch { # @test
   cd "$TEST_REPO"
-  spinclass --format tap new --no-attach source-branch
+  local bin="${SPINCLASS_BIN:-spinclass}"
+  "$bin" --format tap new --no-attach source_branch
 
   # Simulate being inside a session by setting SPINCLASS_SESSION
   local repo_name
   repo_name="$(basename "$TEST_REPO")"
-  export SPINCLASS_SESSION="$repo_name/source-branch"
+  export SPINCLASS_SESSION="$repo_name/source_branch"
 
   # Run fork from the repo root (not the worktree) to avoid .git file issue
-  run_sc fork new-branch
+  run_sc fork new_branch
   assert_success
 
   # New worktree should exist
-  assert [ -d "$TEST_REPO/.worktrees/new-branch" ]
-  assert [ -f "$TEST_REPO/.worktrees/new-branch/.git" ]
+  assert [ -d "$TEST_REPO/.worktrees/new_branch" ]
+  assert [ -f "$TEST_REPO/.worktrees/new_branch/.git" ]
 }
 
 function fork_auto_names_branch { # @test
   cd "$TEST_REPO"
-  spinclass --format tap new --no-attach auto-src
+  local bin="${SPINCLASS_BIN:-spinclass}"
+  "$bin" --format tap new --no-attach auto_src
 
   local repo_name
   repo_name="$(basename "$TEST_REPO")"
-  export SPINCLASS_SESSION="$repo_name/auto-src"
+  export SPINCLASS_SESSION="$repo_name/auto_src"
 
   # Run from repo root
   run_sc fork
   assert_success
 
-  # Should have created auto-src-1
-  assert [ -d "$TEST_REPO/.worktrees/auto-src-1" ]
+  # Should have created auto_src-1
+  assert [ -d "$TEST_REPO/.worktrees/auto_src-1" ]
 }
 
 function fork_requires_spinclass_session { # @test
   cd "$TEST_REPO"
-  spinclass --format tap new --no-attach session-test
+  local bin="${SPINCLASS_BIN:-spinclass}"
+  "$bin" --format tap new --no-attach session_test
 
   unset SPINCLASS_SESSION
 
-  run_sc fork some-branch
+  run_sc fork some_branch
   assert_failure
   assert_output --partial "SPINCLASS_SESSION"
 }

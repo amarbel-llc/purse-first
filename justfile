@@ -154,7 +154,7 @@ test-brew: build-batman
 
 test-spinclass-bats: build-batman
     nix build .#spinclass
-    PATH="{{justfile_directory()}}/result-batman/bin:$PATH" {{cmd_nix_dev}} just packages/spinclass/zz-tests_bats/test
+    SPINCLASS_BIN={{justfile_directory()}}/result/bin/spinclass PATH="{{justfile_directory()}}/result-batman/bin:$PATH" {{cmd_nix_dev}} just packages/spinclass/zz-tests_bats/test
 
 test-grit-bats: build-batman
     nix build .#grit

@@ -16,10 +16,10 @@ claude-allow = ["Bash(git *)"]
 EOF
 
   cd "$TEST_REPO"
-  run_sc new --no-attach test-settings
+  run_sc new --no-attach test_settings
   assert_success
 
-  local settings="$TEST_REPO/.worktrees/test-settings/.claude/settings.local.json"
+  local settings="$TEST_REPO/.worktrees/test_settings/.claude/settings.local.json"
   assert [ -f "$settings" ]
 
   # Check that claude-allow rules appear in the settings
@@ -42,10 +42,10 @@ claude-allow = ["Bash(nix *)"]
 EOF
 
   cd "$TEST_REPO"
-  run_sc new --no-attach test-hierarchy
+  run_sc new --no-attach test_hierarchy
   assert_success
 
-  local settings="$TEST_REPO/.worktrees/test-hierarchy/.claude/settings.local.json"
+  local settings="$TEST_REPO/.worktrees/test_hierarchy/.claude/settings.local.json"
   assert [ -f "$settings" ]
 
   # Both rules should appear (global + repo merged)
@@ -63,10 +63,10 @@ EOF
   git -C "$TEST_REPO" commit -m "add flake.nix"
 
   cd "$TEST_REPO"
-  run_sc new --no-attach test-envrc-flake
+  run_sc new --no-attach test_envrc_flake
   assert_success
 
-  local envrc="$TEST_REPO/.worktrees/test-envrc-flake/.envrc"
+  local envrc="$TEST_REPO/.worktrees/test_envrc_flake/.envrc"
   assert [ -f "$envrc" ]
   run cat "$envrc"
   assert_output --partial "source_up"
@@ -75,10 +75,10 @@ EOF
 
 function apply_skips_use_flake_without_flake_nix { # @test
   cd "$TEST_REPO"
-  run_sc new --no-attach test-envrc-no-flake
+  run_sc new --no-attach test_envrc_no_flake
   assert_success
 
-  local envrc="$TEST_REPO/.worktrees/test-envrc-no-flake/.envrc"
+  local envrc="$TEST_REPO/.worktrees/test_envrc_no_flake/.envrc"
   assert [ -f "$envrc" ]
   run cat "$envrc"
   assert_output --partial "source_up"

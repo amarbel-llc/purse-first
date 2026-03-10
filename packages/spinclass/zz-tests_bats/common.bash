@@ -1,6 +1,9 @@
 bats_load_library bats-support
 bats_load_library bats-assert
 bats_load_library bats-assert-additions
+bats_load_library bats-emo
+
+require_bin SPINCLASS_BIN spinclass
 
 set_xdg() {
   loc="$(realpath "$1" 2>/dev/null)"
@@ -70,5 +73,6 @@ create_worktree() {
 # Run spinclass with timeout.
 # Usage: run_sc <subcommand> [args...]
 run_sc() {
-  run timeout --preserve-status 5s spinclass --format tap "$@"
+  local bin="${SPINCLASS_BIN:-spinclass}"
+  run timeout --preserve-status 5s "$bin" --format tap "$@"
 }

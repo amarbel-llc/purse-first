@@ -10,14 +10,14 @@ setup() {
 
 function spinclass_new_creates_worktree { # @test
   cd "$TEST_REPO"
-  run_sc new test-branch --no-attach
+  run_sc new test_branch --no-attach
 
   assert_success
-  assert [ -d "$TEST_REPO/.worktrees/test-branch" ]
+  assert [ -d "$TEST_REPO/.worktrees/test_branch" ]
   # Should be a git worktree (has .git file, not directory)
-  assert [ -f "$TEST_REPO/.worktrees/test-branch/.git" ]
+  assert [ -f "$TEST_REPO/.worktrees/test_branch/.git" ]
   # Branch should exist
-  run git -C "$TEST_REPO" rev-parse --verify refs/heads/test-branch
+  run git -C "$TEST_REPO" rev-parse --verify refs/heads/test_branch
   assert_success
 }
 
@@ -34,42 +34,44 @@ function spinclass_new_auto_name { # @test
 
 function spinclass_new_no_attach_skips_zmx { # @test
   cd "$TEST_REPO"
-  run_sc new --no-attach test-noattach
+  run_sc new --no-attach test_noattach
 
   assert_success
-  assert [ -d "$TEST_REPO/.worktrees/test-noattach" ]
+  assert [ -d "$TEST_REPO/.worktrees/test_noattach" ]
   # zmx should NOT have been called
   assert [ ! -f "$BATS_TEST_TMPDIR/stubs/zmx.log" ]
 }
 
 function spinclass_new_idempotent { # @test
   cd "$TEST_REPO"
-  run_sc new --no-attach test-idem
+  run_sc new --no-attach test_idem
   assert_success
 
   # Second run should succeed with SKIP
-  run_sc new --no-attach test-idem
+  run_sc new --no-attach test_idem
   assert_success
   assert_output --partial "SKIP"
 }
 
 function spinclass_status_shows_worktrees { # @test
   cd "$TEST_REPO"
+  local bin="${SPINCLASS_BIN:-spinclass}"
   # Create some worktrees
-  spinclass --format tap new --no-attach branch-a
-  spinclass --format tap new --no-attach branch-b
+  "$bin" --format tap new --no-attach branch_a
+  "$bin" --format tap new --no-attach branch_b
 
   run_sc status
   assert_success
-  assert_output --partial "branch-a"
-  assert_output --partial "branch-b"
+  assert_output --partial "branch_a"
+  assert_output --partial "branch_b"
 }
 
 function spinclass_merge_fast_forwards { # @test
   cd "$TEST_REPO"
-  spinclass --format tap new --no-attach merge-test
+  local bin="${SPINCLASS_BIN:-spinclass}"
+  "$bin" --format tap new --no-attach merge_test
 
-  local wt="$TEST_REPO/.worktrees/merge-test"
+  local wt="$TEST_REPO/.worktrees/merge_test"
 
   # Make a commit on the worktree branch
   echo "new content" > "$wt/new-file.txt"
@@ -80,7 +82,7 @@ function spinclass_merge_fast_forwards { # @test
   git -C "$wt" clean -fd
 
   # Merge from the main repo
-  run_sc merge merge-test
+  run_sc merge merge_test
   assert_success
 
   # Commit should now be on main
@@ -93,22 +95,23 @@ function spinclass_merge_fast_forwards { # @test
 
 function spinclass_clean_removes_merged { # @test
   cd "$TEST_REPO"
-  spinclass --format tap new --no-attach clean-test
+  local bin="${SPINCLASS_BIN:-spinclass}"
+  "$bin" --format tap new --no-attach clean_test
 
   # Clean untracked files so worktree remove succeeds
-  git -C "$TEST_REPO/.worktrees/clean-test" clean -fd
+  git -C "$TEST_REPO/.worktrees/clean_test" clean -fd
 
   # Merge the worktree first (makes the branch fully merged)
-  spinclass --format tap merge clean-test
+  "$bin" --format tap merge clean_test
 
   # Create another worktree that IS merged (no extra commits)
-  spinclass --format tap new --no-attach clean-noop
+  "$bin" --format tap new --no-attach clean_noop
 
   # Clean untracked files from sweatfile apply
-  git -C "$TEST_REPO/.worktrees/clean-noop" clean -fd
+  git -C "$TEST_REPO/.worktrees/clean_noop" clean -fd
 
   run_sc clean
   assert_success
   # The noop worktree with zero commits ahead should be cleaned
-  assert [ ! -d "$TEST_REPO/.worktrees/clean-noop" ]
+  assert [ ! -d "$TEST_REPO/.worktrees/clean_noop" ]
 }
