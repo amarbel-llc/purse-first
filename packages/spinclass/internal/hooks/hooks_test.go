@@ -11,9 +11,10 @@ import (
 
 func makeInput(toolName string, toolInput map[string]any, cwd string) []byte {
 	input := map[string]any{
-		"tool_name":  toolName,
-		"tool_input": toolInput,
-		"cwd":        cwd,
+		"hook_event_name": "PreToolUse",
+		"tool_name":       toolName,
+		"tool_input":      toolInput,
+		"cwd":             cwd,
 	}
 	data, _ := json.Marshal(input)
 	return data
@@ -58,12 +59,12 @@ func TestDisallowMainWorktreeOnDeniesMainRepoPath(t *testing.T) {
 	if hso["permissionDecision"] != "deny" {
 		t.Errorf("expected permissionDecision deny, got %v", hso["permissionDecision"])
 	}
-	reason, ok := hso["reason"].(string)
+	reason, ok := hso["permissionDecisionReason"].(string)
 	if !ok || reason == "" {
-		t.Fatal("expected reason in output")
+		t.Fatal("expected permissionDecisionReason in output")
 	}
 	if !strings.Contains(reason, "main worktree") {
-		t.Errorf("expected reason to mention main worktree, got %q", reason)
+		t.Errorf("expected permissionDecisionReason to mention main worktree, got %q", reason)
 	}
 }
 

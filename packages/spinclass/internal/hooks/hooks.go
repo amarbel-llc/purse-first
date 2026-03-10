@@ -97,7 +97,7 @@ func runPreToolUse(input hookInput, w io.Writer, mainRepoRoot string, disallowMa
 				"hookSpecificOutput": map[string]any{
 					"hookEventName":      "PreToolUse",
 					"permissionDecision": "deny",
-					"reason": fmt.Sprintf(
+					"permissionDecisionReason": fmt.Sprintf(
 						"Path %s is in the main worktree (%s). Restrict operations to the session worktree.",
 						p, mainRepoRoot,
 					),
