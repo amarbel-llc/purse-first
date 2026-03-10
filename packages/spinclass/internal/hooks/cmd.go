@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
 
+	"github.com/amarbel-llc/spinclass/internal/git"
 	"github.com/amarbel-llc/spinclass/internal/sweatfile"
 	"github.com/amarbel-llc/spinclass/internal/worktree"
 )
@@ -21,52 +21,40 @@ func NewHooksCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
 			if err != nil {
-				return err
+				return nil
 			}
 
-			boundary, err := detectBoundary(cwd)
+			if !worktree.IsWorktree(cwd) {
+				toplevel, err := gitToplevel(cwd)
+				if err != nil {
+					return nil
+				}
+				if !worktree.IsWorktree(toplevel) {
+					// Not in a worktree — run with flag off
+					return Run(os.Stdin, os.Stdout, "", false)
+				}
+				cwd = toplevel
+			}
+
+			mainRepoRoot, err := git.CommonDir(cwd)
 			if err != nil {
 				return nil
 			}
 
-			if boundary == "" {
-				return nil
-			}
-
-			var allowed []string
 			home, _ := os.UserHomeDir()
+			var disallowMainWorktree bool
 			if home != "" {
-				allowed = append(allowed, filepath.Join(home, ".claude"))
-			}
-
-			var boundaryNotify bool
-			if home != "" {
-				result, err := sweatfile.LoadHierarchy(home, cwd)
+				result, err := sweatfile.LoadWorktreeHierarchy(home, mainRepoRoot, cwd)
 				if err == nil {
-					boundaryNotify = result.Merged.BoundaryNotifyEnabled()
+					disallowMainWorktree = result.Merged.DisallowMainWorktreeEnabled()
 				}
 			}
 
-			return Run(os.Stdin, os.Stdout, boundary, allowed, boundaryNotify)
+			return Run(os.Stdin, os.Stdout, mainRepoRoot, disallowMainWorktree)
 		},
 	}
 
 	return cmd
-}
-
-func detectBoundary(cwd string) (string, error) {
-	if !worktree.IsWorktree(cwd) {
-		toplevel, err := gitToplevel(cwd)
-		if err != nil {
-			return "", err
-		}
-		if !worktree.IsWorktree(toplevel) {
-			return "", nil
-		}
-		return toplevel, nil
-	}
-
-	return gitToplevel(cwd)
 }
 
 func gitToplevel(dir string) (string, error) {
