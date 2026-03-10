@@ -27,8 +27,9 @@ type Sweatfile struct {
 	BranchNameCommand  string        `toml:"branch-name-command"`  // TODO add tests
 	GitSkipIndex       []string      `toml:"git-excludes"`
 	ClaudeAllow        []string      `toml:"claude-allow"`
-	EnvrcDirectives    []string      `toml:"envrc-directives"`
-	Hooks              *Hooks        `toml:"hooks"`
+	EnvrcDirectives    []string          `toml:"envrc-directives"`
+	Env                map[string]string `toml:"env"`
+	Hooks              *Hooks            `toml:"hooks"`
 	Experimental       *Experimental `toml:"experimental"`
 }
 

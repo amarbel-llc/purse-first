@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -458,5 +459,100 @@ func TestWriteEnvrcDefaultFallbackWithoutFlake(t *testing.T) {
 	want := "source_up\n" + wantPathAdd
 	if content != want {
 		t.Errorf(".envrc content:\ngot  %q\nwant %q", content, want)
+	}
+}
+
+func TestWriteSpinclassEnv(t *testing.T) {
+	dir := t.TempDir()
+
+	fakeBin := t.TempDir()
+	os.WriteFile(filepath.Join(fakeBin, "direnv"), []byte("#!/bin/sh\nexit 0\n"), 0o755)
+	t.Setenv("PATH", fakeBin)
+
+	sf := Sweatfile{
+		Env: map[string]string{
+			"FOO": "bar",
+			"BAZ": "qux",
+		},
+	}
+	err := sf.Apply(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(dir, ".spinclass.env"))
+	if err != nil {
+		t.Fatalf("reading .spinclass.env: %v", err)
+	}
+
+	content := string(data)
+	if content != "BAZ=qux\nFOO=bar\n" {
+		t.Errorf(".spinclass.env content: got %q", content)
+	}
+}
+
+func TestWriteSpinclassEnvInterpolatesWorktree(t *testing.T) {
+	dir := t.TempDir()
+
+	fakeBin := t.TempDir()
+	os.WriteFile(filepath.Join(fakeBin, "direnv"), []byte("#!/bin/sh\nexit 0\n"), 0o755)
+	t.Setenv("PATH", fakeBin)
+
+	sf := Sweatfile{
+		Env: map[string]string{
+			"INCLUDE_PATH": "$WORKTREE/lib:.",
+		},
+	}
+	err := sf.Apply(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, _ := os.ReadFile(filepath.Join(dir, ".spinclass.env"))
+	want := fmt.Sprintf("INCLUDE_PATH=%s/lib:.\n", dir)
+	if string(data) != want {
+		t.Errorf(".spinclass.env content:\ngot  %q\nwant %q", string(data), want)
+	}
+}
+
+func TestEnvAutoDotenvDirective(t *testing.T) {
+	dir := t.TempDir()
+
+	fakeBin := t.TempDir()
+	os.WriteFile(filepath.Join(fakeBin, "direnv"), []byte("#!/bin/sh\nexit 0\n"), 0o755)
+	t.Setenv("PATH", fakeBin)
+
+	sf := Sweatfile{
+		Env: map[string]string{"FOO": "bar"},
+	}
+	err := sf.Apply(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, _ := os.ReadFile(filepath.Join(dir, ".envrc"))
+	content := string(data)
+	if !strings.Contains(content, "dotenv .spinclass.env") {
+		t.Errorf("expected dotenv .spinclass.env in .envrc, got %q", content)
+	}
+}
+
+func TestNoEnvNoDotenvDirective(t *testing.T) {
+	dir := t.TempDir()
+
+	fakeBin := t.TempDir()
+	os.WriteFile(filepath.Join(fakeBin, "direnv"), []byte("#!/bin/sh\nexit 0\n"), 0o755)
+	t.Setenv("PATH", fakeBin)
+
+	sf := Sweatfile{}
+	err := sf.Apply(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, _ := os.ReadFile(filepath.Join(dir, ".envrc"))
+	content := string(data)
+	if strings.Contains(content, "dotenv") {
+		t.Errorf("expected no dotenv in .envrc when env is empty, got %q", content)
 	}
 }

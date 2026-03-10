@@ -137,6 +137,15 @@ func Merge(base, repo Sweatfile) Sweatfile {
 		}
 	}
 
+	if repo.Env != nil {
+		if merged.Env == nil {
+			merged.Env = make(map[string]string)
+		}
+		for k, v := range repo.Env {
+			merged.Env[k] = v
+		}
+	}
+
 	if repo.Hooks != nil {
 		if merged.Hooks == nil {
 			merged.Hooks = &Hooks{}

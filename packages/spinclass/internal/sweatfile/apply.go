@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 
 	"github.com/amarbel-llc/spinclass/internal/git"
 )
@@ -21,6 +22,10 @@ func (sweatfile Sweatfile) Apply(worktreePath string) error {
 
 	if err := sweatfile.prepareLocalBin(); err != nil {
 		return err
+	}
+
+	if err := sweatfile.writeSpinclassEnv(worktreePath); err != nil {
+		return fmt.Errorf("writing .spinclass.env: %w", err)
 	}
 
 	if err := sweatfile.prepareDirenv(worktreePath); err != nil {
@@ -83,6 +88,12 @@ func (sf Sweatfile) writeEnvrc(worktreePath string) error {
 		}
 	}
 
+	if len(sf.Env) > 0 {
+		if _, err := fmt.Fprintln(bufferedWriter, "dotenv .spinclass.env"); err != nil {
+			return err
+		}
+	}
+
 	dirSpinclassBinAbs, err := filepath.Abs(".git/spinclass/bin")
 	if err != nil {
 		return err
@@ -97,6 +108,44 @@ func (sf Sweatfile) writeEnvrc(worktreePath string) error {
 	}
 
 	return bufferedWriter.Flush()
+}
+
+func (sf Sweatfile) writeSpinclassEnv(worktreePath string) error {
+	if len(sf.Env) == 0 {
+		return nil
+	}
+
+	keys := make([]string, 0, len(sf.Env))
+	for k := range sf.Env {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	file, err := os.OpenFile(
+		filepath.Join(worktreePath, ".spinclass.env"),
+		os.O_TRUNC|os.O_CREATE|os.O_WRONLY,
+		0o644,
+	)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	expand := func(key string) string {
+		if key == "WORKTREE" {
+			return worktreePath
+		}
+		return os.Getenv(key)
+	}
+
+	for _, k := range keys {
+		expanded := os.Expand(sf.Env[k], expand)
+		if _, err := fmt.Fprintf(file, "%s=%s\n", k, expanded); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (sf Sweatfile) prepareDirenv(worktreePath string) error {

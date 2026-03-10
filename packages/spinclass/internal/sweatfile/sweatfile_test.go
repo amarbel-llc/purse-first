@@ -693,6 +693,64 @@ func TestMergeEnvrcDirectivesInherit(t *testing.T) {
 	}
 }
 
+func TestParseEnv(t *testing.T) {
+	input := `
+[env]
+FOO = "bar"
+BAZ = "qux"
+`
+	sf, err := Parse([]byte(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(sf.Env) != 2 {
+		t.Fatalf("expected 2 env vars, got %v", sf.Env)
+	}
+	if sf.Env["FOO"] != "bar" || sf.Env["BAZ"] != "qux" {
+		t.Errorf("env: got %v", sf.Env)
+	}
+}
+
+func TestParseEnvAbsent(t *testing.T) {
+	sf, err := Parse([]byte(`git-excludes = [".claude/"]`))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sf.Env != nil {
+		t.Errorf("expected nil env, got %v", sf.Env)
+	}
+}
+
+func TestMergeEnvInherit(t *testing.T) {
+	base := Sweatfile{Env: map[string]string{"FOO": "bar"}}
+	repo := Sweatfile{}
+	merged := Merge(base, repo)
+	if merged.Env["FOO"] != "bar" {
+		t.Errorf("expected inherited env, got %v", merged.Env)
+	}
+}
+
+func TestMergeEnvOverrideKey(t *testing.T) {
+	base := Sweatfile{Env: map[string]string{"FOO": "bar", "BAZ": "qux"}}
+	repo := Sweatfile{Env: map[string]string{"FOO": "override"}}
+	merged := Merge(base, repo)
+	if merged.Env["FOO"] != "override" {
+		t.Errorf("expected overridden FOO, got %v", merged.Env["FOO"])
+	}
+	if merged.Env["BAZ"] != "qux" {
+		t.Errorf("expected inherited BAZ, got %v", merged.Env["BAZ"])
+	}
+}
+
+func TestMergeEnvAddKey(t *testing.T) {
+	base := Sweatfile{Env: map[string]string{"FOO": "bar"}}
+	repo := Sweatfile{Env: map[string]string{"BAZ": "qux"}}
+	merged := Merge(base, repo)
+	if len(merged.Env) != 2 {
+		t.Fatalf("expected 2 env vars, got %v", merged.Env)
+	}
+}
+
 func TestLoadHierarchyHooksStopOverriddenByRepo(t *testing.T) {
 	home := t.TempDir()
 	repoDir := filepath.Join(home, "eng", "repos", "myrepo")
