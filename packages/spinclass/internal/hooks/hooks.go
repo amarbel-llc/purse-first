@@ -20,7 +20,7 @@ type hookInput struct {
 	CWD           string         `json:"cwd"`
 }
 
-func Run(r io.Reader, w io.Writer, boundary string, allowed []string, boundaryNotify bool) error {
+func Run(r io.Reader, w io.Writer, mainRepoRoot string, disallowMainWorktree bool) error {
 	var input hookInput
 	if err := json.NewDecoder(r).Decode(&input); err != nil {
 		return fmt.Errorf("decoding hook input: %w", err)
@@ -30,7 +30,7 @@ func Run(r io.Reader, w io.Writer, boundary string, allowed []string, boundaryNo
 	case "Stop":
 		return runStopHook(input, w)
 	default:
-		return runPreToolUse(input, w, boundary, allowed, boundaryNotify)
+		return runPreToolUse(input, w, mainRepoRoot, disallowMainWorktree)
 	}
 }
 
@@ -79,51 +79,35 @@ func runStopHook(input hookInput, w io.Writer) error {
 	return json.NewEncoder(w).Encode(decision)
 }
 
-func runPreToolUse(input hookInput, w io.Writer, boundary string, allowed []string, boundaryNotify bool) error {
-	if !boundaryNotify || boundary == "" {
+func runPreToolUse(input hookInput, w io.Writer, mainRepoRoot string, disallowMainWorktree bool) error {
+	if !disallowMainWorktree || mainRepoRoot == "" {
 		return nil
 	}
 
-	boundary = evalOrClean(boundary)
-
-	for i, a := range allowed {
-		allowed[i] = evalOrClean(a)
-	}
+	mainRepoRoot = resolvePath(mainRepoRoot)
 
 	paths := extractPaths(input)
 	if paths == nil {
 		return nil
 	}
 
-	var violations []string
 	for _, p := range paths {
-		if isInsideAllowed(p, allowed) {
-			continue
+		if isInsideMainWorktree(p, mainRepoRoot) {
+			output := map[string]any{
+				"hookSpecificOutput": map[string]any{
+					"hookEventName":      "PreToolUse",
+					"permissionDecision": "deny",
+					"reason": fmt.Sprintf(
+						"Path %s is in the main worktree (%s). Restrict operations to the session worktree.",
+						p, mainRepoRoot,
+					),
+				},
+			}
+			return json.NewEncoder(w).Encode(output)
 		}
-		if !isInsideBoundary(p, boundary) {
-			violations = append(violations, fmt.Sprintf(
-				"worktree boundary violation: %s %s is outside %s",
-				input.ToolName, p, boundary,
-			))
-		}
 	}
 
-	if len(violations) == 0 {
-		return nil
-	}
-
-	context := strings.Join(violations, "\n") +
-		"\nActivity outside the worktree should only be performed if the user explicitly requested it. Otherwise, work exclusively within the worktree."
-
-	output := map[string]any{
-		"hookSpecificOutput": map[string]any{
-			"hookEventName":      "PreToolUse",
-			"permissionDecision": "allow",
-			"additionalContext":  context,
-		},
-	}
-
-	return json.NewEncoder(w).Encode(output)
+	return nil
 }
 
 func extractPaths(input hookInput) []string {
@@ -176,24 +160,7 @@ func resolvePath(path string) string {
 	return filepath.Clean(path)
 }
 
-func evalOrClean(path string) string {
-	return resolvePath(path)
-}
-
-func isInsideAllowed(path string, allowed []string) bool {
+func isInsideMainWorktree(path, mainRepoRoot string) bool {
 	resolved := resolvePath(path)
-
-	for _, a := range allowed {
-		if resolved == a || strings.HasPrefix(resolved, a+string(filepath.Separator)) {
-			return true
-		}
-	}
-	return false
+	return resolved == mainRepoRoot || strings.HasPrefix(resolved, mainRepoRoot+string(filepath.Separator))
 }
-
-func isInsideBoundary(path, boundary string) bool {
-	resolved := resolvePath(path)
-
-	return resolved == boundary || strings.HasPrefix(resolved, boundary+string(filepath.Separator))
-}
-
