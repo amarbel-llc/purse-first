@@ -13,24 +13,20 @@ import (
 )
 
 type Hooks struct {
-	Create *string `toml:"create"`
-	Stop   *string `toml:"stop"`
-}
-
-type Experimental struct {
-	BoundaryNotify *bool `toml:"boundary-notify"`
+	Create               *string `toml:"create"`
+	Stop                 *string `toml:"stop"`
+	DisallowMainWorktree *bool   `toml:"disallow-main-worktree"`
 }
 
 type Sweatfile struct {
-	SystemPrompt       *string       `toml:"system-prompt"`        // TODO replace with PathOrString struct
-	SystemPromptAppend *string       `toml:"system-prompt-append"` // TODO replace with PathOrString struct
-	BranchNameCommand  string        `toml:"branch-name-command"`  // TODO add tests
-	GitSkipIndex       []string      `toml:"git-excludes"`
-	ClaudeAllow        []string      `toml:"claude-allow"`
+	SystemPrompt       *string           `toml:"system-prompt"`        // TODO replace with PathOrString struct
+	SystemPromptAppend *string           `toml:"system-prompt-append"` // TODO replace with PathOrString struct
+	BranchNameCommand  string            `toml:"branch-name-command"`  // TODO add tests
+	GitSkipIndex       []string          `toml:"git-excludes"`
+	ClaudeAllow        []string          `toml:"claude-allow"`
 	EnvrcDirectives    []string          `toml:"envrc-directives"`
 	Env                map[string]string `toml:"env"`
 	Hooks              *Hooks            `toml:"hooks"`
-	Experimental       *Experimental `toml:"experimental"`
 }
 
 func (sf Sweatfile) StopHookCommand() *string {
@@ -47,10 +43,10 @@ func (sf Sweatfile) CreateHookCommand() *string {
 	return sf.Hooks.Create
 }
 
-func (sf Sweatfile) BoundaryNotifyEnabled() bool {
-	return sf.Experimental != nil &&
-		sf.Experimental.BoundaryNotify != nil &&
-		*sf.Experimental.BoundaryNotify
+func (sf Sweatfile) DisallowMainWorktreeEnabled() bool {
+	return sf.Hooks != nil &&
+		sf.Hooks.DisallowMainWorktree != nil &&
+		*sf.Hooks.DisallowMainWorktree
 }
 
 // baseline excludes and allow rules that are always applied regardless of user

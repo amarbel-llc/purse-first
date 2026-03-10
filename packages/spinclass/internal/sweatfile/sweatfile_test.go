@@ -771,3 +771,27 @@ func TestLoadHierarchyHooksStopOverriddenByRepo(t *testing.T) {
 		t.Errorf("expected overridden hooks.stop, got %v", result.Merged.Hooks)
 	}
 }
+
+func TestParseHooksDisallowMainWorktree(t *testing.T) {
+	input := `
+[hooks]
+disallow-main-worktree = true
+`
+	sf, err := Parse([]byte(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !sf.DisallowMainWorktreeEnabled() {
+		t.Error("expected disallow-main-worktree to be enabled")
+	}
+}
+
+func TestParseHooksDisallowMainWorktreeAbsent(t *testing.T) {
+	sf, err := Parse([]byte(`git-excludes = [".claude/"]`))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sf.DisallowMainWorktreeEnabled() {
+		t.Error("expected disallow-main-worktree to be disabled when absent")
+	}
+}
