@@ -52,6 +52,7 @@
 - [x] grit: add soft reset mode to `reset` tool (git reset --soft via `soft` + `ref` params) — needed for amend workaround and squash flows
 - [ ] update tap-dancer with latest tap amendments
 - [ ] verify install-local skill path resolution (./skills/<name> in .claude-plugin/plugin.json may not resolve correctly — needs manual test)
+- [ ] update global sweatfile (`eng/rcm/config/spinclass/sweatfile`) to use snob-case keys (`git-excludes`, `claude-allow`)
 - [ ] separate libs and marketplace generation into new `bob` repo
 - [ ] migrate everything to latest MCP
 - [x] tap-dancer rust: add quiet/suppress-YAML-block mode for test points

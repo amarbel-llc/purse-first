@@ -36,13 +36,13 @@ nix develop <root> --command go run packages/tap-dancer/ go-test ./packages/spin
 
 **Worktree resolution** (`internal/worktree/`): Resolves targets to `ResolvedPath` (branch, abs path, repo path, session key). Bare name → `<repo>/.worktrees/<branch>`, relative path → resolved from repo root, absolute → used directly.
 
-**Sweatfile config** (`internal/sweatfile/`): TOML-based hierarchical configuration. Merges global (`~/.config/spinclass/sweatfile`) → intermediate parent dirs → repo-level. Supports `git_excludes` and `claude_allow` arrays. Nil = inherit, empty array = clear, non-empty = append.
+**Sweatfile config** (`internal/sweatfile/`): TOML-based hierarchical configuration. Merges global (`~/.config/spinclass/sweatfile`) → intermediate parent dirs → repo-level. Supports `git-excludes`, `claude-allow`, and `envrc-directives` arrays (nil = inherit, empty = clear, non-empty = append), `[env]` table (map merge, repo keys override base), and `[hooks]` table with `create` and `stop` lifecycle hooks (scalar override). The create hook runs after worktree config is applied and receives `$WORKTREE` as an env var.
 
 **Merge/Pull/Clean** (`internal/merge/`, `internal/pull/`, `internal/clean/`): Post-session workflows. Merge rebases onto default branch then ff-only merges. Pull scans repos and rebases clean worktrees. Clean removes fully-merged worktree branches.
 
 **Permission tiers** (`internal/perms/`): Claude Code hook integration. Tier-based permission rules stored as JSON (`global.json` + `repos/<repo>.json`). Implements `PermissionRequest` protocol for Claude's pre-tool-use hooks.
 
-**Claude integration** (`internal/claude/`): Updates `~/.claude.json` to trust worktree paths. Applies `claude_allow` rules from sweatfile to `.claude/settings.local.json`.
+**Claude integration** (`internal/claude/`): Updates `~/.claude.json` to trust worktree paths. Applies `claude-allow` rules from sweatfile to `.claude/settings.local.json`.
 
 **TAP output** (`internal/tap/`): Local TAP-14 writer used across commands for structured output with YAML diagnostic blocks.
 
