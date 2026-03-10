@@ -167,6 +167,21 @@ func (sf Sweatfile) prepareDirenv(worktreePath string) error {
 	return cmd.Run()
 }
 
+func (sf Sweatfile) RunCreateHook(worktreePath string) error {
+	cmd := sf.CreateHookCommand()
+	if cmd == nil || *cmd == "" {
+		return nil
+	}
+
+	c := exec.Command("sh", "-c", *cmd)
+	c.Dir = worktreePath
+	c.Env = append(os.Environ(), "WORKTREE="+worktreePath)
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+
+	return c.Run()
+}
+
 func ApplyClaudeSettings(worktreePath string, sweatfile Sweatfile) error {
 	settingsPath := filepath.Join(worktreePath, ".claude", "settings.local.json")
 

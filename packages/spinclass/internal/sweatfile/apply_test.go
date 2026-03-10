@@ -556,3 +556,72 @@ func TestNoEnvNoDotenvDirective(t *testing.T) {
 		t.Errorf("expected no dotenv in .envrc when env is empty, got %q", content)
 	}
 }
+
+func TestRunCreateHookExecutes(t *testing.T) {
+	dir := t.TempDir()
+	marker := filepath.Join(dir, "hook-ran")
+
+	cmd := fmt.Sprintf("touch %s", marker)
+	sf := Sweatfile{Hooks: &Hooks{Create: &cmd}}
+
+	err := sf.RunCreateHook(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, err := os.Stat(marker); os.IsNotExist(err) {
+		t.Error("expected create hook to run and create marker file")
+	}
+}
+
+func TestRunCreateHookReceivesWorktreeEnv(t *testing.T) {
+	dir := t.TempDir()
+	output := filepath.Join(dir, "worktree-path")
+
+	cmd := fmt.Sprintf("echo $WORKTREE > %s", output)
+	sf := Sweatfile{Hooks: &Hooks{Create: &cmd}}
+
+	err := sf.RunCreateHook(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, _ := os.ReadFile(output)
+	got := strings.TrimSpace(string(data))
+	if got != dir {
+		t.Errorf("WORKTREE env: got %q, want %q", got, dir)
+	}
+}
+
+func TestRunCreateHookFailureReturnsError(t *testing.T) {
+	dir := t.TempDir()
+
+	cmd := "exit 1"
+	sf := Sweatfile{Hooks: &Hooks{Create: &cmd}}
+
+	err := sf.RunCreateHook(dir)
+	if err == nil {
+		t.Error("expected error from failing create hook")
+	}
+}
+
+func TestRunCreateHookNilIsNoop(t *testing.T) {
+	dir := t.TempDir()
+	sf := Sweatfile{}
+
+	err := sf.RunCreateHook(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestRunCreateHookEmptyStringIsNoop(t *testing.T) {
+	dir := t.TempDir()
+	empty := ""
+	sf := Sweatfile{Hooks: &Hooks{Create: &empty}}
+
+	err := sf.RunCreateHook(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

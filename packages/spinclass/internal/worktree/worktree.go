@@ -207,6 +207,11 @@ func applyWorktreeConfig(
 		return fmt.Errorf("trusting workspace in claude: %w", err)
 	}
 
+	if err := sweetfile.Merged.RunCreateHook(worktreePath); err != nil {
+		git.RunPassthrough(repoPath, "worktree", "remove", "--force", worktreePath)
+		return fmt.Errorf("create hook failed: %w", err)
+	}
+
 	return nil
 }
 
