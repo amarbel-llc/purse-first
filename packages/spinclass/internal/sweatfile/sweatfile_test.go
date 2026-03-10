@@ -816,3 +816,47 @@ func TestMergeDisallowMainWorktreeOverride(t *testing.T) {
 		t.Error("expected overridden disallow-main-worktree to be disabled")
 	}
 }
+
+func TestLoadWorktreeHierarchyMainRepoSweatfileIncluded(t *testing.T) {
+	home := t.TempDir()
+	mainRepo := filepath.Join(home, "eng", "repos", "myrepo")
+	worktreeDir := filepath.Join(mainRepo, ".worktrees", "my-branch")
+	os.MkdirAll(worktreeDir, 0o755)
+
+	// Main repo sweatfile enables disallow-main-worktree
+	writeSweatfile(t, filepath.Join(mainRepo, "sweatfile"),
+		"[hooks]\ndisallow-main-worktree = true\n")
+
+	result, err := LoadWorktreeHierarchy(home, mainRepo, worktreeDir)
+	if err != nil {
+		t.Fatalf("LoadWorktreeHierarchy returned error: %v", err)
+	}
+
+	if !result.Merged.DisallowMainWorktreeEnabled() {
+		t.Error("expected disallow-main-worktree from main repo sweatfile")
+	}
+}
+
+func TestLoadWorktreeHierarchyWorktreeOverridesMainRepo(t *testing.T) {
+	home := t.TempDir()
+	mainRepo := filepath.Join(home, "eng", "repos", "myrepo")
+	worktreeDir := filepath.Join(mainRepo, ".worktrees", "my-branch")
+	os.MkdirAll(worktreeDir, 0o755)
+
+	// Main repo enables it
+	writeSweatfile(t, filepath.Join(mainRepo, "sweatfile"),
+		"[hooks]\ndisallow-main-worktree = true\n")
+
+	// Worktree disables it
+	writeSweatfile(t, filepath.Join(worktreeDir, "sweatfile"),
+		"[hooks]\ndisallow-main-worktree = false\n")
+
+	result, err := LoadWorktreeHierarchy(home, mainRepo, worktreeDir)
+	if err != nil {
+		t.Fatalf("LoadWorktreeHierarchy returned error: %v", err)
+	}
+
+	if result.Merged.DisallowMainWorktreeEnabled() {
+		t.Error("expected worktree sweatfile to override main repo")
+	}
+}

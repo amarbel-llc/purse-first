@@ -88,6 +88,32 @@ func LoadHierarchy(home, repoDir string) (Hierarchy, error) {
 	}, nil
 }
 
+// LoadWorktreeHierarchy loads the sweatfile cascade for a worktree context.
+// It delegates to LoadHierarchy for global → intermediate dirs → main repo,
+// then appends the worktree's own sweatfile as the highest-priority layer.
+func LoadWorktreeHierarchy(home, mainRepoRoot, worktreeDir string) (Hierarchy, error) {
+	hierarchy, err := LoadHierarchy(home, mainRepoRoot)
+	if err != nil {
+		return Hierarchy{}, err
+	}
+
+	worktreePath := filepath.Join(filepath.Clean(worktreeDir), "sweatfile")
+	sf, err := Load(worktreePath)
+	if err != nil {
+		return Hierarchy{}, err
+	}
+
+	_, found := fileExists(worktreePath)
+	hierarchy.Sources = append(hierarchy.Sources, LoadSource{
+		Path: worktreePath, Found: found, File: sf,
+	})
+	if found {
+		hierarchy.Merged = Merge(hierarchy.Merged, sf)
+	}
+
+	return hierarchy, nil
+}
+
 // TODO rewrite as object-oriented
 func Merge(base, repo Sweatfile) Sweatfile {
 	merged := base
