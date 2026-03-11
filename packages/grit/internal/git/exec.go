@@ -62,3 +62,30 @@ func RunWithEnv(ctx context.Context, dir string, extraEnv []string, args ...stri
 func Run(ctx context.Context, dir string, args ...string) (string, error) {
 	return RunWithEnv(ctx, dir, nil, args...)
 }
+
+func RunBothOutputs(ctx context.Context, dir string, args ...string) (string, string, error) {
+	if strings.ContainsRune(dir, 0) {
+		return "", "", fmt.Errorf("dir contains null byte")
+	}
+
+	for _, arg := range args {
+		if strings.ContainsRune(arg, 0) {
+			return "", "", fmt.Errorf("argument contains null byte")
+		}
+	}
+
+	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(),
+		"GIT_TERMINAL_PROMPT=0",
+		"GIT_EDITOR=true",
+	)
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	return stdout.String(), stderr.String(), err
+}

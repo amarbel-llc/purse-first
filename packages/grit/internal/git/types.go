@@ -148,3 +148,21 @@ type TryCommitResult struct {
 	Staged []DiffStat   `json:"staged"`
 	Status StatusResult `json:"status"`
 }
+
+type TagEntry struct {
+	Name        string `json:"name"`
+	Hash        string `json:"hash"`
+	Type        string `json:"type"`
+	Subject     string `json:"subject,omitempty"`
+	TaggerName  string `json:"tagger_name,omitempty"`
+	TaggerEmail string `json:"tagger_email,omitempty"`
+	TaggerDate  string `json:"tagger_date,omitempty"`
+	TargetHash  string `json:"target_hash,omitempty"`
+}
+
+type TagVerifyResult struct {
+	Name    string `json:"name"`
+	Valid   bool   `json:"valid"`
+	Signer  string `json:"signer,omitempty"`
+	Message string `json:"message,omitempty"`
+}
