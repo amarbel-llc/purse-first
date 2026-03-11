@@ -7,9 +7,26 @@ import (
 	"testing"
 )
 
+func collect(ch <-chan ExecResult) []ExecResult {
+	var results []ExecResult
+	for r := range ch {
+		results = append(results, r)
+	}
+	return results
+}
+
+func chanFromSlice(results []ExecResult) <-chan ExecResult {
+	ch := make(chan ExecResult, len(results))
+	for _, r := range results {
+		ch <- r
+	}
+	close(ch)
+	return ch
+}
+
 func TestGoroutineExecutorAllSucceed(t *testing.T) {
 	executor := &GoroutineExecutor{}
-	results := executor.Run(context.Background(), "echo {}", []string{"hello", "world"})
+	results := collect(executor.Run(context.Background(), "echo {}", []string{"hello", "world"}))
 
 	if len(results) != 2 {
 		t.Fatalf("expected 2 results, got %d", len(results))
@@ -31,7 +48,7 @@ func TestGoroutineExecutorAllSucceed(t *testing.T) {
 
 func TestGoroutineExecutorPreservesOrder(t *testing.T) {
 	executor := &GoroutineExecutor{}
-	results := executor.Run(context.Background(), "echo {}", []string{"a", "b", "c", "d", "e"})
+	results := collect(executor.Run(context.Background(), "echo {}", []string{"a", "b", "c", "d", "e"}))
 
 	if len(results) != 5 {
 		t.Fatalf("expected 5 results, got %d", len(results))
@@ -46,7 +63,7 @@ func TestGoroutineExecutorPreservesOrder(t *testing.T) {
 
 func TestGoroutineExecutorFailingCommand(t *testing.T) {
 	executor := &GoroutineExecutor{}
-	results := executor.Run(context.Background(), "exit 1", []string{"x"})
+	results := collect(executor.Run(context.Background(), "exit 1", []string{"x"}))
 
 	if len(results) != 1 {
 		t.Fatalf("expected 1 result, got %d", len(results))
@@ -59,7 +76,7 @@ func TestGoroutineExecutorFailingCommand(t *testing.T) {
 
 func TestGoroutineExecutorCapturesStderr(t *testing.T) {
 	executor := &GoroutineExecutor{}
-	results := executor.Run(context.Background(), "echo err >&2", []string{"x"})
+	results := collect(executor.Run(context.Background(), "echo err >&2", []string{"x"}))
 
 	if len(results) != 1 {
 		t.Fatalf("expected 1 result, got %d", len(results))
@@ -72,7 +89,7 @@ func TestGoroutineExecutorCapturesStderr(t *testing.T) {
 
 func TestGoroutineExecutorSubstitution(t *testing.T) {
 	executor := &GoroutineExecutor{}
-	results := executor.Run(context.Background(), "echo prefix-{}-suffix", []string{"mid"})
+	results := collect(executor.Run(context.Background(), "echo prefix-{}-suffix", []string{"mid"}))
 
 	if len(results) != 1 {
 		t.Fatalf("expected 1 result, got %d", len(results))
@@ -88,10 +105,10 @@ func TestGoroutineExecutorSubstitution(t *testing.T) {
 }
 
 func TestConvertExecParallelAllPass(t *testing.T) {
-	results := []ExecResult{
+	results := chanFromSlice([]ExecResult{
 		{Arg: "a", Command: "echo a", ExitCode: 0, Stdout: []byte("a\n")},
 		{Arg: "b", Command: "echo b", ExitCode: 0, Stdout: []byte("b\n")},
-	}
+	})
 
 	var buf bytes.Buffer
 	exitCode := ConvertExecParallel(results, &buf, false, false)
@@ -116,10 +133,10 @@ func TestConvertExecParallelAllPass(t *testing.T) {
 }
 
 func TestConvertExecParallelWithFailure(t *testing.T) {
-	results := []ExecResult{
+	results := chanFromSlice([]ExecResult{
 		{Arg: "a", Command: "echo a", ExitCode: 0, Stdout: []byte("a\n")},
 		{Arg: "b", Command: "false", ExitCode: 1, Stdout: []byte(""), Stderr: []byte("something broke\n")},
-	}
+	})
 
 	var buf bytes.Buffer
 	exitCode := ConvertExecParallel(results, &buf, false, false)
@@ -145,9 +162,9 @@ func TestConvertExecParallelWithFailure(t *testing.T) {
 }
 
 func TestConvertExecParallelNoDiagOnSuccess(t *testing.T) {
-	results := []ExecResult{
+	results := chanFromSlice([]ExecResult{
 		{Arg: "a", Command: "echo a", ExitCode: 0, Stdout: []byte("output\n")},
-	}
+	})
 
 	var buf bytes.Buffer
 	ConvertExecParallel(results, &buf, false, false)
@@ -159,9 +176,9 @@ func TestConvertExecParallelNoDiagOnSuccess(t *testing.T) {
 }
 
 func TestConvertExecParallelVerboseIncludesDiagOnSuccess(t *testing.T) {
-	results := []ExecResult{
+	results := chanFromSlice([]ExecResult{
 		{Arg: "a", Command: "echo a", ExitCode: 0, Stdout: []byte("output\n")},
-	}
+	})
 
 	var buf bytes.Buffer
 	ConvertExecParallel(results, &buf, true, false)
@@ -180,7 +197,7 @@ func TestGoroutineExecutorContextCancellation(t *testing.T) {
 	cancel() // cancel immediately
 
 	executor := &GoroutineExecutor{}
-	results := executor.Run(ctx, "sleep 10", []string{"a"})
+	results := collect(executor.Run(ctx, "sleep 10", []string{"a"}))
 
 	if results[0].Err == nil {
 		t.Error("expected error from cancelled context")
@@ -189,7 +206,7 @@ func TestGoroutineExecutorContextCancellation(t *testing.T) {
 
 func TestGoroutineExecutorEmptyArgs(t *testing.T) {
 	executor := &GoroutineExecutor{}
-	results := executor.Run(context.Background(), "echo {}", []string{})
+	results := collect(executor.Run(context.Background(), "echo {}", []string{}))
 
 	if len(results) != 0 {
 		t.Errorf("expected 0 results, got %d", len(results))

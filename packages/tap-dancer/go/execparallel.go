@@ -7,7 +7,6 @@ import (
 	"io"
 	"os/exec"
 	"strings"
-	"sync"
 	"syscall"
 )
 
@@ -22,9 +21,9 @@ type ExecResult struct {
 }
 
 // Executor runs a template command against a list of arguments in parallel
-// and returns results in argument order.
+// and streams results in argument order.
 type Executor interface {
-	Run(ctx context.Context, template string, args []string) []ExecResult
+	Run(ctx context.Context, template string, args []string) <-chan ExecResult
 }
 
 // GoroutineExecutor runs commands concurrently using goroutines.
@@ -36,21 +35,37 @@ func expandTemplate(template, arg string) string {
 	return strings.ReplaceAll(template, "{}", arg)
 }
 
-func (e *GoroutineExecutor) Run(ctx context.Context, template string, args []string) []ExecResult {
+func (e *GoroutineExecutor) Run(ctx context.Context, template string, args []string) <-chan ExecResult {
+	ch := make(chan ExecResult, len(args))
+
+	if len(args) == 0 {
+		close(ch)
+		return ch
+	}
+
 	results := make([]ExecResult, len(args))
-	var wg sync.WaitGroup
+	done := make([]chan struct{}, len(args))
+	for i := range done {
+		done[i] = make(chan struct{})
+	}
 
 	for i, arg := range args {
-		wg.Add(1)
 		go func(idx int, a string) {
-			defer wg.Done()
 			expanded := expandTemplate(template, a)
 			results[idx] = runCommand(ctx, a, expanded)
+			close(done[idx])
 		}(i, arg)
 	}
 
-	wg.Wait()
-	return results
+	go func() {
+		defer close(ch)
+		for i := range args {
+			<-done[i]
+			ch <- results[i]
+		}
+	}()
+
+	return ch
 }
 
 func runCommand(ctx context.Context, arg, expanded string) ExecResult {
@@ -87,11 +102,11 @@ func runCommand(ctx context.Context, arg, expanded string) ExecResult {
 
 // ConvertExecParallel writes TAP-14 output from parallel execution results.
 // Returns 0 if all commands succeeded, 1 if any failed.
-func ConvertExecParallel(results []ExecResult, w io.Writer, verbose bool, color bool) int {
+func ConvertExecParallel(results <-chan ExecResult, w io.Writer, verbose bool, color bool) int {
 	tw := NewColorWriter(w, color)
 	exitCode := 0
 
-	for _, r := range results {
+	for r := range results {
 		if r.ExitCode == 0 {
 			if verbose {
 				tw.OkDiag(r.Command, execResultDiagnostics(r))
