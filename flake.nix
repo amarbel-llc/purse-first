@@ -19,15 +19,15 @@
   };
 
   outputs =
-    { self
-    , nixpkgs
-    , nixpkgs-master
-    , utils
-    , gomod2nix
-    , crane
-    , rust-overlay
-    , fh
-    ,
+    {
+      self,
+      nixpkgs,
+      nixpkgs-master,
+      utils,
+      gomod2nix,
+      crane,
+      rust-overlay,
+      fh,
     }:
     let
       mkMarketplace = import ./lib/mkMarketplace.nix;
@@ -231,21 +231,6 @@
         skills = ./skills;
         packageToml = ./package.toml;
         pluginConfig = builtins.fromJSON (builtins.readFile ./marketplace-config.json);
-        brewConfig = {
-          releaseRepo = "amarbel-llc/purse-first";
-          tapName = "amarbel-llc/purse-first";
-          exclude = [ "chix" ];
-          dependencies = {
-            get-hubbed = [ "gh" ];
-          };
-          binaryPackages = [
-            "purse-first"
-            "grit"
-            "lux"
-            "get-hubbed"
-          ];
-          license = "MIT";
-        };
         devShellPackages =
           system: pkgs: pkgs-master:
           let

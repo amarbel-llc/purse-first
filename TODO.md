@@ -127,3 +127,4 @@
 
 - [ ] add claude-mcp-tool annotation modes to sweatfile (so read-only mode means
   all mcp's that support sweatfiles operate in read-only mode, etc)
+- [ ] remove brew tap infrastructure from `.github/workflows/release.yml` (tarball packaging, update-tap job, brew-build-tarball/brew-update-hashes references)

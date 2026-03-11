@@ -33,10 +33,6 @@ build-spinclass:
 build-go:
     {{cmd_nix_dev}} go build -o build/purse-first ./cmd/purse-first
 
-# Build Homebrew tap formula templates
-build-brew:
-    nix build .#homebrew-tap
-
 # Build marketplace without hooks
 build-no-hooks:
     nix build .#marketplace-no-hooks
@@ -146,11 +142,6 @@ test-lux-service: build-batman
 # Validate own plugin manifest
 validate:
     {{cmd_nix_dev}} go run ./cmd/purse-first validate .claude-plugin/plugin.json
-
-# Run Homebrew tap BATS tests
-test-brew: build-batman
-    nix build .#homebrew-tap
-    {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/homebrew_tap.bats
 
 test-spinclass-bats: build-batman
     nix build .#spinclass

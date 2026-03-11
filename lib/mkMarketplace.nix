@@ -33,13 +33,12 @@
   skills ? null,
   packageToml ? null,
 
-  # Optional — Homebrew tap generation.
-  # When set, produces a packages.homebrew-tap output.
-  brewConfig ? null,
-
   # Optional — extra devShell configuration
-  devShellPackages ? (_system: _pkgs: _pkgs-master: []),
-  devShellInputsFrom ? (_system: []),
+  devShellPackages ? (
+    _system: _pkgs: _pkgs-master:
+    [ ]
+  ),
+  devShellInputsFrom ? (_system: [ ]),
   devShellHook ? ''echo "${name} - dev environment"'',
 }:
 
@@ -120,14 +119,16 @@ utils.lib.eachDefaultSystem (
     # Write marketplace-config.json if pluginConfig is provided.
     configFile =
       if pluginConfig != null then
-        pkgs.writeText "${name}-marketplace-config.json" (builtins.toJSON (
-          {
-            inherit name description;
-            inherit owner;
-          }
-          // (if repo != null then { inherit repo; } else { })
-          // (if pluginConfig ? plugins then { inherit (pluginConfig) plugins; } else { })
-        ))
+        pkgs.writeText "${name}-marketplace-config.json" (
+          builtins.toJSON (
+            {
+              inherit name description;
+              inherit owner;
+            }
+            // (if repo != null then { inherit repo; } else { })
+            // (if pluginConfig ? plugins then { inherit (pluginConfig) plugins; } else { })
+          )
+        )
       else
         null;
 
@@ -149,15 +150,6 @@ utils.lib.eachDefaultSystem (
           --output "$out/.claude-plugin/marketplace.json"
       '';
     };
-
-    # Homebrew tap derivation (optional).
-    brewTap =
-      if brewConfig != null && pluginConfig != null then
-        import ./mkBrewTap.nix {
-          inherit pkgs pluginConfig brewConfig;
-        }
-      else
-        null;
 
     # No-hooks variant.
     marketplace-no-hooks = pkgs.symlinkJoin {
@@ -195,8 +187,8 @@ utils.lib.eachDefaultSystem (
     packages = {
       default = marketplace;
       inherit marketplace-no-hooks;
-    } // (if purse-first-build != null then { purse-first = cli; } else { })
-      // (if brewTap != null then { homebrew-tap = brewTap; } else { });
+    }
+    // (if purse-first-build != null then { purse-first = cli; } else { });
 
     apps.default = {
       type = "app";
@@ -206,7 +198,8 @@ utils.lib.eachDefaultSystem (
     devShells.default = pkgs.mkShell {
       packages = [
         pkgs.just
-      ] ++ (devShellPackages system pkgs pkgs-master);
+      ]
+      ++ (devShellPackages system pkgs pkgs-master);
 
       inputsFrom = devShellInputsFrom system;
 
