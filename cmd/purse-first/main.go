@@ -11,6 +11,7 @@ import (
 	"github.com/amarbel-llc/purse-first/internal/install"
 	"github.com/amarbel-llc/purse-first/internal/localplugin"
 	"github.com/amarbel-llc/purse-first/internal/marketplace"
+	"github.com/amarbel-llc/purse-first/internal/packagebrew"
 	"github.com/amarbel-llc/purse-first/internal/packagetoml"
 	"github.com/amarbel-llc/purse-first/internal/validate"
 )
@@ -215,7 +216,48 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 	validateCmd.Flags().StringVar(&validateType, "type", "", "document type: plugin, mapping, marketplace")
 	validateCmd.Flags().BoolVar(&validateStrict, "strict", false, "promote warnings to errors")
 
-	root.AddCommand(installCmd, genMarketplaceCmd, installLocalCmd, installDevMCPCmd, genPluginCmd, validateCmd)
+	packageCmd := &cobra.Command{
+		Use:   "package",
+		Short: "Package commands for distribution",
+	}
+
+	var (
+		brewConfigPath    string
+		brewOutputDir     string
+		brewNoAutoInstall bool
+	)
+
+	brewCmd := &cobra.Command{
+		Use:           "brew",
+		Short:         "Generate a Homebrew tap from pre-built packages",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			output := brewOutputDir
+			if output == "" {
+				cwd, err := os.Getwd()
+				if err != nil {
+					return fmt.Errorf("getting working directory: %w", err)
+				}
+				output = cwd
+			}
+
+			return packagebrew.Run(packagebrew.RunOptions{
+				ConfigPath:  brewConfigPath,
+				OutputDir:   output,
+				AutoInstall: !brewNoAutoInstall,
+			})
+		},
+	}
+
+	brewCmd.Flags().StringVar(&brewConfigPath, "config", "", "path to brew-config.json")
+	brewCmd.Flags().StringVar(&brewOutputDir, "output", "", "output directory (defaults to cwd)")
+	brewCmd.Flags().BoolVar(&brewNoAutoInstall, "no-auto-install", false, "omit purse-first install from meta-formula post_install")
+	brewCmd.MarkFlagRequired("config")
+
+	packageCmd.AddCommand(brewCmd)
+
+	root.AddCommand(installCmd, genMarketplaceCmd, installLocalCmd, installDevMCPCmd, genPluginCmd, validateCmd, packageCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
