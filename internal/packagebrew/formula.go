@@ -101,10 +101,11 @@ func GenerateFormula(opts FormulaOptions) string {
 			}
 			fmt.Fprintf(&b, "  on_%s do\n", osName)
 			for i, e := range entries {
-				if i > 0 {
-					b.WriteString("    else\n")
+				if i == 0 {
+					fmt.Fprintf(&b, "    if Hardware::CPU.%s\n", e.archFn)
+				} else {
+					fmt.Fprintf(&b, "    elsif Hardware::CPU.%s\n", e.archFn)
 				}
-				fmt.Fprintf(&b, "    if Hardware::CPU.%s\n", e.archFn)
 				fmt.Fprintf(&b, "      url %q\n", e.url)
 				fmt.Fprintf(&b, "      sha256 %q\n", e.hash)
 			}

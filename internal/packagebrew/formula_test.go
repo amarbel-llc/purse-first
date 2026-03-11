@@ -44,6 +44,28 @@ func TestGenerateBinaryFormula(t *testing.T) {
 	}
 }
 
+func TestGenerateBinaryFormulaMultiArch(t *testing.T) {
+	formula := GenerateFormula(FormulaOptions{
+		Name:        "grit",
+		Description: "Git operations via MCP",
+		Version:     "1.0.0",
+		License:     "MIT",
+		ReleaseRepo: "org/homebrew-tap",
+		Binary:      true,
+		Hashes: map[string]string{
+			"darwin-arm64": "abc123",
+			"darwin-amd64": "def456",
+		},
+	})
+
+	if !strings.Contains(formula, "elsif Hardware::CPU.") {
+		t.Errorf("multi-arch formula should use elsif, got:\n%s", formula)
+	}
+	if strings.Contains(formula, "else\n") {
+		t.Error("multi-arch formula should not use bare else")
+	}
+}
+
 func TestGenerateSkillOnlyFormula(t *testing.T) {
 	formula := GenerateFormula(FormulaOptions{
 		Name:        "bob",
