@@ -277,9 +277,9 @@ var validateCmd = &cobra.Command{
 }
 
 var cmdExecClaude = &cobra.Command{
-	Use:   "exec-claude [claude args...]",
-	Short: "Executes claude after applying sweatfile settings",
-	Args:  cobra.MinimumNArgs(0),
+	Use:                "exec-claude [claude args...]",
+	Short:              "Executes claude after applying sweatfile settings",
+	DisableFlagParsing: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		hierarchy, err := sweatfile.LoadDefaultHierarchy()
 		if err != nil {
