@@ -129,3 +129,16 @@ type RebaseResult struct {
 	CurrentStep string   `json:"current_step,omitempty"`
 	Summary     string   `json:"summary,omitempty"`
 }
+
+type TodoEntry struct {
+	Action  string `json:"action"`
+	Hash    string `json:"hash"`
+	Message string `json:"message,omitempty"`
+}
+
+type InteractiveRebasePlan struct {
+	Status   string     `json:"status"`
+	Branch   string     `json:"branch,omitempty"`
+	Upstream string     `json:"upstream,omitempty"`
+	Commits  []LogEntry `json:"commits"`
+}
