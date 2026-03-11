@@ -183,26 +183,6 @@ pub struct TapWriter<'a> {
 }
 
 impl<'a> TapWriter<'a> {
-    pub fn new(w: &'a mut dyn Write) -> io::Result<Self> {
-        TapWriterBuilder::new(w).build()
-    }
-
-    pub fn new_color(w: &'a mut dyn Write, color: bool) -> io::Result<Self> {
-        TapWriterBuilder::new(w).color(color).build()
-    }
-
-    pub fn with_locale(w: &'a mut dyn Write, locale: Locale) -> io::Result<Self> {
-        TapWriterBuilder::new(w).locale(locale).build()
-    }
-
-    pub fn bare(w: &'a mut dyn Write, color: bool) -> Self {
-        // Safe: no locale means no formatter creation, no I/O in build_without_printing
-        TapWriterBuilder::new(w)
-            .color(color)
-            .build_without_printing()
-            .unwrap()
-    }
-
     pub fn count(&self) -> usize {
         self.counter
     }
@@ -769,14 +749,14 @@ mod tests {
     #[test]
     fn writer_emits_version() {
         let mut buf = Vec::new();
-        let _tw = TapWriter::new(&mut buf).unwrap();
+        let _tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         assert_eq!(String::from_utf8(buf).unwrap(), "TAP version 14\n");
     }
 
     #[test]
     fn writer_ok() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         let n = tw.ok("first test").unwrap();
         assert_eq!(n, 1);
         let n = tw.ok("second test").unwrap();
@@ -789,7 +769,7 @@ mod tests {
     #[test]
     fn writer_not_ok() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         let n = tw.not_ok("broken").unwrap();
         assert_eq!(n, 1);
         assert!(tw.has_failures());
@@ -800,7 +780,7 @@ mod tests {
     #[test]
     fn writer_not_ok_diag() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.not_ok_diag("broken", &[("message", "segfault"), ("severity", "fail")])
             .unwrap();
         let out = String::from_utf8(buf).unwrap();
@@ -814,7 +794,7 @@ mod tests {
     #[test]
     fn writer_not_ok_diag_multiline() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.not_ok_diag("broken", &[("output", "line one\nline two")])
             .unwrap();
         let out = String::from_utf8(buf).unwrap();
@@ -826,7 +806,7 @@ mod tests {
     #[test]
     fn writer_not_ok_diag_empty() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.not_ok_diag("broken", &[]).unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(out.contains("not ok 1 - broken\n"));
@@ -836,7 +816,7 @@ mod tests {
     #[test]
     fn writer_skip() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         let n = tw.skip("optional", "not supported").unwrap();
         assert_eq!(n, 1);
         assert!(!tw.has_failures());
@@ -847,7 +827,7 @@ mod tests {
     #[test]
     fn writer_todo() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         let n = tw.todo("future", "not done").unwrap();
         assert_eq!(n, 1);
         let out = String::from_utf8(buf).unwrap();
@@ -857,7 +837,7 @@ mod tests {
     #[test]
     fn writer_bail_out() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.bail_out("on fire").unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(out.contains("Bail out! on fire\n"));
@@ -866,7 +846,7 @@ mod tests {
     #[test]
     fn writer_comment() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.comment("a note").unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(out.contains("# a note\n"));
@@ -875,7 +855,7 @@ mod tests {
     #[test]
     fn writer_pragma() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.pragma("strict", true).unwrap();
         tw.pragma("strict", false).unwrap();
         let out = String::from_utf8(buf).unwrap();
@@ -886,7 +866,7 @@ mod tests {
     #[test]
     fn writer_trailing_plan() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.ok("one").unwrap();
         tw.ok("two").unwrap();
         tw.plan().unwrap();
@@ -897,7 +877,7 @@ mod tests {
     #[test]
     fn writer_plan_idempotent() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.ok("one").unwrap();
         tw.plan().unwrap();
         tw.plan().unwrap();
@@ -908,7 +888,7 @@ mod tests {
     #[test]
     fn writer_plan_ahead() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.plan_ahead(5).unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(out.contains("1..5\n"));
@@ -917,7 +897,7 @@ mod tests {
     #[test]
     fn writer_plan_skip() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.plan_skip("missing dependency").unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(out.contains("1..0 # SKIP missing dependency\n"));
@@ -926,7 +906,7 @@ mod tests {
     #[test]
     fn writer_counter() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         assert_eq!(tw.count(), 0);
         tw.ok("a").unwrap();
         assert_eq!(tw.count(), 1);
@@ -937,7 +917,7 @@ mod tests {
     #[test]
     fn writer_has_failures_tracks_not_ok() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         assert!(!tw.has_failures());
         tw.ok("pass").unwrap();
         assert!(!tw.has_failures());
@@ -948,7 +928,7 @@ mod tests {
     #[test]
     fn writer_subtest() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.subtest("group", |sub| {
             sub.ok("nested one")?;
             sub.ok("nested two")?;
@@ -969,7 +949,7 @@ mod tests {
     #[test]
     fn writer_nested_subtest() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.subtest("outer", |sub| {
             sub.ok("before")?;
             sub.subtest("inner", |inner| {
@@ -995,7 +975,7 @@ mod tests {
     #[test]
     fn writer_subtest_with_skip() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.subtest("optional", |sub| {
             sub.skip("feature x", "not available")?;
             sub.plan()
@@ -1009,7 +989,7 @@ mod tests {
     #[test]
     fn writer_subtest_with_pragma() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new(&mut buf).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).build().unwrap();
         tw.subtest("streaming", |sub| {
             sub.pragma("streamed-output", true)?;
             sub.ok("step one")?;
@@ -1179,7 +1159,7 @@ mod tests {
     #[test]
     fn writer_ok_color() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).color(true).build().unwrap();
         tw.ok("pass").unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(out.contains("\x1b[32mok\x1b[0m 1 - pass\n"));
@@ -1188,7 +1168,7 @@ mod tests {
     #[test]
     fn writer_not_ok_color() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).color(true).build().unwrap();
         tw.not_ok("fail").unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(out.contains("\x1b[31mnot ok\x1b[0m 1 - fail\n"));
@@ -1197,7 +1177,7 @@ mod tests {
     #[test]
     fn writer_skip_color() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).color(true).build().unwrap();
         tw.skip("optional", "not supported").unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(
@@ -1208,7 +1188,7 @@ mod tests {
     #[test]
     fn writer_todo_color() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).color(true).build().unwrap();
         tw.todo("future", "not done").unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(out.contains("\x1b[31mnot ok\x1b[0m 1 - future # \x1b[33mTODO\x1b[0m not done\n"));
@@ -1217,7 +1197,7 @@ mod tests {
     #[test]
     fn writer_bail_out_color() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).color(true).build().unwrap();
         tw.bail_out("on fire").unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(out.contains("\x1b[31mBail out!\x1b[0m on fire\n"));
@@ -1226,7 +1206,7 @@ mod tests {
     #[test]
     fn writer_test_point_ok_color() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).color(true).build().unwrap();
         let result = TestResult {
             number: 1,
             name: "build".into(),
@@ -1245,7 +1225,7 @@ mod tests {
     #[test]
     fn writer_test_point_not_ok_color() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).color(true).build().unwrap();
         let result = TestResult {
             number: 1,
             name: "test".into(),
@@ -1265,7 +1245,9 @@ mod tests {
     #[test]
     fn writer_bare_no_version() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::bare(&mut buf, false);
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .build_without_printing()
+            .unwrap();
         tw.ok("first").unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(!out.contains("TAP version"));
@@ -1275,7 +1257,7 @@ mod tests {
     #[test]
     fn writer_subtest_propagates_color() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).color(true).build().unwrap();
         tw.subtest("group", |sub| {
             sub.ok("nested")?;
             sub.plan()
@@ -1293,7 +1275,10 @@ mod tests {
     fn writer_locale_emits_pragma() {
         let mut buf = Vec::new();
         let locale: Locale = "en-US".parse().unwrap();
-        let mut tw = TapWriter::with_locale(&mut buf, locale).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .locale(locale)
+            .build()
+            .unwrap();
         tw.ok("first").unwrap();
         tw.plan().unwrap();
         let out = String::from_utf8(buf).unwrap();
@@ -1307,7 +1292,10 @@ mod tests {
     fn writer_locale_formats_large_test_number() {
         let mut buf = Vec::new();
         let locale: Locale = "en-US".parse().unwrap();
-        let mut tw = TapWriter::with_locale(&mut buf, locale).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .locale(locale)
+            .build()
+            .unwrap();
         for _ in 0..1234 {
             tw.ok("test").unwrap();
         }
@@ -1323,7 +1311,10 @@ mod tests {
     fn writer_locale_formats_plan_count() {
         let mut buf = Vec::new();
         let locale: Locale = "en-US".parse().unwrap();
-        let mut tw = TapWriter::with_locale(&mut buf, locale).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .locale(locale)
+            .build()
+            .unwrap();
         tw.plan_ahead(10000).unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(
@@ -1336,7 +1327,10 @@ mod tests {
     fn writer_locale_german_separator() {
         let mut buf = Vec::new();
         let locale: Locale = "de-DE".parse().unwrap();
-        let mut tw = TapWriter::with_locale(&mut buf, locale).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .locale(locale)
+            .build()
+            .unwrap();
         tw.plan_ahead(10000).unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(
@@ -1349,7 +1343,10 @@ mod tests {
     fn writer_locale_small_numbers_no_separator() {
         let mut buf = Vec::new();
         let locale: Locale = "en-US".parse().unwrap();
-        let mut tw = TapWriter::with_locale(&mut buf, locale).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .locale(locale)
+            .build()
+            .unwrap();
         tw.ok("test").unwrap();
         let out = String::from_utf8(buf).unwrap();
         assert!(out.contains("ok 1 - test\n"));
@@ -1359,7 +1356,10 @@ mod tests {
     fn writer_locale_subtest_inherits() {
         let mut buf = Vec::new();
         let locale: Locale = "en-US".parse().unwrap();
-        let mut tw = TapWriter::with_locale(&mut buf, locale).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .locale(locale)
+            .build()
+            .unwrap();
         tw.subtest("nested", |sub| {
             sub.plan_ahead(10000)?;
             sub.plan()
@@ -1462,7 +1462,7 @@ mod tests {
     #[test]
     fn writer_test_point_preserves_sgr_in_yaml_when_color() {
         let mut buf = Vec::new();
-        let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf).color(true).build().unwrap();
         let result = TestResult {
             number: 1,
             name: "test".into(),
