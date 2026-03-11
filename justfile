@@ -177,6 +177,10 @@ test-mgp-conformance: build-batman
       PATH="{{justfile_directory()}}/result-batman/bin:$PATH" \
       {{cmd_nix_dev}} just zz-tests_bats/rfc-0001/test
 
+test-package-brew: build-batman
+    nix build
+    PURSE_FIRST_BIN={{justfile_directory()}}/result/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/package_brew.bats
+
 test: \
     test-batman-bats \
     test-chix \
@@ -189,6 +193,7 @@ test: \
     test-lifecycle \
     test-lux \
     test-lux-service \
+    test-package-brew \
     test-rust-mcp \
     test-sandcastle-bats \
     test-spinclass \
