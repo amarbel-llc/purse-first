@@ -4,20 +4,56 @@ use fixed_decimal::Decimal;
 use icu_decimal::DecimalFormatter;
 use icu_locale_core::Locale;
 
+#[derive(Clone)]
+pub struct TapConfig {
+    color: bool,
+    locale: Option<Locale>,
+    formatter: Option<DecimalFormatter>,
+}
+
+impl TapConfig {
+    pub fn color(&self) -> bool {
+        self.color
+    }
+
+    pub fn format_number(&self, n: usize) -> String {
+        match &self.formatter {
+            Some(fmt) => fmt.format(&Decimal::from(n as i64)).to_string(),
+            None => n.to_string(),
+        }
+    }
+}
+
 fn status_ok(color: bool) -> &'static str {
-    if color { "\x1b[32mok\x1b[0m" } else { "ok" }
+    if color {
+        "\x1b[32mok\x1b[0m"
+    } else {
+        "ok"
+    }
 }
 
 fn status_not_ok(color: bool) -> &'static str {
-    if color { "\x1b[31mnot ok\x1b[0m" } else { "not ok" }
+    if color {
+        "\x1b[31mnot ok\x1b[0m"
+    } else {
+        "not ok"
+    }
 }
 
 fn directive_skip(color: bool) -> &'static str {
-    if color { "\x1b[33mSKIP\x1b[0m" } else { "SKIP" }
+    if color {
+        "\x1b[33mSKIP\x1b[0m"
+    } else {
+        "SKIP"
+    }
 }
 
 fn directive_todo(color: bool) -> &'static str {
-    if color { "\x1b[33mTODO\x1b[0m" } else { "TODO" }
+    if color {
+        "\x1b[33mTODO\x1b[0m"
+    } else {
+        "TODO"
+    }
 }
 
 fn token_bail_out(color: bool) -> &'static str {
@@ -137,11 +173,7 @@ impl<'a> TapWriter<'a> {
         Ok(self.counter)
     }
 
-    pub fn not_ok_diag(
-        &mut self,
-        desc: &str,
-        diagnostics: &[(&str, &str)],
-    ) -> io::Result<usize> {
+    pub fn not_ok_diag(&mut self, desc: &str, diagnostics: &[(&str, &str)]) -> io::Result<usize> {
         self.counter += 1;
         self.failed = true;
         let num = self.format_number(self.counter);
@@ -226,7 +258,11 @@ impl<'a> TapWriter<'a> {
         };
 
         if let Some(ref directive) = result.directive {
-            writeln!(self.w, "{status} {} - {} # {directive}", result.number, result.name)?;
+            writeln!(
+                self.w,
+                "{status} {} - {} # {directive}",
+                result.number, result.name
+            )?;
         } else {
             writeln!(self.w, "{status} {} - {}", result.number, result.name)?;
         }
@@ -291,8 +327,8 @@ impl IndentWriter<'_> {
 
 impl Write for IndentWriter<'_> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let s = std::str::from_utf8(buf)
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        let s =
+            std::str::from_utf8(buf).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
         self.indent_lines(s)?;
         Ok(buf.len())
     }
@@ -354,7 +390,7 @@ fn strip_non_sgr_csi(s: &str) -> String {
             // Found CSI sequence start, collect the whole sequence
             let start = i;
             i += 2; // skip ESC [
-            // Skip parameter bytes (digits and semicolons)
+                    // Skip parameter bytes (digits and semicolons)
             while i < bytes.len() && (bytes[i].is_ascii_digit() || bytes[i] == b';') {
                 i += 1;
             }
@@ -423,7 +459,11 @@ pub fn write_plan(w: &mut impl Write, count: usize) -> io::Result<()> {
 pub fn write_test_point(w: &mut impl Write, result: &TestResult) -> io::Result<()> {
     let status = if result.ok { "ok" } else { "not ok" };
     if let Some(ref directive) = result.directive {
-        writeln!(w, "{status} {} - {} # {directive}", result.number, result.name)?;
+        writeln!(
+            w,
+            "{status} {} - {} # {directive}",
+            result.number, result.name
+        )?;
     } else {
         writeln!(w, "{status} {} - {}", result.number, result.name)?;
     }
@@ -1090,7 +1130,9 @@ mod tests {
         let mut tw = TapWriter::new_color(&mut buf, true).unwrap();
         tw.skip("optional", "not supported").unwrap();
         let out = String::from_utf8(buf).unwrap();
-        assert!(out.contains("\x1b[32mok\x1b[0m 1 - optional # \x1b[33mSKIP\x1b[0m not supported\n"));
+        assert!(
+            out.contains("\x1b[32mok\x1b[0m 1 - optional # \x1b[33mSKIP\x1b[0m not supported\n")
+        );
     }
 
     #[test]
@@ -1279,10 +1321,7 @@ mod tests {
 
     #[test]
     fn strip_non_sgr_csi_preserves_sgr() {
-        assert_eq!(
-            strip_non_sgr_csi("\x1b[32mok\x1b[0m"),
-            "\x1b[32mok\x1b[0m"
-        );
+        assert_eq!(strip_non_sgr_csi("\x1b[32mok\x1b[0m"), "\x1b[32mok\x1b[0m");
         assert_eq!(
             strip_non_sgr_csi("\x1b[31;1mbold red\x1b[0m"),
             "\x1b[31;1mbold red\x1b[0m"
@@ -1344,7 +1383,10 @@ mod tests {
             !out.contains("\x1b["),
             "expected all ANSI stripped, got: {out}"
         );
-        assert!(out.contains("error text"), "expected clean text, got: {out}");
+        assert!(
+            out.contains("error text"),
+            "expected clean text, got: {out}"
+        );
     }
 
     #[test]
@@ -1371,5 +1413,38 @@ mod tests {
             out.contains("\x1b[33mwarning\x1b[0m"),
             "expected SGR in output, got:\n{out}"
         );
+    }
+
+    #[test]
+    fn config_format_number_no_locale() {
+        let config = TapConfig {
+            color: false,
+            locale: None,
+            formatter: None,
+        };
+        assert_eq!(config.format_number(1234), "1234");
+    }
+
+    #[test]
+    fn config_format_number_with_locale() {
+        let locale: Locale = "en-US".parse().unwrap();
+        let formatter =
+            DecimalFormatter::try_new(locale.clone().into(), Default::default()).unwrap();
+        let config = TapConfig {
+            color: true,
+            locale: Some(locale),
+            formatter: Some(formatter),
+        };
+        assert_eq!(config.format_number(1234), "1,234");
+    }
+
+    #[test]
+    fn config_color_accessor() {
+        let config = TapConfig {
+            color: true,
+            locale: None,
+            formatter: None,
+        };
+        assert!(config.color());
     }
 }
