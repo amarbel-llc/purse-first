@@ -3,7 +3,9 @@ package command
 import "encoding/json"
 
 type schemaItems struct {
-	Type string `json:"type"`
+	Type       string                    `json:"type"`
+	Properties map[string]schemaProperty `json:"properties,omitempty"`
+	Required   []string                  `json:"required,omitempty"`
 }
 
 type schemaProperty struct {
@@ -34,7 +36,24 @@ func (c *Command) InputSchema() json.RawMessage {
 			Default:     p.Default,
 		}
 		if p.Type == Array {
-			prop.Items = &schemaItems{Type: "string"}
+			if len(p.Items) > 0 {
+				items := &schemaItems{
+					Type:       "object",
+					Properties: make(map[string]schemaProperty),
+				}
+				for _, ip := range p.Items {
+					items.Properties[ip.Name] = schemaProperty{
+						Type:        ip.Type.JSONSchemaType(),
+						Description: ip.Description,
+					}
+					if ip.Required {
+						items.Required = append(items.Required, ip.Name)
+					}
+				}
+				prop.Items = items
+			} else {
+				prop.Items = &schemaItems{Type: "string"}
+			}
 		}
 		schema.Properties[p.Name] = prop
 

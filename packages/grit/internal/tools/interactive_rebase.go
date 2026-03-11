@@ -43,7 +43,16 @@ func registerInteractiveRebaseCommands(app *command.App) {
 		Params: []command.Param{
 			{Name: "repo_path", Type: command.String, Description: "Path to the git repository", Required: true},
 			{Name: "upstream", Type: command.String, Description: "Ref to rebase onto", Required: true},
-			{Name: "todo", Type: command.Array, Description: "Ordered list of {action, hash, message?} objects. Actions: pick, reword, squash, fixup, drop", Required: true},
+			{
+				Name: "todo", Type: command.Array,
+				Description: "Ordered list of {action, hash, message?} objects. Actions: pick, reword, squash, fixup, drop",
+				Required: true,
+				Items: []command.Param{
+					{Name: "action", Type: command.String, Description: "Rebase action: pick, reword, squash, fixup, drop", Required: true},
+					{Name: "hash", Type: command.String, Description: "Commit hash", Required: true},
+					{Name: "message", Type: command.String, Description: "New commit message (required for reword)"},
+				},
+			},
 			{Name: "autostash", Type: command.Bool, Description: "Automatically stash/unstash uncommitted changes"},
 		},
 		MapsTools: []command.ToolMapping{

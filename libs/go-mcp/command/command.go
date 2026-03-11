@@ -62,6 +62,7 @@ type Param struct {
 	Required    bool
 	Default     any
 	Completer   func() map[string]string
+	Items       []Param // item schema for Array params (generates object items with properties)
 }
 
 // Example represents a single usage example for a command or app.
