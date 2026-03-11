@@ -83,7 +83,7 @@ impl<'a> TapWriterBuilder<'a> {
             Some(locale) => {
                 let formatter =
                     DecimalFormatter::try_new(locale.clone().into(), Default::default())
-                        .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+                        .map_err(|e| io::Error::other(e.to_string()))?;
                 (Some(locale.clone()), Some(formatter))
             }
             None => (None, None),
