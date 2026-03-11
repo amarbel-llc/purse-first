@@ -88,20 +88,35 @@ Then: Cleanup worktree (Step 5)
 
 #### Option 2: Push and Create PR
 
+**Two-part PR description: human context + agent detail.**
+
+1. **Agent drafts** a technical summary of the changes (what changed, why, test plan).
+2. **Ask the user** for their PR description — the human motivation, context, or open questions. Use AskUserQuestion with a free-text prompt:
+   ```
+   What would you like to say in the PR description? (I'll append my
+   technical summary in a blockquote below yours.)
+   ```
+3. **Compose the PR body** with the user's text first, then the agent's summary in a blockquote with a robot header:
+
+```markdown
+<user's description>
+
+> 🤖 The following was authored by the Claude LLM 🤖
+>
+> <agent's technical summary — changes, rationale, test plan>
+```
+
+4. **Push and create:**
+
 ```bash
 # Push branch
 git push -u origin <feature-branch>
 
-# Create PR
-gh pr create --title "<title>" --body "$(cat <<'EOF'
-## Summary
-<2-3 bullets of what changed>
-
-## Test Plan
-- [ ] <verification steps>
-EOF
-)"
+# Create PR with composed body
+gh pr create --title "<title>" --body "<composed body>"
 ```
+
+The user MUST provide a description — do not proceed without one. If the response is empty, ask again.
 
 Then: Cleanup worktree (Step 5)
 
