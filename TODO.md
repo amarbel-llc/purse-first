@@ -53,6 +53,7 @@
 - [ ] sandcastle BATS: migrate to bats-emo conformance pattern (require_bin SANDCASTLE_BIN sandcastle)
 - [x] update tap-dancer with latest tap amendments
 - [x] tap-dancer rust: add combined color+locale constructor — `with_locale` hardcodes `color: false`, so ANSI display hints and locale formatting can't be used together in the same TAP stream
+- [ ] tap-dancer: update SKILL.md Rust section to reflect TapWriterBuilder API (old examples reference removed TapWriter::new() counter API)
 - [ ] verify install-local skill path resolution (./skills/<name> in .claude-plugin/plugin.json may not resolve correctly — needs manual test)
 - [ ] update global sweatfile (`eng/rcm/config/spinclass/sweatfile`) to use snob-case keys (`git-excludes`, `claude-allow`)
 - [ ] separate libs and marketplace generation into new `bob` repo
