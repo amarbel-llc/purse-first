@@ -129,3 +129,4 @@
   all mcp's that support sweatfiles operate in read-only mode, etc)
 - [ ] remove brew tap infrastructure from `.github/workflows/release.yml` (tarball packaging, update-tap job, brew-build-tarball/brew-update-hashes references)
 - [ ] `package brew`: add optional top-level `version` field to `brew-config.json` for explicit meta-formula version (currently derived from first alphabetically-sorted package)
+- [ ] `package brew --release`: add `--release` flag that creates a GitHub release on `releaseRepo` and uploads all tarballs via `gh release create`, eliminating the need for a separate release step
