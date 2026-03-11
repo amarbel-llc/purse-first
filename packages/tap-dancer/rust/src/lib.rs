@@ -578,6 +578,10 @@ pub fn write_plan_locale(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    // Env-var tests must not run in parallel — they share process-wide state.
+    static ENV_MUTEX: Mutex<()> = Mutex::new(());
 
     // --- Free function tests (existing, unchanged) ---
 
@@ -1622,6 +1626,7 @@ mod tests {
 
     #[test]
     fn builder_auto_no_color_when_set() {
+        let _lock = ENV_MUTEX.lock().unwrap();
         let original = std::env::var("NO_COLOR").ok();
         std::env::set_var("NO_COLOR", "1");
 
@@ -1637,6 +1642,7 @@ mod tests {
 
     #[test]
     fn builder_auto_color_when_no_color_absent() {
+        let _lock = ENV_MUTEX.lock().unwrap();
         let original = std::env::var("NO_COLOR").ok();
         std::env::remove_var("NO_COLOR");
 
@@ -1651,6 +1657,7 @@ mod tests {
 
     #[test]
     fn builder_auto_override_color() {
+        let _lock = ENV_MUTEX.lock().unwrap();
         let original = std::env::var("NO_COLOR").ok();
         std::env::remove_var("NO_COLOR");
 
@@ -1668,6 +1675,7 @@ mod tests {
 
     #[test]
     fn builder_default_locale_ignores_c_locale() {
+        let _lock = ENV_MUTEX.lock().unwrap();
         let orig_all = std::env::var("LC_ALL").ok();
         let orig_num = std::env::var("LC_NUMERIC").ok();
         let orig_lang = std::env::var("LANG").ok();
