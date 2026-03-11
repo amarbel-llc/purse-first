@@ -240,3 +240,55 @@ function execute_rejects_when_rebase_in_progress { # @test
   assert_success
   assert_output --partial "already in progress"
 }
+
+function execute_explicit_drop { # @test
+  setup_multi_commit_scenario
+
+  local hash1 hash2 hash3
+  hash1=$(git -C "$TEST_REPO" log --reverse --format=%H main..HEAD | sed -n '1p')
+  hash2=$(git -C "$TEST_REPO" log --reverse --format=%H main..HEAD | sed -n '2p')
+  hash3=$(git -C "$TEST_REPO" log --reverse --format=%H main..HEAD | sed -n '3p')
+
+  # Explicitly drop the second commit
+  run run_grit_mcp "interactive_rebase_execute" "$(printf '{"repo_path":"%s","upstream":"main","todo":[{"action":"pick","hash":"%s"},{"action":"drop","hash":"%s"},{"action":"pick","hash":"%s"}]}' "$TEST_REPO" "$hash1" "$hash2" "$hash3")"
+  assert_success
+
+  local status
+  status=$(echo "$output" | jq -r '.status')
+  assert_equal "$status" "completed"
+
+  # second.txt should not exist
+  assert [ ! -f "$TEST_REPO/second.txt" ]
+
+  # Should have 2 commits
+  local count
+  count=$(git -C "$TEST_REPO" log --oneline main..HEAD | wc -l | tr -d ' ')
+  assert_equal "$count" "2"
+}
+
+function execute_fixup_commits { # @test
+  setup_multi_commit_scenario
+
+  local hash1 hash2 hash3
+  hash1=$(git -C "$TEST_REPO" log --reverse --format=%H main..HEAD | sed -n '1p')
+  hash2=$(git -C "$TEST_REPO" log --reverse --format=%H main..HEAD | sed -n '2p')
+  hash3=$(git -C "$TEST_REPO" log --reverse --format=%H main..HEAD | sed -n '3p')
+
+  # Fixup second into first (like squash but discard second's message)
+  run run_grit_mcp "interactive_rebase_execute" "$(printf '{"repo_path":"%s","upstream":"main","todo":[{"action":"pick","hash":"%s"},{"action":"fixup","hash":"%s"},{"action":"pick","hash":"%s"}]}' "$TEST_REPO" "$hash1" "$hash2" "$hash3")"
+  assert_success
+
+  local status
+  status=$(echo "$output" | jq -r '.status')
+  assert_equal "$status" "completed"
+
+  # Should have 2 commits
+  local count
+  count=$(git -C "$TEST_REPO" log --oneline main..HEAD | wc -l | tr -d ' ')
+  assert_equal "$count" "2"
+
+  # First commit message should be the original (not combined)
+  local first_subject
+  first_subject=$(git -C "$TEST_REPO" log --reverse --format=%s main..HEAD | head -1)
+  assert_equal "$first_subject" "feature: add first"
+}
