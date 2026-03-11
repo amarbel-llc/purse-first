@@ -10,6 +10,7 @@ func RegisterAll() *command.App {
 	registerLogCommands(app)
 	registerStagingCommands(app)
 	registerCommitCommands(app)
+	registerTryCommitCommands(app)
 	registerBranchCommands(app)
 	registerRemoteCommands(app)
 	registerRevParseCommands(app)
