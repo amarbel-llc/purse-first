@@ -51,8 +51,8 @@
 - [x] grit: add `--amend` support to `commit` tool (git commit --amend)
 - [x] grit: add soft reset mode to `reset` tool (git reset --soft via `soft` + `ref` params) — needed for amend workaround and squash flows
 - [ ] sandcastle BATS: migrate to bats-emo conformance pattern (require_bin SANDCASTLE_BIN sandcastle)
-- [ ] update tap-dancer with latest tap amendments
-- [ ] tap-dancer rust: add combined color+locale constructor — `with_locale` hardcodes `color: false`, so ANSI display hints and locale formatting can't be used together in the same TAP stream
+- [x] update tap-dancer with latest tap amendments
+- [x] tap-dancer rust: add combined color+locale constructor — `with_locale` hardcodes `color: false`, so ANSI display hints and locale formatting can't be used together in the same TAP stream
 - [ ] verify install-local skill path resolution (./skills/<name> in .claude-plugin/plugin.json may not resolve correctly — needs manual test)
 - [ ] update global sweatfile (`eng/rcm/config/spinclass/sweatfile`) to use snob-case keys (`git-excludes`, `claude-allow`)
 - [ ] separate libs and marketplace generation into new `bob` repo
