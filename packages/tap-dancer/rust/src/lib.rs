@@ -1700,4 +1700,85 @@ mod tests {
             None => std::env::remove_var("LANG"),
         }
     }
+
+    // --- Color + locale combined tests ---
+
+    #[test]
+    fn writer_color_and_locale_combined() {
+        let mut buf = Vec::new();
+        let locale: Locale = "en-US".parse().unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .color(true)
+            .locale(locale)
+            .build()
+            .unwrap();
+        for _ in 0..1234 {
+            tw.ok("test").unwrap();
+        }
+        tw.plan().unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.starts_with("TAP version 14\n"));
+        assert!(out.contains("pragma +locale-formatting:en-US\n"));
+        assert!(out.contains("\x1b[32mok\x1b[0m 1,234 - test\n"));
+        assert!(out.contains("1..1,234\n"));
+    }
+
+    #[test]
+    fn writer_color_and_locale_subtest_inheritance() {
+        let mut buf = Vec::new();
+        let locale: Locale = "en-US".parse().unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .color(true)
+            .locale(locale)
+            .build()
+            .unwrap();
+        tw.subtest("nested", |sub| {
+            sub.plan_ahead(10000)?;
+            sub.ok("inner")?;
+            sub.plan()
+        })
+        .unwrap();
+        tw.ok("nested").unwrap();
+        tw.plan().unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(
+            out.contains("    pragma +locale-formatting:en-US\n"),
+            "expected subtest locale pragma, got:\n{out}"
+        );
+        assert!(
+            out.contains("    \x1b[32mok\x1b[0m 1 - inner\n"),
+            "expected subtest color, got:\n{out}"
+        );
+        assert!(
+            out.contains("    1..10,000\n"),
+            "expected subtest locale plan, got:\n{out}"
+        );
+        assert!(out.contains("\x1b[32mok\x1b[0m 1 - nested\n"));
+    }
+
+    #[test]
+    fn writer_test_point_formats_number_with_locale() {
+        let mut buf = Vec::new();
+        let locale: Locale = "en-US".parse().unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .locale(locale)
+            .build()
+            .unwrap();
+        let result = TestResult {
+            number: 1234,
+            name: "big number".into(),
+            ok: true,
+            directive: None,
+            error_message: None,
+            exit_code: None,
+            output: None,
+            suppress_yaml: false,
+        };
+        tw.test_point(&result).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(
+            out.contains("ok 1,234 - big number\n"),
+            "expected locale-formatted number, got:\n{out}"
+        );
+    }
 }
