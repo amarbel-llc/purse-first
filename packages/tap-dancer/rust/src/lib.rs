@@ -69,8 +69,9 @@ impl<'a> TapWriterBuilder<'a> {
             .or_else(|_| std::env::var("LANG"))
             .ok();
         if let Some(s) = locale_str {
-            // Strip .UTF-8 or other encoding suffixes for ICU parsing
-            let base = s.split('.').next().unwrap_or(&s);
+            // Strip .UTF-8 or other encoding suffixes, then normalize
+            // POSIX underscores (en_US) to BCP 47 hyphens (en-US)
+            let base = s.split('.').next().unwrap_or(&s).replace('_', "-");
             if let Ok(locale) = base.parse::<Locale>() {
                 self.locale = Some(locale);
             }
@@ -1693,6 +1694,43 @@ mod tests {
         // C locale should not parse as ICU locale, so no formatting
         assert!(!out.contains("pragma"));
         assert!(out.contains("1..10000\n"));
+
+        // Restore
+        match orig_all {
+            Some(v) => std::env::set_var("LC_ALL", v),
+            None => std::env::remove_var("LC_ALL"),
+        }
+        match orig_num {
+            Some(v) => std::env::set_var("LC_NUMERIC", v),
+            None => std::env::remove_var("LC_NUMERIC"),
+        }
+        match orig_lang {
+            Some(v) => std::env::set_var("LANG", v),
+            None => std::env::remove_var("LANG"),
+        }
+    }
+
+    #[test]
+    fn builder_default_locale_normalizes_posix_underscores() {
+        let _lock = ENV_MUTEX.lock().unwrap();
+        let orig_all = std::env::var("LC_ALL").ok();
+        let orig_num = std::env::var("LC_NUMERIC").ok();
+        let orig_lang = std::env::var("LANG").ok();
+        std::env::set_var("LANG", "en_US.UTF-8");
+        std::env::remove_var("LC_ALL");
+        std::env::remove_var("LC_NUMERIC");
+
+        let mut buf = Vec::new();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .default_locale()
+            .build()
+            .unwrap();
+        tw.plan_ahead(10000).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        // en_US should parse after underscore-to-hyphen normalization,
+        // producing formatted output with grouping separators
+        assert!(out.contains("pragma"));
+        assert!(out.contains("1..10,000\n"));
 
         // Restore
         match orig_all {
