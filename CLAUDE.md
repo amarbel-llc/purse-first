@@ -180,6 +180,21 @@ Nix builds output to `result`/`result-*` symlinks (managed by nix, already gitig
 - **Go**: `goimports` + `gofumpt`
 - **Tests**: TAP-14 output format when reasonable, BATS for CLI integration tests
 
+### macOS Path Resolution
+
+On macOS, `/var` → `/private/var` and `/tmp` → `/private/tmp`.
+`filepath.EvalSymlinks` fails on non-existent paths, returning the unresolved
+form. Comparing that against a resolved path produces false mismatches.
+
+When resolving paths that may not exist (e.g., for prefix-matching or
+containment checks), walk up the directory tree to find an existing ancestor,
+resolve symlinks there, then re-append the non-existent suffix. See
+`packages/spinclass/internal/hooks/hooks.go:resolvePath` for the reference
+implementation.
+
+Never use raw `filepath.EvalSymlinks` for path comparison when the target
+might not exist.
+
 ### Git
 
 - GPG signing is required for commits. If signing fails, ask user to unlock their agent rather than skipping signatures

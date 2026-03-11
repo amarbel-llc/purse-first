@@ -149,15 +149,28 @@ func resolvePath(path string) string {
 		return resolved
 	}
 
-	// File may not exist yet — resolve the parent directory instead.
-	dir, base := filepath.Split(path)
-	if dir != "" {
-		if resolvedDir, dirErr := filepath.EvalSymlinks(dir); dirErr == nil {
-			return filepath.Join(resolvedDir, base)
+	// Path doesn't fully exist — walk up until we find an existing ancestor,
+	// resolve symlinks there, then re-append the non-existent suffix.
+	cleaned := filepath.Clean(path)
+	var suffix []string
+	current := cleaned
+	for {
+		parent := filepath.Dir(current)
+		suffix = append(suffix, filepath.Base(current))
+		if parent == current {
+			break
 		}
+		if resolved, err := filepath.EvalSymlinks(parent); err == nil {
+			// Reverse suffix and join.
+			for i, j := 0, len(suffix)-1; i < j; i, j = i+1, j-1 {
+				suffix[i], suffix[j] = suffix[j], suffix[i]
+			}
+			return filepath.Join(append([]string{resolved}, suffix...)...)
+		}
+		current = parent
 	}
 
-	return filepath.Clean(path)
+	return cleaned
 }
 
 func isInsideMainWorktree(path, mainRepoRoot string) bool {

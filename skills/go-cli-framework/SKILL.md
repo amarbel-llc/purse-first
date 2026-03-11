@@ -218,6 +218,8 @@ app.AddCommand(&command.Command{
 
 ### HandleHook Behavior
 
+When comparing paths that may not exist (e.g., in PreToolUse hooks checking path containment), use the walk-up-ancestors resolution pattern -- see `references/macos-path-resolution.md`.
+
 `HandleHook` reads hook input JSON from stdin, matches against all registered `ToolMapping` declarations, and:
 
 - **Match found**: writes a deny response with the MCP tool name (e.g., `mcp__plugin_grit_grit__status`)
@@ -240,6 +242,7 @@ To ship a `command.App`-based tool as a purse-first plugin, use `app.GenerateAll
 ## Reference Files
 
 - **`references/api-reference.md`** -- Complete type signatures, method docs, and interface definitions for all packages
+- **`references/macos-path-resolution.md`** -- Walk-up-ancestors pattern for resolving paths that may not exist on macOS (required for PreToolUse hooks doing path containment checks)
 - **`examples/command-app.go`** -- Full command.App example with CLI + MCP + artifact generation
 - **`examples/raw-server.go`** -- Full raw server example with tools, resources, and prompts
 
