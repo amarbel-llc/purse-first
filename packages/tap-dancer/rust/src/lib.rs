@@ -24,6 +24,105 @@ impl TapConfig {
     }
 }
 
+pub struct TapWriterBuilder<'a> {
+    w: &'a mut dyn Write,
+    color: bool,
+    locale: Option<Locale>,
+}
+
+impl<'a> TapWriterBuilder<'a> {
+    pub fn new(w: &'a mut dyn Write) -> Self {
+        Self {
+            w,
+            color: false,
+            locale: None,
+        }
+    }
+
+    pub fn auto(w: &'a mut dyn Write) -> Self {
+        Self::new(w).default_color().default_locale()
+    }
+
+    pub fn color(mut self, color: bool) -> Self {
+        self.color = color;
+        self
+    }
+
+    pub fn locale(mut self, locale: Locale) -> Self {
+        self.locale = Some(locale);
+        self
+    }
+
+    pub fn no_locale(mut self) -> Self {
+        self.locale = None;
+        self
+    }
+
+    pub fn default_color(mut self) -> Self {
+        self.color = std::env::var("NO_COLOR").is_err();
+        self
+    }
+
+    pub fn default_locale(mut self) -> Self {
+        let locale_str = std::env::var("LC_ALL")
+            .or_else(|_| std::env::var("LC_NUMERIC"))
+            .or_else(|_| std::env::var("LANG"))
+            .ok();
+        if let Some(s) = locale_str {
+            // Strip .UTF-8 or other encoding suffixes for ICU parsing
+            let base = s.split('.').next().unwrap_or(&s);
+            if let Ok(locale) = base.parse::<Locale>() {
+                self.locale = Some(locale);
+            }
+        }
+        self
+    }
+
+    fn build_config(&self) -> io::Result<TapConfig> {
+        let (locale, formatter) = match &self.locale {
+            Some(locale) => {
+                let formatter =
+                    DecimalFormatter::try_new(locale.clone().into(), Default::default())
+                        .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+                (Some(locale.clone()), Some(formatter))
+            }
+            None => (None, None),
+        };
+        Ok(TapConfig {
+            color: self.color,
+            locale,
+            formatter,
+        })
+    }
+
+    pub fn build(self) -> io::Result<TapWriter<'a>> {
+        // Create formatter before any I/O to avoid partial output on error
+        let config = self.build_config()?;
+        writeln!(self.w, "TAP version 14")?;
+        if let Some(ref locale) = config.locale {
+            writeln!(self.w, "pragma +locale-formatting:{locale}")?;
+        }
+        Ok(TapWriter {
+            w: self.w,
+            counter: 0,
+            failed: false,
+            plan_emitted: false,
+            config,
+        })
+    }
+
+    pub fn build_without_printing(self) -> io::Result<TapWriter<'a>> {
+        let config = self.build_config()?;
+        Ok(TapWriter {
+            w: self.w,
+            counter: 0,
+            failed: false,
+            plan_emitted: false,
+            config,
+        })
+    }
+}
+
 fn status_ok(color: bool) -> &'static str {
     if color {
         "\x1b[32mok\x1b[0m"
@@ -80,74 +179,28 @@ pub struct TapWriter<'a> {
     counter: usize,
     failed: bool,
     plan_emitted: bool,
-    color: bool,
-    locale: Option<Locale>,
-    formatter: Option<DecimalFormatter>,
+    pub(crate) config: TapConfig,
 }
 
 impl<'a> TapWriter<'a> {
     pub fn new(w: &'a mut dyn Write) -> io::Result<Self> {
-        Self::new_color(w, false)
+        TapWriterBuilder::new(w).build()
     }
 
     pub fn new_color(w: &'a mut dyn Write, color: bool) -> io::Result<Self> {
-        writeln!(w, "TAP version 14")?;
-        Ok(Self {
-            w,
-            counter: 0,
-            failed: false,
-            plan_emitted: false,
-            color,
-            locale: None,
-            formatter: None,
-        })
+        TapWriterBuilder::new(w).color(color).build()
     }
 
     pub fn with_locale(w: &'a mut dyn Write, locale: Locale) -> io::Result<Self> {
-        writeln!(w, "TAP version 14")?;
-        let formatter = DecimalFormatter::try_new(locale.clone().into(), Default::default())
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
-        writeln!(w, "pragma +locale-formatting:{locale}")?;
-        Ok(Self {
-            w,
-            counter: 0,
-            failed: false,
-            plan_emitted: false,
-            color: false,
-            locale: Some(locale),
-            formatter: Some(formatter),
-        })
+        TapWriterBuilder::new(w).locale(locale).build()
     }
 
     pub fn bare(w: &'a mut dyn Write, color: bool) -> Self {
-        Self {
-            w,
-            counter: 0,
-            failed: false,
-            plan_emitted: false,
-            color,
-            locale: None,
-            formatter: None,
-        }
-    }
-
-    fn child(w: &'a mut dyn Write, color: bool) -> Self {
-        Self {
-            w,
-            counter: 0,
-            failed: false,
-            plan_emitted: false,
-            color,
-            locale: None,
-            formatter: None,
-        }
-    }
-
-    fn format_number(&self, n: usize) -> String {
-        match &self.formatter {
-            Some(fmt) => fmt.format(&Decimal::from(n as i64)).to_string(),
-            None => n.to_string(),
-        }
+        // Safe: no locale means no formatter creation, no I/O in build_without_printing
+        TapWriterBuilder::new(w)
+            .color(color)
+            .build_without_printing()
+            .unwrap()
     }
 
     pub fn count(&self) -> usize {
@@ -160,38 +213,56 @@ impl<'a> TapWriter<'a> {
 
     pub fn ok(&mut self, desc: &str) -> io::Result<usize> {
         self.counter += 1;
-        let num = self.format_number(self.counter);
-        writeln!(self.w, "{} {} - {}", status_ok(self.color), num, desc)?;
+        let num = self.config.format_number(self.counter);
+        writeln!(
+            self.w,
+            "{} {} - {}",
+            status_ok(self.config.color()),
+            num,
+            desc
+        )?;
         Ok(self.counter)
     }
 
     pub fn not_ok(&mut self, desc: &str) -> io::Result<usize> {
         self.counter += 1;
         self.failed = true;
-        let num = self.format_number(self.counter);
-        writeln!(self.w, "{} {} - {}", status_not_ok(self.color), num, desc)?;
+        let num = self.config.format_number(self.counter);
+        writeln!(
+            self.w,
+            "{} {} - {}",
+            status_not_ok(self.config.color()),
+            num,
+            desc
+        )?;
         Ok(self.counter)
     }
 
     pub fn not_ok_diag(&mut self, desc: &str, diagnostics: &[(&str, &str)]) -> io::Result<usize> {
         self.counter += 1;
         self.failed = true;
-        let num = self.format_number(self.counter);
-        writeln!(self.w, "{} {} - {}", status_not_ok(self.color), num, desc)?;
-        write_diagnostics_block(self.w, diagnostics, self.color)?;
+        let num = self.config.format_number(self.counter);
+        writeln!(
+            self.w,
+            "{} {} - {}",
+            status_not_ok(self.config.color()),
+            num,
+            desc
+        )?;
+        write_diagnostics_block(self.w, diagnostics, self.config.color())?;
         Ok(self.counter)
     }
 
     pub fn skip(&mut self, desc: &str, reason: &str) -> io::Result<usize> {
         self.counter += 1;
-        let num = self.format_number(self.counter);
+        let num = self.config.format_number(self.counter);
         writeln!(
             self.w,
             "{} {} - {} # {} {}",
-            status_ok(self.color),
+            status_ok(self.config.color()),
             num,
             desc,
-            directive_skip(self.color),
+            directive_skip(self.config.color()),
             reason
         )?;
         Ok(self.counter)
@@ -199,21 +270,21 @@ impl<'a> TapWriter<'a> {
 
     pub fn todo(&mut self, desc: &str, reason: &str) -> io::Result<usize> {
         self.counter += 1;
-        let num = self.format_number(self.counter);
+        let num = self.config.format_number(self.counter);
         writeln!(
             self.w,
             "{} {} - {} # {} {}",
-            status_not_ok(self.color),
+            status_not_ok(self.config.color()),
             num,
             desc,
-            directive_todo(self.color),
+            directive_todo(self.config.color()),
             reason
         )?;
         Ok(self.counter)
     }
 
     pub fn bail_out(&mut self, reason: &str) -> io::Result<()> {
-        writeln!(self.w, "{} {}", token_bail_out(self.color), reason)
+        writeln!(self.w, "{} {}", token_bail_out(self.config.color()), reason)
     }
 
     pub fn comment(&mut self, text: &str) -> io::Result<()> {
@@ -230,13 +301,13 @@ impl<'a> TapWriter<'a> {
             return Ok(());
         }
         self.plan_emitted = true;
-        let num = self.format_number(self.counter);
+        let num = self.config.format_number(self.counter);
         writeln!(self.w, "1..{}", num)
     }
 
     pub fn plan_ahead(&mut self, n: usize) -> io::Result<()> {
         self.plan_emitted = true;
-        let num = self.format_number(n);
+        let num = self.config.format_number(n);
         writeln!(self.w, "1..{}", num)
     }
 
@@ -252,25 +323,22 @@ impl<'a> TapWriter<'a> {
         }
 
         let status = if result.ok {
-            status_ok(self.color)
+            status_ok(self.config.color())
         } else {
-            status_not_ok(self.color)
+            status_not_ok(self.config.color())
         };
 
+        let num = self.config.format_number(result.number);
         if let Some(ref directive) = result.directive {
-            writeln!(
-                self.w,
-                "{status} {} - {} # {directive}",
-                result.number, result.name
-            )?;
+            writeln!(self.w, "{status} {num} - {} # {directive}", result.name)?;
         } else {
-            writeln!(self.w, "{status} {} - {}", result.number, result.name)?;
+            writeln!(self.w, "{status} {num} - {}", result.name)?;
         }
 
         if !result.suppress_yaml && has_yaml_block(result) {
             writeln!(self.w, "  ---")?;
             if let Some(ref message) = result.error_message {
-                write_yaml_field(&mut *self.w, "message", message, self.color)?;
+                write_yaml_field(&mut *self.w, "message", message, self.config.color())?;
             }
             if !result.ok {
                 writeln!(self.w, "  severity: fail")?;
@@ -279,7 +347,7 @@ impl<'a> TapWriter<'a> {
                 writeln!(self.w, "  exitcode: {code}")?;
             }
             if let Some(ref output) = result.output {
-                write_yaml_field(&mut *self.w, "output", output, self.color)?;
+                write_yaml_field(&mut *self.w, "output", output, self.config.color())?;
             }
             writeln!(self.w, "  ...")?;
         }
@@ -294,13 +362,15 @@ impl<'a> TapWriter<'a> {
     ) -> io::Result<()> {
         writeln!(self.w, "    # Subtest: {}", name)?;
         let mut indent = IndentWriter { w: &mut *self.w };
-        let mut child = TapWriter::child(&mut indent, self.color);
-        if let Some(ref locale) = self.locale {
-            child.formatter = Some(
-                DecimalFormatter::try_new(locale.clone().into(), Default::default())
-                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?,
-            );
-            child.locale = Some(locale.clone());
+        let config = self.config.clone();
+        let mut child = TapWriter {
+            w: &mut indent,
+            counter: 0,
+            failed: false,
+            plan_emitted: false,
+            config,
+        };
+        if let Some(ref locale) = child.config.locale {
             writeln!(child.w, "pragma +locale-formatting:{locale}")?;
         }
         f(&mut child)
@@ -1446,5 +1516,107 @@ mod tests {
             formatter: None,
         };
         assert!(config.color());
+    }
+
+    #[test]
+    fn builder_new_defaults() {
+        let mut buf = Vec::new();
+        let count;
+        let color;
+        {
+            let tw = TapWriterBuilder::new(&mut buf).build().unwrap();
+            count = tw.count();
+            color = tw.config.color();
+        }
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.contains("TAP version 14\n"));
+        assert!(!color);
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn builder_with_color() {
+        let mut buf = Vec::new();
+        let color;
+        {
+            let tw = TapWriterBuilder::new(&mut buf).color(true).build().unwrap();
+            color = tw.config.color();
+        }
+        assert!(color);
+    }
+
+    #[test]
+    fn builder_with_locale() {
+        let mut buf = Vec::new();
+        let locale: Locale = "en-US".parse().unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .locale(locale)
+            .build()
+            .unwrap();
+        tw.plan_ahead(10000).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.contains("pragma +locale-formatting:en-US\n"));
+        assert!(out.contains("1..10,000\n"));
+    }
+
+    #[test]
+    fn builder_with_color_and_locale() {
+        let mut buf = Vec::new();
+        let locale: Locale = "en-US".parse().unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .color(true)
+            .locale(locale)
+            .build()
+            .unwrap();
+        tw.ok("test").unwrap();
+        tw.plan_ahead(10000).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(out.contains("pragma +locale-formatting:en-US\n"));
+        assert!(out.contains("\x1b[32mok\x1b[0m 1 - test\n"));
+        assert!(out.contains("1..10,000\n"));
+    }
+
+    #[test]
+    fn builder_build_without_printing() {
+        let mut buf = Vec::new();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .color(true)
+            .build_without_printing()
+            .unwrap();
+        tw.ok("first").unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(!out.contains("TAP version"));
+        assert!(out.contains("\x1b[32mok\x1b[0m 1 - first\n"));
+    }
+
+    #[test]
+    fn builder_build_without_printing_with_locale() {
+        let mut buf = Vec::new();
+        let locale: Locale = "en-US".parse().unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .color(true)
+            .locale(locale)
+            .build_without_printing()
+            .unwrap();
+        tw.plan_ahead(10000).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(!out.contains("TAP version"));
+        assert!(!out.contains("pragma"));
+        assert!(out.contains("1..10,000\n"));
+    }
+
+    #[test]
+    fn builder_no_locale_clears() {
+        let mut buf = Vec::new();
+        let locale: Locale = "en-US".parse().unwrap();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .locale(locale)
+            .no_locale()
+            .build()
+            .unwrap();
+        tw.plan_ahead(10000).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        assert!(!out.contains("pragma"));
+        assert!(out.contains("1..10000\n"));
     }
 }
