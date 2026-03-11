@@ -142,3 +142,9 @@ type InteractiveRebasePlan struct {
 	Upstream string     `json:"upstream,omitempty"`
 	Commits  []LogEntry `json:"commits"`
 }
+
+type TryCommitResult struct {
+	Commit CommitResult `json:"commit"`
+	Staged []DiffStat   `json:"staged"`
+	Status StatusResult `json:"status"`
+}
