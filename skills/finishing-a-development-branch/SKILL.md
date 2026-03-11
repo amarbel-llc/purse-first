@@ -67,20 +67,18 @@ Which option?
 
 #### Option 1: Merge Locally
 
+```
+grit checkout (repo_path, ref: "<base-branch>")
+grit pull (repo_path)
+```
+
+Merge the feature branch (grit has no merge tool — use Bash):
 ```bash
-# Switch to base branch
-git checkout <base-branch>
-
-# Pull latest
-git pull
-
-# Merge feature branch
 git merge <feature-branch>
+```
 
-# Verify tests on merged result
-<test command>
-
-# If tests pass
+Verify tests on merged result, then cleanup:
+```bash
 git branch -d <feature-branch>
 ```
 
@@ -108,12 +106,15 @@ Then: Cleanup worktree (Step 5)
 
 4. **Push and create:**
 
-```bash
-# Push branch
-git push -u origin <feature-branch>
+```
+grit push (repo_path, set_upstream: true)
 
-# Create PR with composed body
-gh pr create --title "<title>" --body "<composed body>"
+get-hubbed pr_create (
+  repo: "<owner>/<repo>",
+  title: "<title>",
+  head: "<feature-branch>",
+  body: "<composed body>"
+)
 ```
 
 The user MUST provide a description — do not proceed without one. If the response is empty, ask again.
@@ -141,8 +142,10 @@ Type 'discard' to confirm.
 Wait for exact confirmation.
 
 If confirmed:
+```
+grit checkout (repo_path, ref: "<base-branch>")
+```
 ```bash
-git checkout <base-branch>
 git branch -D <feature-branch>
 ```
 
