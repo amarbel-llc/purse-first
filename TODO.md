@@ -54,6 +54,7 @@
 - [x] update tap-dancer with latest tap amendments
 - [x] tap-dancer rust: add combined color+locale constructor — `with_locale` hardcodes `color: false`, so ANSI display hints and locale formatting can't be used together in the same TAP stream
 - [ ] tap-dancer: update SKILL.md Rust section to reflect TapWriterBuilder API (old examples reference removed TapWriter::new() counter API)
+- [ ] tap-dancer rust: `default_locale()` should normalize POSIX underscores to BCP 47 hyphens before parsing — `en_US.UTF-8` strips to `en_US` which fails `Locale::parse` (expects `en-US`)
 - [ ] verify install-local skill path resolution (./skills/<name> in .claude-plugin/plugin.json may not resolve correctly — needs manual test)
 - [ ] update global sweatfile (`eng/rcm/config/spinclass/sweatfile`) to use snob-case keys (`git-excludes`, `claude-allow`)
 - [ ] separate libs and marketplace generation into new `bob` repo
