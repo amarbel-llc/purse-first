@@ -34,9 +34,9 @@ func tarballFilename(name, version, platform string) string {
 	return fmt.Sprintf("%s-%s-%s.tar.gz", name, version, platform)
 }
 
-func CreateTarball(opts TarballOptions) (string, error) {
+func CreateTarball(opts TarballOptions) (outPath string, retErr error) {
 	filename := tarballFilename(opts.Name, opts.Version, opts.Platform)
-	outPath := filepath.Join(opts.OutputDir, filename)
+	outPath = filepath.Join(opts.OutputDir, filename)
 
 	f, err := os.Create(outPath)
 	if err != nil {
@@ -45,10 +45,18 @@ func CreateTarball(opts TarballOptions) (string, error) {
 	defer f.Close()
 
 	gw := gzip.NewWriter(f)
-	defer gw.Close()
+	defer func() {
+		if cerr := gw.Close(); cerr != nil && retErr == nil {
+			retErr = fmt.Errorf("finalizing gzip: %w", cerr)
+		}
+	}()
 
 	tw := tar.NewWriter(gw)
-	defer tw.Close()
+	defer func() {
+		if cerr := tw.Close(); cerr != nil && retErr == nil {
+			retErr = fmt.Errorf("finalizing tar: %w", cerr)
+		}
+	}()
 
 	if opts.BinPath != "" {
 		if err := addFileToTar(tw, opts.BinPath, filepath.Join("bin", opts.Name)); err != nil {
@@ -66,9 +74,9 @@ func CreateTarball(opts TarballOptions) (string, error) {
 	return outPath, nil
 }
 
-func CreateMarketplaceTarball(opts MarketplaceTarballOptions) (string, error) {
+func CreateMarketplaceTarball(opts MarketplaceTarballOptions) (outPath string, retErr error) {
 	filename := tarballFilename(opts.Name, opts.Version, "")
-	outPath := filepath.Join(opts.OutputDir, filename)
+	outPath = filepath.Join(opts.OutputDir, filename)
 
 	f, err := os.Create(outPath)
 	if err != nil {
@@ -77,10 +85,18 @@ func CreateMarketplaceTarball(opts MarketplaceTarballOptions) (string, error) {
 	defer f.Close()
 
 	gw := gzip.NewWriter(f)
-	defer gw.Close()
+	defer func() {
+		if cerr := gw.Close(); cerr != nil && retErr == nil {
+			retErr = fmt.Errorf("finalizing gzip: %w", cerr)
+		}
+	}()
 
 	tw := tar.NewWriter(gw)
-	defer tw.Close()
+	defer func() {
+		if cerr := tw.Close(); cerr != nil && retErr == nil {
+			retErr = fmt.Errorf("finalizing tar: %w", cerr)
+		}
+	}()
 
 	hdr := &tar.Header{
 		Name: ".claude-plugin/marketplace.json",
