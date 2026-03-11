@@ -14,6 +14,7 @@ func RegisterAll() *command.App {
 	registerRemoteCommands(app)
 	registerRevParseCommands(app)
 	registerRebaseCommands(app)
+	registerInteractiveRebaseCommands(app)
 	registerHardResetCommands(app)
 
 	return app
