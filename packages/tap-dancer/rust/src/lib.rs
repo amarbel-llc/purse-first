@@ -1619,4 +1619,85 @@ mod tests {
         assert!(!out.contains("pragma"));
         assert!(out.contains("1..10000\n"));
     }
+
+    #[test]
+    fn builder_auto_no_color_when_set() {
+        let original = std::env::var("NO_COLOR").ok();
+        std::env::set_var("NO_COLOR", "1");
+
+        let mut buf = Vec::new();
+        let tw = TapWriterBuilder::auto(&mut buf).build().unwrap();
+        assert!(!tw.config.color());
+
+        match original {
+            Some(v) => std::env::set_var("NO_COLOR", v),
+            None => std::env::remove_var("NO_COLOR"),
+        }
+    }
+
+    #[test]
+    fn builder_auto_color_when_no_color_absent() {
+        let original = std::env::var("NO_COLOR").ok();
+        std::env::remove_var("NO_COLOR");
+
+        let mut buf = Vec::new();
+        let tw = TapWriterBuilder::auto(&mut buf).build().unwrap();
+        assert!(tw.config.color());
+
+        if let Some(v) = original {
+            std::env::set_var("NO_COLOR", v);
+        }
+    }
+
+    #[test]
+    fn builder_auto_override_color() {
+        let original = std::env::var("NO_COLOR").ok();
+        std::env::remove_var("NO_COLOR");
+
+        let mut buf = Vec::new();
+        let tw = TapWriterBuilder::auto(&mut buf)
+            .color(false)
+            .build()
+            .unwrap();
+        assert!(!tw.config.color());
+
+        if let Some(v) = original {
+            std::env::set_var("NO_COLOR", v);
+        }
+    }
+
+    #[test]
+    fn builder_default_locale_ignores_c_locale() {
+        let orig_all = std::env::var("LC_ALL").ok();
+        let orig_num = std::env::var("LC_NUMERIC").ok();
+        let orig_lang = std::env::var("LANG").ok();
+        std::env::set_var("LANG", "C");
+        std::env::remove_var("LC_ALL");
+        std::env::remove_var("LC_NUMERIC");
+
+        let mut buf = Vec::new();
+        let mut tw = TapWriterBuilder::new(&mut buf)
+            .default_locale()
+            .build()
+            .unwrap();
+        tw.plan_ahead(10000).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+        // C locale should not parse as ICU locale, so no formatting
+        assert!(!out.contains("pragma"));
+        assert!(out.contains("1..10000\n"));
+
+        // Restore
+        match orig_all {
+            Some(v) => std::env::set_var("LC_ALL", v),
+            None => std::env::remove_var("LC_ALL"),
+        }
+        match orig_num {
+            Some(v) => std::env::set_var("LC_NUMERIC", v),
+            None => std::env::remove_var("LC_NUMERIC"),
+        }
+        match orig_lang {
+            Some(v) => std::env::set_var("LANG", v),
+            None => std::env::remove_var("LANG"),
+        }
+    }
 }
