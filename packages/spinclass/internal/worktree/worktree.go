@@ -46,17 +46,18 @@ func ResolvePath(
 		}, nil
 	}
 
-	rawName := SanitizeBranchName(args)
-	if rawName == "" {
+	unsanitizedName := strings.Join(args, "-")
+	sanitizedName := SanitizeBranchName(args)
+	if sanitizedName == "" {
 		return ResolvedPath{}, fmt.Errorf("branch name is empty after sanitization of %q", args)
 	}
 
-	transformedName, err := sf.CreateBranchName(rawName)
+	transformedName, err := sf.CreateBranchName(sanitizedName)
 	if err != nil {
 		return ResolvedPath{}, err
 	}
 
-	branch, existingBranch := detectBranch(repoPath, rawName, transformedName)
+	branch, existingBranch := detectBranch(repoPath, unsanitizedName, sanitizedName, transformedName)
 
 	absPath := filepath.Join(repoPath, WorktreesDir, branch)
 	repoDirname := filepath.Base(repoPath)
@@ -71,20 +72,29 @@ func ResolvePath(
 	}, nil
 }
 
-func detectBranch(repoPath, rawName, transformedName string) (string, string) {
-	if git.BranchExists(repoPath, rawName) {
-		return rawName, rawName
+func detectBranch(repoPath string, candidates ...string) (string, string) {
+	seen := make(map[string]bool)
+	var unique []string
+	for _, c := range candidates {
+		if c != "" && !seen[c] {
+			seen[c] = true
+			unique = append(unique, c)
+		}
 	}
-	if transformedName != rawName && git.BranchExists(repoPath, transformedName) {
-		return transformedName, transformedName
+
+	for _, name := range unique {
+		if git.BranchExists(repoPath, name) {
+			return name, name
+		}
 	}
-	if git.RemoteBranchExists(repoPath, rawName) {
-		return rawName, rawName
+	for _, name := range unique {
+		if git.RemoteBranchExists(repoPath, name) {
+			return name, name
+		}
 	}
-	if transformedName != rawName && git.RemoteBranchExists(repoPath, transformedName) {
-		return transformedName, transformedName
-	}
-	return transformedName, ""
+
+	// No existing branch found — use the last candidate (most transformed).
+	return unique[len(unique)-1], ""
 }
 
 // DetectRepo walks up from dir looking for a .git directory (must be a

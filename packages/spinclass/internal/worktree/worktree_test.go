@@ -441,6 +441,124 @@ func TestResolvePathDetectsRemoteBranch(t *testing.T) {
 	}
 }
 
+func TestResolvePathPrefersUnsanitizedBranch(t *testing.T) {
+	root := t.TempDir()
+	repoDir := filepath.Join(root, "myrepo")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	runGit := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	runGit(repoDir, "init")
+	runGit(repoDir, "config", "user.email", "test@test.com")
+	runGit(repoDir, "config", "user.name", "Test")
+	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
+
+	// Create a branch with the hyphenated name (as if created outside spinclass)
+	runGit(repoDir, "branch", "quiet-pecan")
+
+	// User passes "quiet-pecan" — should find the hyphenated branch,
+	// NOT normalize to "quiet_pecan" and miss it.
+	rp, err := ResolvePath(sweatfile.Sweatfile{}, repoDir, []string{"quiet-pecan"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if rp.ExistingBranch != "quiet-pecan" {
+		t.Errorf("ExistingBranch = %q, want %q", rp.ExistingBranch, "quiet-pecan")
+	}
+	if rp.Branch != "quiet-pecan" {
+		t.Errorf("Branch = %q, want %q", rp.Branch, "quiet-pecan")
+	}
+	wantAbs := filepath.Join(repoDir, WorktreesDir, "quiet-pecan")
+	if rp.AbsPath != wantAbs {
+		t.Errorf("AbsPath = %q, want %q", rp.AbsPath, wantAbs)
+	}
+}
+
+func TestResolvePathFallsBackToSanitizedBranch(t *testing.T) {
+	root := t.TempDir()
+	repoDir := filepath.Join(root, "myrepo")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	runGit := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	runGit(repoDir, "init")
+	runGit(repoDir, "config", "user.email", "test@test.com")
+	runGit(repoDir, "config", "user.name", "Test")
+	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
+
+	// Only the sanitized form exists
+	runGit(repoDir, "branch", "quiet_pecan")
+
+	// User passes "quiet-pecan" — unsanitized won't match, should fall back
+	// to sanitized "quiet_pecan".
+	rp, err := ResolvePath(sweatfile.Sweatfile{}, repoDir, []string{"quiet-pecan"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if rp.ExistingBranch != "quiet_pecan" {
+		t.Errorf("ExistingBranch = %q, want %q", rp.ExistingBranch, "quiet_pecan")
+	}
+	if rp.Branch != "quiet_pecan" {
+		t.Errorf("Branch = %q, want %q", rp.Branch, "quiet_pecan")
+	}
+}
+
+func TestResolvePathBothFormsExistPrefersUnsanitized(t *testing.T) {
+	root := t.TempDir()
+	repoDir := filepath.Join(root, "myrepo")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	runGit := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	runGit(repoDir, "init")
+	runGit(repoDir, "config", "user.email", "test@test.com")
+	runGit(repoDir, "config", "user.name", "Test")
+	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
+
+	// Both forms exist as branches
+	runGit(repoDir, "branch", "quiet-pecan")
+	runGit(repoDir, "branch", "quiet_pecan")
+
+	// Should prefer the unsanitized (user's literal input) form
+	rp, err := ResolvePath(sweatfile.Sweatfile{}, repoDir, []string{"quiet-pecan"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if rp.ExistingBranch != "quiet-pecan" {
+		t.Errorf("ExistingBranch = %q, want %q", rp.ExistingBranch, "quiet-pecan")
+	}
+	if rp.Branch != "quiet-pecan" {
+		t.Errorf("Branch = %q, want %q", rp.Branch, "quiet-pecan")
+	}
+}
+
 func TestResolvePathRandomNameWhenNoArgs(t *testing.T) {
 	home := t.TempDir()
 	repoPath := filepath.Join(home, "repos", "myrepo")
