@@ -392,6 +392,55 @@ func TestResolvePathDetectsLocalBranch(t *testing.T) {
 	}
 }
 
+func TestResolvePathDetectsRemoteBranch(t *testing.T) {
+	root := t.TempDir()
+
+	// Create a bare "remote" repo
+	bareDir := filepath.Join(root, "remote.git")
+	if err := os.MkdirAll(bareDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	runGit := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	runGit(bareDir, "init", "--bare")
+
+	// Create a local repo, add the bare as origin
+	repoDir := filepath.Join(root, "local")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	runGit(repoDir, "init")
+	runGit(repoDir, "config", "user.email", "test@test.com")
+	runGit(repoDir, "config", "user.name", "Test")
+	runGit(repoDir, "commit", "--allow-empty", "-m", "initial")
+	runGit(repoDir, "remote", "add", "origin", bareDir)
+
+	// Push a branch to the remote, then delete it locally
+	runGit(repoDir, "branch", "remote_only_branch")
+	runGit(repoDir, "push", "origin", "remote_only_branch")
+	runGit(repoDir, "branch", "-d", "remote_only_branch")
+	runGit(repoDir, "fetch", "origin")
+
+	rp, err := ResolvePath(sweatfile.Sweatfile{}, repoDir, []string{"remote-only-branch"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if rp.ExistingBranch != "remote_only_branch" {
+		t.Errorf("ExistingBranch = %q, want %q", rp.ExistingBranch, "remote_only_branch")
+	}
+	if rp.Branch != "remote_only_branch" {
+		t.Errorf("Branch = %q, want %q", rp.Branch, "remote_only_branch")
+	}
+}
+
 func TestResolvePathRandomNameWhenNoArgs(t *testing.T) {
 	home := t.TempDir()
 	repoPath := filepath.Join(home, "repos", "myrepo")

@@ -50,7 +50,7 @@
 - [x] bootstrap root Cargo workspace — add root Cargo.toml with members [packages/chix, packages/tap-dancer/rust, libs/rust-mcp], delete per-crate Cargo.lock files, remove chix.nix vendor workaround, verify: `nix build .#chix`, `nix build .#tap-dancer`, `cargo test --workspace`
 - [x] grit: add `--amend` support to `commit` tool (git commit --amend)
 - [x] grit: add soft reset mode to `reset` tool (git reset --soft via `soft` + `ref` params) — needed for amend workaround and squash flows
-- [ ] sandcastle BATS: migrate to bats-emo conformance pattern (require_bin SANDCASTLE_BIN sandcastle)
+- [x] sandcastle BATS: migrate to bats-emo conformance pattern (require_bin SANDCASTLE_BIN sandcastle)
 - [x] update tap-dancer with latest tap amendments
 - [x] tap-dancer rust: add combined color+locale constructor — `with_locale` hardcodes `color: false`, so ANSI display hints and locale formatting can't be used together in the same TAP stream
 - [ ] tap-dancer: update SKILL.md Rust section to reflect TapWriterBuilder API (old examples reference removed TapWriter::new() counter API)
@@ -75,6 +75,7 @@
 - [x] fix grit rebase_mcp.bats: tests expect `packages/grit/result/bin/grit` symlink but no build step creates it
 - [x] add ANSI color output to `tap-dancer *-test` for TTY's
 - [x] fix sandcastle/batman socket permission failures: use `--allow-unix-sockets` in bats wrapper tests and sandcastle tests
+- [ ] sandcastle BATS: tests fail with `socat socket(AF_UNIX): Operation not permitted` — sandcastle's own bwrap bridge setup can't create unix sockets on Linux (seccomp blocks `socket(AF_UNIX)` even for the outer socat processes). Not an `--allow-unix-sockets` issue (tests use `--no-sandbox`, no outer sandcastle). Likely needs sandcastle to either skip bridge setup for local-only commands or use a pipe-based transport instead of socat bridges.
 - [x] P0: flaky timeout in `bats_wrapper_hide_passing_preserves_plan_and_version` (test 12) — 10s BATS_TEST_TIMEOUT too tight under parallel load
 - [ ] lux daemon: debug remaining "no views" error in dev-lux-open — test-lux-lsp passes clean but real nvim still triggers it; likely dev/prod env difference (nix-built lux vs go-built, production daemon vs dev daemon, or multi-LSP startup race). Check daemon log trace added in 3ab2c81
 - [ ] lux service daemon: add SIGTERM/SIGINT signal handler to cancel context for graceful shutdown (socket cleanup on kill)
@@ -90,7 +91,7 @@
 - [ ] lux service BATS: add service-stop and service-start CLI tests
 - [ ] bats-assert: show trailing whitespace in `--output differs--` / `--regular expression does not match output--` blocks (e.g. render spaces as `·` or `␣` at EOL, or show `$` line terminators like `cat -A`). Invisible trailing spaces cause regex mismatches that look identical in TAP output.
 - [ ] FDR: versioned conformance test suites — mechanism for pairing a test suite version with the SUT version it targets, so version bumps surface which assertions need updating rather than requiring forensic debugging. Consider: version-tagged expected-output fixtures, SUT version gates in test setup, or a manifest mapping SUT version ranges to assertion variants.
-- [ ] spinclass: add test for remote branch detection in ResolvePath (requires setting up local remote in test)
+- [x] spinclass: add test for remote branch detection in ResolvePath (requires setting up local remote in test)
 - [ ] spinclass: `list-agent-sessions` command — parse `~/.claude/projects/` to find session IDs for the current repo; if running inside a worktree, scope results to that worktree only
 - [ ] add new `/commit` skill that includes the prompt transcript up until that
   point
