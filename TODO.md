@@ -75,7 +75,7 @@
 - [x] fix grit rebase_mcp.bats: tests expect `packages/grit/result/bin/grit` symlink but no build step creates it
 - [x] add ANSI color output to `tap-dancer *-test` for TTY's
 - [x] fix sandcastle/batman socket permission failures: use `--allow-unix-sockets` in bats wrapper tests and sandcastle tests
-- [ ] sandcastle BATS: tests fail with `socat socket(AF_UNIX): Operation not permitted` — sandcastle's own bwrap bridge setup can't create unix sockets on Linux (seccomp blocks `socket(AF_UNIX)` even for the outer socat processes). Not an `--allow-unix-sockets` issue (tests use `--no-sandbox`, no outer sandcastle). Likely needs sandcastle to either skip bridge setup for local-only commands or use a pipe-based transport instead of socat bridges.
+- [x] sandcastle BATS: tests fail with `socat socket(AF_UNIX): Operation not permitted` — sandcastle's own bwrap bridge setup can't create unix sockets on Linux (seccomp blocks `socket(AF_UNIX)` even for the outer socat processes). Fixed by skipping network infrastructure (proxy servers + socat bridge) in `initialize()` when `isInsideBwrap()` detects a bwrap ancestor.
 - [x] P0: flaky timeout in `bats_wrapper_hide_passing_preserves_plan_and_version` (test 12) — 10s BATS_TEST_TIMEOUT too tight under parallel load
 - [ ] lux daemon: debug remaining "no views" error in dev-lux-open — test-lux-lsp passes clean but real nvim still triggers it; likely dev/prod env difference (nix-built lux vs go-built, production daemon vs dev daemon, or multi-LSP startup race). Check daemon log trace added in 3ab2c81
 - [ ] lux service daemon: add SIGTERM/SIGINT signal handler to cancel context for graceful shutdown (socket cleanup on kill)

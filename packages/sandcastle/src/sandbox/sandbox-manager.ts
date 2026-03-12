@@ -20,6 +20,7 @@ import {
   checkLinuxDependencies,
   type SandboxDependencyCheck,
   cleanupBwrapMountPoints,
+  isInsideBwrap,
 } from './linux-sandbox-utils.js'
 import {
   wrapCommandWithSandboxMacOS,
@@ -253,6 +254,16 @@ async function initialize(
 
   // Register cleanup handlers first time
   registerCleanup()
+
+  // Skip network infrastructure when nested inside bwrap — the socat bridge
+  // processes call socket(AF_UNIX) which is blocked by the outer bwrap's
+  // seccomp filter. wrapCommandWithSandboxLinux already skips --unshare-net
+  // when nested, so none of this infrastructure is needed.
+  if (getPlatform() === 'linux' && isInsideBwrap()) {
+    logForDebugging('Skipping network infrastructure — nested inside bwrap')
+    managerContext = { httpProxyPort: 0, socksProxyPort: 0, linuxBridge: undefined }
+    return
+  }
 
   // Initialize network infrastructure
   initializationPromise = (async () => {

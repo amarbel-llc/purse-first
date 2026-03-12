@@ -72,7 +72,7 @@ const DEFAULT_MANDATORY_DENY_SEARCH_DEPTH = 3
  * This is used to avoid double-applying network/pid/seccomp isolation
  * (which fails) while still allowing additional filesystem restrictions.
  */
-function isInsideBwrap(): boolean {
+export function isInsideBwrap(): boolean {
   try {
     let pid = process.pid
     while (pid > 1) {
