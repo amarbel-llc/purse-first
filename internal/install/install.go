@@ -79,10 +79,20 @@ func readMarketplace(root string) (*marketplaceJSON, error) {
 	return &m, nil
 }
 
-func Run(w io.Writer) error {
-	root, err := resolveMarketplaceRoot()
-	if err != nil {
-		return fmt.Errorf("resolving marketplace: %w", err)
+func Run(w io.Writer, explicitRoot string) error {
+	var root string
+	var err error
+	if explicitRoot != "" {
+		root = explicitRoot
+		path := filepath.Join(root, ".claude-plugin", "marketplace.json")
+		if _, err := os.Stat(path); err != nil {
+			return fmt.Errorf("marketplace.json not found at %s", path)
+		}
+	} else {
+		root, err = resolveMarketplaceRoot()
+		if err != nil {
+			return fmt.Errorf("resolving marketplace: %w", err)
+		}
 	}
 
 	m, err := readMarketplace(root)

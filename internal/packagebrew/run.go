@@ -166,7 +166,14 @@ func Run(opts RunOptions) error {
 		return fmt.Errorf("hashing meta tarball: %w", err)
 	}
 
-	// 4. Generate per-package formulas.
+	// 4. Write download strategy file for private repos.
+	if cfg.Private || cfg.DownloadStrategy != "" {
+		if err := writeDownloadStrategy(opts.OutputDir, cfg.DownloadStrategy); err != nil {
+			return fmt.Errorf("writing download strategy: %w", err)
+		}
+	}
+
+	// 5. Generate per-package formulas.
 	for _, name := range pkgNames {
 		pkg := cfg.Packages[name]
 
@@ -178,6 +185,7 @@ func Run(opts RunOptions) error {
 			License:     cfg.License,
 			ReleaseRepo: cfg.ReleaseRepo,
 			Binary:      pkg.Binary,
+			Private:     cfg.Private || cfg.DownloadStrategy != "",
 			Hashes:      allHashes[name].hashes,
 			BrewDeps:    pkg.BrewDeps,
 		})
@@ -188,7 +196,7 @@ func Run(opts RunOptions) error {
 		}
 	}
 
-	// 5. Generate meta-formula.
+	// 6. Generate meta-formula.
 	metaFormula := GenerateMetaFormula(MetaFormulaOptions{
 		Name:        cfg.Name,
 		Description: cfg.Description,
@@ -198,13 +206,14 @@ func Run(opts RunOptions) error {
 		Hash:        metaHash,
 		Packages:    pkgNames,
 		AutoInstall: opts.AutoInstall,
+		Private:     cfg.Private || cfg.DownloadStrategy != "",
 	})
 	metaFormulaPath := filepath.Join(formulaDir, cfg.Name+".rb")
 	if err := os.WriteFile(metaFormulaPath, []byte(metaFormula), 0o644); err != nil {
 		return fmt.Errorf("writing meta formula: %w", err)
 	}
 
-	// 6. Generate README.
+	// 7. Generate README.
 	var readmePkgs []ReadmePackage
 	for _, name := range pkgNames {
 		readmePkgs = append(readmePkgs, ReadmePackage{

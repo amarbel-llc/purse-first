@@ -23,10 +23,15 @@ func main() {
 	}
 
 	installCmd := &cobra.Command{
-		Use:   "install",
+		Use:   "install [marketplace-root]",
 		Short: "Install purse-first marketplace and packages into Claude Code",
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return install.Run(os.Stderr)
+			var root string
+			if len(args) > 0 {
+				root = args[0]
+			}
+			return install.Run(os.Stderr, root)
 		},
 	}
 

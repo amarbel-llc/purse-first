@@ -7,13 +7,15 @@ import (
 )
 
 type Config struct {
-	Name        string                   `json:"name"`
-	Description string                   `json:"description,omitempty"`
-	Owner       Owner                    `json:"owner"`
-	ReleaseRepo string                   `json:"releaseRepo"`
-	TapName     string                   `json:"tapName"`
-	License     string                   `json:"license"`
-	Packages    map[string]PackageConfig `json:"packages"`
+	Name             string                   `json:"name"`
+	Description      string                   `json:"description,omitempty"`
+	Owner            Owner                    `json:"owner"`
+	ReleaseRepo      string                   `json:"releaseRepo"`
+	TapName          string                   `json:"tapName"`
+	License          string                   `json:"license"`
+	Private          bool                     `json:"private,omitempty"`
+	DownloadStrategy string                   `json:"downloadStrategy,omitempty"`
+	Packages         map[string]PackageConfig `json:"packages"`
 }
 
 type Owner struct {

@@ -33,7 +33,7 @@ func TestGenerateBinaryFormula(t *testing.T) {
 	if !strings.Contains(formula, `sha256 "def456"`) {
 		t.Error("missing linux-amd64 hash")
 	}
-	if !strings.Contains(formula, `bin.install "grit"`) {
+	if !strings.Contains(formula, `bin.install "bin/grit"`) {
 		t.Error("missing bin.install for binary package")
 	}
 	if !strings.Contains(formula, `depends_on "gh"`) {

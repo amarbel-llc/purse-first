@@ -151,12 +151,12 @@ func TestCreateMarketplaceTarball(t *testing.T) {
 	entries := tarEntries(t, path)
 	found := false
 	for _, e := range entries {
-		if e == ".claude-plugin/marketplace.json" {
+		if e == "marketplace.json" {
 			found = true
 		}
 	}
 	if !found {
-		t.Errorf("marketplace tarball missing .claude-plugin/marketplace.json, entries: %v", entries)
+		t.Errorf("marketplace tarball missing marketplace.json, entries: %v", entries)
 	}
 
 	expectedName := "my-marketplace-1.0.0.tar.gz"

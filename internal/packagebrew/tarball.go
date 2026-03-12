@@ -99,7 +99,7 @@ func CreateMarketplaceTarball(opts MarketplaceTarballOptions) (outPath string, r
 	}()
 
 	hdr := &tar.Header{
-		Name: ".claude-plugin/marketplace.json",
+		Name: "marketplace.json",
 		Mode: 0o644,
 		Size: int64(len(opts.MarketplaceJSON)),
 	}

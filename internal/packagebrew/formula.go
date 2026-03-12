@@ -14,6 +14,7 @@ type FormulaOptions struct {
 	License     string
 	ReleaseRepo string
 	Binary      bool
+	Private     bool
 	Hashes      map[string]string // platform -> sha256 (empty key for platform-independent)
 	BrewDeps    []string
 }
@@ -27,6 +28,7 @@ type MetaFormulaOptions struct {
 	Hash        string
 	Packages    []string
 	AutoInstall bool
+	Private     bool
 }
 
 // Platform mapping for Homebrew conditionals.
@@ -62,6 +64,10 @@ func toClassName(name string) string {
 func GenerateFormula(opts FormulaOptions) string {
 	var b strings.Builder
 
+	if opts.Private {
+		b.WriteString("require_relative \"../lib/custom_download_strategy\"\n\n")
+	}
+
 	homepage := opts.Homepage
 	if homepage == "" {
 		homepage = fmt.Sprintf("https://github.com/%s", opts.ReleaseRepo)
@@ -73,6 +79,11 @@ func GenerateFormula(opts FormulaOptions) string {
 	fmt.Fprintf(&b, "  version %q\n", opts.Version)
 	fmt.Fprintf(&b, "  license %q\n", opts.License)
 	b.WriteString("\n")
+
+	using := ""
+	if opts.Private {
+		using = ",\n          using: GitHubPrivateRepositoryReleaseDownloadStrategy"
+	}
 
 	if opts.Binary {
 		// Group platforms by OS.
@@ -106,7 +117,7 @@ func GenerateFormula(opts FormulaOptions) string {
 				} else {
 					fmt.Fprintf(&b, "    elsif Hardware::CPU.%s\n", e.archFn)
 				}
-				fmt.Fprintf(&b, "      url %q\n", e.url)
+				fmt.Fprintf(&b, "      url %q%s\n", e.url, using)
 				fmt.Fprintf(&b, "      sha256 %q\n", e.hash)
 			}
 			b.WriteString("    end\n")
@@ -119,7 +130,7 @@ func GenerateFormula(opts FormulaOptions) string {
 			"https://github.com/%s/releases/download/v%s/%s-%s.tar.gz",
 			opts.ReleaseRepo, opts.Version, opts.Name, opts.Version,
 		)
-		fmt.Fprintf(&b, "  url %q\n", url)
+		fmt.Fprintf(&b, "  url %q%s\n", url, using)
 		fmt.Fprintf(&b, "  sha256 %q\n", hash)
 		b.WriteString("\n")
 	}
@@ -133,7 +144,7 @@ func GenerateFormula(opts FormulaOptions) string {
 
 	b.WriteString("  def install\n")
 	if opts.Binary {
-		fmt.Fprintf(&b, "    bin.install %q\n", opts.Name)
+		fmt.Fprintf(&b, "    bin.install \"bin/%s\"\n", opts.Name)
 	}
 	fmt.Fprintf(&b, "    (share/\"purse-first/%s\").install Dir[\"share/purse-first/%s/*\"]\n", opts.Name, opts.Name)
 	b.WriteString("  end\n\n")
@@ -153,6 +164,10 @@ func GenerateFormula(opts FormulaOptions) string {
 func GenerateMetaFormula(opts MetaFormulaOptions) string {
 	var b strings.Builder
 
+	if opts.Private {
+		b.WriteString("require_relative \"../lib/custom_download_strategy\"\n\n")
+	}
+
 	fmt.Fprintf(&b, "class %s < Formula\n", toClassName(opts.Name))
 	fmt.Fprintf(&b, "  desc %q\n", opts.Description)
 	fmt.Fprintf(&b, "  homepage \"https://github.com/%s\"\n", opts.ReleaseRepo)
@@ -163,7 +178,11 @@ func GenerateMetaFormula(opts MetaFormulaOptions) string {
 		"https://github.com/%s/releases/download/v%s/%s-%s.tar.gz",
 		opts.ReleaseRepo, opts.Version, opts.Name, opts.Version,
 	)
-	fmt.Fprintf(&b, "  url %q\n", url)
+	using := ""
+	if opts.Private {
+		using = ",\n      using: GitHubPrivateRepositoryReleaseDownloadStrategy"
+	}
+	fmt.Fprintf(&b, "  url %q%s\n", url, using)
 	fmt.Fprintf(&b, "  sha256 %q\n", opts.Hash)
 	b.WriteString("\n")
 
@@ -173,12 +192,13 @@ func GenerateMetaFormula(opts MetaFormulaOptions) string {
 	b.WriteString("\n")
 
 	b.WriteString("  def install\n")
-	b.WriteString("    (prefix/\".claude-plugin\").install \".claude-plugin/marketplace.json\"\n")
+	b.WriteString("    (share/\"purse-first\").install \"marketplace.json\"\n")
+	b.WriteString("    (prefix/\".claude-plugin\").install share/\"purse-first/marketplace.json\"\n")
 	b.WriteString("  end\n\n")
 
 	if opts.AutoInstall {
 		b.WriteString("  def post_install\n")
-		b.WriteString("    system \"purse-first\", \"install\"\n")
+		b.WriteString("    system \"purse-first\", \"install\", prefix\n")
 		b.WriteString("  end\n\n")
 	}
 
