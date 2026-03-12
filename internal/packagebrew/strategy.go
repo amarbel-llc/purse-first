@@ -70,6 +70,10 @@ class GitHubPrivateRepositoryReleaseDownloadStrategy < GitHubPrivateRepositoryDo
       http.request(req)
     end
 
+    unless res["location"]
+      raise CurlDownloadStrategyError, "Expected redirect for asset download, got #{res.code}"
+    end
+
     res["location"]
   end
 
@@ -127,7 +131,7 @@ func writeDownloadStrategy(outputDir, customPath string) error {
 	return os.WriteFile(dest, []byte(builtinDownloadStrategy), 0o644)
 }
 
-func copyFile(src, dst string) error {
+func copyFile(src, dst string) (retErr error) {
 	in, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("opening %s: %w", src, err)
@@ -138,7 +142,11 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("creating %s: %w", dst, err)
 	}
-	defer out.Close()
+	defer func() {
+		if cerr := out.Close(); cerr != nil && retErr == nil {
+			retErr = fmt.Errorf("closing %s: %w", dst, cerr)
+		}
+	}()
 
 	if _, err := io.Copy(out, in); err != nil {
 		return fmt.Errorf("copying %s to %s: %w", src, dst, err)

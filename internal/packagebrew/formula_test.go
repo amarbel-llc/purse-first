@@ -136,6 +136,115 @@ func TestGenerateMetaFormulaNoAutoInstall(t *testing.T) {
 	}
 }
 
+func TestGeneratePrivateBinaryFormula(t *testing.T) {
+	formula := GenerateFormula(FormulaOptions{
+		Name:        "grit",
+		Description: "Git operations via MCP",
+		Version:     "1.0.0",
+		Homepage:    "https://example.com",
+		License:     "MIT",
+		ReleaseRepo: "org/homebrew-tap",
+		Binary:      true,
+		Private:     true,
+		Hashes: map[string]string{
+			"darwin-arm64": "abc123",
+		},
+	})
+
+	if !strings.Contains(formula, `require_relative "../lib/custom_download_strategy"`) {
+		t.Error("private formula missing require_relative")
+	}
+	if !strings.Contains(formula, "using: GitHubPrivateRepositoryReleaseDownloadStrategy") {
+		t.Error("private formula missing using: directive")
+	}
+}
+
+func TestGeneratePrivateSkillOnlyFormula(t *testing.T) {
+	formula := GenerateFormula(FormulaOptions{
+		Name:        "bob",
+		Description: "Skills package",
+		Version:     "0.1.0",
+		License:     "MIT",
+		ReleaseRepo: "org/homebrew-tap",
+		Binary:      false,
+		Private:     true,
+		Hashes: map[string]string{
+			"": "xyz789",
+		},
+	})
+
+	if !strings.Contains(formula, `require_relative "../lib/custom_download_strategy"`) {
+		t.Error("private formula missing require_relative")
+	}
+	if !strings.Contains(formula, "using: GitHubPrivateRepositoryReleaseDownloadStrategy") {
+		t.Error("private formula missing using: directive")
+	}
+}
+
+func TestGenerateNonPrivateFormulaOmitsStrategy(t *testing.T) {
+	formula := GenerateFormula(FormulaOptions{
+		Name:        "grit",
+		Description: "Git operations via MCP",
+		Version:     "1.0.0",
+		License:     "MIT",
+		ReleaseRepo: "org/homebrew-tap",
+		Binary:      true,
+		Private:     false,
+		Hashes: map[string]string{
+			"darwin-arm64": "abc123",
+		},
+	})
+
+	if strings.Contains(formula, "require_relative") {
+		t.Error("non-private formula should not have require_relative")
+	}
+	if strings.Contains(formula, "using:") {
+		t.Error("non-private formula should not have using: directive")
+	}
+}
+
+func TestGeneratePrivateMetaFormula(t *testing.T) {
+	formula := GenerateMetaFormula(MetaFormulaOptions{
+		Name:        "my-marketplace",
+		Description: "All packages",
+		Version:     "1.0.0",
+		License:     "MIT",
+		ReleaseRepo: "org/homebrew-tap",
+		Hash:        "meta123",
+		Packages:    []string{"grit"},
+		AutoInstall: true,
+		Private:     true,
+	})
+
+	if !strings.Contains(formula, `require_relative "../lib/custom_download_strategy"`) {
+		t.Error("private meta-formula missing require_relative")
+	}
+	if !strings.Contains(formula, "using: GitHubPrivateRepositoryReleaseDownloadStrategy") {
+		t.Error("private meta-formula missing using: directive")
+	}
+}
+
+func TestGenerateNonPrivateMetaFormulaOmitsStrategy(t *testing.T) {
+	formula := GenerateMetaFormula(MetaFormulaOptions{
+		Name:        "my-marketplace",
+		Description: "All packages",
+		Version:     "1.0.0",
+		License:     "MIT",
+		ReleaseRepo: "org/homebrew-tap",
+		Hash:        "meta123",
+		Packages:    []string{"grit"},
+		AutoInstall: true,
+		Private:     false,
+	})
+
+	if strings.Contains(formula, "require_relative") {
+		t.Error("non-private meta-formula should not have require_relative")
+	}
+	if strings.Contains(formula, "using:") {
+		t.Error("non-private meta-formula should not have using: directive")
+	}
+}
+
 func TestToClassName(t *testing.T) {
 	tests := []struct {
 		input string
