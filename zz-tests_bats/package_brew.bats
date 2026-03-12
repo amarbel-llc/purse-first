@@ -134,3 +134,76 @@ CONF
   grep -q 'class MySkills < Formula' "$OUTPUT_DIR/Formula/my-skills.rb"
   grep -q 'class TestMarketplace < Formula' "$OUTPUT_DIR/Formula/test-marketplace.rb"
 }
+
+# --- Private repo tests ---
+
+setup_private_config() {
+  PRIVATE_OUTPUT_DIR="${BATS_TEST_TMPDIR}/brew-private-output"
+  PRIVATE_CONFIG_PATH="${BATS_TEST_TMPDIR}/brew-config-private.json"
+  cat > "$PRIVATE_CONFIG_PATH" <<CONF
+{
+  "name": "test-marketplace",
+  "description": "Test marketplace",
+  "owner": {"name": "tester"},
+  "releaseRepo": "org/tap",
+  "tapName": "org/tap",
+  "license": "MIT",
+  "private": true,
+  "packages": {
+    "my-tool": {
+      "description": "A tool",
+      "version": "1.0.0",
+      "binary": true,
+      "platforms": {"darwin-arm64": "$BIN_DIR/my-tool"},
+      "share": "$TOOL_SHARE",
+      "brewDeps": []
+    }
+  }
+}
+CONF
+}
+
+@test "private config generates download strategy file" {
+  setup_private_config
+  "$purse_first" package brew --config "$PRIVATE_CONFIG_PATH" --output "$PRIVATE_OUTPUT_DIR"
+  [[ -f "$PRIVATE_OUTPUT_DIR/lib/custom_download_strategy.rb" ]]
+}
+
+@test "private config formula has require_relative" {
+  setup_private_config
+  "$purse_first" package brew --config "$PRIVATE_CONFIG_PATH" --output "$PRIVATE_OUTPUT_DIR"
+  grep -q 'require_relative "../lib/custom_download_strategy"' "$PRIVATE_OUTPUT_DIR/Formula/my-tool.rb"
+}
+
+@test "private config formula has using: directive" {
+  setup_private_config
+  "$purse_first" package brew --config "$PRIVATE_CONFIG_PATH" --output "$PRIVATE_OUTPUT_DIR"
+  grep -q 'using: GitHubPrivateRepositoryReleaseDownloadStrategy' "$PRIVATE_OUTPUT_DIR/Formula/my-tool.rb"
+}
+
+@test "private config meta-formula has require_relative" {
+  setup_private_config
+  "$purse_first" package brew --config "$PRIVATE_CONFIG_PATH" --output "$PRIVATE_OUTPUT_DIR"
+  grep -q 'require_relative "../lib/custom_download_strategy"' "$PRIVATE_OUTPUT_DIR/Formula/test-marketplace.rb"
+}
+
+@test "private config meta-formula has using: directive" {
+  setup_private_config
+  "$purse_first" package brew --config "$PRIVATE_CONFIG_PATH" --output "$PRIVATE_OUTPUT_DIR"
+  grep -q 'using: GitHubPrivateRepositoryReleaseDownloadStrategy' "$PRIVATE_OUTPUT_DIR/Formula/test-marketplace.rb"
+}
+
+@test "non-private config omits download strategy file" {
+  "$purse_first" package brew --config "$CONFIG_PATH" --output "$OUTPUT_DIR"
+  [[ ! -f "$OUTPUT_DIR/lib/custom_download_strategy.rb" ]]
+}
+
+@test "non-private config formula omits require_relative" {
+  "$purse_first" package brew --config "$CONFIG_PATH" --output "$OUTPUT_DIR"
+  ! grep -q 'require_relative' "$OUTPUT_DIR/Formula/my-tool.rb"
+}
+
+@test "non-private config formula omits using: directive" {
+  "$purse_first" package brew --config "$CONFIG_PATH" --output "$OUTPUT_DIR"
+  ! grep -q 'using:' "$OUTPUT_DIR/Formula/my-tool.rb"
+}
