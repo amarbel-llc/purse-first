@@ -23,15 +23,20 @@ func main() {
 	}
 
 	installCmd := &cobra.Command{
-		Use:   "install [marketplace-root]",
-		Short: "Install purse-first marketplace and packages into Claude Code",
-		Args:  cobra.MaximumNArgs(1),
+		Use:   "install <marketplace-root>",
+		Short: "Install marketplace packages into Claude Code",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var root string
-			if len(args) > 0 {
-				root = args[0]
-			}
-			return install.Run(os.Stderr, root)
+			return install.Run(os.Stderr, args[0])
+		},
+	}
+
+	installSelfCmd := &cobra.Command{
+		Use:   "install-self",
+		Short: "Install this marketplace's packages into Claude Code",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return install.RunSelf(os.Stderr)
 		},
 	}
 
@@ -262,7 +267,7 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 
 	packageCmd.AddCommand(brewCmd)
 
-	root.AddCommand(installCmd, genMarketplaceCmd, installLocalCmd, installDevMCPCmd, genPluginCmd, validateCmd, packageCmd)
+	root.AddCommand(installCmd, installSelfCmd, genMarketplaceCmd, installLocalCmd, installDevMCPCmd, genPluginCmd, validateCmd, packageCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)

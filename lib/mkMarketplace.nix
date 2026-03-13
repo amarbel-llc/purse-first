@@ -139,12 +139,8 @@ utils.lib.eachDefaultSystem (
     marketplace = pkgs.symlinkJoin {
       name = "${name}-marketplace";
       paths = allPaths;
-      nativeBuildInputs = [ pkgs.makeWrapper ];
       postBuild = ''
-        makeWrapper ${cli}/bin/purse-first $out/bin/purse-first \
-          --set PURSE_FIRST_PLUGINS_DIR "$out/share/purse-first"
-
-        $out/bin/purse-first generate-marketplace \
+        ${cli}/bin/purse-first generate-marketplace \
           --plugins-dir "$out/share/purse-first" \
           ${if configFile != null then "--config ${configFile}" else ""} \
           --output "$out/.claude-plugin/marketplace.json"
@@ -156,7 +152,6 @@ utils.lib.eachDefaultSystem (
       name = "${name}-marketplace-no-hooks";
       paths = allPaths;
       nativeBuildInputs = [
-        pkgs.makeWrapper
         pkgs.jq
       ];
       postBuild = ''
@@ -172,10 +167,7 @@ utils.lib.eachDefaultSystem (
           [ -e "$d" ] && rm -rf "$d"
         done
 
-        makeWrapper ${cli}/bin/purse-first $out/bin/purse-first \
-          --set PURSE_FIRST_PLUGINS_DIR "$out/share/purse-first"
-
-        $out/bin/purse-first generate-marketplace \
+        ${cli}/bin/purse-first generate-marketplace \
           --no-hooks \
           --plugins-dir "$out/share/purse-first" \
           ${if configFile != null then "--config ${configFile}" else ""} \
@@ -195,7 +187,7 @@ utils.lib.eachDefaultSystem (
 
     apps.default = {
       type = "app";
-      program = "${marketplace}/bin/purse-first";
+      program = "${cli}/bin/purse-first";
     };
 
     devShells.default = pkgs.mkShell {

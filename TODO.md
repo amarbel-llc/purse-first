@@ -42,6 +42,8 @@
 ## Other
 
 - [ ] `purse-first validate` for hook output: validate hookSpecificOutput against Claude Code's expected schema (hookEventName required, permissionDecision enum, etc.) — could run as part of `just test-integration` or as a standalone `purse-first validate --hook-output` mode
+- [ ] skill: downstream marketplace consumer workflow (how to consume mkMarketplace outputs in a parent flake, handle collisions, install separately)
+- [ ] FDR: eliminate .claude-plugin/marketplace.json collision so downstream consumers can symlinkJoin multiple marketplaces without infraInputs workaround
 
 - [x] tap-dancer rust: add `write_pragma` support (needed for `pragma +streamed-output`)
 - [x] tap-dancer rust: add comment/description directive field to `TestResult` (`ok 1 - name # comment`)

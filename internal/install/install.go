@@ -28,23 +28,7 @@ type marketplaceJSON struct {
 	Plugins []marketplacePlugin `json:"plugins"`
 }
 
-// rootFromPluginsDir returns the marketplace root given PURSE_FIRST_PLUGINS_DIR.
-// The layout is: <root>/share/purse-first (packages dir) with marketplace.json
-// at <root>/.claude-plugin/marketplace.json — two levels up.
-func rootFromPluginsDir(pluginsDir string) string {
-	return filepath.Dir(filepath.Dir(pluginsDir))
-}
-
-func resolveMarketplaceRoot() (string, error) {
-	if envDir := os.Getenv("PURSE_FIRST_PLUGINS_DIR"); envDir != "" {
-		root := rootFromPluginsDir(envDir)
-		path := filepath.Join(root, ".claude-plugin", "marketplace.json")
-		if _, err := os.Stat(path); err == nil {
-			return root, nil
-		}
-		return "", fmt.Errorf("marketplace.json not found at %s", path)
-	}
-
+func resolveMarketplaceRootFromExe() (string, error) {
 	exe, err := os.Executable()
 	if err != nil {
 		return "", fmt.Errorf("finding executable path: %w", err)
@@ -79,20 +63,20 @@ func readMarketplace(root string) (*marketplaceJSON, error) {
 	return &m, nil
 }
 
-func Run(w io.Writer, explicitRoot string) error {
-	var root string
-	var err error
-	if explicitRoot != "" {
-		root = explicitRoot
-		path := filepath.Join(root, ".claude-plugin", "marketplace.json")
-		if _, err := os.Stat(path); err != nil {
-			return fmt.Errorf("marketplace.json not found at %s", path)
-		}
-	} else {
-		root, err = resolveMarketplaceRoot()
-		if err != nil {
-			return fmt.Errorf("resolving marketplace: %w", err)
-		}
+// RunSelf installs the marketplace that contains the running executable.
+func RunSelf(w io.Writer) error {
+	root, err := resolveMarketplaceRootFromExe()
+	if err != nil {
+		return fmt.Errorf("resolving marketplace: %w", err)
+	}
+
+	return Run(w, root)
+}
+
+func Run(w io.Writer, root string) error {
+	path := filepath.Join(root, ".claude-plugin", "marketplace.json")
+	if _, err := os.Stat(path); err != nil {
+		return fmt.Errorf("marketplace.json not found at %s", path)
 	}
 
 	m, err := readMarketplace(root)

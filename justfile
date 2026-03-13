@@ -24,6 +24,9 @@ build-chix:
 build-purse-first:
     nix build .#purse-first
 
+build-purse-first-cli:
+    nix build .#purse-first -o result-cli
+
 build-robin:
     nix build .#robin
 
@@ -40,9 +43,10 @@ build-no-hooks:
 build-batman:
     nix build .#batman -o result-batman
 
-# Install MCP servers and packages
-install:
-    nix run .#install
+# Install this marketplace's packages into Claude Code
+install: build-purse-first-cli
+    nix build
+    {{justfile_directory()}}/result-cli/bin/purse-first install {{justfile_directory()}}/result
 
 update: update-nix
 
@@ -114,30 +118,30 @@ vendor-hash:
     echo "updated goVendorHash to $hash"
 
 # Run integration tests
-test-integration: build-batman
+test-integration: build-batman build-purse-first-cli
     nix build
-    PURSE_FIRST_BIN={{justfile_directory()}}/result/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} \
+    PURSE_FIRST_BIN={{justfile_directory()}}/result-cli/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} \
       zz-tests_bats/validate_marketplace.bats \
       zz-tests_bats/validate_documents.bats \
       zz-tests_bats/validate_plugin_repos.bats
 
 # Validate plugin repos have correct .claude-plugin/plugin.json
-test-validate-repos: build-batman
-    PURSE_FIRST_BIN={{justfile_directory()}}/result/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/validate_plugin_repos.bats
+test-validate-repos: build-batman build-purse-first-cli
+    PURSE_FIRST_BIN={{justfile_directory()}}/result-cli/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/validate_plugin_repos.bats
 
 # Run validate-specific BATS tests
-test-validate: build-batman
+test-validate: build-batman build-purse-first-cli
     nix build
-    PURSE_FIRST_BIN={{justfile_directory()}}/result/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/validate_documents.bats
+    PURSE_FIRST_BIN={{justfile_directory()}}/result-cli/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/validate_documents.bats
 
 # Run lifecycle tests
-test-lifecycle: build-batman
+test-lifecycle: build-batman build-purse-first-cli
     nix build
-    PURSE_FIRST_BIN={{justfile_directory()}}/result/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/hook_lifecycle.bats
+    PURSE_FIRST_BIN={{justfile_directory()}}/result-cli/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/hook_lifecycle.bats
 
-test-lux-service: build-batman
+test-lux-service: build-batman build-purse-first-cli
     nix build
-    PURSE_FIRST_BIN={{justfile_directory()}}/result/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --allow-unix-sockets --jobs {{num_cpus()}} zz-tests_bats/lux_service.bats
+    PURSE_FIRST_BIN={{justfile_directory()}}/result-cli/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --allow-unix-sockets --jobs {{num_cpus()}} zz-tests_bats/lux_service.bats
 
 # Validate own plugin manifest
 validate:
@@ -177,9 +181,9 @@ test-mgp-conformance: build-batman
       PATH="{{justfile_directory()}}/result-batman/bin:$PATH" \
       {{cmd_nix_dev}} just zz-tests_bats/rfc-0001/test
 
-test-package-brew: build-batman
+test-package-brew: build-batman build-purse-first-cli
     nix build
-    PURSE_FIRST_BIN={{justfile_directory()}}/result/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/package_brew.bats
+    PURSE_FIRST_BIN={{justfile_directory()}}/result-cli/bin/purse-first {{cmd_nix_dev}} {{cmd_batman_bats}} --jobs {{num_cpus()}} zz-tests_bats/package_brew.bats
 
 test: \
     test-batman-bats \
@@ -436,4 +440,4 @@ test-lux-lsp:
 clean:
     rm -f purse-first
     rm -rf build/
-    rm -rf result result-batman
+    rm -rf result result-batman result-cli
