@@ -1,11 +1,11 @@
 ---
 name: Go CLI and MCP Framework
-description: This skill should be used when the user asks to "build a Go MCP server", "create a Go CLI tool", "add an MCP tool in Go", "use go-lib-mcp", "use command.App", "register MCP tools", "add context-saving in Go", "build a CLI with MCP support", "unified CLI and MCP server", or is building a Go project that imports go-lib-mcp, serves MCP tools, or combines CLI subcommands with MCP tool registration. Also applies when adding a subcommand to a go-lib-mcp-based project or working with the command, server, transport, output, or purse packages from go-lib-mcp.
+description: This skill should be used when the user asks to "build a Go MCP server", "create a Go CLI tool", "add an MCP tool in Go", "use go-mcp", "use command.App", "register MCP tools", "add context-saving in Go", "build a CLI with MCP support", "unified CLI and MCP server", or is building a Go project that imports go-mcp, serves MCP tools, or combines CLI subcommands with MCP tool registration. Also applies when adding a subcommand to a go-mcp-based project or working with the command, server, transport, output, or purse packages from go-mcp.
 ---
 
 # Go CLI and MCP Framework
 
-`go-lib-mcp` (`github.com/amarbel-llc/go-lib-mcp`) is a zero-dependency Go library for building MCP servers and CLI tools. It provides two layers: a high-level `command` package that generates CLI parsing, MCP registration, plugin manifests, manpages, and shell completions from a single definition, and low-level packages for building MCP servers directly.
+`go-mcp` (`github.com/amarbel-llc/purse-first/libs/go-mcp`) is a zero-dependency Go library for building MCP servers and CLI tools. It provides two layers: a high-level `command` package that generates CLI parsing, MCP registration, plugin manifests, manpages, and shell completions from a single definition, and low-level packages for building MCP servers directly.
 
 For framework orientation and when to use each skill, see the **bob:overview** skill.
 For detailed context-saving patterns (pagination/truncation), see the **bob:context-saving** skill.
@@ -48,7 +48,7 @@ Define commands once, get CLI + MCP + completions + manpages + plugin manifests.
 ### Pattern
 
 ```go
-import "github.com/amarbel-llc/go-lib-mcp/command"
+import "github.com/amarbel-llc/purse-first/libs/go-mcp/command"
 
 // 1. Create app
 app := command.NewApp("my-tool", "Short description")
@@ -103,9 +103,9 @@ Build an MCP server directly using provider interfaces and registries.
 
 ```go
 import (
-    "github.com/amarbel-llc/go-lib-mcp/server"
-    "github.com/amarbel-llc/go-lib-mcp/transport"
-    "github.com/amarbel-llc/go-lib-mcp/protocol"
+    "github.com/amarbel-llc/purse-first/libs/go-mcp/server"
+    "github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
+    "github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 )
 
 // 1. Create registries

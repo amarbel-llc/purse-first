@@ -2,8 +2,8 @@
 name: "Downstream Rust: Consuming purse-first Libraries"
 description: >-
   This skill should be used when the user asks to "add mcp-server dependency",
-  "depend on rust-mcp", "consume rust-lib-mcp", "build a Rust MCP server
-  outside purse-first", "migrate from amarbel-llc/rust-lib-mcp", or is building
+  "depend on rust-mcp", "consume rust-mcp", "build a Rust MCP server
+  outside purse-first", "migrate from amarbel-llc/rust-mcp", or is building
   a Rust project that depends on purse-first libraries (like mcp-server) from a
   separate repository. Also applies when encountering dependency resolution
   questions about git deps vs path deps vs flake inputs for Rust crates across
@@ -93,7 +93,7 @@ For a downstream project, this creates two problems:
 ```toml
 # Cargo.toml
 [dependencies]
-mcp-server = { git = "https://github.com/amarbel-llc/rust-lib-mcp", features = ["tools"] }
+mcp-server = { git = "https://github.com/amarbel-llc/rust-mcp", features = ["tools"] }
 ```
 
 Select features based on what the server needs:
@@ -166,7 +166,7 @@ cargo update -p mcp-server
 Or to pin a specific rev:
 
 ```toml
-mcp-server = { git = "https://github.com/amarbel-llc/rust-lib-mcp", rev = "abc1234", features = ["tools"] }
+mcp-server = { git = "https://github.com/amarbel-llc/rust-mcp", rev = "abc1234", features = ["tools"] }
 ```
 
 ## Implementing Tools

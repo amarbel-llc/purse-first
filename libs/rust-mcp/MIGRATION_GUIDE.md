@@ -1,14 +1,14 @@
-# Migration Guide: chix to rust-lib-mcp
+# Migration Guide: chix to rust-mcp
 
 ## Current Status
 
-✅ **Library Complete**: rust-lib-mcp is fully functional with:
+✅ **Library Complete**: rust-mcp is fully functional with:
 - Tools, Resources, Prompts, and Sampling support
 - Trait-based registration system
 - Builder pattern for server setup
 - All protocol infrastructure
 
-✅ **Dependency Added**: chix now depends on rust-lib-mcp via path dependency
+✅ **Dependency Added**: chix now depends on rust-mcp via path dependency
 
 ## Migration Scope
 

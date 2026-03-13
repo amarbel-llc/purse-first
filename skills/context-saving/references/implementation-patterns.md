@@ -347,7 +347,7 @@ func Run(ctx context.Context, args ...string) (string, error) {
 ### After (truncated stderr)
 
 ```go
-import "github.com/amarbel-llc/go-lib-mcp/output"
+import "github.com/amarbel-llc/purse-first/libs/go-mcp/output"
 
 func Run(ctx context.Context, args ...string) (string, output.LimitedText, error) {
     var stdout, stderr bytes.Buffer

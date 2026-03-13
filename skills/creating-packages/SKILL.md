@@ -486,4 +486,4 @@ Consult these when you need detailed implementation examples:
 - **bob:overview** — Framework orientation, terminology, and workflow overview
 - **bob:using-packages** — How installed packages work at runtime, troubleshooting
 - **bob:context-saving** — Adding output-limiting to MCP tools (pagination, truncation)
-- **bob:go-cli-framework** — Building Go CLIs and MCP servers with go-lib-mcp
+- **bob:go-cli-framework** — Building Go CLIs and MCP servers with go-mcp

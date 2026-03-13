@@ -1,6 +1,6 @@
-# go-lib-mcp API Reference
+# go-mcp API Reference
 
-Complete type and method reference for `github.com/amarbel-llc/go-lib-mcp`.
+Complete type and method reference for `github.com/amarbel-llc/purse-first/libs/go-mcp`.
 
 ## command
 
