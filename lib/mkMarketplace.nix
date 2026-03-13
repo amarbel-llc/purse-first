@@ -188,7 +188,10 @@ utils.lib.eachDefaultSystem (
       default = marketplace;
       inherit marketplace-no-hooks;
     }
-    // (if purse-first-build != null then { purse-first = cli; } else { });
+    // {
+      purse-first = cli;
+      marketplace = marketplace;
+    };
 
     apps.default = {
       type = "app";
