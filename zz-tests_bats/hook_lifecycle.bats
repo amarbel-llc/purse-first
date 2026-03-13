@@ -15,7 +15,7 @@ teardown() {
 function install_produces_tap_output { # @test
   # Install requires a configured claude CLI for plugin install steps.
   # In sandcastle, verify it produces TAP output and gets past marketplace add.
-  run "$purse_first" install
+  run "$purse_first" install "$result_path"
   # May fail at plugin install step if claude isn't configured
   assert_output --partial "TAP version 14"
   assert_output --partial "add marketplace"
@@ -57,11 +57,7 @@ function marketplace_json_validates { # @test
 }
 
 function chix_has_mappings { # @test
-  local mappings="$result_path/share/purse-first/chix/mappings.json"
-  [[ -f "$mappings" ]]
-
-  run jq -e '.server == "chix"' "$mappings"
-  assert_success
+  skip "chix was extracted to bob marketplace"
 }
 
 function get_hubbed_has_mappings { # @test

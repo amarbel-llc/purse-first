@@ -73,7 +73,7 @@ vendor-hash:
     sed -i '' -E 's|(goVendorHash = )"sha256-[^"]+";|\1"'"$hash"'";|' flake.nix
     echo "updated goVendorHash to $hash"
 
-# Run BATS integration tests (requires batman from bob)
+# Run BATS integration tests
 test-integration: build-purse-first-cli
     nix build
     PURSE_FIRST_BIN={{justfile_directory()}}/result-cli/bin/purse-first {{cmd_nix_dev}} bats --tap --jobs {{num_cpus()}} \
@@ -114,7 +114,11 @@ check-template:
 test: \
     test-go \
     test-go-mcp \
-    test-rust-mcp
+    test-rust-mcp \
+    test-integration \
+    test-lifecycle \
+    test-package-brew \
+    test-template
 
 # Bump version for a package. Usage: just bump-version grit 0.2.0
 bump-version package version:
