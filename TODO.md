@@ -58,6 +58,7 @@
 - [ ] verify install-local skill path resolution (./skills/<name> in .claude-plugin/plugin.json may not resolve correctly — needs manual test)
 - [ ] update global sweatfile (`eng/rcm/config/spinclass/sweatfile`) to use snob-case keys (`git-excludes`, `claude-allow`)
 - [ ] separate libs and marketplace generation into new `bob` repo
+- [ ] explore publishing tap-dancer/go as a standalone Go module (currently unpublished, requiring workspace replace directives)
 - [ ] migrate everything to latest MCP
 - [x] tap-dancer rust: add quiet/suppress-YAML-block mode for test points
 - [x] add PreToolUse hook support to rust-mcp (parity with go-mcp's HandleHook, GenerateHooks, ToolMapping/MapsTools, GeneratePlugin)

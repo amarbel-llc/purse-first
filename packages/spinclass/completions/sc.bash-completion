@@ -1,2 +1,0 @@
-# Reuse _spinclass_complete from spinclass.bash-completion
-complete -F _spinclass_complete sc

@@ -1,7 +1,3 @@
 [workspace]
-members = [
-    "libs/rust-mcp",
-    "packages/chix",
-    "packages/tap-dancer/rust",
-]
+members = ["libs/rust-mcp"]
 resolver = "2"

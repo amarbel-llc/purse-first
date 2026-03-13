@@ -2,38 +2,16 @@
   "author": {
     "name": "friedenberg"
   },
-  "description": "Package framework for bundling CLIs, MCP servers, and skills into composable, Nix-built packages for humans and agents like Claude Code",
-  "name": "bob",
+  "description": "Package framework for bundling CLIs, MCP servers, and skills",
+  "name": "purse-first",
   "skills": [
-    "./skills/adr",
-    "./skills/brainstorming",
     "./skills/claude-plugins",
-    "./skills/commit",
     "./skills/context-saving",
     "./skills/creating-packages",
     "./skills/design_patterns-downstream_rust",
-    "./skills/design_patterns-just",
-    "./skills/dispatching-parallel-agents",
-    "./skills/executing-plans",
-    "./skills/fdr",
-    "./skills/finishing-a-development-branch",
-    "./skills/freud",
     "./skills/go-cli-framework",
     "./skills/mcp",
-    "./skills/minus-chorevaults",
     "./skills/overview",
-    "./skills/receiving-code-review",
-    "./skills/requesting-code-review",
-    "./skills/rfc",
-    "./skills/subagent-driven-development",
-    "./skills/systematic-debugging",
-    "./skills/test-driven-development",
-    "./skills/using-git-worktrees",
-    "./skills/using-packages",
-    "./skills/using-superpowers",
-    "./skills/verification-before-completion",
-    "./skills/voldemort",
-    "./skills/writing-plans",
-    "./skills/writing-skills"
+    "./skills/using-packages"
   ]
 }

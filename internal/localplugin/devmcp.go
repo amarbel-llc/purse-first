@@ -8,15 +8,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-
-	tap "github.com/amarbel-llc/purse-first/packages/tap-dancer/go"
 )
 
 // InstallDevMCP runs `<binaryPath> generate-plugin -` to get a plugin manifest
 // from stdout, rewrites the mcpServers command fields to the absolute binary
 // path, and writes the result as .mcp.json in outputDir.
 func InstallDevMCP(w io.Writer, binaryPath, outputDir string) error {
-	tw := tap.NewWriter(w)
+	tw := newTAPWriter(w)
 	tw.PlanAhead(3)
 
 	// 1. Resolve binary to absolute path and verify it exists

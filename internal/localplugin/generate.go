@@ -9,8 +9,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-
-	tap "github.com/amarbel-llc/purse-first/packages/tap-dancer/go"
 )
 
 func DiscoverSkills(root string) ([]string, error) {
@@ -67,7 +65,7 @@ type InstallLocalOptions struct {
 // InstallLocal sets up the local development environment: optionally generates
 // plugin.json via _generate, discovers skills, and installs MCP servers.
 func InstallLocal(w io.Writer, root string, opts InstallLocalOptions) error {
-	tw := tap.NewWriter(w)
+	tw := newTAPWriter(w)
 
 	pluginPath := filepath.Join(root, ".claude-plugin", "plugin.json")
 
