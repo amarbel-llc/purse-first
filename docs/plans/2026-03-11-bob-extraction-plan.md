@@ -1,5 +1,9 @@
 # Bob Extraction Implementation Plan
 
+> **DEPRECATED CODE EXAMPLES:** This plan contains `devenvs.*.devShell`
+> references which have been superseded by `devenvs.*.devShells.default`. See
+> ADR-0005 for the current convention.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task.
 
 **Goal:** Extract all packages and general-purpose skills from purse-first into `~/eng/repos/bob`, making purse-first framework-only.

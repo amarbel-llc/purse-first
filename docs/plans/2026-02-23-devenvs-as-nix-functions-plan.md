@@ -1,5 +1,9 @@
 # Devenvs as Plain Nix Functions — Implementation Plan
 
+> **DEPRECATED CODE EXAMPLES:** This plan contains `devenvs.*.devShell`
+> references which have been superseded by `devenvs.*.devShells.default`. See
+> ADR-0005 for the current convention.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Remove all `path:./devenvs/*` flake inputs from purse-first, replacing them with plain Nix function imports so transitive consumers don't break on `nix flake update`.

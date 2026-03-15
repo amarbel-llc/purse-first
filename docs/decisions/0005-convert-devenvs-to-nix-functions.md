@@ -21,6 +21,8 @@ Chosen option: "Convert to plain Nix functions", because it eliminates the broke
 
 Each devenv becomes a `default.nix` function taking concrete values (`pkgs`, `pkgs-master`, and any devenv-specific args like `gomod2nix`). A companion `flake.nix` wrapper imports `default.nix` for standalone `nix develop` and direnv use. The top-level `flake.nix` removes all `path:./devenvs/*` inputs and calls `import ./devenvs/<name>` directly.
 
+**Naming convention (2026-03-15):** `default.nix` returns `{ devShells.default = ...; }` (not `{ devShell = ...; }`). This mirrors the flake output schema so the pattern is identical at every level --- `default.nix`, `flake.nix` wrappers, monorepo `flake.nix`, and downstream consumers all use `devShells.default`.
+
 ### Consequences
 
 * Good, because transitive flake consumers no longer hit NixOS/nix#14762 when resolving devenv inputs.
@@ -28,6 +30,7 @@ Each devenv becomes a `default.nix` function taking concrete values (`pkgs`, `pk
 * Good, because standalone `nix develop ./devenvs/go` and direnv continue to work via the thin `flake.nix` wrapper.
 * Bad, because devenv-specific inputs (e.g., `gomod2nix`) must be hoisted to the top-level flake, increasing its input count.
 * Bad, because consumers must migrate from `purse-first?dir=devenvs/go` to `purse-first.devShells.${system}.go`.
+* Good, because `devShells.default` naming is consistent from `default.nix` through flake outputs, eliminating confusion between the monorepo internal pattern and the flake output pattern.
 
 ## More Information
 
