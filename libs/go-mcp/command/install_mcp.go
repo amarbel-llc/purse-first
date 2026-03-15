@@ -12,14 +12,19 @@ import (
 // config, merges an entry using the app's Name and MCPArgs, and writes
 // the result back.
 func (a *App) InstallMCP() error {
-	exe, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("resolving executable: %w", err)
-	}
+	var binaryPath string
+	if a.MCPURL == "" {
+		exe, err := os.Executable()
+		if err != nil {
+			return fmt.Errorf("resolving executable: %w", err)
+		}
 
-	resolved, err := filepath.EvalSymlinks(exe)
-	if err != nil {
-		return fmt.Errorf("resolving symlinks: %w", err)
+		resolved, err := filepath.EvalSymlinks(exe)
+		if err != nil {
+			return fmt.Errorf("resolving symlinks: %w", err)
+		}
+
+		binaryPath = resolved
 	}
 
 	home, err := os.UserHomeDir()
@@ -29,7 +34,7 @@ func (a *App) InstallMCP() error {
 
 	configPath := filepath.Join(home, ".claude.json")
 
-	return a.installMCPTo(resolved, configPath)
+	return a.installMCPTo(binaryPath, configPath)
 }
 
 func (a *App) installMCPTo(binaryPath, configPath string) error {
@@ -43,17 +48,33 @@ func (a *App) installMCPTo(binaryPath, configPath string) error {
 		mcpServers = make(map[string]any)
 	}
 
-	args := a.MCPArgs
-	if args == nil {
-		args = []string{}
+	var entry map[string]any
+	if a.MCPURL != "" {
+		entry = map[string]any{
+			"type": "http",
+			"url":  a.MCPURL,
+		}
+		if len(a.MCPHeaders) > 0 {
+			headers := make(map[string]any, len(a.MCPHeaders))
+			for k, v := range a.MCPHeaders {
+				headers[k] = v
+			}
+			entry["headers"] = headers
+		}
+	} else {
+		args := a.MCPArgs
+		if args == nil {
+			args = []string{}
+		}
+		entry = map[string]any{
+			"type":    "stdio",
+			"command": binaryPath,
+			"args":    args,
+			"env":     map[string]any{},
+		}
 	}
 
-	mcpServers[a.Name] = map[string]any{
-		"type":    "stdio",
-		"command": binaryPath,
-		"args":    args,
-		"env":     map[string]any{},
-	}
+	mcpServers[a.Name] = entry
 	config["mcpServers"] = mcpServers
 
 	if err := writeUserMCPConfig(configPath, config); err != nil {

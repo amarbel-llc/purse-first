@@ -51,6 +51,8 @@ Downstream packages only call `app.InstallMCP()`.
 
 ## Examples
 
+### stdio (local binary)
+
 Build and install in one step:
 
     nix build ./go && ./go/result/bin/chrest install-mcp
@@ -72,6 +74,36 @@ Resulting `~/.claude/mcp.json`:
 
 Running again after rebuilding updates the binary path in place without
 disturbing other MCP entries in the file.
+
+### HTTP/SSE (remote server)
+
+When `MCPURL` is set on the App, `InstallMCP` writes an `http` entry instead:
+
+```go
+app := command.NewApp("remote", "Remote MCP server")
+app.MCPURL = "https://api.example.com/mcp"
+app.MCPHeaders = map[string]string{
+    "Authorization": "Bearer ${API_KEY}",
+}
+```
+
+Resulting `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "remote": {
+      "type": "http",
+      "url": "https://api.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${API_KEY}"
+      }
+    }
+  }
+}
+```
+
+Binary path resolution is skipped entirely — the URL is the connection target.
 
 ## Limitations
 
