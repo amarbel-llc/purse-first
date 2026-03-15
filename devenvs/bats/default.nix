@@ -14,7 +14,7 @@ let
   );
 in
 {
-  devShell = pkgs.mkShell {
+  devShells.default = pkgs.mkShell {
     packages = [
       pkgs.bats
       pkgs.parallel

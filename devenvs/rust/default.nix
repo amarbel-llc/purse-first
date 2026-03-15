@@ -36,7 +36,7 @@ let
   };
 in
 {
-  devShell = pkgs-rust.mkShell {
+  devShells.default = pkgs-rust.mkShell {
     packages = [
       pkgs-rust.rustToolchain
       pkgs.openssl

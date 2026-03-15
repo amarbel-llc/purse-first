@@ -89,10 +89,10 @@
             devenvs = buildDevenvs system;
           in
           [
-            devenvs.go.devShell
-            devenvs.shell.devShell
-            devenvs.bats.devShell
-            devenvs.rust.devShell
+            devenvs.go.devShells.default
+            devenvs.shell.devShells.default
+            devenvs.bats.devShells.default
+            devenvs.rust.devShells.default
           ];
         devShellHook = ''
           echo "purse-first - dev environment"
@@ -117,10 +117,10 @@
 
           devShells = {
             default = marketplaceOutputs.devShells.${system}.default;
-            go = devenvs.go.devShell;
-            shell = devenvs.shell.devShell;
-            bats = devenvs.bats.devShell;
-            rust = devenvs.rust.devShell;
+            go = devenvs.go.devShells.default;
+            shell = devenvs.shell.devShells.default;
+            bats = devenvs.bats.devShells.default;
+            rust = devenvs.rust.devShells.default;
           };
         }
       ))

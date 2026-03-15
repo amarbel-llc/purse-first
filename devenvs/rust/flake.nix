@@ -25,7 +25,7 @@
         result = import ./default.nix { inherit pkgs pkgs-master rust-overlay; };
       in
       {
-        devShells.default = result.devShell;
+        devShells.default = result.devShells.default;
       }
     ));
 }

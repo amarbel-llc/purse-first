@@ -21,7 +21,7 @@
         result = import ./default.nix { inherit pkgs; };
       in
       {
-        inherit (result) devShell;
+        devShells.default = result.devShells.default;
       }
     ));
 }

@@ -59,7 +59,7 @@
           mcp-server = mcp-server-crate;
         };
 
-        devShells.default = rustDevenv.devShell;
+        devShells.default = rustDevenv.devShells.default;
       }
     );
 }

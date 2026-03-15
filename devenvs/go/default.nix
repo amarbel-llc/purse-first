@@ -34,7 +34,7 @@ in
   overlay = gomod2nix.overlays.default;
   inherit packages;
 
-  devShell = pkgs-master.mkShell {
+  devShells.default = pkgs-master.mkShell {
     packages = builtins.attrValues packages;
 
   };
