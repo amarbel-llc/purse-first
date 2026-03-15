@@ -37,8 +37,5 @@ in
   devShell = pkgs-master.mkShell {
     packages = builtins.attrValues packages;
 
-    env = {
-      GOPATH = "$HOME/.cache/go";
-    };
   };
 }
