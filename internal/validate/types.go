@@ -7,13 +7,18 @@ type Severity int
 const (
 	Error Severity = iota
 	Warning
+	Info
 )
 
 func (s Severity) String() string {
-	if s == Warning {
+	switch s {
+	case Warning:
 		return "warning"
+	case Info:
+		return "info"
+	default:
+		return "error"
 	}
-	return "error"
 }
 
 type Issue struct {
@@ -39,6 +44,10 @@ func (r *Result) addError(path, msg string) {
 
 func (r *Result) addWarning(path, msg string) {
 	r.issues = append(r.issues, Issue{Severity: Warning, Path: path, Message: msg})
+}
+
+func (r *Result) addInfo(path, msg string) {
+	r.issues = append(r.issues, Issue{Severity: Info, Path: path, Message: msg})
 }
 
 func (r *Result) HasErrors() bool {
