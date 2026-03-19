@@ -12,6 +12,7 @@ const (
 	PluginDoc
 	MappingDoc
 	MarketplaceDoc
+	MCPDoc
 )
 
 func (d DocType) String() string {
@@ -22,6 +23,8 @@ func (d DocType) String() string {
 		return "mapping"
 	case MarketplaceDoc:
 		return "marketplace"
+	case MCPDoc:
+		return "mcp"
 	default:
 		return "unknown"
 	}

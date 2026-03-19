@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -198,7 +199,14 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			docType := parseDocType(validateType)
 			if validateType != "" && docType == validate.Unknown {
-				return fmt.Errorf("unknown type %q; use plugin, mapping, or marketplace", validateType)
+				return fmt.Errorf("unknown type %q; use plugin, mapping, marketplace, or mcp", validateType)
+			}
+
+			if docType == validate.MCPDoc {
+				if len(args) == 0 {
+					return fmt.Errorf("validate --type mcp requires a binary path")
+				}
+				return runValidateMCP(args[0])
 			}
 
 			path := "."
@@ -223,7 +231,7 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 		},
 	}
 
-	validateCmd.Flags().StringVar(&validateType, "type", "", "document type: plugin, mapping, marketplace")
+	validateCmd.Flags().StringVar(&validateType, "type", "", "document type: plugin, mapping, marketplace, mcp")
 	validateCmd.Flags().BoolVar(&validateStrict, "strict", false, "promote warnings to errors")
 
 	packageCmd := &cobra.Command{
@@ -267,11 +275,43 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 
 	packageCmd.AddCommand(brewCmd)
 
-	root.AddCommand(installCmd, installSelfCmd, genMarketplaceCmd, installLocalCmd, installDevMCPCmd, genPluginCmd, validateCmd, packageCmd)
+	validateMCPCmd := &cobra.Command{
+		Use:   "validate-mcp <binary> [args...]",
+		Short: "Validate a running MCP server over stdio",
+		Long: `Spawn an MCP server binary and validate its protocol responses.
+
+Checks: initialize handshake, tools/list (non-empty, annotations present),
+resources/list (schema), and resources/templates/list (schema).`,
+		Args:          cobra.MinimumNArgs(1),
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runValidateMCP(args[0], args[1:]...)
+		},
+	}
+
+	root.AddCommand(installCmd, installSelfCmd, genMarketplaceCmd, installLocalCmd, installDevMCPCmd, genPluginCmd, validateCmd, validateMCPCmd, packageCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
 	}
+}
+
+func runValidateMCP(binary string, args ...string) error {
+	r, err := validate.ValidateMCP(context.Background(), binary, args...)
+	if err != nil {
+		return err
+	}
+
+	for _, issue := range r.Issues() {
+		fmt.Fprintf(os.Stderr, "%s\n", issue)
+	}
+
+	if r.HasErrors() {
+		return fmt.Errorf("MCP validation failed")
+	}
+
+	return nil
 }
 
 func parseDocType(s string) validate.DocType {
@@ -282,6 +322,8 @@ func parseDocType(s string) validate.DocType {
 		return validate.MappingDoc
 	case "marketplace":
 		return validate.MarketplaceDoc
+	case "mcp":
+		return validate.MCPDoc
 	default:
 		return validate.Unknown
 	}
