@@ -16,7 +16,6 @@ tasks = []
 elicitation = []
 completions = []
 command = []
-http-transport = ["tokio/net", "tokio/time"]
 command-executor = ["tokio/process", "tokio/time"]
 
 [dependencies]

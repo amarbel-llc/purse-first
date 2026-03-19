@@ -64,12 +64,6 @@ impl McpServer {
         super::stdio::run_stdio_server(self).await
     }
 
-    /// Run the server with Streamable HTTP transport.
-    #[cfg(feature = "http-transport")]
-    pub async fn run_http(self, addr: &str) -> Result<(), ServerError> {
-        super::http::run_http_server(self, addr).await
-    }
-
     /// Handle a JSON-RPC request
     pub async fn handle_request(&self, request: &str, ctx: &mut Context) -> Value {
         let parsed: Result<JsonRpcRequest, _> = serde_json::from_str(request);

@@ -8,8 +8,6 @@ type App struct {
 	Description       Description
 	Version           string
 	MCPArgs           []string          // extra args passed to the binary in plugin manifests
-	MCPURL            string            // HTTP/SSE endpoint URL; when set, InstallMCP writes "http" type instead of "stdio"
-	MCPHeaders        map[string]string // HTTP headers (e.g. Authorization); only used when MCPURL is set
 	MCPBinary         string            // binary name for plugin.json command; defaults to Name
 	PluginDescription string    // "description" in plugin.json; omitted if empty
 	PluginAuthor      string    // "author.name" in plugin.json; omitted if empty

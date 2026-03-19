@@ -36,18 +36,10 @@ func New(t transport.Transport, opts Options) (*Server, error) {
 }
 
 // Run starts the server and processes messages until the context is canceled
-// or the transport is closed. If the transport implements LifecycleTransport,
-// its Start method is called before entering the message loop.
+// or the transport is closed.
 func (s *Server) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
-	// Start lifecycle transports (e.g., HTTP server).
-	if lt, ok := s.transport.(transport.LifecycleTransport); ok {
-		if err := lt.Start(ctx); err != nil {
-			return fmt.Errorf("starting transport: %w", err)
-		}
-	}
 
 	for {
 		select {

@@ -2,15 +2,9 @@ pub mod context;
 pub mod dispatcher;
 pub mod stdio;
 
-#[cfg(feature = "http-transport")]
-pub mod http;
-
 pub use context::Context;
 pub use dispatcher::McpServer;
 pub use stdio::run_stdio_server;
-
-#[cfg(feature = "http-transport")]
-pub use http::run_http_server;
 
 use crate::protocol::{Capabilities, ServerInfo, PROTOCOL_VERSION_V0};
 use crate::protocol::capabilities_v1::CapabilitiesV1;
