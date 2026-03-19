@@ -97,6 +97,7 @@ Per-package hooks are registered automatically via the package's `hooks/hooks.js
 |---------|---------|
 | `purse-first install` | Install marketplace |
 | `purse-first validate` | Validate plugin/mapping/marketplace documents |
+| `purse-first validate-mcp <binary>` | Validate MCP server over stdio (initialize, tools/list, resources) |
 | `purse-first generate-marketplace` | Build marketplace.json from discovered packages |
 | `purse-first generate-local-plugin` | Discover skills and update plugin.json |
 | `<package> hook` | Per-package PreToolUse handler (called by hooks/pre-tool-use, not manually) |

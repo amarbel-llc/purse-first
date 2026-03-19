@@ -313,6 +313,7 @@ marketplace = pkgs.symlinkJoin {
 just update-plugins   # or: nix flake update my-mcp
 just build-all        # verify marketplace builds
 just test-validate-repos  # validate package manifests
+purse-first validate-mcp ./result/bin/<binary>  # verify MCP server responds correctly
 ```
 
 ## Package Manifest Format
@@ -453,6 +454,7 @@ When adding purse-first support:
 4. Wire the `hook` subcommand if using tool mappings (calls `app.HandleHook`)
 5. Update `flake.nix` to output `$out/share/purse-first/<name>/plugin.json` (and `mappings.json`, `hooks/` if applicable)
 6. Build and verify: `nix build && ls ./result/share/purse-first/`
+7. Validate MCP server: `purse-first validate-mcp ./result/bin/<binary>` (checks initialize handshake, tools/list, resources/list, annotations)
 
 ### Skills (if applicable)
 6. Create `skills/<skill-name>/SKILL.md` with YAML frontmatter

@@ -223,7 +223,7 @@ When Claude Code reports a hook error (e.g., "PreToolUse:Bash hook error"):
 | Integration | How to verify |
 |-------------|---------------|
 | direnv (`prepareDirenv`) | Integration test suite or manual: create worktree, `direnv allow` |
-| MCP JSON-RPC | Send `tools/list` via stdin, verify JSON response |
+| MCP JSON-RPC | `purse-first validate-mcp <binary>`, verify initialize + tools/list + resources |
 | Claude Code plugin install | `purse-first install`, verify plugin appears |
 | git worktree operations | Create and close a worktree, verify cleanup |
 | lux service RPC | Start `lux serve`, verify `lux service status` responds |
