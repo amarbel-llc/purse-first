@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
@@ -55,7 +57,18 @@ func ValidateMCP(ctx context.Context, binary string, args ...string) (*Result, e
 
 	conn.Close()
 	stdin.Close()
-	cmd.Wait()
+
+	if err := cmd.Wait(); err != nil {
+		r.addWarning("mcp", fmt.Sprintf("process exited with: %v", err))
+	}
+
+	select {
+	case err := <-connErr:
+		if err != nil && !isBenignConnErr(err) {
+			r.addWarning("mcp", fmt.Sprintf("connection error: %v", err))
+		}
+	default:
+	}
 
 	return r, nil
 }
@@ -130,6 +143,7 @@ func validateMCPResourcesList(ctx context.Context, conn *jsonrpc.Conn, r *Result
 	var result protocol.ResourcesListResultV1
 	if err := json.Unmarshal(raw, &result); err != nil {
 		r.addError("resources/list", fmt.Sprintf("invalid response: %s", err))
+		return
 	}
 }
 
@@ -147,7 +161,20 @@ func validateMCPResourceTemplatesList(ctx context.Context, conn *jsonrpc.Conn, r
 	var result protocol.ResourceTemplatesListResultV1
 	if err := json.Unmarshal(raw, &result); err != nil {
 		r.addError("resources/templates/list", fmt.Sprintf("invalid response: %s", err))
+		return
 	}
+}
+
+func isBenignConnErr(err error) bool {
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrClosedPipe) {
+		return true
+	}
+
+	msg := err.Error()
+	return strings.Contains(msg, "broken pipe") ||
+		strings.Contains(msg, "closed pipe") ||
+		strings.Contains(msg, "use of closed") ||
+		strings.Contains(msg, "file already closed")
 }
 
 func isMethodNotFound(err error) bool {
