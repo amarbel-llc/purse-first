@@ -300,6 +300,7 @@ resources/list (schema), and resources/templates/list (schema).`,
 func runValidateMCP(binary string, args ...string) error {
 	r, err := validate.ValidateMCP(context.Background(), binary, args...)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %s\n", err)
 		return err
 	}
 
@@ -311,6 +312,7 @@ func runValidateMCP(binary string, args ...string) error {
 		return fmt.Errorf("MCP validation failed")
 	}
 
+	fmt.Fprintf(os.Stderr, "valid mcp: %s\n", binary)
 	return nil
 }
 

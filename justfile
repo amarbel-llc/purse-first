@@ -78,7 +78,8 @@ test-integration: build-purse-first-cli
     nix build
     PURSE_FIRST_BIN={{justfile_directory()}}/result-cli/bin/purse-first {{cmd_nix_dev}} bats --tap --jobs {{num_cpus()}} \
       zz-tests_bats/validate_marketplace.bats \
-      zz-tests_bats/validate_documents.bats
+      zz-tests_bats/validate_documents.bats \
+      zz-tests_bats/validate_mcp.bats
 
 # Run validate-specific BATS tests
 test-validate: build-purse-first-cli
@@ -89,6 +90,10 @@ test-validate: build-purse-first-cli
 test-lifecycle: build-purse-first-cli
     nix build
     PURSE_FIRST_BIN={{justfile_directory()}}/result-cli/bin/purse-first {{cmd_nix_dev}} bats --tap --jobs {{num_cpus()}} zz-tests_bats/hook_lifecycle.bats
+
+# Run MCP validation tests
+test-validate-mcp: build-purse-first-cli
+    PURSE_FIRST_BIN={{justfile_directory()}}/result-cli/bin/purse-first {{cmd_nix_dev}} bats --tap zz-tests_bats/validate_mcp.bats
 
 # Run package brew tests
 test-package-brew: build-purse-first-cli

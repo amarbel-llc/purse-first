@@ -8,13 +8,105 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
+	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
 )
 
 const mcpValidationTimeout = 10 * time.Second
+
+// mcpClient wraps a transport.Stdio to provide Call and Notify over
+// newline-delimited JSON, which is what MCP servers use.
+type mcpClient struct {
+	t       *transport.Stdio
+	pending map[string]chan *jsonrpc.Message
+	mu      sync.Mutex
+	nextID  atomic.Int64
+	closed  atomic.Bool
+}
+
+func newMCPClient(r io.Reader, w io.Writer) *mcpClient {
+	return &mcpClient{
+		t:       transport.NewStdio(r, w),
+		pending: make(map[string]chan *jsonrpc.Message),
+	}
+}
+
+func (c *mcpClient) Run(ctx context.Context) error {
+	for {
+		msg, err := c.t.Read()
+		if err != nil {
+			if c.closed.Load() {
+				return nil
+			}
+			return fmt.Errorf("reading message: %w", err)
+		}
+
+		if msg.IsResponse() {
+			c.mu.Lock()
+			ch, ok := c.pending[msg.ID.String()]
+			if ok {
+				delete(c.pending, msg.ID.String())
+			}
+			c.mu.Unlock()
+			if ok {
+				ch <- msg
+				close(ch)
+			}
+		}
+	}
+}
+
+func (c *mcpClient) Call(ctx context.Context, method string, params any) (json.RawMessage, error) {
+	id := jsonrpc.NewNumberID(c.nextID.Add(1))
+
+	msg, err := jsonrpc.NewRequest(id, method, params)
+	if err != nil {
+		return nil, err
+	}
+
+	ch := make(chan *jsonrpc.Message, 1)
+	c.mu.Lock()
+	c.pending[id.String()] = ch
+	c.mu.Unlock()
+
+	if err := c.t.Write(msg); err != nil {
+		c.mu.Lock()
+		delete(c.pending, id.String())
+		c.mu.Unlock()
+		return nil, err
+	}
+
+	select {
+	case <-ctx.Done():
+		c.mu.Lock()
+		delete(c.pending, id.String())
+		c.mu.Unlock()
+		return nil, ctx.Err()
+	case resp := <-ch:
+		if resp.Error != nil {
+			return nil, resp.Error
+		}
+		return resp.Result, nil
+	}
+}
+
+func (c *mcpClient) Notify(method string, params any) error {
+	msg, err := jsonrpc.NewNotification(method, params)
+	if err != nil {
+		return err
+	}
+	return c.t.Write(msg)
+}
+
+func (c *mcpClient) Close() error {
+	c.closed.Store(true)
+	return c.t.Close()
+}
 
 func ValidateMCP(ctx context.Context, binary string, args ...string) (*Result, error) {
 	ctx, cancel := context.WithTimeout(ctx, mcpValidationTimeout)
@@ -36,26 +128,26 @@ func ValidateMCP(ctx context.Context, binary string, args ...string) (*Result, e
 		return nil, fmt.Errorf("starting process: %w", err)
 	}
 
-	conn := jsonrpc.NewConn(stdout, stdin, nil)
+	client := newMCPClient(stdout, stdin)
 
 	connErr := make(chan error, 1)
 	go func() {
-		connErr <- conn.Run(ctx)
+		connErr <- client.Run(ctx)
 	}()
 
 	r := &Result{}
 
-	if err := validateMCPInitialize(ctx, conn, r); err != nil {
+	if err := validateMCPInitialize(ctx, client, r); err != nil {
 		stdin.Close()
 		cmd.Wait()
 		return nil, fmt.Errorf("initialize: %w", err)
 	}
 
-	validateMCPToolsList(ctx, conn, r)
-	validateMCPResourcesList(ctx, conn, r)
-	validateMCPResourceTemplatesList(ctx, conn, r)
+	validateMCPToolsList(ctx, client, r)
+	validateMCPResourcesList(ctx, client, r)
+	validateMCPResourceTemplatesList(ctx, client, r)
 
-	conn.Close()
+	client.Close()
 	stdin.Close()
 
 	if err := cmd.Wait(); err != nil {
@@ -73,7 +165,7 @@ func ValidateMCP(ctx context.Context, binary string, args ...string) (*Result, e
 	return r, nil
 }
 
-func validateMCPInitialize(ctx context.Context, conn *jsonrpc.Conn, r *Result) error {
+func validateMCPInitialize(ctx context.Context, client *mcpClient, r *Result) error {
 	params := protocol.InitializeParamsV1{
 		ProtocolVersion: "2025-03-26",
 		Capabilities:    protocol.ClientCapabilitiesV1{},
@@ -83,7 +175,7 @@ func validateMCPInitialize(ctx context.Context, conn *jsonrpc.Conn, r *Result) e
 		},
 	}
 
-	raw, err := conn.Call(ctx, protocol.MethodInitialize, params)
+	raw, err := client.Call(ctx, protocol.MethodInitialize, params)
 	if err != nil {
 		return fmt.Errorf("calling initialize: %w", err)
 	}
@@ -97,15 +189,15 @@ func validateMCPInitialize(ctx context.Context, conn *jsonrpc.Conn, r *Result) e
 		r.addError("initialize", "response missing protocolVersion")
 	}
 
-	if err := conn.Notify(protocol.MethodInitialized, nil); err != nil {
+	if err := client.Notify(protocol.MethodInitialized, nil); err != nil {
 		return fmt.Errorf("sending initialized notification: %w", err)
 	}
 
 	return nil
 }
 
-func validateMCPToolsList(ctx context.Context, conn *jsonrpc.Conn, r *Result) {
-	raw, err := conn.Call(ctx, protocol.MethodToolsList, nil)
+func validateMCPToolsList(ctx context.Context, client *mcpClient, r *Result) {
+	raw, err := client.Call(ctx, protocol.MethodToolsList, nil)
 	if err != nil {
 		r.addError("tools/list", fmt.Sprintf("call failed: %s", err))
 		return
@@ -129,10 +221,10 @@ func validateMCPToolsList(ctx context.Context, conn *jsonrpc.Conn, r *Result) {
 	}
 }
 
-func validateMCPResourcesList(ctx context.Context, conn *jsonrpc.Conn, r *Result) {
-	raw, err := conn.Call(ctx, protocol.MethodResourcesList, nil)
+func validateMCPResourcesList(ctx context.Context, client *mcpClient, r *Result) {
+	raw, err := client.Call(ctx, protocol.MethodResourcesList, nil)
 	if err != nil {
-		if isMethodNotFound(err) {
+		if isMethodNotSupported(err) {
 			r.addInfo("resources/list", "method not supported by server")
 			return
 		}
@@ -147,10 +239,10 @@ func validateMCPResourcesList(ctx context.Context, conn *jsonrpc.Conn, r *Result
 	}
 }
 
-func validateMCPResourceTemplatesList(ctx context.Context, conn *jsonrpc.Conn, r *Result) {
-	raw, err := conn.Call(ctx, protocol.MethodResourcesTemplates, nil)
+func validateMCPResourceTemplatesList(ctx context.Context, client *mcpClient, r *Result) {
+	raw, err := client.Call(ctx, protocol.MethodResourcesTemplates, nil)
 	if err != nil {
-		if isMethodNotFound(err) {
+		if isMethodNotSupported(err) {
 			r.addInfo("resources/templates/list", "method not supported by server")
 			return
 		}
@@ -177,10 +269,18 @@ func isBenignConnErr(err error) bool {
 		strings.Contains(msg, "file already closed")
 }
 
-func isMethodNotFound(err error) bool {
+func isMethodNotSupported(err error) bool {
 	var rpcErr *jsonrpc.Error
 	if errors.As(err, &rpcErr) {
-		return rpcErr.Code == jsonrpc.MethodNotFound
+		if rpcErr.Code == jsonrpc.MethodNotFound {
+			return true
+		}
+		// Some servers return InternalError with "not supported" message
+		// instead of MethodNotFound.
+		if rpcErr.Code == jsonrpc.InternalError &&
+			strings.Contains(strings.ToLower(rpcErr.Message), "not supported") {
+			return true
+		}
 	}
 	return false
 }
