@@ -227,6 +227,8 @@ func validateMCPToolsList(ctx context.Context, client *mcpClient, r *Result) {
 			r.addWarning("tools/list", fmt.Sprintf("tool %q has no annotations", tool.Name))
 		}
 	}
+
+	r.addInfo("tools/list", fmt.Sprintf("server exposes %d tool(s)", len(result.Tools)))
 }
 
 func validateMCPResourcesList(ctx context.Context, client *mcpClient, r *Result) {
