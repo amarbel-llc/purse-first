@@ -1,129 +1,231 @@
-
 ## Feature Design Records
 
-- [x] FDR: Sweatfile Configuration & Apply — `docs/features/0002-sweatfile-configuration.md`
-- [x] FDR: Worktree Boundary Enforcement — `docs/features/0004-worktree-boundary-enforcement.md`
-- [x] FDR: Per-Package Hook Architecture — `docs/features/0005-per-package-hook-architecture.md`
-- [x] FDR: Merge & Close-Shop Lifecycle — `docs/features/0006-merge-close-shop-lifecycle.md`
-- [x] FDR: Lux Service Daemon — `docs/features/0007-lux-service-daemon.md`
+- [x] FDR: Sweatfile Configuration & Apply ---
+  `docs/features/0002-sweatfile-configuration.md`
+- [x] FDR: Worktree Boundary Enforcement ---
+  `docs/features/0004-worktree-boundary-enforcement.md`
+- [x] FDR: Per-Package Hook Architecture ---
+  `docs/features/0005-per-package-hook-architecture.md`
+- [x] FDR: Merge & Close-Shop Lifecycle ---
+  `docs/features/0006-merge-close-shop-lifecycle.md`
+- [x] FDR: Lux Service Daemon --- `docs/features/0007-lux-service-daemon.md`
 
 ## P0
 
 - [x] P0: Move `plugin.json` into `.claude-plugin/` subdirectory (1d2357a)
-- [x] P0: Hook execution error after discovery fix — root cause: `hookSpecificOutput` was missing required `hookEventName: "PreToolUse"` field. Claude Code validates hook output against a schema that requires this discriminator. Fixed in both go-mcp (`hook.go`) and rust-mcp (`hooks.rs`).
+- [x] P0: Hook execution error after discovery fix --- root cause:
+  `hookSpecificOutput` was missing required `hookEventName: "PreToolUse"` field.
+  Claude Code validates hook output against a schema that requires this
+  discriminator. Fixed in both go-mcp (`hook.go`) and rust-mcp (`hooks.rs`).
 
 ## RFC-0001: Package Binary Interface
 
 ### go-mcp library
-- [x] add built-in `generate-plugin` command to `command.App` with three modes: directory, PWD default, stdout (`-`)
+
+- [x] add built-in `generate-plugin` command to `command.App` with three modes:
+  directory, PWD default, stdout (`-`)
 - [x] wire `--skills-dir` flag on the built-in `generate-plugin` command
-- [x] `HandleHook` must swallow decode errors (return nil, log to stderr) — RFC-0001 section 2.2 requires exit 0 on any error
+- [x] `HandleHook` must swallow decode errors (return nil, log to stderr) ---
+  RFC-0001 section 2.2 requires exit 0 on any error
 
 ### Per-package Go migrations
-- [x] grit: remove manual `generate-plugin` dispatch from main.go (library command handles it)
+
+- [x] grit: remove manual `generate-plugin` dispatch from main.go (library
+  command handles it)
 - [x] get-hubbed: remove manual `generate-plugin` dispatch from main.go
 - [x] mgp: remove manual `generate-plugin` dispatch from main.go
-- [x] lux: remove `_generate` command, update `lux.nix` to call `generate-plugin`
+- [x] lux: remove `_generate` command, update `lux.nix` to call
+  `generate-plugin`
 
 ### rust-mcp library
-- [x] add `generate-plugin` subcommand support to rust-mcp (plugin.json, mappings.json, hooks; all three output modes)
+
+- [x] add `generate-plugin` subcommand support to rust-mcp (plugin.json,
+  mappings.json, hooks; all three output modes)
 
 ### chix
-- [x] add `generate-plugin` to chix using rust-mcp support, replacing `purse-first generate-plugin` + `chix generate-hooks` split
+
+- [x] add `generate-plugin` to chix using rust-mcp support, replacing
+  `purse-first generate-plugin` + `chix generate-hooks` split
 - [x] update `chix.nix` to use single `$out/bin/chix generate-plugin $out` call
 
 ### purse-first CLI
-- [x] implement `purse-first install-dev-mcp <binary>` — calls `<binary> generate-plugin -`, writes `.mcp.json` to PWD
+
+- [x] implement `purse-first install-dev-mcp <binary>` --- calls
+  `<binary> generate-plugin -`, writes `.mcp.json` to PWD
 
 ### Conformance tests
-- [x] `zz-tests_bats/rfc-0001/generate_plugin_interface.bats` — covers all RFC-0001 section 2.1 requirements
-- [x] `zz-tests_bats/rfc-0001/hook_interface.bats` — covers RFC-0001 section 2.2
+
+- [x] `zz-tests_bats/rfc-0001/generate_plugin_interface.bats` --- covers all
+  RFC-0001 section 2.1 requirements
+- [x] `zz-tests_bats/rfc-0001/hook_interface.bats` --- covers RFC-0001 section
+  2.2
 
 ## Other
 
-- [ ] `purse-first validate` for hook output: validate hookSpecificOutput against Claude Code's expected schema (hookEventName required, permissionDecision enum, etc.) — could run as part of `just test-integration` or as a standalone `purse-first validate --hook-output` mode
-- [ ] skill: downstream marketplace consumer workflow (how to consume mkMarketplace outputs in a parent flake, handle collisions, install separately)
-- [ ] FDR: eliminate .claude-plugin/marketplace.json collision so downstream consumers can symlinkJoin multiple marketplaces without infraInputs workaround
+- [ ] `purse-first validate` for hook output: validate hookSpecificOutput
+  against Claude Code's expected schema (hookEventName required,
+  permissionDecision enum, etc.) --- could run as part of
+  `just test-integration` or as a standalone
+  `purse-first validate --hook-output` mode
 
-- [x] tap-dancer rust: add `write_pragma` support (needed for `pragma +streamed-output`)
-- [x] tap-dancer rust: add comment/description directive field to `TestResult` (`ok 1 - name # comment`)
+- [ ] skill: downstream marketplace consumer workflow (how to consume
+  mkMarketplace outputs in a parent flake, handle collisions, install
+  separately)
+
+- [ ] FDR: eliminate .claude-plugin/marketplace.json collision so downstream
+  consumers can symlinkJoin multiple marketplaces without infraInputs workaround
+
+- [x] tap-dancer rust: add `write_pragma` support (needed for
+  `pragma +streamed-output`)
+
+- [x] tap-dancer rust: add comment/description directive field to `TestResult`
+  (`ok 1 - name # comment`)
+
 - [x] tap-dancer rust: add carriage return stripping for YAML output fields
+
 - [x] tap-dancer rust: add ANSI escape code stripping in YAML output
-- [x] bootstrap root Cargo workspace — add root Cargo.toml with members [packages/chix, packages/tap-dancer/rust, libs/rust-mcp], delete per-crate Cargo.lock files, remove chix.nix vendor workaround, verify: `nix build .#chix`, `nix build .#tap-dancer`, `cargo test --workspace`
+
+- [x] bootstrap root Cargo workspace --- add root Cargo.toml with members
+  \[packages/chix, packages/tap-dancer/rust, libs/rust-mcp\], delete per-crate
+  Cargo.lock files, remove chix.nix vendor workaround, verify:
+  `nix build .#chix`, `nix build .#tap-dancer`, `cargo test --workspace`
+
 - [x] grit: add `--amend` support to `commit` tool (git commit --amend)
-- [x] grit: add soft reset mode to `reset` tool (git reset --soft via `soft` + `ref` params) — needed for amend workaround and squash flows
-- [x] sandcastle BATS: migrate to bats-emo conformance pattern (require_bin SANDCASTLE_BIN sandcastle)
+
+- [x] grit: add soft reset mode to `reset` tool (git reset --soft via `soft` +
+  `ref` params) --- needed for amend workaround and squash flows
+
+- [x] sandcastle BATS: migrate to bats-emo conformance pattern (require_bin
+  SANDCASTLE_BIN sandcastle)
+
 - [x] update tap-dancer with latest tap amendments
-- [x] tap-dancer rust: add combined color+locale constructor — `with_locale` hardcodes `color: false`, so ANSI display hints and locale formatting can't be used together in the same TAP stream
-- [ ] tap-dancer: update SKILL.md Rust section to reflect TapWriterBuilder API (old examples reference removed TapWriter::new() counter API)
-- [ ] devenvs/shell: migrate from legacy `devShell` export to modern `devShells.default` (downstream consumers like crap expect `devShells`)
-- [x] tap-dancer rust: `default_locale()` should normalize POSIX underscores to BCP 47 hyphens before parsing — `en_US.UTF-8` strips to `en_US` which fails `Locale::parse` (expects `en-US`)
-- [ ] verify install-local skill path resolution (./skills/<name> in .claude-plugin/plugin.json may not resolve correctly — needs manual test)
-- [ ] update global sweatfile (`eng/rcm/config/spinclass/sweatfile`) to use snob-case keys (`git-excludes`, `claude-allow`)
-- [ ] separate libs and marketplace generation into new `bob` repo
-- [ ] explore publishing tap-dancer/go as a standalone Go module (currently unpublished, requiring workspace replace directives)
+
+- [x] tap-dancer rust: add combined color+locale constructor --- `with_locale`
+  hardcodes `color: false`, so ANSI display hints and locale formatting can't be
+  used together in the same TAP stream
+
+- [ ] tap-dancer: update SKILL.md Rust section to reflect TapWriterBuilder API
+  (old examples reference removed TapWriter::new() counter API)
+
+- [x] tap-dancer rust: `default_locale()` should normalize POSIX underscores to
+  BCP 47 hyphens before parsing --- `en_US.UTF-8` strips to `en_US` which fails
+  `Locale::parse` (expects `en-US`)
+
+- [ ] verify install-local skill path resolution (./skills/`<name>`{=html} in
+  .claude-plugin/plugin.json may not resolve correctly --- needs manual test)
+
 - [x] add HTTP/SSE transport support to InstallMCP (MCPURL, MCPHeaders on App)
-- [ ] migrate everything to latest MCP
+
 - [x] tap-dancer rust: add quiet/suppress-YAML-block mode for test points
-- [x] add PreToolUse hook support to rust-mcp (parity with go-mcp's HandleHook, GenerateHooks, ToolMapping/MapsTools, GeneratePlugin)
-- [x] add PreToolUse hooks to chix (depends on rust-mcp hook support) — map nix/fh/cachix CLI tools to MCP equivalents
-- [ ] FDR: single-package local test flow — `purse-first test-local .#chix` or similar that installs one package's hooks+MCP into an isolated Claude Code project config without touching global state
-- [ ] explore purse-first neovim plugin packaging (ftplugins, lux config fragments, auto-discovery)
-- [ ] lux: address the tension between having to define lux.lua with explicit filetypes against lux's own config declaration (lux already knows its filetypes via filetype/*.toml but neovim requires a static list in lsp/lux.lua)
-- [ ] pivot hook matching to delegation: let packages provide custom matchers (e.g. a `MatchHook` callback on `Command`) instead of the framework owning all matching logic via static `CommandPrefixes`/`Extensions`
+
+- [x] add PreToolUse hook support to rust-mcp (parity with go-mcp's HandleHook,
+  GenerateHooks, ToolMapping/MapsTools, GeneratePlugin)
+
+- [x] add PreToolUse hooks to chix (depends on rust-mcp hook support) --- map
+  nix/fh/cachix CLI tools to MCP equivalents
+
+- [ ] FDR: single-package local test flow --- `purse-first test-local .#chix` or
+  similar that installs one package's hooks+MCP into an isolated Claude Code
+  project config without touching global state
+
+- [ ] explore purse-first neovim plugin packaging (ftplugins, lux config
+  fragments, auto-discovery)
+
+- [ ] pivot hook matching to delegation: let packages provide custom matchers
+  (e.g. a `MatchHook` callback on `Command`) instead of the framework owning all
+  matching logic via static `CommandPrefixes`/`Extensions`
+
 - [x] migrate grit to `bats_load_library bats-island`
-- [x] migrate dodder to `bats_load_library bats-island` (moved to ~/eng/repos/dodder/TODO.md)
-- [x] migrate pivy to `bats_load_library bats-island` (moved to ~/eng/repos/pivy/TODO.md)
+
+- [x] migrate dodder to `bats_load_library bats-island` (moved to
+  \~/eng/repos/dodder/TODO.md)
+
+- [x] migrate pivy to `bats_load_library bats-island` (moved to
+  \~/eng/repos/pivy/TODO.md)
+
 - [x] migrate purse-first root tests to `bats_load_library bats-island`
+
 - [x] update batman bats-testing skill examples/references to use bats-island
-- [x] promote FDR 0001-bats-island from `exploring` to `proposed` after tests pass
-- [x] fix grit rebase_mcp.bats: tests expect `packages/grit/result/bin/grit` symlink but no build step creates it
+
+- [x] promote FDR 0001-bats-island from `exploring` to `proposed` after tests
+  pass
+
+- [x] fix grit rebase_mcp.bats: tests expect `packages/grit/result/bin/grit`
+  symlink but no build step creates it
+
 - [x] add ANSI color output to `tap-dancer *-test` for TTY's
-- [x] fix sandcastle/batman socket permission failures: use `--allow-unix-sockets` in bats wrapper tests and sandcastle tests
-- [x] sandcastle BATS: tests fail with `socat socket(AF_UNIX): Operation not permitted` — sandcastle's own bwrap bridge setup can't create unix sockets on Linux (seccomp blocks `socket(AF_UNIX)` even for the outer socat processes). Fixed by skipping network infrastructure (proxy servers + socat bridge) in `initialize()` when `isInsideBwrap()` detects a bwrap ancestor.
-- [x] P0: flaky timeout in `bats_wrapper_hide_passing_preserves_plan_and_version` (test 12) — 10s BATS_TEST_TIMEOUT too tight under parallel load
-- [ ] lux daemon: debug remaining "no views" error in dev-lux-open — test-lux-lsp passes clean but real nvim still triggers it; likely dev/prod env difference (nix-built lux vs go-built, production daemon vs dev daemon, or multi-LSP startup race). Check daemon log trace added in 3ab2c81
-- [ ] lux service daemon: add SIGTERM/SIGINT signal handler to cancel context for graceful shutdown (socket cleanup on kill)
-- [ ] ADR: assembly trampoline for launchd socket activation (go:cgo_import_dynamic pattern, why not cgo/dependency)
-- [ ] lux service tests: add notification broadcast test — multiple sessions per workspace, verify LSP notification fans out to all clients
-- [ ] lux service tests: add handleLSPNotification unit test
-- [ ] lux service tests: add handlePoolStart / handlePoolStop unit tests
-- [ ] lux service tests: add pool failure mode tests — build error, execute error, init error transitions
-- [ ] lux service tests: add concurrent GetOrStart stress test for pool state machine races
-- [ ] lux service tests: add config loading error path tests — missing files, invalid TOML, multiple LSPs
-- [ ] lux service tests: add LSPClient connection failure / reconnection tests
-- [x] fix flaky `TestServiceDocumentManager_OpenAlreadyOpenSendsDidChange` — notifications arrive in reversed order (didChange before didOpen) due to race in pipe-based test harness; `Notify` is async so recorder observes nondeterministic ordering
-- [ ] lux service BATS: add service-stop and service-start CLI tests
-- [ ] bats-assert: show trailing whitespace in `--output differs--` / `--regular expression does not match output--` blocks (e.g. render spaces as `·` or `␣` at EOL, or show `$` line terminators like `cat -A`). Invisible trailing spaces cause regex mismatches that look identical in TAP output.
-- [ ] FDR: versioned conformance test suites — mechanism for pairing a test suite version with the SUT version it targets, so version bumps surface which assertions need updating rather than requiring forensic debugging. Consider: version-tagged expected-output fixtures, SUT version gates in test setup, or a manifest mapping SUT version ranges to assertion variants.
-- [x] spinclass: add test for remote branch detection in ResolvePath (requires setting up local remote in test)
-- [ ] spinclass: `list-agent-sessions` command — parse `~/.claude/projects/` to find session IDs for the current repo; if running inside a worktree, scope results to that worktree only
-- [ ] add new `/commit` skill that includes the prompt transcript up until that
-  point
-- [x] update go-cli-framework skill: import paths reference `amarbel-llc/go-lib-mcp` but library moved to `amarbel-llc/purse-first/libs/go-mcp`; API reference and examples are stale
-- [ ] FDR: skill/docs freshness verification skill — a skill that audits all skills and docs against the current codebase, flags stale references (import paths, API signatures, examples), and produces a report of what needs updating
+
+- [x] fix sandcastle/batman socket permission failures: use
+  `--allow-unix-sockets` in bats wrapper tests and sandcastle tests
+
+- [x] sandcastle BATS: tests fail with
+  `socat socket(AF_UNIX): Operation not permitted` --- sandcastle's own bwrap
+  bridge setup can't create unix sockets on Linux (seccomp blocks
+  `socket(AF_UNIX)` even for the outer socat processes). Fixed by skipping
+  network infrastructure (proxy servers + socat bridge) in `initialize()` when
+  `isInsideBwrap()` detects a bwrap ancestor.
+
+- [x] P0: flaky timeout in
+  `bats_wrapper_hide_passing_preserves_plan_and_version` (test 12) --- 10s
+  BATS_TEST_TIMEOUT too tight under parallel load
+
+- [x] fix flaky `TestServiceDocumentManager_OpenAlreadyOpenSendsDidChange` ---
+  notifications arrive in reversed order (didChange before didOpen) due to race
+  in pipe-based test harness; `Notify` is async so recorder observes
+  nondeterministic ordering
+
+
+
+- [x] spinclass: add test for remote branch detection in ResolvePath (requires
+  setting up local remote in test)
+
+
+
+- [x] update go-cli-framework skill: import paths reference
+  `amarbel-llc/go-lib-mcp` but library moved to
+  `amarbel-llc/purse-first/libs/go-mcp`; API reference and examples are stale
+
 
 ## CLAUDE.md improvements (from transcript analysis)
 
-- [ ] add instruction: use `/tmp/lux-test-*` for socket paths, not `t.TempDir()` — worktree paths exceed 108-byte `sun_path` limit
-- [ ] add instruction: BATS tests need `--allow-unix-sockets` for daemon tests in sandcastle
-- [ ] add instruction: `tools -> service` import OK; `service -> tools` creates cycle; use func types to break
-- [ ] add instruction: use polling-with-timeout for async test assertions, not `time.Sleep`
-- [ ] add instruction: use `-run TestName` or `just test-lux`, not full-package `nix develop` runs
+- [ ] add instruction: use `/tmp/lux-test-*` for socket paths, not `t.TempDir()`
+  --- worktree paths exceed 108-byte `sun_path` limit
+- [ ] add instruction: BATS tests need `--allow-unix-sockets` for daemon tests
+  in sandcastle
+- [ ] add instruction: `tools -> service` import OK; `service -> tools` creates
+  cycle; use func types to break
+- [ ] add instruction: use polling-with-timeout for async test assertions, not
+  `time.Sleep`
+- [ ] add instruction: use `-run TestName` or `just test-lux`, not full-package
+  `nix develop` runs
 - [ ] default `log_tail: 50` on `chix build` calls to avoid token overflow
 
 ## develop_run improvements (from transcript analysis)
 
-- [ ] chix `develop_run`: false positive on Go test `-run` regex patterns — `|` and `()` in args like `-run "TestA|TestB"` are Go regex, not shell operators. Metacharacter validation should only reject metacharacters in shell-interpreted positions, not inside arbitrary arg values
-- [ ] chix `develop_run`: add `env` command examples to error message — when rejecting metacharacters, show the `env` pattern: `command: "env", args: ["VAR=val", "actual-cmd", "arg1"]`
-- [ ] chix hook: when agents use `Bash` with `nix develop -c`/`nix develop --command`, redirect to `develop_run` with a corrected invocation rather than just blocking — agents fall back to Bash 3/4 times after `develop_run` metacharacter rejections, bypassing the tool entirely
-- [ ] chix hook: when agents use `Bash` with `nix search` against a remote nixpkgs SHA (2+ min eval), redirect to `chix search` tool instead
+- [ ] chix `develop_run`: false positive on Go test `-run` regex patterns ---
+  `|` and `()` in args like `-run "TestA|TestB"` are Go regex, not shell
+  operators. Metacharacter validation should only reject metacharacters in
+  shell-interpreted positions, not inside arbitrary arg values
+- [ ] chix `develop_run`: add `env` command examples to error message --- when
+  rejecting metacharacters, show the `env` pattern:
+  `command: "env", args: ["VAR=val", "actual-cmd", "arg1"]`
+- [ ] chix hook: when agents use `Bash` with
+  `nix develop -c`/`nix develop --command`, redirect to `develop_run` with a
+  corrected invocation rather than just blocking --- agents fall back to Bash
+  3/4 times after `develop_run` metacharacter rejections, bypassing the tool
+  entirely
+- [ ] chix hook: when agents use `Bash` with `nix search` against a remote
+  nixpkgs SHA (2+ min eval), redirect to `chix search` tool instead
 
 ## Skill improvements (from transcript analysis)
 
-- [ ] sub-agent exploration: instruct "use Glob/Grep tools, never bash grep/ls/find; use Glob before Read on directories, never Read a directory path"
-- [ ] sub-agent delegation: include explicit stop conditions for error recovery ("if X fails, STOP and report back")
-- [ ] sub-agent-driven-development skill: add guidance to keep sequential dependent tasks in main context rather than spawning sub-agents
+- [ ] sub-agent exploration: instruct "use Glob/Grep tools, never bash
+  grep/ls/find; use Glob before Read on directories, never Read a directory
+  path"
+- [ ] sub-agent delegation: include explicit stop conditions for error recovery
+  ("if X fails, STOP and report back")
+- [ ] sub-agent-driven-development skill: add guidance to keep sequential
+  dependent tasks in main context rather than spawning sub-agents
 
 # OTHER
 
@@ -133,6 +235,15 @@
 
 - [ ] add claude-mcp-tool annotation modes to sweatfile (so read-only mode means
   all mcp's that support sweatfiles operate in read-only mode, etc)
-- [ ] remove brew tap infrastructure from `.github/workflows/release.yml` (tarball packaging, update-tap job, brew-build-tarball/brew-update-hashes references)
-- [ ] `package brew`: add optional top-level `version` field to `brew-config.json` for explicit meta-formula version (currently derived from first alphabetically-sorted package)
-- [ ] `package brew --release`: add `--release` flag that creates a GitHub release on `releaseRepo` and uploads all tarballs via `gh release create`, eliminating the need for a separate release step
+
+- [ ] remove brew tap infrastructure from `.github/workflows/release.yml`
+  (tarball packaging, update-tap job, brew-build-tarball/brew-update-hashes
+  references)
+
+- [ ] `package brew`: add optional top-level `version` field to
+  `brew-config.json` for explicit meta-formula version (currently derived from
+  first alphabetically-sorted package)
+
+- [ ] `package brew --release`: add `--release` flag that creates a GitHub
+  release on `releaseRepo` and uploads all tarballs via `gh release create`,
+  eliminating the need for a separate release step

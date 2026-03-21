@@ -166,8 +166,9 @@ func ValidateMCP(ctx context.Context, binary string, args ...string) (*Result, e
 }
 
 func validateMCPInitialize(ctx context.Context, client *mcpClient, r *Result) error {
+	// Request V1 — servers that only support V0 will negotiate down.
 	params := protocol.InitializeParamsV1{
-		ProtocolVersion: "2025-03-26",
+		ProtocolVersion: protocol.ProtocolVersionV1,
 		Capabilities:    protocol.ClientCapabilitiesV1{},
 		ClientInfo: protocol.ImplementationV1{
 			Name:    "purse-first-validate",
@@ -185,8 +186,15 @@ func validateMCPInitialize(ctx context.Context, client *mcpClient, r *Result) er
 		return fmt.Errorf("decoding initialize result: %w", err)
 	}
 
-	if result.ProtocolVersion == "" {
+	switch result.ProtocolVersion {
+	case protocol.ProtocolVersionV1:
+		r.addInfo("initialize", "negotiated protocol V1 (2025-11-25)")
+	case protocol.ProtocolVersionV0:
+		r.addInfo("initialize", "negotiated protocol V0 (2024-11-05)")
+	case "":
 		r.addError("initialize", "response missing protocolVersion")
+	default:
+		r.addWarning("initialize", fmt.Sprintf("unknown protocolVersion %q", result.ProtocolVersion))
 	}
 
 	if err := client.Notify(protocol.MethodInitialized, nil); err != nil {
