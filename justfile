@@ -38,6 +38,10 @@ test-go:
 test-v:
     {{cmd_nix_dev}} go test -v ./...
 
+# Run Go tests with race detector
+test-race:
+    {{cmd_nix_dev}} go test -race ./...
+
 # Test go-mcp library
 test-go-mcp:
     {{cmd_nix_dev}} go test -v ./libs/go-mcp/...

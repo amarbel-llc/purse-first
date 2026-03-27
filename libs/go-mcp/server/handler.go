@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"sync"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
@@ -11,6 +12,7 @@ import (
 // Handler handles MCP protocol method calls.
 type Handler struct {
 	server            *Server
+	mu                sync.RWMutex
 	initialized       bool
 	negotiatedVersion string
 }
@@ -103,6 +105,8 @@ func (h *Handler) hasV1Providers() bool {
 
 // isV1 returns true if V1 was negotiated.
 func (h *Handler) isV1() bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 	return h.negotiatedVersion == protocol.ProtocolVersionV1
 }
 
@@ -112,17 +116,20 @@ func (h *Handler) handleInitialize(ctx context.Context, msg *jsonrpc.Message) (*
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InvalidParams, "invalid params", nil)
 	}
 
+	h.mu.Lock()
 	h.initialized = true
 
 	// Version negotiation: if client requests V1 and we have V1 providers, negotiate V1.
 	clientVersion := params.ProtocolVersion
 	if clientVersion == protocol.ProtocolVersionV1 && h.hasV1Providers() {
 		h.negotiatedVersion = protocol.ProtocolVersionV1
+		h.mu.Unlock()
 		return h.handleInitializeV1(ctx, msg)
 	}
 
 	// Fall back to V0.
 	h.negotiatedVersion = protocol.ProtocolVersionV0
+	h.mu.Unlock()
 
 	capabilities := protocol.ServerCapabilities{}
 	if h.server.opts.Tools != nil {

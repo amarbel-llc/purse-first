@@ -29,6 +29,18 @@ jobs:
           include-output-paths: true
           directory: ./
 
+  test-race:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+        with:
+          determinate: true
+      - uses: DeterminateSystems/flakehub-cache-action@main
+      - run: nix develop --command go test -race ./...
+
   build-nix-package:
     strategy:
       matrix:
