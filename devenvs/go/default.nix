@@ -23,9 +23,7 @@ let
       parallel
       ;
 
-    inherit (pkgs)
-      go
-      ;
+    go = pkgs-master.go_1_26;
 
     gomod2nix = gomod2nix.packages.${pkgs.stdenv.hostPlatform.system}.default;
   };

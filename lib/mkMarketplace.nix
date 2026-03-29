@@ -61,6 +61,7 @@ utils.lib.eachDefaultSystem (
         let
           mkGoModule = import ./mkGoWorkspaceModule.nix {
             inherit pkgs;
+            go = pkgs-master.go_1_26;
             inherit (purse-first-build) goWorkspaceSrc goVendorHash;
           };
         in
