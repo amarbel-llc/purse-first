@@ -285,6 +285,39 @@ func TestGenerateManpageShortFlags(t *testing.T) {
 	}
 }
 
+func TestGenerateManpagePassthroughArgs(t *testing.T) {
+	app := NewApp("myapp", "My app")
+	app.AddCommand(&Command{
+		Name:            "exec-claude",
+		Description:     Description{Short: "Execute claude with args"},
+		PassthroughArgs: true,
+		Params: []Param{
+			{Name: "ignored", Type: String, Description: "This param should not appear"},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	cmdPage, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "myapp-exec-claude.1"))
+	if err != nil {
+		t.Fatalf("read manpage: %v", err)
+	}
+
+	content := string(cmdPage)
+	if !strings.Contains(content, "args...") {
+		t.Error("passthrough command SYNOPSIS should show [args...]")
+	}
+	if strings.Contains(content, "--ignored") {
+		t.Error("passthrough command should not list individual flags in SYNOPSIS")
+	}
+	if strings.Contains(content, ".SH OPTIONS") {
+		t.Error("passthrough command should not have OPTIONS section")
+	}
+}
+
 func TestManpageSectionOrdering(t *testing.T) {
 	app := NewApp("demo", "Demo tool")
 	app.Version = "1.0.0"

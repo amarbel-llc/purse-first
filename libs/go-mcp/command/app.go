@@ -7,8 +7,8 @@ type App struct {
 	Name              string
 	Description       Description
 	Version           string
-	MCPArgs           []string          // extra args passed to the binary in plugin manifests
-	MCPBinary         string            // binary name for plugin.json command; defaults to Name
+	MCPArgs           []string  // extra args passed to the binary in plugin manifests
+	MCPBinary         string    // binary name for plugin.json command; defaults to Name
 	PluginDescription string    // "description" in plugin.json; omitted if empty
 	PluginAuthor      string    // "author.name" in plugin.json; omitted if empty
 	Params            []Param   // global flags
@@ -28,6 +28,7 @@ func NewApp(name, short string) *App {
 	}
 
 	a.addDevMCPCommand()
+	a.addCompleteCommand()
 
 	return a
 }

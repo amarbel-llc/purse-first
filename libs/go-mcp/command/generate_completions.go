@@ -66,16 +66,37 @@ func (a *App) generateBashCompletion(dir string) error {
 	fmt.Fprintf(&b, "    local subcmd=\"${COMP_WORDS[1]}\"\n")
 	fmt.Fprintf(&b, "    case \"${subcmd}\" in\n")
 	for _, c := range cmds {
+		if c.cmd.PassthroughArgs {
+			continue
+		}
 		var flags []string
+		var completableParams []Param
 		for _, p := range c.cmd.Params {
 			flags = append(flags, "--"+p.Name)
 			if p.Short != 0 {
 				flags = append(flags, fmt.Sprintf("-%c", p.Short))
 			}
+			if p.Completer != nil {
+				completableParams = append(completableParams, p)
+			}
 		}
 		if len(flags) > 0 {
 			fmt.Fprintf(&b, "        %s)\n", c.name)
-			fmt.Fprintf(&b, "            COMPREPLY=( $(compgen -W %q -- \"${cur}\") )\n", strings.Join(flags, " "))
+			if len(completableParams) > 0 {
+				fmt.Fprintf(&b, "            case \"${prev}\" in\n")
+				for _, p := range completableParams {
+					fmt.Fprintf(&b, "                --%s)\n", p.Name)
+					fmt.Fprintf(&b, "                    COMPREPLY=( $(compgen -W \"$(%s __complete --command %s --param %s)\" -- \"${cur}\") )\n",
+						a.Name, c.name, p.Name)
+					fmt.Fprintf(&b, "                    ;;\n")
+				}
+				fmt.Fprintf(&b, "                *)\n")
+				fmt.Fprintf(&b, "                    COMPREPLY=( $(compgen -W %q -- \"${cur}\") )\n", strings.Join(flags, " "))
+				fmt.Fprintf(&b, "                    ;;\n")
+				fmt.Fprintf(&b, "            esac\n")
+			} else {
+				fmt.Fprintf(&b, "            COMPREPLY=( $(compgen -W %q -- \"${cur}\") )\n", strings.Join(flags, " "))
+			}
 			fmt.Fprintf(&b, "            ;;\n")
 		}
 	}
@@ -130,14 +151,22 @@ func (a *App) generateFishCompletion(dir string) error {
 	}
 
 	for _, c := range cmds {
+		if c.cmd.PassthroughArgs {
+			continue
+		}
 		for _, p := range c.cmd.Params {
 			desc := strings.ReplaceAll(p.Description, "'", "\\'")
 			shortOpt := ""
 			if p.Short != 0 {
 				shortOpt = fmt.Sprintf(" -s %c", p.Short)
 			}
-			fmt.Fprintf(&b, "complete -c %s -n '__fish_seen_subcommand_from %s' -l %s%s -d '%s'\n",
-				a.Name, c.name, p.Name, shortOpt, desc)
+			completerArg := ""
+			if p.Completer != nil {
+				completerArg = fmt.Sprintf(" -ra '(%s __complete --command %s --param %s)'",
+					a.Name, c.name, p.Name)
+			}
+			fmt.Fprintf(&b, "complete -c %s -n '__fish_seen_subcommand_from %s' -l %s%s -d '%s'%s\n",
+				a.Name, c.name, p.Name, shortOpt, desc, completerArg)
 		}
 	}
 

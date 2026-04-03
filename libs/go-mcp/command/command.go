@@ -94,6 +94,12 @@ type Command struct {
 	MapsTools []ToolMapping
 	Examples  []Example
 
+	// PassthroughArgs disables flag parsing for this command. All arguments
+	// after the command name are passed raw as {"args": [...]} to the handler.
+	// Passthrough commands appear in help, manpages, and completions but have
+	// no individual flag completions.
+	PassthroughArgs bool
+
 	// Run handles both MCP tool invocations and CLI execution.
 	// In MCP mode, Prompter is a StubPrompter that returns errors.
 	// In CLI mode, Prompter is a real interactive implementation.

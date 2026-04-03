@@ -74,8 +74,8 @@ func TestAppAllCommands(t *testing.T) {
 	for range app.AllCommands() {
 		count++
 	}
-	if count != 4 {
-		t.Errorf("AllCommands count = %d, want 4", count)
+	if count != 5 {
+		t.Errorf("AllCommands count = %d, want 5", count)
 	}
 
 	visible := 0

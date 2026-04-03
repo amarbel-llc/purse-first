@@ -860,6 +860,90 @@ func TestRunCLIPrefixSubcommandHelpFlag(t *testing.T) {
 	}
 }
 
+func TestRunCLIPassthroughArgs(t *testing.T) {
+	var got []string
+	app := NewApp("test", "test app")
+	app.AddCommand(&Command{
+		Name:            "exec-claude",
+		Description:     Description{Short: "Execute claude with args"},
+		PassthroughArgs: true,
+		RunCLI: func(ctx context.Context, args json.RawMessage) error {
+			var params struct {
+				Args []string `json:"args"`
+			}
+			json.Unmarshal(args, &params)
+			got = params.Args
+			return nil
+		},
+	})
+
+	err := app.RunCLI(context.Background(), []string{"exec-claude", "hello", "world"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if len(got) != 2 || got[0] != "hello" || got[1] != "world" {
+		t.Errorf("args = %v, want [hello world]", got)
+	}
+}
+
+func TestRunCLIPassthroughArgsWithDashes(t *testing.T) {
+	var got []string
+	app := NewApp("test", "test app")
+	app.AddCommand(&Command{
+		Name:            "exec-claude",
+		Description:     Description{Short: "Execute claude with args"},
+		PassthroughArgs: true,
+		RunCLI: func(ctx context.Context, args json.RawMessage) error {
+			var params struct {
+				Args []string `json:"args"`
+			}
+			json.Unmarshal(args, &params)
+			got = params.Args
+			return nil
+		},
+	})
+
+	err := app.RunCLI(context.Background(), []string{"exec-claude", "--model", "opus", "-v", "--flag=value"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	expected := []string{"--model", "opus", "-v", "--flag=value"}
+	if len(got) != len(expected) {
+		t.Fatalf("args length = %d, want %d", len(got), len(expected))
+	}
+	for i, v := range expected {
+		if got[i] != v {
+			t.Errorf("args[%d] = %q, want %q", i, got[i], v)
+		}
+	}
+}
+
+func TestRunCLIPassthroughArgsEmpty(t *testing.T) {
+	var got []string
+	app := NewApp("test", "test app")
+	app.AddCommand(&Command{
+		Name:            "exec-claude",
+		Description:     Description{Short: "Execute claude with args"},
+		PassthroughArgs: true,
+		RunCLI: func(ctx context.Context, args json.RawMessage) error {
+			var params struct {
+				Args []string `json:"args"`
+			}
+			json.Unmarshal(args, &params)
+			got = params.Args
+			return nil
+		},
+	})
+
+	err := app.RunCLI(context.Background(), []string{"exec-claude"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if len(got) != 0 {
+		t.Errorf("args = %v, want empty", got)
+	}
+}
+
 func TestShortFlagNotInJSONSchema(t *testing.T) {
 	cmd := &Command{
 		Name: "status",

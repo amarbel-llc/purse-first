@@ -70,6 +70,25 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 		return nil
 	}
 
+	if cmd.PassthroughArgs {
+		argsJSON, err := json.Marshal(map[string]any{"args": cmdArgs})
+		if err != nil {
+			return fmt.Errorf("marshaling passthrough args: %w", err)
+		}
+		if cmd.RunCLI != nil {
+			return cmd.RunCLI(ctx, argsJSON)
+		}
+		if cmd.Run != nil {
+			result, err := cmd.Run(ctx, argsJSON, p)
+			if err != nil {
+				return err
+			}
+			printResult(result)
+			return nil
+		}
+		return fmt.Errorf("command %s has no handler", name)
+	}
+
 	cmdVals := make(map[string]any)
 	for k, v := range globalVals {
 		cmdVals[k] = v
