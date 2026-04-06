@@ -103,8 +103,20 @@ func (a *App) generateBashCompletion(dir string) error {
 	fmt.Fprintf(&b, "    esac\n")
 	fmt.Fprintf(&b, "}\n\n")
 	fmt.Fprintf(&b, "complete -F _%s %s\n", a.Name, a.Name)
+	for _, alias := range a.Aliases {
+		fmt.Fprintf(&b, "complete -F _%s %s\n", a.Name, alias)
+	}
 
-	return os.WriteFile(filepath.Join(bashDir, a.Name), []byte(b.String()), 0o644)
+	content := []byte(b.String())
+	if err := os.WriteFile(filepath.Join(bashDir, a.Name), content, 0o644); err != nil {
+		return err
+	}
+	for _, alias := range a.Aliases {
+		if err := os.WriteFile(filepath.Join(bashDir, alias), content, 0o644); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (a *App) generateZshCompletion(dir string) error {
@@ -128,8 +140,20 @@ func (a *App) generateZshCompletion(dir string) error {
 	fmt.Fprintf(&b, "    _describe 'command' commands\n")
 	fmt.Fprintf(&b, "}\n\n")
 	fmt.Fprintf(&b, "_%s\n", a.Name)
+	for _, alias := range a.Aliases {
+		fmt.Fprintf(&b, "compdef _%s %s\n", a.Name, alias)
+	}
 
-	return os.WriteFile(filepath.Join(zshDir, "_"+a.Name), []byte(b.String()), 0o644)
+	content := []byte(b.String())
+	if err := os.WriteFile(filepath.Join(zshDir, "_"+a.Name), content, 0o644); err != nil {
+		return err
+	}
+	for _, alias := range a.Aliases {
+		if err := os.WriteFile(filepath.Join(zshDir, "_"+alias), content, 0o644); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (a *App) generateFishCompletion(dir string) error {
@@ -170,5 +194,45 @@ func (a *App) generateFishCompletion(dir string) error {
 		}
 	}
 
-	return os.WriteFile(filepath.Join(fishDir, a.Name+".fish"), []byte(b.String()), 0o644)
+	if err := os.WriteFile(filepath.Join(fishDir, a.Name+".fish"), []byte(b.String()), 0o644); err != nil {
+		return err
+	}
+
+	for _, alias := range a.Aliases {
+		var ab strings.Builder
+		fmt.Fprintf(&ab, "# fish completion for %s (alias of %s)\n\n", alias, a.Name)
+		fmt.Fprintf(&ab, "complete -c %s -f\n\n", alias)
+
+		for _, c := range cmds {
+			desc := strings.ReplaceAll(c.cmd.Description.Short, "'", "\\'")
+			fmt.Fprintf(&ab, "complete -c %s -n '__fish_use_subcommand' -a %s -d '%s'\n",
+				alias, c.name, desc)
+		}
+
+		for _, c := range cmds {
+			if c.cmd.PassthroughArgs {
+				continue
+			}
+			for _, p := range c.cmd.Params {
+				desc := strings.ReplaceAll(p.Description, "'", "\\'")
+				shortOpt := ""
+				if p.Short != 0 {
+					shortOpt = fmt.Sprintf(" -s %c", p.Short)
+				}
+				completerArg := ""
+				if p.Completer != nil {
+					completerArg = fmt.Sprintf(" -ra '(%s __complete --command %s --param %s)'",
+						a.Name, c.name, p.Name)
+				}
+				fmt.Fprintf(&ab, "complete -c %s -n '__fish_seen_subcommand_from %s' -l %s%s -d '%s'%s\n",
+					alias, c.name, p.Name, shortOpt, desc, completerArg)
+			}
+		}
+
+		if err := os.WriteFile(filepath.Join(fishDir, alias+".fish"), []byte(ab.String()), 0o644); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -5,6 +5,7 @@ import "fmt"
 // App holds the command registry and top-level metadata for a CLI/MCP application.
 type App struct {
 	Name              string
+	Aliases           []string // Aliases are additional binary names that should get shell completions
 	Description       Description
 	Version           string
 	MCPArgs           []string  // extra args passed to the binary in plugin manifests
