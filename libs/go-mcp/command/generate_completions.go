@@ -71,6 +71,9 @@ func (a *App) generateBashCompletion(dir string) error {
 		}
 		var flags []string
 		var completableParams []Param
+		// positionalCompletable: non-Bool params with Completer, in declaration
+		// order. Mirrors the positional assignment logic in cli.go.
+		var positionalCompletable []Param
 		for _, p := range c.cmd.Params {
 			flags = append(flags, "--"+p.Name)
 			if p.Short != 0 {
@@ -78,6 +81,9 @@ func (a *App) generateBashCompletion(dir string) error {
 			}
 			if p.Completer != nil {
 				completableParams = append(completableParams, p)
+				if p.Type != Bool {
+					positionalCompletable = append(positionalCompletable, p)
+				}
 			}
 		}
 		if len(flags) > 0 {
@@ -91,7 +97,11 @@ func (a *App) generateBashCompletion(dir string) error {
 					fmt.Fprintf(&b, "                    ;;\n")
 				}
 				fmt.Fprintf(&b, "                *)\n")
-				fmt.Fprintf(&b, "                    COMPREPLY=( $(compgen -W %q -- \"${cur}\") )\n", strings.Join(flags, " "))
+				if len(positionalCompletable) > 0 {
+					a.emitBashPositionalCompletions(&b, c.name, c.cmd.Params, positionalCompletable, flags)
+				} else {
+					fmt.Fprintf(&b, "                    COMPREPLY=( $(compgen -W %q -- \"${cur}\") )\n", strings.Join(flags, " "))
+				}
 				fmt.Fprintf(&b, "                    ;;\n")
 				fmt.Fprintf(&b, "            esac\n")
 			} else {
@@ -174,25 +184,7 @@ func (a *App) generateFishCompletion(dir string) error {
 			a.Name, c.name, desc)
 	}
 
-	for _, c := range cmds {
-		if c.cmd.PassthroughArgs {
-			continue
-		}
-		for _, p := range c.cmd.Params {
-			desc := strings.ReplaceAll(p.Description, "'", "\\'")
-			shortOpt := ""
-			if p.Short != 0 {
-				shortOpt = fmt.Sprintf(" -s %c", p.Short)
-			}
-			completerArg := ""
-			if p.Completer != nil {
-				completerArg = fmt.Sprintf(" -ra '(%s __complete --command %s --param %s)'",
-					a.Name, c.name, p.Name)
-			}
-			fmt.Fprintf(&b, "complete -c %s -n '__fish_seen_subcommand_from %s' -l %s%s -d '%s'%s\n",
-				a.Name, c.name, p.Name, shortOpt, desc, completerArg)
-		}
-	}
+	a.emitFishParamCompletions(&b, a.Name, cmds)
 
 	if err := os.WriteFile(filepath.Join(fishDir, a.Name+".fish"), []byte(b.String()), 0o644); err != nil {
 		return err
@@ -209,25 +201,7 @@ func (a *App) generateFishCompletion(dir string) error {
 				alias, c.name, desc)
 		}
 
-		for _, c := range cmds {
-			if c.cmd.PassthroughArgs {
-				continue
-			}
-			for _, p := range c.cmd.Params {
-				desc := strings.ReplaceAll(p.Description, "'", "\\'")
-				shortOpt := ""
-				if p.Short != 0 {
-					shortOpt = fmt.Sprintf(" -s %c", p.Short)
-				}
-				completerArg := ""
-				if p.Completer != nil {
-					completerArg = fmt.Sprintf(" -ra '(%s __complete --command %s --param %s)'",
-						a.Name, c.name, p.Name)
-				}
-				fmt.Fprintf(&ab, "complete -c %s -n '__fish_seen_subcommand_from %s' -l %s%s -d '%s'%s\n",
-					alias, c.name, p.Name, shortOpt, desc, completerArg)
-			}
-		}
+		a.emitFishParamCompletions(&ab, alias, cmds)
 
 		if err := os.WriteFile(filepath.Join(fishDir, alias+".fish"), []byte(ab.String()), 0o644); err != nil {
 			return err
@@ -235,4 +209,109 @@ func (a *App) generateFishCompletion(dir string) error {
 	}
 
 	return nil
+}
+
+// emitBashPositionalCompletions writes bash completion logic that counts
+// positional args typed so far and calls __complete for the corresponding
+// positional param. This mirrors the positional assignment logic in cli.go:
+// non-flag args are assigned to non-Bool params in declaration order.
+func (a *App) emitBashPositionalCompletions(
+	b *strings.Builder,
+	cmdName string,
+	allParams []Param,
+	positionalCompletable []Param,
+	flags []string,
+) {
+	// Build a set of all non-Bool params for positional index counting.
+	// We need all non-Bool params (not just completable ones) to correctly
+	// compute which positional slot the cursor is at.
+	var allNonBool []Param
+	for _, p := range allParams {
+		if p.Type != Bool {
+			allNonBool = append(allNonBool, p)
+		}
+	}
+
+	// Count positional args already typed (words that aren't flags and
+	// aren't values consumed by a preceding non-Bool flag).
+	fmt.Fprintf(b, "                    local _pos=0 _i\n")
+	fmt.Fprintf(b, "                    for (( _i=2; _i < COMP_CWORD; _i++ )); do\n")
+	fmt.Fprintf(b, "                        case \"${COMP_WORDS[_i]}\" in\n")
+	fmt.Fprintf(b, "                            -*) ;;\n")
+	fmt.Fprintf(b, "                            *)\n")
+	fmt.Fprintf(b, "                                case \"${COMP_WORDS[_i-1]}\" in\n")
+	for _, p := range allNonBool {
+		fmt.Fprintf(b, "                                    --%s) ;;\n", p.Name)
+	}
+	fmt.Fprintf(b, "                                    *) (( _pos++ )) ;;\n")
+	fmt.Fprintf(b, "                                esac\n")
+	fmt.Fprintf(b, "                                ;;\n")
+	fmt.Fprintf(b, "                        esac\n")
+	fmt.Fprintf(b, "                    done\n")
+
+	// Map positional completable params to their positional indices
+	// among all non-Bool params.
+	type posEntry struct {
+		index int
+		param Param
+	}
+	var entries []posEntry
+	for posIdx, nbp := range allNonBool {
+		for _, pc := range positionalCompletable {
+			if nbp.Name == pc.Name {
+				entries = append(entries, posEntry{posIdx, pc})
+				break
+			}
+		}
+	}
+
+	fmt.Fprintf(b, "                    case \"${_pos}\" in\n")
+	for _, e := range entries {
+		fmt.Fprintf(b, "                        %d)\n", e.index)
+		fmt.Fprintf(b, "                            COMPREPLY=( $(compgen -W \"$(%s __complete --command %s --param %s)\" -- \"${cur}\") )\n",
+			a.Name, cmdName, e.param.Name)
+		fmt.Fprintf(b, "                            ;;\n")
+	}
+	fmt.Fprintf(b, "                        *)\n")
+	fmt.Fprintf(b, "                            COMPREPLY=( $(compgen -W %q -- \"${cur}\") )\n", strings.Join(flags, " "))
+	fmt.Fprintf(b, "                            ;;\n")
+	fmt.Fprintf(b, "                    esac\n")
+}
+
+// emitFishParamCompletions writes fish completion rules for all params of all
+// commands, including positional completion rules for non-Bool params with
+// Completer. cmdName is the command name to use in `complete -c` (the primary
+// binary name or an alias).
+func (a *App) emitFishParamCompletions(b *strings.Builder, cmdName string, cmds []sortedCommand) {
+	for _, c := range cmds {
+		if c.cmd.PassthroughArgs {
+			continue
+		}
+		for _, p := range c.cmd.Params {
+			desc := strings.ReplaceAll(p.Description, "'", "\\'")
+			shortOpt := ""
+			if p.Short != 0 {
+				shortOpt = fmt.Sprintf(" -s %c", p.Short)
+			}
+			completerArg := ""
+			if p.Completer != nil {
+				completerArg = fmt.Sprintf(" -ra '(%s __complete --command %s --param %s)'",
+					a.Name, c.name, p.Name)
+			}
+			fmt.Fprintf(b, "complete -c %s -n '__fish_seen_subcommand_from %s' -l %s%s -d '%s'%s\n",
+				cmdName, c.name, p.Name, shortOpt, desc, completerArg)
+		}
+		// Positional completions: for non-Bool params with Completer, add a
+		// rule that fires when the flag form hasn't been used. This allows
+		// positional arg completion (e.g., `cmd 42<TAB>` instead of requiring
+		// `cmd --pr 42<TAB>`).
+		for _, p := range c.cmd.Params {
+			if p.Type == Bool || p.Completer == nil {
+				continue
+			}
+			desc := strings.ReplaceAll(p.Description, "'", "\\'")
+			fmt.Fprintf(b, "complete -c %s -n '__fish_seen_subcommand_from %s; and not __fish_contains_opt %s' -ra '(%s __complete --command %s --param %s)' -d '%s'\n",
+				cmdName, c.name, p.Name, a.Name, c.name, p.Name, desc)
+		}
+	}
 }

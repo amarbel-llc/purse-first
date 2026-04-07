@@ -679,3 +679,216 @@ func TestGenerateCompletionsAliasesPrimaryFileContainsAliasLines(t *testing.T) {
 		t.Error("primary zsh missing compdef line for sc alias")
 	}
 }
+
+func TestGenerateCompletionsPositionalBash(t *testing.T) {
+	app := NewApp("sc", "Worktree manager")
+	app.AddCommand(&Command{
+		Name:        "start-gh_pr",
+		Description: Description{Short: "Start from PR"},
+		Params: []Param{
+			{
+				Name: "pr", Type: String, Required: true, Description: "PR number",
+				Completer: func() map[string]string { return nil },
+			},
+			{Name: "verbose", Type: Bool, Description: "Verbose output"},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateCompletions(dir); err != nil {
+		t.Fatalf("GenerateCompletions: %v", err)
+	}
+
+	bashPath := filepath.Join(dir, "share", "bash-completion", "completions", "sc")
+	data, err := os.ReadFile(bashPath)
+	if err != nil {
+		t.Fatalf("read bash completion: %v", err)
+	}
+
+	content := string(data)
+	// Flag-style completion should still work
+	if !strings.Contains(content, "--pr)\n") {
+		t.Error("bash completion missing --pr flag trigger for Completer")
+	}
+	// Positional completion: __complete should be reachable via positional index
+	if !strings.Contains(content, "case \"${_pos}\" in") {
+		t.Error("bash completion missing positional index dispatch")
+	}
+	if !strings.Contains(content, "sc __complete --command start-gh_pr --param pr") {
+		t.Error("bash completion missing __complete call for positional pr param")
+	}
+}
+
+func TestGenerateCompletionsPositionalFish(t *testing.T) {
+	app := NewApp("sc", "Worktree manager")
+	app.AddCommand(&Command{
+		Name:        "start-gh_pr",
+		Description: Description{Short: "Start from PR"},
+		Params: []Param{
+			{
+				Name: "pr", Type: String, Required: true, Description: "PR number",
+				Completer: func() map[string]string { return nil },
+			},
+			{Name: "verbose", Type: Bool, Description: "Verbose output"},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateCompletions(dir); err != nil {
+		t.Fatalf("GenerateCompletions: %v", err)
+	}
+
+	fishPath := filepath.Join(dir, "share", "fish", "vendor_completions.d", "sc.fish")
+	data, err := os.ReadFile(fishPath)
+	if err != nil {
+		t.Fatalf("read fish completion: %v", err)
+	}
+
+	content := string(data)
+	// Flag-style completion should exist
+	if !strings.Contains(content, "-l pr") {
+		t.Error("fish completion missing --pr flag completion")
+	}
+	// Positional completion: should have a rule without -l that calls __complete
+	// when the flag form hasn't been used
+	hasPositionalRule := false
+	for _, line := range strings.Split(content, "\n") {
+		if strings.Contains(line, "__fish_contains_opt pr") &&
+			strings.Contains(line, "sc __complete --command start-gh_pr --param pr") &&
+			!strings.Contains(line, "-l pr") {
+			hasPositionalRule = true
+			break
+		}
+	}
+	if !hasPositionalRule {
+		t.Error("fish completion missing positional completion rule for pr param")
+	}
+}
+
+func TestGenerateCompletionsPositionalMultipleParams(t *testing.T) {
+	app := NewApp("myapp", "My app")
+	app.AddCommand(&Command{
+		Name:        "deploy",
+		Description: Description{Short: "Deploy"},
+		Params: []Param{
+			{Name: "target", Type: String, Description: "Deploy target"},
+			{
+				Name: "env", Type: String, Description: "Environment",
+				Completer: func() map[string]string { return nil },
+			},
+			{
+				Name: "region", Type: String, Description: "Region",
+				Completer: func() map[string]string { return nil },
+			},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateCompletions(dir); err != nil {
+		t.Fatalf("GenerateCompletions: %v", err)
+	}
+
+	bashPath := filepath.Join(dir, "share", "bash-completion", "completions", "myapp")
+	data, err := os.ReadFile(bashPath)
+	if err != nil {
+		t.Fatalf("read bash completion: %v", err)
+	}
+
+	content := string(data)
+	// env is the 2nd non-Bool param (index 1), region is the 3rd (index 2)
+	if !strings.Contains(content, "1)\n") {
+		t.Error("bash completion missing positional index 1 for env")
+	}
+	if !strings.Contains(content, "myapp __complete --command deploy --param env") {
+		t.Error("bash completion missing __complete for positional env param")
+	}
+	if !strings.Contains(content, "2)\n") {
+		t.Error("bash completion missing positional index 2 for region")
+	}
+	if !strings.Contains(content, "myapp __complete --command deploy --param region") {
+		t.Error("bash completion missing __complete for positional region param")
+	}
+}
+
+func TestGenerateCompletionsPositionalBoolSkipped(t *testing.T) {
+	app := NewApp("myapp", "My app")
+	app.AddCommand(&Command{
+		Name:        "cmd",
+		Description: Description{Short: "A command"},
+		Params: []Param{
+			{
+				Name: "flag", Type: Bool, Description: "A bool flag",
+				Completer: func() map[string]string { return nil },
+			},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateCompletions(dir); err != nil {
+		t.Fatalf("GenerateCompletions: %v", err)
+	}
+
+	bashPath := filepath.Join(dir, "share", "bash-completion", "completions", "myapp")
+	data, err := os.ReadFile(bashPath)
+	if err != nil {
+		t.Fatalf("read bash completion: %v", err)
+	}
+
+	content := string(data)
+	// Bool params should not get positional completion
+	if strings.Contains(content, "case \"${_pos}\"") {
+		t.Error("bash completion should not have positional dispatch for Bool-only Completer params")
+	}
+
+	fishPath := filepath.Join(dir, "share", "fish", "vendor_completions.d", "myapp.fish")
+	data, err = os.ReadFile(fishPath)
+	if err != nil {
+		t.Fatalf("read fish completion: %v", err)
+	}
+
+	content = string(data)
+	if strings.Contains(content, "__fish_contains_opt flag") {
+		t.Error("fish completion should not have positional rule for Bool param")
+	}
+}
+
+func TestGenerateCompletionsPositionalFishAlias(t *testing.T) {
+	app := NewApp("spinclass", "Worktree manager")
+	app.Aliases = []string{"sc"}
+	app.AddCommand(&Command{
+		Name:        "start-gh_pr",
+		Description: Description{Short: "Start from PR"},
+		Params: []Param{
+			{
+				Name: "pr", Type: String, Required: true, Description: "PR number",
+				Completer: func() map[string]string { return nil },
+			},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateCompletions(dir); err != nil {
+		t.Fatalf("GenerateCompletions: %v", err)
+	}
+
+	fishPath := filepath.Join(dir, "share", "fish", "vendor_completions.d", "sc.fish")
+	data, err := os.ReadFile(fishPath)
+	if err != nil {
+		t.Fatalf("read fish alias completion: %v", err)
+	}
+
+	content := string(data)
+	// Alias should have positional completion rule using primary binary name
+	hasPositionalRule := false
+	for _, line := range strings.Split(content, "\n") {
+		if strings.Contains(line, "complete -c sc") &&
+			strings.Contains(line, "__fish_contains_opt pr") &&
+			strings.Contains(line, "spinclass __complete --command start-gh_pr --param pr") {
+			hasPositionalRule = true
+			break
+		}
+	}
+	if !hasPositionalRule {
+		t.Error("fish alias completion missing positional rule that calls spinclass __complete")
+	}
+}
