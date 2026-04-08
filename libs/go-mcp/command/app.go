@@ -14,9 +14,26 @@ type App struct {
 	PluginAuthor      string    // "author.name" in plugin.json; omitted if empty
 	Params            []Param   // global flags
 	Examples          []Example // app-level workflow examples
-	commands          map[string]*Command
-	canonicalNames    map[*Command]string
-	pluginSkills      []string // discovered skill paths for plugin.json
+
+	// EnvVars are environment variables the app as a whole reads, rendered
+	// into the app manpage's ENVIRONMENT section.
+	EnvVars []EnvVar
+
+	// Files are filesystem paths the app as a whole reads or writes, rendered
+	// into the app manpage's FILES section.
+	Files []FilePath
+
+	// ExtraManpages are hand-written manpage source files (any roff dialect)
+	// to install alongside the auto-generated pages. Each entry is read from
+	// its Source fs.FS and written verbatim to share/man/man{Section}/{Name}.
+	// The framework does not parse, validate, or modify these files —
+	// authors choose any dialect (man(7), mdoc(7), or pre-rendered output
+	// from scdoc/ronn/asciidoctor).
+	ExtraManpages []ManpageFile
+
+	commands       map[string]*Command
+	canonicalNames map[*Command]string
+	pluginSkills   []string // discovered skill paths for plugin.json
 }
 
 // NewApp creates a new App with the given name and short description.

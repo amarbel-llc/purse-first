@@ -3,8 +3,10 @@ package command
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
 
 func TestGenerateManpageApp(t *testing.T) {
@@ -374,5 +376,248 @@ func TestManpageSectionOrdering(t *testing.T) {
 			t.Errorf("section %s appears out of order in command page", section)
 		}
 		lastIdx = idx
+	}
+}
+
+func TestGenerateManpageAppEnvVarsAndFiles(t *testing.T) {
+	app := NewApp("lux", "LSP multiplexer")
+	app.Version = "0.1.0"
+	app.EnvVars = []EnvVar{
+		{
+			Name:        "LUX_SOCKET",
+			Description: "Path to the lux Unix domain socket. Overrides the default location.",
+		},
+		{
+			Name:        "XDG_CONFIG_HOME",
+			Description: "Base directory for lux configuration files.",
+			Default:     "$HOME/.config",
+		},
+		{
+			Name:        "EDITOR",
+			Description: "Editor used by config-edit.",
+			Default:     "vi",
+		},
+	}
+	app.Files = []FilePath{
+		{
+			Path:        "$XDG_CONFIG_HOME/lux/config.toml",
+			Description: "Per-user lux configuration file.",
+		},
+		{
+			Path:        "$XDG_DATA_HOME/lux",
+			Description: "Persistent state directory.",
+		},
+	}
+	app.AddCommand(&Command{
+		Name:        "status",
+		Description: Description{Short: "Show server status"},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	page, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "lux.1"))
+	if err != nil {
+		t.Fatalf("read lux.1: %v", err)
+	}
+	content := string(page)
+
+	if !strings.Contains(content, ".SH ENVIRONMENT") {
+		t.Error("missing .SH ENVIRONMENT")
+	}
+	for _, name := range []string{"LUX_SOCKET", "XDG_CONFIG_HOME", "EDITOR"} {
+		if !strings.Contains(content, ".B "+name) {
+			t.Errorf("ENVIRONMENT missing .B %s", name)
+		}
+	}
+	if !strings.Contains(content, "Default: $HOME/.config") {
+		t.Error("ENVIRONMENT missing default for XDG_CONFIG_HOME")
+	}
+	if !strings.Contains(content, "Default: vi") {
+		t.Error("ENVIRONMENT missing default for EDITOR")
+	}
+
+	if !strings.Contains(content, ".SH FILES") {
+		t.Error("missing .SH FILES")
+	}
+	if !strings.Contains(content, ".I $XDG_CONFIG_HOME/lux/config.toml") {
+		t.Error("FILES missing config.toml entry")
+	}
+	if !strings.Contains(content, ".I $XDG_DATA_HOME/lux") {
+		t.Error("FILES missing data dir entry")
+	}
+
+	// ENVIRONMENT and FILES must appear after EXAMPLES (which is empty here,
+	// so just check vs DESCRIPTION) and before SEE ALSO.
+	envIdx := strings.Index(content, ".SH ENVIRONMENT")
+	filesIdx := strings.Index(content, ".SH FILES")
+	seeAlsoIdx := strings.Index(content, ".SH SEE ALSO")
+	if !(envIdx < filesIdx && filesIdx < seeAlsoIdx) {
+		t.Errorf("section order wrong: ENVIRONMENT=%d FILES=%d SEE_ALSO=%d", envIdx, filesIdx, seeAlsoIdx)
+	}
+}
+
+func TestGenerateManpageCommandEnvVarsAndFiles(t *testing.T) {
+	app := NewApp("lux", "LSP multiplexer")
+	app.AddCommand(&Command{
+		Name:        "config-edit",
+		Description: Description{Short: "Edit lux configuration"},
+		EnvVars: []EnvVar{
+			{Name: "EDITOR", Description: "Editor to launch.", Default: "vi"},
+		},
+		Files: []FilePath{
+			{Path: "$XDG_CONFIG_HOME/lux/config.toml", Description: "File opened for editing."},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	page, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "lux-config-edit.1"))
+	if err != nil {
+		t.Fatalf("read lux-config-edit.1: %v", err)
+	}
+	content := string(page)
+
+	if !strings.Contains(content, ".SH ENVIRONMENT") {
+		t.Error("missing .SH ENVIRONMENT on command page")
+	}
+	if !strings.Contains(content, ".B EDITOR") {
+		t.Error("ENVIRONMENT missing EDITOR on command page")
+	}
+	if !strings.Contains(content, ".SH FILES") {
+		t.Error("missing .SH FILES on command page")
+	}
+}
+
+func TestGenerateManpageNoEnvVarsOrFiles(t *testing.T) {
+	app := NewApp("plain", "no env/files")
+	app.AddCommand(&Command{
+		Name:        "run",
+		Description: Description{Short: "Run it"},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	for _, name := range []string{"plain.1", "plain-run.1"} {
+		page, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", name))
+		if err != nil {
+			t.Fatalf("read %s: %v", name, err)
+		}
+		content := string(page)
+		if strings.Contains(content, ".SH ENVIRONMENT") {
+			t.Errorf("%s: ENVIRONMENT should be absent when EnvVars is empty", name)
+		}
+		if strings.Contains(content, ".SH FILES") {
+			t.Errorf("%s: FILES should be absent when Files is empty", name)
+		}
+	}
+}
+
+func TestInstallExtraManpagesMapFS(t *testing.T) {
+	app := NewApp("moxy", "moxy proxy")
+	mfs := fstest.MapFS{
+		"cmd/moxy/moxyfile.5": &fstest.MapFile{
+			Data: []byte(".Dd March 31, 2026\n.Dt MOXYFILE 5\n.Sh NAME\n"),
+		},
+		"cmd/maneater/maneater.1": &fstest.MapFile{
+			Data: []byte(".Dd March 31, 2026\n.Dt MANEATER 1\n.Sh NAME\n"),
+		},
+	}
+	app.ExtraManpages = []ManpageFile{
+		{Source: mfs, Path: "cmd/moxy/moxyfile.5", Section: 5, Name: "moxyfile.5"},
+		{Source: mfs, Path: "cmd/maneater/maneater.1", Section: 1, Name: "maneater.1"},
+	}
+
+	dir := t.TempDir()
+	if err := app.GenerateAll(dir); err != nil {
+		t.Fatalf("GenerateAll: %v", err)
+	}
+
+	for _, tc := range []struct {
+		section int
+		name    string
+		want    string
+	}{
+		{5, "moxyfile.5", ".Dt MOXYFILE 5"},
+		{1, "maneater.1", ".Dt MANEATER 1"},
+	} {
+		path := filepath.Join(dir, "share", "man", "man"+strconv.Itoa(tc.section), tc.name)
+		got, err := os.ReadFile(path)
+		if err != nil {
+			t.Errorf("read %s: %v", path, err)
+			continue
+		}
+		if !strings.Contains(string(got), tc.want) {
+			t.Errorf("%s: missing %q in copied bytes", path, tc.want)
+		}
+	}
+}
+
+func TestInstallExtraManpagesDirFS(t *testing.T) {
+	// Stage source files on disk and read them via os.DirFS — exercises the
+	// "path in source tree" code path that nix postInstall uses.
+	srcDir := t.TempDir()
+	manpageContent := ".TH FOO 1 \"\" \"foo 1.0\"\n.SH NAME\nfoo \\- demo\n"
+	if err := os.MkdirAll(filepath.Join(srcDir, "doc"), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(srcDir, "doc", "foo.1"), []byte(manpageContent), 0o644); err != nil {
+		t.Fatalf("write source: %v", err)
+	}
+
+	app := NewApp("foo", "foo tool")
+	app.ExtraManpages = []ManpageFile{
+		{Source: os.DirFS(srcDir), Path: "doc/foo.1", Section: 1, Name: "foo.1"},
+	}
+
+	outDir := t.TempDir()
+	if err := app.GenerateAll(outDir); err != nil {
+		t.Fatalf("GenerateAll: %v", err)
+	}
+
+	// foo.1 will exist as both the GenerateManpages output and the ExtraManpages
+	// copy at the same path. The ExtraManpages copy runs after GenerateManpages
+	// so it overwrites — verify the final bytes are the hand-written content.
+	got, err := os.ReadFile(filepath.Join(outDir, "share", "man", "man1", "foo.1"))
+	if err != nil {
+		t.Fatalf("read foo.1: %v", err)
+	}
+	if string(got) != manpageContent {
+		t.Errorf("ExtraManpages did not overwrite generated page; got:\n%s", string(got))
+	}
+}
+
+func TestInstallExtraManpagesValidationErrors(t *testing.T) {
+	cases := []struct {
+		name string
+		mf   ManpageFile
+		want string
+	}{
+		{"nil source", ManpageFile{Path: "x", Section: 1, Name: "x.1"}, "Source is nil"},
+		{"empty path", ManpageFile{Source: fstest.MapFS{}, Section: 1, Name: "x.1"}, "Path is empty"},
+		{"zero section", ManpageFile{Source: fstest.MapFS{}, Path: "x", Name: "x.1"}, "Section must be > 0"},
+		{"empty name", ManpageFile{Source: fstest.MapFS{}, Path: "x", Section: 1}, "Name is empty"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			app := NewApp("t", "test")
+			app.ExtraManpages = []ManpageFile{tc.mf}
+			err := app.GenerateAll(t.TempDir())
+			if err == nil {
+				t.Fatalf("expected error containing %q, got nil", tc.want)
+			}
+			if !strings.Contains(err.Error(), tc.want) {
+				t.Errorf("error %q did not contain %q", err.Error(), tc.want)
+			}
+		})
 	}
 }

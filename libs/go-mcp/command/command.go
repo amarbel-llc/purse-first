@@ -3,9 +3,40 @@ package command
 import (
 	"context"
 	"encoding/json"
+	"io/fs"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
 )
+
+// EnvVar declares an environment variable that an app or command reads,
+// for inclusion in the manpage ENVIRONMENT section.
+type EnvVar struct {
+	Name        string // variable name, e.g. "LUX_SOCKET"
+	Description string // one-paragraph description (plain text)
+	Default     string // optional; rendered as "Default: ..." when non-empty
+}
+
+// FilePath declares a file or directory path that an app or command reads
+// or writes, for inclusion in the manpage FILES section.
+type FilePath struct {
+	Path        string // filesystem path, e.g. "$XDG_CONFIG_HOME/lux"
+	Description string // one-paragraph description (plain text)
+}
+
+// ManpageFile declares a hand-written manpage source file (any roff dialect)
+// to be installed alongside the auto-generated pages produced by
+// GenerateManpages. The framework reads bytes from Source and writes them
+// verbatim to {dir}/share/man/man{Section}/{Name}.
+//
+// Source may be any fs.FS — typically an embed.FS for binary-bundled docs,
+// or os.DirFS(".") for paths relative to the package source root (which is
+// the convention for nix postInstall steps).
+type ManpageFile struct {
+	Source  fs.FS  // filesystem to read from; required
+	Path    string // path within Source; required
+	Section int    // man section number, e.g. 1, 5, 7; required
+	Name    string // installed filename, e.g. "lux-config.5"; required
+}
 
 // ParamType identifies the data type of a command parameter.
 type ParamType int
@@ -93,6 +124,14 @@ type Command struct {
 	Params    []Param
 	MapsTools []ToolMapping
 	Examples  []Example
+
+	// EnvVars are environment variables this command reads, rendered into
+	// the per-command manpage's ENVIRONMENT section.
+	EnvVars []EnvVar
+
+	// Files are filesystem paths this command reads or writes, rendered into
+	// the per-command manpage's FILES section.
+	Files []FilePath
 
 	// PassthroughArgs disables flag parsing for this command. All arguments
 	// after the command name are passed raw as {"args": [...]} to the handler.

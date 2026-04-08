@@ -75,6 +75,8 @@ func (a *App) writeAppManpage(dir string) error {
 	}
 
 	writeExamples(&b, a.Examples)
+	writeEnvironment(&b, a.EnvVars)
+	writeFiles(&b, a.Files)
 
 	if len(cmds) > 0 {
 		fmt.Fprintf(&b, ".SH SEE ALSO\n")
@@ -150,12 +152,50 @@ func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Comman
 	}
 
 	writeExamples(&b, cmd.Examples)
+	writeEnvironment(&b, cmd.EnvVars)
+	writeFiles(&b, cmd.Files)
 
 	fmt.Fprintf(&b, ".SH SEE ALSO\n")
 	fmt.Fprintf(&b, ".BR %s (1)\n", a.Name)
 
 	path := filepath.Join(dir, fullName+".1")
 	return os.WriteFile(path, []byte(b.String()), 0o644)
+}
+
+// writeEnvironment renders an ENVIRONMENT section in man(7) format.
+// Each EnvVar becomes a .TP entry with the variable name in bold,
+// followed by its description and optional default.
+func writeEnvironment(b *strings.Builder, vars []EnvVar) {
+	if len(vars) == 0 {
+		return
+	}
+	fmt.Fprintf(b, ".SH ENVIRONMENT\n")
+	for _, v := range vars {
+		fmt.Fprintf(b, ".TP\n")
+		fmt.Fprintf(b, ".B %s\n", v.Name)
+		if v.Description != "" {
+			fmt.Fprintf(b, "%s\n", v.Description)
+		}
+		if v.Default != "" {
+			fmt.Fprintf(b, "Default: %s\n", v.Default)
+		}
+	}
+}
+
+// writeFiles renders a FILES section in man(7) format. Each FilePath
+// becomes a .TP entry with the path in italics, followed by its description.
+func writeFiles(b *strings.Builder, files []FilePath) {
+	if len(files) == 0 {
+		return
+	}
+	fmt.Fprintf(b, ".SH FILES\n")
+	for _, f := range files {
+		fmt.Fprintf(b, ".TP\n")
+		fmt.Fprintf(b, ".I %s\n", f.Path)
+		if f.Description != "" {
+			fmt.Fprintf(b, "%s\n", f.Description)
+		}
+	}
 }
 
 func writeExamples(b *strings.Builder, examples []Example) {
