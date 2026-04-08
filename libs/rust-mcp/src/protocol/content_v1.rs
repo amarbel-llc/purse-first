@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::content_v0::Content as ContentV0;
+use super::content_v0::{Content as ContentV0, ResourceContents};
 
 /// ContentAnnotations provides metadata about content blocks.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -44,12 +44,11 @@ pub enum ContentV1 {
         #[serde(skip_serializing_if = "Option::is_none")]
         annotations: Option<ContentAnnotations>,
     },
-    /// Embedded resource content.
+    /// Embedded resource content. Per the MCP spec, the resource contents
+    /// nest under a `resource` field rather than being flattened beside
+    /// `type`.
     Resource {
-        uri: String,
-        #[serde(rename = "mimeType")]
-        mime_type: String,
-        text: String,
+        resource: ResourceContents,
         #[serde(skip_serializing_if = "Option::is_none")]
         annotations: Option<ContentAnnotations>,
     },
@@ -120,15 +119,8 @@ impl ContentV1 {
                 mime_type,
                 annotations: None,
             },
-            ContentV0::Resource {
-                uri,
-                mime_type,
-                text,
-                ..
-            } => ContentV1::Resource {
-                uri,
-                mime_type,
-                text,
+            ContentV0::Resource { resource } => ContentV1::Resource {
+                resource,
                 annotations: None,
             },
         }

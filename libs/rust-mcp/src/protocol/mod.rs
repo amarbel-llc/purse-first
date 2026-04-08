@@ -11,11 +11,11 @@ pub mod jsonrpc;
 
 // V1 modules (new types).
 pub mod capabilities_v1;
+pub mod completions;
 pub mod content_v1;
 pub mod icons;
 pub mod initialize_v1;
 pub mod methods;
-pub mod completions;
 pub mod pagination;
 
 // Re-export V0 types as the default types for backward compatibility.
@@ -30,15 +30,15 @@ pub use jsonrpc::{JsonRpcError, JsonRpcRequest, JsonRpcResponse};
 
 // V1 re-exports for convenience.
 pub use capabilities_v1::CapabilitiesV1;
+pub use completions::{
+    CompletionArgument, CompletionCompleteParams, CompletionReference, CompletionResult,
+    CompletionValues,
+};
 pub use content_v1::{ContentAnnotations, ContentV1};
 pub use icons::Icon;
 pub use initialize_v1::{InitializeResultV1, ServerInfoV1};
 pub use methods::*;
 pub use pagination::{PaginatedResult, PaginationParams};
-pub use completions::{
-    CompletionArgument, CompletionCompleteParams, CompletionReference, CompletionResult,
-    CompletionValues,
-};
 
 #[cfg(test)]
 mod tests {
@@ -104,6 +104,72 @@ mod tests {
                 assert!((ann.priority.unwrap() - 0.8).abs() < f64::EPSILON);
             }
             _ => panic!("expected Text variant"),
+        }
+    }
+
+    #[test]
+    fn v0_content_resource_matches_mcp_embedded_resource_shape() {
+        // MCP spec: EmbeddedResource serializes as
+        //   {"type":"resource","resource":{"uri":..,"mimeType":..,"text":..}}
+        // not as flat fields next to "type":"resource".
+        let content = Content::resource("file:///foo.txt", "text/plain", "hello");
+        let actual: serde_json::Value = serde_json::to_value(&content).unwrap();
+        let expected = serde_json::json!({
+            "type": "resource",
+            "resource": {
+                "uri": "file:///foo.txt",
+                "mimeType": "text/plain",
+                "text": "hello",
+            },
+        });
+        assert_eq!(actual, expected);
+
+        // Round-trip from spec-shaped JSON.
+        let decoded: Content = serde_json::from_value(expected).unwrap();
+        match decoded {
+            Content::Resource { resource } => {
+                assert_eq!(resource.uri, "file:///foo.txt");
+                assert_eq!(resource.mime_type, "text/plain");
+                assert_eq!(resource.text, "hello");
+            }
+            _ => panic!("expected Resource variant"),
+        }
+    }
+
+    #[test]
+    fn v1_content_resource_matches_mcp_embedded_resource_shape() {
+        use content_v0::ResourceContents;
+        let content = ContentV1::Resource {
+            resource: ResourceContents {
+                uri: "file:///foo.txt".to_string(),
+                mime_type: "text/plain".to_string(),
+                text: "hello".to_string(),
+            },
+            annotations: None,
+        };
+        let actual: serde_json::Value = serde_json::to_value(&content).unwrap();
+        let expected = serde_json::json!({
+            "type": "resource",
+            "resource": {
+                "uri": "file:///foo.txt",
+                "mimeType": "text/plain",
+                "text": "hello",
+            },
+        });
+        assert_eq!(actual, expected);
+
+        let decoded: ContentV1 = serde_json::from_value(expected).unwrap();
+        match decoded {
+            ContentV1::Resource {
+                resource,
+                annotations,
+            } => {
+                assert_eq!(resource.uri, "file:///foo.txt");
+                assert_eq!(resource.mime_type, "text/plain");
+                assert_eq!(resource.text, "hello");
+                assert!(annotations.is_none());
+            }
+            _ => panic!("expected Resource variant"),
         }
     }
 
