@@ -7,7 +7,9 @@
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
 
     gomod2nix = {
-      url = "github:nix-community/gomod2nix";
+      # Fork: adds go.work support and a build cache fix for large projects.
+      # Upstream PR: https://github.com/nix-community/gomod2nix (no go.work tracking issue yet).
+      url = "github:amarbel-llc/gomod2nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     crane.url = "github:ipetkov/crane";
@@ -44,11 +46,9 @@
           || baseName == "go.mod"
           || baseName == "go.sum"
           || baseName == "go.work"
-          || baseName == "go.work.sum";
+          || baseName == "go.work.sum"
+          || baseName == "gomod2nix.toml";
       };
-
-      # Single vendor hash for the Go workspace (purse-first CLI + libs/go-mcp).
-      goVendorHash = "sha256-UQuOMQ4YLXWL5yVevCuNXz6jE6Cj3QlkmKNrdPlWkps=";
 
       buildDevenvs =
         system:
@@ -73,7 +73,8 @@
         description = "Package framework for bundling CLIs, MCP servers, and skills";
         repo = "amarbel-llc/purse-first";
         purse-first-build = {
-          inherit goWorkspaceSrc goVendorHash;
+          inherit goWorkspaceSrc;
+          goOverlays = [ gomod2nix.overlays.default ];
           version = "0.1.0";
         };
         plugins = _system: [ ];

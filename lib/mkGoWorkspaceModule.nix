@@ -1,46 +1,39 @@
 # lib/mkGoWorkspaceModule.nix
 #
-# Builds a Go package from the workspace using `go work vendor`.
-# All Go packages in the monorepo share the same source and vendor hash.
+# Builds a Go package from the workspace via gomod2nix's buildGoApplication.
+# All Go packages in the monorepo share the same source tree and the single
+# checked-in `gomod2nix.toml` lockfile at the workspace root.
+#
+# `pkgs` MUST have the gomod2nix overlay applied so that `pkgs.buildGoApplication`
+# is available. mkMarketplace handles this for the self-build path.
 #
 # Usage:
 #   mkGoModule = import ./lib/mkGoWorkspaceModule.nix {
-#     inherit pkgs goWorkspaceSrc goVendorHash;
+#     inherit pkgs goWorkspaceSrc;
 #   };
-#   gritPkg = mkGoModule {
-#     pname = "grit";
-#     subPackages = [ "packages/grit/cmd/grit" ];
+#   purseFirstPkg = mkGoModule {
+#     pname = "purse-first";
+#     subPackages = [ "cmd/purse-first" ];
 #   };
 {
   pkgs,
   goWorkspaceSrc,
-  goVendorHash,
   go ? pkgs.go,
 }:
 
-let
-  buildGoModule = pkgs.buildGoModule.override { inherit go; };
-in
-
 attrs:
 
-buildGoModule (
+pkgs.buildGoApplication (
   {
+    inherit go;
     version = "0.1.0";
     src = goWorkspaceSrc;
-    vendorHash = goVendorHash;
-
-    # Enable workspace mode (buildGoModule defaults to GOWORK=off)
-    GOWORK = "";
-
-    overrideModAttrs = _: _: {
-      GOWORK = "";
-      buildPhase = ''
-        runHook preBuild
-        go work vendor -e
-        runHook postBuild
-      '';
-    };
+    # `pwd` tells the fork where to find go.work — required so it parses the
+    # workspace and merges replace maps from each child go.mod. Without this,
+    # the synthetic vendor/modules.txt drops the explicit markers for direct
+    # deps and `go build` rejects the vendor tree.
+    pwd = goWorkspaceSrc;
+    modules = goWorkspaceSrc + "/gomod2nix.toml";
   }
   // attrs
 )

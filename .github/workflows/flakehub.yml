@@ -10,7 +10,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   flakehub-publish:
     runs-on: "ubuntu-latest"
     permissions:
@@ -61,4 +60,8 @@ jobs:
         with:
           determinate: true
       - uses: DeterminateSystems/flakehub-cache-action@main
+      - name: Validate gomod2nix.toml is in sync with go.mod / go.sum / go.work
+        run: |
+          nix develop --command just build-nix-gomod2nix
+          git diff --exit-code -- gomod2nix.toml
       - run: nix build

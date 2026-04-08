@@ -1,10 +1,10 @@
 
 cmd_nix_dev := "nix develop " + justfile_directory() + " --command "
 
-default: build test
+default: build-nix-gomod2nix build test
 
 # Build all packages (default = marketplace bundle)
-build:
+build: build-nix-gomod2nix
     nix build
 
 build-purse-first:
@@ -58,24 +58,14 @@ fmt:
 lint:
     {{cmd_nix_dev}} go vet ./...
 
-# Regenerate workspace vendor directory after dependency changes
-vendor:
-    {{cmd_nix_dev}} go work vendor
-
-# Update go dependencies, tidy all modules, and re-vendor
-deps:
+# Sync go.work and regenerate gomod2nix.toml from go.mod / go.sum / go.work.
+# Run this whenever go dependencies change. Cheap and idempotent.
+build-nix-gomod2nix:
     {{cmd_nix_dev}} go work sync
-    {{cmd_nix_dev}} go work vendor
+    {{cmd_nix_dev}} gomod2nix
 
-# Recompute goVendorHash in flake.nix from the local vendor directory
-vendor-hash:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    # Hash the vendor directory — matches what nix's fixed-output derivation produces
-    hash=$(nix hash path vendor/)
-    # Update goVendorHash in flake.nix
-    sed -i '' -E 's|(goVendorHash = )"sha256-[^"]+";|\1"'"$hash"'";|' flake.nix
-    echo "updated goVendorHash to $hash"
+# Update go dependencies, tidy all modules, and refresh gomod2nix.toml
+deps: build-nix-gomod2nix
 
 # Run BATS integration tests
 test-integration: build-purse-first-cli

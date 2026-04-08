@@ -52,17 +52,22 @@ utils.lib.eachDefaultSystem (
     };
 
     # Resolve the purse-first CLI package.
-    # Self-build: purse-first-build is an attrset with goWorkspaceSrc, goVendorHash, version.
+    # Self-build: purse-first-build is an attrset with goWorkspaceSrc, goOverlays, version.
     # Downstream: purse-first-cli is a package from the flake input.
     cli =
       if purse-first-cli != null then
         purse-first-cli.packages.${system}.purse-first
       else if purse-first-build != null then
         let
+          # Apply caller-provided overlays (e.g. gomod2nix) when building Go pkgs.
+          goPkgs = import nixpkgs {
+            inherit system;
+            overlays = purse-first-build.goOverlays or [ ];
+          };
           mkGoModule = import ./mkGoWorkspaceModule.nix {
-            inherit pkgs;
+            pkgs = goPkgs;
             go = pkgs-master.go_1_26;
-            inherit (purse-first-build) goWorkspaceSrc goVendorHash;
+            inherit (purse-first-build) goWorkspaceSrc;
           };
         in
         mkGoModule {
