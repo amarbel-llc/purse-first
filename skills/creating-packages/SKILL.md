@@ -106,6 +106,23 @@ postInstall = ''
 
 This writes `$out/share/purse-first/my-mcp/plugin.json` at build time.
 
+### Step 4: Add install-mcp subcommand (optional)
+
+For standalone dev testing outside the marketplace, add an `install-mcp` subcommand that registers the binary as an MCP server in `~/.claude.json`. The `command.App` abstraction provides this out of the box:
+
+```go
+app.AddCommand(&command.Command{
+    Name:        "install-mcp",
+    Hidden:      true,
+    Description: command.Description{Short: "Register as MCP server in ~/.claude.json"},
+    RunCLI: func(ctx context.Context, args json.RawMessage) error {
+        return app.InstallMCP()
+    },
+})
+```
+
+Then run `my-mcp install-mcp` to register the dev binary without a full marketplace install. This resolves the running binary's path, so it works with both `go run` and Nix-built binaries.
+
 ## Pattern 2: Non-Go MCP Servers (static plugin.json)
 
 For Rust or other languages that cannot easily import the `purse` Go package.

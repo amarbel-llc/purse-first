@@ -60,6 +60,12 @@ MCP integration:
 .TP
 .B RegisterMCPTools(registry *server.ToolRegistry)
 Registers all non-hidden commands that have a Run handler as MCP tools.
+.TP
+.B InstallMCP() error
+Registers this app as an MCP server in ~/.claude.json. Resolves the
+running binary's absolute path, reads the existing config, merges an
+entry using the app's Name and MCPArgs, and writes the result back.
+Useful for standalone dev testing outside the marketplace.
 .RE
 .PP
 Hook handling:
