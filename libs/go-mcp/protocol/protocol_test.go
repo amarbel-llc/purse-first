@@ -140,6 +140,80 @@ func TestToolCallResultV1Serialization(t *testing.T) {
 	}
 }
 
+func TestEmbeddedTextResourceContentSerialization(t *testing.T) {
+	block := EmbeddedTextResourceContent(
+		"moxy.native://results/session/123",
+		`{"a": 1}`,
+		"application/json",
+	)
+
+	data, err := json.Marshal(block)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	var m map[string]interface{}
+	if err := json.Unmarshal(data, &m); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	if m["type"] != "resource" {
+		t.Errorf("type = %v, want resource", m["type"])
+	}
+
+	resource, ok := m["resource"].(map[string]interface{})
+	if !ok {
+		t.Fatal("resource field missing or not an object")
+	}
+
+	if resource["uri"] != "moxy.native://results/session/123" {
+		t.Errorf("resource.uri = %v", resource["uri"])
+	}
+	if resource["text"] != `{"a": 1}` {
+		t.Errorf("resource.text = %v", resource["text"])
+	}
+	if resource["mimeType"] != "application/json" {
+		t.Errorf("resource.mimeType = %v", resource["mimeType"])
+	}
+}
+
+func TestEmbeddedBlobResourceContentSerialization(t *testing.T) {
+	block := EmbeddedBlobResourceContent(
+		"example://file.bin",
+		"AQIDBA==",
+		"application/octet-stream",
+	)
+
+	data, err := json.Marshal(block)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	var m map[string]interface{}
+	if err := json.Unmarshal(data, &m); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	if m["type"] != "resource" {
+		t.Errorf("type = %v, want resource", m["type"])
+	}
+
+	resource, ok := m["resource"].(map[string]interface{})
+	if !ok {
+		t.Fatal("resource field missing or not an object")
+	}
+
+	if resource["uri"] != "example://file.bin" {
+		t.Errorf("resource.uri = %v", resource["uri"])
+	}
+	if resource["blob"] != "AQIDBA==" {
+		t.Errorf("resource.blob = %v", resource["blob"])
+	}
+	if resource["mimeType"] != "application/octet-stream" {
+		t.Errorf("resource.mimeType = %v", resource["mimeType"])
+	}
+}
+
 func TestInitializeResultV1Serialization(t *testing.T) {
 	result := InitializeResultV1{
 		ProtocolVersion: ProtocolVersionV1,

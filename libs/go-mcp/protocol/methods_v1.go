@@ -50,6 +50,9 @@ const (
 	// MethodNotificationsMessage is a logging notification.
 	MethodNotificationsMessage = "notifications/message"
 
+	// MethodNotificationsElicitationComplete is sent when a URL elicitation completes.
+	MethodNotificationsElicitationComplete = "notifications/elicitation/complete"
+
 	// MethodNotificationsRootsListChanged is sent when roots change.
 	MethodNotificationsRootsListChanged = "notifications/roots/list_changed"
 

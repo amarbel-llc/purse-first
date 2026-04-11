@@ -12,6 +12,31 @@ type ContentAnnotations struct {
 	LastModified string `json:"lastModified,omitempty"`
 }
 
+// TextResourceContents holds text content for an EmbeddedResource content block.
+// Per MCP spec: required uri + text, optional mimeType.
+type TextResourceContents struct {
+	URI      string `json:"uri"`
+	Text     string `json:"text"`
+	MimeType string `json:"mimeType,omitempty"`
+}
+
+// BlobResourceContents holds base64-encoded binary content for an EmbeddedResource content block.
+// Per MCP spec: required uri + blob, optional mimeType.
+type BlobResourceContents struct {
+	URI      string `json:"uri"`
+	Blob     string `json:"blob"`
+	MimeType string `json:"mimeType,omitempty"`
+}
+
+// EmbeddedResourceContents is the union of TextResourceContents and BlobResourceContents.
+// Exactly one of Text or Blob should be populated.
+type EmbeddedResourceContents struct {
+	URI      string `json:"uri"`
+	Text     string `json:"text,omitempty"`
+	Blob     string `json:"blob,omitempty"`
+	MimeType string `json:"mimeType,omitempty"`
+}
+
 // ContentBlockV1 represents a piece of content with optional annotations.
 // This is the V1 (2025-11-25) content block type.
 type ContentBlockV1 struct {
@@ -28,7 +53,8 @@ type ContentBlockV1 struct {
 	Data string `json:"data,omitempty"`
 
 	// Resource contains embedded resource data (for type="resource").
-	Resource *ResourceContentV0 `json:"resource,omitempty"`
+	// Use EmbeddedTextResourceContent or EmbeddedBlobResourceContent helpers to construct.
+	Resource *EmbeddedResourceContents `json:"resource,omitempty"`
 
 	// URI is the resource URI (for type="resource_link").
 	URI string `json:"uri,omitempty"`
@@ -56,6 +82,30 @@ func ResourceLinkContent(uri, name, description, mimeType string) ContentBlockV1
 		Name:        name,
 		Description: description,
 		MimeType:    mimeType,
+	}
+}
+
+// EmbeddedTextResourceContent creates a ContentBlockV1 containing an embedded text resource.
+func EmbeddedTextResourceContent(uri, text, mimeType string) ContentBlockV1 {
+	return ContentBlockV1{
+		Type: "resource",
+		Resource: &EmbeddedResourceContents{
+			URI:      uri,
+			Text:     text,
+			MimeType: mimeType,
+		},
+	}
+}
+
+// EmbeddedBlobResourceContent creates a ContentBlockV1 containing an embedded blob resource.
+func EmbeddedBlobResourceContent(uri, blob, mimeType string) ContentBlockV1 {
+	return ContentBlockV1{
+		Type: "resource",
+		Resource: &EmbeddedResourceContents{
+			URI:      uri,
+			Blob:     blob,
+			MimeType: mimeType,
+		},
 	}
 }
 

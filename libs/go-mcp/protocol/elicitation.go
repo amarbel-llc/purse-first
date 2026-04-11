@@ -26,6 +26,12 @@ type ElicitRequestParams struct {
 
 	// ElicitationId is a unique identifier for URL elicitation (mode="url").
 	ElicitationId string `json:"elicitationId,omitempty"`
+
+	// Task contains task metadata for task-augmented elicitation.
+	Task *TaskParams `json:"task,omitempty"`
+
+	// Meta contains protocol-level metadata (e.g., progressToken).
+	Meta map[string]any `json:"_meta,omitempty"`
 }
 
 // ElicitResult is the result of an elicitation request.
@@ -35,4 +41,14 @@ type ElicitResult struct {
 
 	// Content contains the form data when action is "accept".
 	Content json.RawMessage `json:"content,omitempty"`
+
+	// Meta contains protocol-level metadata.
+	Meta map[string]any `json:"_meta,omitempty"`
+}
+
+// ElicitationCompleteNotificationParams contains the params for an
+// elicitation completion notification (URL mode).
+type ElicitationCompleteNotificationParams struct {
+	// ElicitationId identifies the completed elicitation.
+	ElicitationId string `json:"elicitationId"`
 }
