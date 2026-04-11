@@ -31,4 +31,10 @@ type Options struct {
 
 	// Logging is the logging handler (V1, optional).
 	Logging LoggingHandler
+
+	// PreferV1Providers, when true, causes the handler to use V1 provider
+	// methods (CallToolV1, ListToolsV1, etc.) whenever the provider implements
+	// them, regardless of the negotiated protocol version. This avoids lossy
+	// content block downgrade for V0 clients that accept V1 shapes.
+	PreferV1Providers bool
 }

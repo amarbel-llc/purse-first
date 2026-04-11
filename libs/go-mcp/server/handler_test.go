@@ -271,6 +271,136 @@ func makeInitialize(t *testing.T, version string) *jsonrpc.Message {
 	}
 }
 
+// stubToolProviderV1 implements both ToolProvider (V0) and ToolProviderV1.
+// It tracks which method was called.
+type stubToolProviderV1 struct {
+	calledV0 bool
+	calledV1 bool
+}
+
+func (s *stubToolProviderV1) ListTools(ctx context.Context) ([]protocol.Tool, error) {
+	s.calledV0 = true
+	return []protocol.Tool{
+		{Name: "echo", Description: "Echo tool", InputSchema: json.RawMessage(`{"type":"object"}`)},
+	}, nil
+}
+
+func (s *stubToolProviderV1) CallTool(ctx context.Context, name string, args json.RawMessage) (*protocol.ToolCallResult, error) {
+	s.calledV0 = true
+	return &protocol.ToolCallResult{
+		Content: []protocol.ContentBlock{protocol.TextContent("v0")},
+	}, nil
+}
+
+func (s *stubToolProviderV1) ListToolsV1(ctx context.Context, cursor string) (*protocol.ToolsListResultV1, error) {
+	s.calledV1 = true
+	return &protocol.ToolsListResultV1{
+		Tools: []protocol.ToolV1{
+			{Name: "echo", Description: "Echo tool", InputSchema: json.RawMessage(`{"type":"object"}`)},
+		},
+	}, nil
+}
+
+func (s *stubToolProviderV1) CallToolV1(ctx context.Context, name string, args json.RawMessage) (*protocol.ToolCallResultV1, error) {
+	s.calledV1 = true
+	return &protocol.ToolCallResultV1{
+		Content: []protocol.ContentBlockV1{{Type: "text", Text: "v1"}},
+	}, nil
+}
+
+func TestPreferV1ProvidersCallTool(t *testing.T) {
+	tools := &stubToolProviderV1{}
+	s := &Server{
+		opts: Options{
+			ServerName:        "test",
+			ServerVersion:     "1.0",
+			Tools:             tools,
+			PreferV1Providers: true,
+		},
+	}
+	s.handler = NewHandler(s)
+
+	// Client negotiates V0.
+	initMsg := makeInitialize(t, protocol.ProtocolVersionV0)
+	resp, err := s.handler.Handle(context.Background(), initMsg)
+	if err != nil {
+		t.Fatalf("Handle initialize: %v", err)
+	}
+
+	var initResult protocol.InitializeResult
+	if err := json.Unmarshal(resp.Result, &initResult); err != nil {
+		t.Fatalf("unmarshal init result: %v", err)
+	}
+	if initResult.ProtocolVersion != protocol.ProtocolVersionV0 {
+		t.Fatalf("expected V0 negotiation, got %q", initResult.ProtocolVersion)
+	}
+
+	// Call a tool — should use V1 provider despite V0 negotiation.
+	callParams, _ := json.Marshal(protocol.ToolCallParams{Name: "echo"})
+	callID := jsonrpc.NewNumberID(2)
+	callMsg := &jsonrpc.Message{
+		JSONRPC: "2.0",
+		ID:      &callID,
+		Method:  "tools/call",
+		Params:  callParams,
+	}
+
+	resp, err = s.handler.Handle(context.Background(), callMsg)
+	if err != nil {
+		t.Fatalf("Handle tools/call: %v", err)
+	}
+	if resp.Error != nil {
+		t.Fatalf("tools/call error: %v", resp.Error)
+	}
+
+	if !tools.calledV1 {
+		t.Error("expected CallToolV1 to be called, but it was not")
+	}
+	if tools.calledV0 {
+		t.Error("expected CallTool (V0) NOT to be called, but it was")
+	}
+}
+
+func TestPreferV1ProvidersListTools(t *testing.T) {
+	tools := &stubToolProviderV1{}
+	s := &Server{
+		opts: Options{
+			ServerName:        "test",
+			ServerVersion:     "1.0",
+			Tools:             tools,
+			PreferV1Providers: true,
+		},
+	}
+	s.handler = NewHandler(s)
+
+	// Client negotiates V0.
+	initMsg := makeInitialize(t, protocol.ProtocolVersionV0)
+	s.handler.Handle(context.Background(), initMsg)
+
+	// List tools — should use V1 provider despite V0 negotiation.
+	listID := jsonrpc.NewNumberID(2)
+	listMsg := &jsonrpc.Message{
+		JSONRPC: "2.0",
+		ID:      &listID,
+		Method:  "tools/list",
+	}
+
+	resp, err := s.handler.Handle(context.Background(), listMsg)
+	if err != nil {
+		t.Fatalf("Handle tools/list: %v", err)
+	}
+	if resp.Error != nil {
+		t.Fatalf("tools/list error: %v", resp.Error)
+	}
+
+	if !tools.calledV1 {
+		t.Error("expected ListToolsV1 to be called, but it was not")
+	}
+	if tools.calledV0 {
+		t.Error("expected ListTools (V0) NOT to be called, but it was")
+	}
+}
+
 // stubLoggingHandler satisfies LoggingHandler for tests.
 type stubLoggingHandler struct{}
 

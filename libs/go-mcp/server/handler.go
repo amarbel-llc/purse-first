@@ -163,8 +163,8 @@ func (h *Handler) handleToolsList(ctx context.Context, msg *jsonrpc.Message) (*j
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, "tools not supported", nil)
 	}
 
-	// If V1 negotiated and provider supports V1, use V1 listing.
-	if h.isV1() {
+	// If V1 negotiated (or PreferV1Providers) and provider supports V1, use V1 listing.
+	if h.isV1() || h.server.opts.PreferV1Providers {
 		if p, ok := h.server.opts.Tools.(ToolProviderV1); ok {
 			var cursor string
 			if msg.Params != nil {
@@ -200,8 +200,8 @@ func (h *Handler) handleToolsCall(ctx context.Context, msg *jsonrpc.Message) (*j
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InvalidParams, "invalid params", nil)
 	}
 
-	// If V1 negotiated and provider supports V1, use V1 call.
-	if h.isV1() {
+	// If V1 negotiated (or PreferV1Providers) and provider supports V1, use V1 call.
+	if h.isV1() || h.server.opts.PreferV1Providers {
 		if p, ok := h.server.opts.Tools.(ToolProviderV1); ok {
 			result, err := p.CallToolV1(ctx, params.Name, params.Arguments)
 			if err != nil {
@@ -224,7 +224,7 @@ func (h *Handler) handleResourcesList(ctx context.Context, msg *jsonrpc.Message)
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, "resources not supported", nil)
 	}
 
-	if h.isV1() {
+	if h.isV1() || h.server.opts.PreferV1Providers {
 		if p, ok := h.server.opts.Resources.(ResourceProviderV1); ok {
 			var cursor string
 			if msg.Params != nil {
@@ -273,7 +273,7 @@ func (h *Handler) handleResourcesTemplates(ctx context.Context, msg *jsonrpc.Mes
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, "resources not supported", nil)
 	}
 
-	if h.isV1() {
+	if h.isV1() || h.server.opts.PreferV1Providers {
 		if p, ok := h.server.opts.Resources.(ResourceProviderV1); ok {
 			var cursor string
 			if msg.Params != nil {
@@ -304,7 +304,7 @@ func (h *Handler) handlePromptsList(ctx context.Context, msg *jsonrpc.Message) (
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InternalError, "prompts not supported", nil)
 	}
 
-	if h.isV1() {
+	if h.isV1() || h.server.opts.PreferV1Providers {
 		if p, ok := h.server.opts.Prompts.(PromptProviderV1); ok {
 			var cursor string
 			if msg.Params != nil {
@@ -340,7 +340,7 @@ func (h *Handler) handlePromptsGet(ctx context.Context, msg *jsonrpc.Message) (*
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InvalidParams, "invalid params", nil)
 	}
 
-	if h.isV1() {
+	if h.isV1() || h.server.opts.PreferV1Providers {
 		if p, ok := h.server.opts.Prompts.(PromptProviderV1); ok {
 			result, err := p.GetPromptV1(ctx, params.Name, params.Arguments)
 			if err != nil {
