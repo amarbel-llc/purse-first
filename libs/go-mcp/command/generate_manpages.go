@@ -156,7 +156,12 @@ func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Comman
 	writeFiles(&b, cmd.Files)
 
 	fmt.Fprintf(&b, ".SH SEE ALSO\n")
-	fmt.Fprintf(&b, ".BR %s (1)\n", a.Name)
+	var seeAlsoRefs []string
+	seeAlsoRefs = append(seeAlsoRefs, fmt.Sprintf(".BR %s (1)", a.Name))
+	for _, ref := range cmd.SeeAlso {
+		seeAlsoRefs = append(seeAlsoRefs, fmt.Sprintf(".BR %s (1)", ref))
+	}
+	fmt.Fprintf(&b, "%s\n", strings.Join(seeAlsoRefs, ",\n"))
 
 	path := filepath.Join(dir, fullName+".1")
 	return os.WriteFile(path, []byte(b.String()), 0o644)

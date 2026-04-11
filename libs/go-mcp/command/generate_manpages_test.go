@@ -521,6 +521,56 @@ func TestGenerateManpageNoEnvVarsOrFiles(t *testing.T) {
 	}
 }
 
+func TestGenerateManpageCommandSeeAlso(t *testing.T) {
+	app := NewApp("lux", "LSP multiplexer")
+	app.AddCommand(&Command{
+		Name:        "hover",
+		Description: Description{Short: "Show hover info"},
+		SeeAlso:     []string{"lux-definition", "lux-references"},
+	})
+	app.AddCommand(&Command{
+		Name:        "definition",
+		Description: Description{Short: "Go to definition"},
+		SeeAlso:     []string{"lux-hover"},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	// hover page should list both cross-refs plus the parent back-ref
+	hoverPage, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "lux-hover.1"))
+	if err != nil {
+		t.Fatalf("read lux-hover.1: %v", err)
+	}
+	hoverContent := string(hoverPage)
+
+	if !strings.Contains(hoverContent, ".BR lux-definition (1)") {
+		t.Error("hover page missing cross-reference to lux-definition")
+	}
+	if !strings.Contains(hoverContent, ".BR lux-references (1)") {
+		t.Error("hover page missing cross-reference to lux-references")
+	}
+	if !strings.Contains(hoverContent, ".BR lux (1)") {
+		t.Error("hover page missing back-reference to parent app")
+	}
+
+	// definition page should reference hover plus parent
+	defPage, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "lux-definition.1"))
+	if err != nil {
+		t.Fatalf("read lux-definition.1: %v", err)
+	}
+	defContent := string(defPage)
+
+	if !strings.Contains(defContent, ".BR lux-hover (1)") {
+		t.Error("definition page missing cross-reference to lux-hover")
+	}
+	if !strings.Contains(defContent, ".BR lux (1)") {
+		t.Error("definition page missing back-reference to parent app")
+	}
+}
+
 func TestInstallExtraManpagesMapFS(t *testing.T) {
 	app := NewApp("moxy", "moxy proxy")
 	mfs := fstest.MapFS{

@@ -133,6 +133,11 @@ type Command struct {
 	// the per-command manpage's FILES section.
 	Files []FilePath
 
+	// SeeAlso lists related command page names (e.g. "lux-definition",
+	// "lux-references") rendered into the per-command manpage's SEE ALSO
+	// section alongside the automatic back-reference to the parent app page.
+	SeeAlso []string
+
 	// PassthroughArgs disables flag parsing for this command. All arguments
 	// after the command name are passed raw as {"args": [...]} to the handler.
 	// Passthrough commands appear in help, manpages, and completions but have
