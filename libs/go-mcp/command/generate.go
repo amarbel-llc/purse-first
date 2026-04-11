@@ -64,17 +64,17 @@ func (a *App) GenerateAllWithSkills(dir, skillsDir string) error {
 		return err
 	}
 
-	if err := a.installExtraManpages(dir); err != nil {
+	if err := a.InstallExtraManpages(dir); err != nil {
 		return err
 	}
 
 	return a.GenerateCompletions(dir)
 }
 
-// installExtraManpages copies each ExtraManpages entry from its source fs.FS
+// InstallExtraManpages copies each ExtraManpages entry from its source fs.FS
 // to {dir}/share/man/man{Section}/{Name}. The framework does not parse or
 // modify the file contents — bytes are written verbatim.
-func (a *App) installExtraManpages(dir string) error {
+func (a *App) InstallExtraManpages(dir string) error {
 	for i, mf := range a.ExtraManpages {
 		if mf.Source == nil {
 			return fmt.Errorf("ExtraManpages[%d]: Source is nil", i)

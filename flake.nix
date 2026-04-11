@@ -47,7 +47,8 @@
           || baseName == "go.sum"
           || baseName == "go.work"
           || baseName == "go.work.sum"
-          || baseName == "gomod2nix.toml";
+          || baseName == "gomod2nix.toml"
+          || nixpkgs.lib.hasSuffix ".7" baseName;
       };
 
       buildDevenvs =
@@ -63,6 +64,30 @@
           rust = import ./devenvs/rust { inherit pkgs pkgs-master rust-overlay; };
         };
 
+      # Build go-mcp-docs binary per-system, then run it to produce manpages.
+      buildGoMcpDocs =
+        system:
+        let
+          goPkgs = import nixpkgs {
+            inherit system;
+            overlays = [ gomod2nix.overlays.default ];
+          };
+          pkgs-master = import nixpkgs-master { inherit system; };
+          mkGoModule = import ./lib/mkGoWorkspaceModule.nix {
+            pkgs = goPkgs;
+            go = pkgs-master.go_1_26;
+            inherit goWorkspaceSrc;
+          };
+          docsBin = mkGoModule {
+            pname = "go-mcp-docs";
+            version = "0.0.9";
+            subPackages = [ "cmd/go-mcp-docs" ];
+          };
+        in
+        goPkgs.runCommand "go-mcp-manpages" { } ''
+          ${docsBin}/bin/go-mcp-docs "$out"
+        '';
+
       marketplaceOutputs = mkMarketplace {
         inherit nixpkgs nixpkgs-master utils;
         name = "purse-first";
@@ -77,7 +102,7 @@
           goOverlays = [ gomod2nix.overlays.default ];
           version = "0.1.0";
         };
-        plugins = _system: [ ];
+        plugins = system: [ (buildGoMcpDocs system) ];
         skills = ./skills;
         packageToml = ./package.toml;
         pluginConfig = builtins.fromJSON (builtins.readFile ./marketplace-config.json);

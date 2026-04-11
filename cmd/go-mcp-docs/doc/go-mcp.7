@@ -1,0 +1,78 @@
+.TH GO-MCP 7 "2026-04-10" "go-mcp 0.0.9" "Go MCP Framework"
+.SH NAME
+go-mcp \- zero-dependency Go library for MCP servers and CLI tools
+.SH DESCRIPTION
+.B go-mcp
+.RI ( github.com/amarbel-llc/purse-first/libs/go-mcp )
+is a zero-dependency Go library for building MCP servers and CLI tools.
+It provides two layers: a high-level
+.B command
+package that generates CLI parsing, MCP registration, plugin manifests,
+manpages, and shell completions from a single definition, and low-level
+packages for building MCP servers directly.
+.SS Which Layer?
+Default to
+.B command.App
+unless you are building a pure MCP server with no CLI surface.
+The command layer adds no overhead and generates artifacts for free.
+.PP
+Use the
+.B command
+layer when you need CLI subcommands and MCP tools from the same
+definitions, or when you want automatic manpages, completions, and
+plugin manifests.
+.PP
+Use the raw
+.B server
+layer when you need only an MCP server with no CLI surface, or when
+you need custom dispatch logic that doesn't fit the command abstraction.
+.SH PACKAGES
+.TP
+.BR go-mcp-command (7)
+Unified command abstraction: CLI + MCP + manpages + completions + manifests
+from a single definition.
+.TP
+.BR go-mcp-server (7)
+MCP server scaffolding with lifecycle management and provider registries.
+.TP
+.BR go-mcp-protocol (7)
+MCP protocol types and constants (version 2024-11-05).
+.TP
+.BR go-mcp-output (7)
+Context-saving utilities for limiting tool output size (pagination, truncation).
+.TP
+.BR go-mcp-transport (7)
+Transport layer for sending and receiving JSON-RPC messages.
+.TP
+.BR go-mcp-purse (7)
+Plugin manifest and mapping builders for purse-first integration.
+.TP
+.BR go-mcp-executor (7)
+Process management abstraction for MCP servers that manage subprocesses.
+.TP
+.BR go-mcp-hooks (7)
+Per-package PreToolUse hook system for tool interception.
+.SH IMPORT PATH
+.nf
+github.com/amarbel-llc/purse-first/libs/go-mcp
+.fi
+.PP
+Sub-packages are imported individually:
+.nf
+github.com/amarbel-llc/purse-first/libs/go-mcp/command
+github.com/amarbel-llc/purse-first/libs/go-mcp/server
+github.com/amarbel-llc/purse-first/libs/go-mcp/protocol
+github.com/amarbel-llc/purse-first/libs/go-mcp/output
+github.com/amarbel-llc/purse-first/libs/go-mcp/transport
+github.com/amarbel-llc/purse-first/libs/go-mcp/purse
+github.com/amarbel-llc/purse-first/libs/go-mcp/executor
+.fi
+.SH SEE ALSO
+.BR go-mcp-command (7),
+.BR go-mcp-server (7),
+.BR go-mcp-protocol (7),
+.BR go-mcp-output (7),
+.BR go-mcp-transport (7),
+.BR go-mcp-purse (7),
+.BR go-mcp-executor (7),
+.BR go-mcp-hooks (7)

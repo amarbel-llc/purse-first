@@ -1,0 +1,147 @@
+.TH GO-MCP-PROTOCOL 7 "2026-04-10" "go-mcp 0.0.9" "Go MCP Framework"
+.SH NAME
+go-mcp-protocol \- MCP protocol types and constants
+.SH SYNOPSIS
+.nf
+import "github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
+.fi
+.SH DESCRIPTION
+The
+.B protocol
+package defines types for MCP protocol version 2024-11-05 (V0) and
+the V1 extensions (tool annotations, execution hints, icons).
+.SH TYPES
+.SS Tool
+.nf
+type Tool struct {
+    Name        string          `json:"name"`
+    Description string          `json:"description,omitempty"`
+    InputSchema json.RawMessage `json:"inputSchema"`
+}
+.fi
+.SS ToolCallParams
+.nf
+type ToolCallParams struct {
+    Name      string          `json:"name"`
+    Arguments json.RawMessage `json:"arguments,omitempty"`
+}
+.fi
+.SS ToolCallResult
+.nf
+type ToolCallResult struct {
+    Content []ContentBlock `json:"content"`
+    IsError bool           `json:"isError,omitempty"`
+}
+.fi
+.SS ContentBlock
+.nf
+type ContentBlock struct {
+    Type     string `json:"type"`
+    Text     string `json:"text"`
+    MimeType string `json:"mimeType,omitempty"`
+    Data     string `json:"data,omitempty"`
+}
+.fi
+.SS Resource
+.nf
+type Resource struct {
+    URI         string `json:"uri"`
+    Name        string `json:"name"`
+    Description string `json:"description,omitempty"`
+    MimeType    string `json:"mimeType,omitempty"`
+}
+.fi
+.SS ResourceTemplate
+.nf
+type ResourceTemplate struct {
+    URITemplate string `json:"uriTemplate"` // RFC 6570
+    Name        string `json:"name"`
+    Description string `json:"description,omitempty"`
+    MimeType    string `json:"mimeType,omitempty"`
+}
+.fi
+.SS ResourceContent
+.nf
+type ResourceContent struct {
+    URI      string `json:"uri"`
+    MimeType string `json:"mimeType,omitempty"`
+    Text     string `json:"text,omitempty"`
+    Blob     string `json:"blob,omitempty"` // base64
+}
+.fi
+.SS ResourceReadResult
+.nf
+type ResourceReadResult struct {
+    Contents []ResourceContent `json:"contents"`
+}
+.fi
+.SS Prompt
+.nf
+type Prompt struct {
+    Name        string           `json:"name"`
+    Description string           `json:"description,omitempty"`
+    Arguments   []PromptArgument `json:"arguments,omitempty"`
+}
+
+type PromptArgument struct {
+    Name        string `json:"name"`
+    Description string `json:"description,omitempty"`
+    Required    bool   `json:"required,omitempty"`
+}
+.fi
+.SS PromptGetResult
+.nf
+type PromptGetResult struct {
+    Description string          `json:"description,omitempty"`
+    Messages    []PromptMessage `json:"messages"`
+}
+
+type PromptMessage struct {
+    Role    string       `json:"role"` // "user" or "assistant"
+    Content ContentBlock `json:"content"`
+}
+.fi
+.SS Capabilities
+.nf
+type ServerCapabilities struct {
+    Tools     *ToolsCapability     `json:"tools,omitempty"`
+    Resources *ResourcesCapability `json:"resources,omitempty"`
+    Prompts   *PromptsCapability   `json:"prompts,omitempty"`
+}
+.fi
+.SS V1 Extensions
+.nf
+type ToolAnnotations struct {
+    Title           string `json:"title,omitempty"`
+    ReadOnlyHint    *bool  `json:"readOnlyHint,omitempty"`
+    DestructiveHint *bool  `json:"destructiveHint,omitempty"`
+    IdempotentHint  *bool  `json:"idempotentHint,omitempty"`
+    OpenWorldHint   *bool  `json:"openWorldHint,omitempty"`
+}
+.fi
+.SH HELPER FUNCTIONS
+.TP
+.B TextContent(text string) ContentBlock
+Creates a ContentBlock containing plain text.
+.TP
+.B ErrorResult(msg string) *ToolCallResult
+Creates a ToolCallResult representing an error.
+.SH CONSTANTS
+.nf
+const (
+    MethodInitialize         = "initialize"
+    MethodInitialized        = "notifications/initialized"
+    MethodPing               = "ping"
+    MethodToolsList          = "tools/list"
+    MethodToolsCall          = "tools/call"
+    MethodResourcesList      = "resources/list"
+    MethodResourcesRead      = "resources/read"
+    MethodResourcesTemplates = "resources/templates/list"
+    MethodPromptsList        = "prompts/list"
+    MethodPromptsGet         = "prompts/get"
+)
+.fi
+.SH SEE ALSO
+.BR go-mcp (7),
+.BR go-mcp-server (7),
+.BR go-mcp-command (7)

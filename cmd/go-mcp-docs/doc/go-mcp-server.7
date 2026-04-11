@@ -1,0 +1,152 @@
+.TH GO-MCP-SERVER 7 "2026-04-10" "go-mcp 0.0.9" "Go MCP Framework"
+.SH NAME
+go-mcp-server \- MCP server scaffolding with provider registries
+.SH SYNOPSIS
+.nf
+import "github.com/amarbel-llc/purse-first/libs/go-mcp/server"
+.fi
+.SH DESCRIPTION
+The
+.B server
+package provides MCP server scaffolding with lifecycle management
+and provider registries. Capabilities are automatically advertised
+based on which providers are set.
+.PP
+Use this package directly when building a pure MCP server without
+CLI subcommands. For combined CLI + MCP, use
+.BR go-mcp-command (7)
+instead.
+.SH TYPES
+.SS Server
+.nf
+type Server struct { /* unexported */ }
+.fi
+.RS
+.TP
+.B New(t transport.Transport, opts Options) (*Server, error)
+Creates a new MCP server. Requires opts.ServerName to be set.
+.TP
+.B Run(ctx context.Context) error
+Starts the server and processes messages until the context is canceled
+or the transport is closed. Handles concurrent request processing
+and graceful shutdown.
+.TP
+.B Close()
+Signals the server to shut down gracefully.
+.RE
+.SS Options
+.nf
+type Options struct {
+    ServerName    string           // required
+    ServerVersion string           // optional
+    Tools         ToolProvider     // optional
+    Resources     ResourceProvider // optional
+    Prompts       PromptProvider   // optional
+}
+.fi
+.SS Provider Interfaces
+.nf
+type ToolProvider interface {
+    ListTools(ctx context.Context) ([]protocol.Tool, error)
+    CallTool(ctx context.Context, name string,
+        args json.RawMessage) (*protocol.ToolCallResult, error)
+}
+
+type ResourceProvider interface {
+    ListResources(ctx context.Context) ([]protocol.Resource, error)
+    ReadResource(ctx context.Context, uri string) (
+        *protocol.ResourceReadResult, error)
+    ListResourceTemplates(ctx context.Context) (
+        []protocol.ResourceTemplate, error)
+}
+
+type PromptProvider interface {
+    ListPrompts(ctx context.Context) ([]protocol.Prompt, error)
+    GetPrompt(ctx context.Context, name string,
+        args map[string]string) (*protocol.PromptGetResult, error)
+}
+.fi
+.PP
+Implement these directly for custom dispatch logic, or use the registry
+helpers below.
+.SS ToolRegistry
+.nf
+func NewToolRegistry() *ToolRegistry
+
+func (r *ToolRegistry) Register(name, description string,
+    schema json.RawMessage, handler ToolHandler)
+func (r *ToolRegistry) ListTools(ctx) ([]protocol.Tool, error)
+func (r *ToolRegistry) CallTool(ctx, name, args) (
+    *protocol.ToolCallResult, error)
+.fi
+.PP
+.B ToolHandler
+is
+.BR "func(ctx context.Context, args json.RawMessage) (*protocol.ToolCallResult, error)" .
+.SS ResourceRegistry
+.nf
+func NewResourceRegistry() *ResourceRegistry
+
+func (r *ResourceRegistry) RegisterResource(
+    resource protocol.Resource, reader ResourceReader)
+func (r *ResourceRegistry) RegisterTemplate(
+    template protocol.ResourceTemplate, reader ResourceReader)
+func (r *ResourceRegistry) ListResources(ctx) (
+    []protocol.Resource, error)
+func (r *ResourceRegistry) ReadResource(ctx, uri) (
+    *protocol.ResourceReadResult, error)
+func (r *ResourceRegistry) ListResourceTemplates(ctx) (
+    []protocol.ResourceTemplate, error)
+.fi
+.PP
+.B ResourceReader
+is
+.BR "func(ctx context.Context, uri string) (*protocol.ResourceReadResult, error)" .
+.SS PromptRegistry
+.nf
+func NewPromptRegistry() *PromptRegistry
+
+func (r *PromptRegistry) Register(
+    prompt protocol.Prompt, renderer PromptRenderer)
+func (r *PromptRegistry) ListPrompts(ctx) (
+    []protocol.Prompt, error)
+func (r *PromptRegistry) GetPrompt(ctx, name, args) (
+    *protocol.PromptGetResult, error)
+.fi
+.PP
+.B PromptRenderer
+is
+.BR "func(ctx context.Context, args map[string]string) (*protocol.PromptGetResult, error)" .
+.SH EXAMPLES
+Build an MCP server with tools and resources:
+.PP
+.nf
+tools := server.NewToolRegistry()
+tools.Register("echo", "Echoes back the message",
+    json.RawMessage(`{"type":"object",
+        "properties":{"message":{"type":"string"}},
+        "required":["message"]}`),
+    func(ctx context.Context, args json.RawMessage) (
+        *protocol.ToolCallResult, error) {
+        var p struct{ Message string `json:"message"` }
+        json.Unmarshal(args, &p)
+        return &protocol.ToolCallResult{
+            Content: []protocol.ContentBlock{
+                protocol.TextContent(p.Message),
+            },
+        }, nil
+    },
+)
+
+t := transport.NewStdio(os.Stdin, os.Stdout)
+srv, _ := server.New(t, server.Options{
+    ServerName: "my-server",
+    Tools:      tools,
+})
+srv.Run(context.Background())
+.fi
+.SH SEE ALSO
+.BR go-mcp (7),
+.BR go-mcp-command (7),
+.BR go-mcp-protocol (7),
+.BR go-mcp-transport (7)

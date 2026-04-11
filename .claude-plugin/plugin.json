@@ -9,7 +9,6 @@
     "./skills/context-saving",
     "./skills/creating-packages",
     "./skills/design_patterns-downstream_rust",
-    "./skills/go-cli-framework",
     "./skills/mcp",
     "./skills/overview",
     "./skills/using-packages"

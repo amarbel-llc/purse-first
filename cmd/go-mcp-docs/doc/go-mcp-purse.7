@@ -1,0 +1,85 @@
+.TH GO-MCP-PURSE 7 "2026-04-10" "go-mcp 0.0.9" "Go MCP Framework"
+.SH NAME
+go-mcp-purse \- plugin manifest and mapping builders for purse-first
+.SH SYNOPSIS
+.nf
+import "github.com/amarbel-llc/purse-first/libs/go-mcp/purse"
+.fi
+.SH DESCRIPTION
+The
+.B purse
+package provides builders for constructing plugin manifests (plugin.json)
+and tool mapping files (mappings.json) for purse-first integration.
+.PP
+Most packages do not need this package directly \(em
+.B command.App.GenerateAll()
+produces these artifacts automatically. Use this package when building
+a raw MCP server that needs purse-first integration without the command
+layer.
+.SH TYPES
+.SS PluginBuilder
+.nf
+func NewPluginBuilder(name string) *PluginBuilder
+
+func (b *PluginBuilder) Command(cmd string,
+    args ...string) *PluginBuilder
+func (b *PluginBuilder) StdioTransport() *PluginBuilder
+func (b *PluginBuilder) OnPostToolUse(
+    action HTTPPostAction, when *NotifyCondition) *PluginBuilder
+func (b *PluginBuilder) OnStop(
+    action HTTPPostAction) *PluginBuilder
+func (b *PluginBuilder) Mappings() *MappingBuilder
+func (b *PluginBuilder) Build() Plugin
+.fi
+.SS MappingBuilder
+.nf
+func NewMappingBuilder(server string) *MappingBuilder
+
+func (b *MappingBuilder) Replaces(
+    builtinTool string) *MappingEntryBuilder
+func (b *MappingBuilder) Build() MappingFile
+.fi
+.PP
+Built-in tool constants:
+.BR BuiltinRead ,
+.BR BuiltinEdit ,
+.BR BuiltinWrite ,
+.BR BuiltinGrep ,
+.BR BuiltinGlob ,
+.BR BuiltinBash .
+.SS MappingEntryBuilder
+.nf
+func (eb *MappingEntryBuilder) ForExtensions(
+    exts ...string) *MappingEntryBuilder
+func (eb *MappingEntryBuilder) WithTool(
+    name, useWhen string) *MappingEntryBuilder
+func (eb *MappingEntryBuilder) Because(
+    reason string) *MappingEntryBuilder
+func (eb *MappingEntryBuilder) Replaces(
+    builtinTool string) *MappingEntryBuilder
+.fi
+.SS Plugin
+.nf
+type Plugin struct {
+    Name          string         `json:"name"`
+    Type          string         `json:"type"`     // "stdio"
+    Command       string         `json:"command"`
+    Args          []string       `json:"args"`
+    Notifications []Notification `json:"notifications,omitempty"`
+    Mappings      []Mapping      `json:"mappings,omitempty"`
+}
+.fi
+.SS Writers
+.TP
+.B WritePlugin(dir string, p Plugin) error
+Writes {dir}/{p.Name}/plugin.json.
+.TP
+.B WriteGlobal(mf MappingFile) error
+Writes $XDG_STATE_HOME/purse-first/{server}.json.
+.TP
+.B WriteProject(projectDir string, mf MappingFile) error
+Writes {projectDir}/.purse-first/{server}.json.
+.SH SEE ALSO
+.BR go-mcp (7),
+.BR go-mcp-command (7),
+.BR go-mcp-hooks (7)

@@ -1,0 +1,34 @@
+.TH GO-MCP-TRANSPORT 7 "2026-04-10" "go-mcp 0.0.9" "Go MCP Framework"
+.SH NAME
+go-mcp-transport \- transport layer for JSON-RPC messages
+.SH SYNOPSIS
+.nf
+import "github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
+.fi
+.SH DESCRIPTION
+The
+.B transport
+package defines the interface for sending and receiving JSON-RPC
+messages, and provides a stdio implementation using newline-delimited
+JSON (not Content-Length headers like LSP).
+.SH TYPES
+.SS Transport Interface
+.nf
+type Transport interface {
+    Read() (*jsonrpc.Message, error)  // io.EOF on close
+    Write(*jsonrpc.Message) error
+    Close() error
+}
+.fi
+.SS Stdio
+MCP stdio transport using newline-delimited JSON.
+.nf
+func NewStdio(r io.Reader, w io.Writer) *Stdio
+func NewStdioWithCloser(r io.Reader, w io.Writer,
+    c io.Closer) *Stdio
+.fi
+.PP
+Buffer: 64KB initial, 1MB max per message.
+.SH SEE ALSO
+.BR go-mcp (7),
+.BR go-mcp-server (7)

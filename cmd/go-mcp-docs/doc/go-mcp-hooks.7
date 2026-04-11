@@ -1,0 +1,147 @@
+.TH GO-MCP-HOOKS 7 "2026-04-10" "go-mcp 0.0.9" "Go MCP Framework"
+.SH NAME
+go-mcp-hooks \- per-package PreToolUse hook system for tool interception
+.SH DESCRIPTION
+Packages that declare
+.B MapsTools
+on their commands automatically get per-package PreToolUse hooks.
+The hooks intercept built-in Claude Code tools (Bash, Read, Grep, etc.)
+and deny them when a matching MCP tool exists, suggesting the MCP tool
+instead.
+.SH HOW IT WORKS
+.B GenerateAll
+(and
+.BR GenerateAllWithSkills )
+calls
+.BR GenerateHooks ,
+which:
+.IP 1. 3
+Collects the unique set of
+.B Replaces
+values from all
+.B ToolMapping
+declarations across commands.
+.IP 2. 3
+Builds an alphabetically-sorted matcher string (e.g., "Bash|Grep|Read").
+.IP 3. 3
+Writes
+.I hooks/hooks.json
+with a PreToolUse entry pointing to an executable wrapper.
+.IP 4. 3
+Writes
+.I hooks/pre-tool-use
+\(em a shell script that calls
+.BI < binary >" hook" .
+.PP
+The
+.I hooks/hooks.json
+uses
+.B ${CLAUDE_PLUGIN_ROOT}
+for portable path resolution:
+.PP
+.nf
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
+.fi
+.SH WIRING THE HOOK SUBCOMMAND
+Each package binary needs a
+.B hook
+subcommand that calls
+.BR app.HandleHook .
+The
+.I pre-tool-use
+wrapper script delegates to this subcommand.
+.PP
+Flag-based CLI pattern:
+.PP
+.nf
+if flag.NArg() >= 1 && flag.Arg(0) == "hook" {
+    if err := app.HandleHook(os.Stdin, os.Stdout); err != nil {
+        log.Fatalf("handling hook: %v", err)
+    }
+    return
+}
+.fi
+.PP
+command.App pattern:
+.PP
+.nf
+app.AddCommand(&command.Command{
+    Name:   "hook",
+    Hidden: true,
+    Description: command.Description{
+        Short: "Handle PreToolUse hook",
+    },
+    RunCLI: func(ctx context.Context,
+        args json.RawMessage) error {
+        return app.HandleHook(os.Stdin, os.Stdout)
+    },
+})
+.fi
+.SH HANDLEHOOK BEHAVIOR
+.B HandleHook
+reads hook input JSON from stdin, matches against all registered
+.B ToolMapping
+declarations, and:
+.IP \(bu 2
+.B Match found:
+writes a deny response with the MCP tool name
+(e.g.,
+.IR mcp__plugin_grit_grit__status ).
+.IP \(bu 2
+.B No match:
+writes nothing (implicit allow).
+.PP
+The MCP tool name follows the pattern
+.IR mcp__plugin_{name}_{name}__{command} .
+.PP
+Hooks follow a fail-open model: errors return success, never deny.
+.SH ARCHITECTURE
+Hooks are entirely per-package. There is no central
+.B purse-first hook
+command or shared hook handler. Each package binary handles its own
+PreToolUse invocations independently. This means:
+.IP \(bu 2
+Adding a new package with mappings automatically gets hooks.
+.IP \(bu 2
+Removing a package removes its hooks.
+.IP \(bu 2
+No coordination needed between packages.
+.SH MACOS PATH RESOLUTION
+On macOS,
+.I /var
+is a symlink to
+.I /private/var
+and
+.I /tmp
+to
+.IR /private/tmp .
+.BR filepath.EvalSymlinks (3)
+fails on non-existent paths, returning the unresolved form.
+.PP
+When resolving paths that may not exist (e.g., for prefix-matching
+in PreToolUse hooks), walk up the directory tree to find an existing
+ancestor, resolve symlinks there, then re-append the non-existent
+suffix. On Linux this is a no-op.
+.PP
+Always resolve
+.B both
+sides of a path comparison, not just one.
+.SH SEE ALSO
+.BR go-mcp (7),
+.BR go-mcp-command (7),
+.BR go-mcp-purse (7)

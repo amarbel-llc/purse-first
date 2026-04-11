@@ -1,0 +1,43 @@
+.TH GO-MCP-EXECUTOR 7 "2026-04-10" "go-mcp 0.0.9" "Go MCP Framework"
+.SH NAME
+go-mcp-executor \- process management abstraction for MCP servers
+.SH SYNOPSIS
+.nf
+import "github.com/amarbel-llc/purse-first/libs/go-mcp/executor"
+import "github.com/amarbel-llc/purse-first/libs/go-mcp/executor/nix"
+.fi
+.SH DESCRIPTION
+The
+.B executor
+package provides a process management abstraction for MCP servers that
+need to manage subprocesses. A Nix implementation is available at
+.B executor/nix
+for building and running Nix flake references.
+.SH TYPES
+.SS Executor Interface
+.nf
+type Executor interface {
+    Build(ctx context.Context, spec string) (string, error)
+    Execute(ctx context.Context, path string,
+        args []string) (*Process, error)
+}
+.fi
+.TP
+.B Build
+Resolves a spec (e.g., a Nix flake reference) to an executable path.
+.TP
+.B Execute
+Launches a subprocess and returns a Process handle.
+.SS Process
+.nf
+type Process struct {
+    Stdin  io.WriteCloser
+    Stdout io.ReadCloser
+    Stderr io.ReadCloser
+    Wait   func() error
+    Kill   func() error
+}
+.fi
+.SH SEE ALSO
+.BR go-mcp (7),
+.BR go-mcp-server (7)

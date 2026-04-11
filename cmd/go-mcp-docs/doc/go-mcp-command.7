@@ -1,0 +1,243 @@
+.TH GO-MCP-COMMAND 7 "2026-04-10" "go-mcp 0.0.9" "Go MCP Framework"
+.SH NAME
+go-mcp-command \- unified command abstraction for CLI and MCP tools
+.SH SYNOPSIS
+.nf
+import "github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+.fi
+.SH DESCRIPTION
+The
+.B command
+package generates CLI parsing, MCP tool registration, plugin manifests,
+tool mappings, manpages, and shell completions from a single definition.
+Define commands once, get CLI + MCP + completions + manpages + plugin manifests.
+.SH TYPES
+.SS App
+.nf
+type App struct {
+    Name        string
+    Description Description
+    Version     string
+    MCPArgs     []string  // extra args in plugin manifests
+    Params      []Param   // global flags
+    Examples    []Example // app-level workflow examples
+    EnvVars     []EnvVar  // rendered in ENVIRONMENT section
+    Files       []FilePath // rendered in FILES section
+    ExtraManpages []ManpageFile // hand-written pages
+}
+.fi
+.PP
+Constructor:
+.RS
+.TP
+.B NewApp(name, short string) *App
+Creates a new App with the given name and short description.
+.RE
+.PP
+Command management:
+.RS
+.TP
+.B AddCommand(cmd *Command)
+Registers a command and its aliases.
+.B Panics on duplicate names.
+.TP
+.B GetCommand(name string) (*Command, bool)
+Looks up a command by name or alias.
+.TP
+.B AllCommands() func(yield func(string, *Command) bool)
+Iterates over all registered commands (including hidden).
+.TP
+.B VisibleCommands() func(yield func(string, *Command) bool)
+Iterates over non-hidden commands.
+.TP
+.B MergeWithPrefix(other *App, prefix string)
+Adds all commands from another App, prefixed with the given string
+(e.g., "store" produces "store-ls", "store-cat").
+.RE
+.PP
+MCP integration:
+.RS
+.TP
+.B RegisterMCPTools(registry *server.ToolRegistry)
+Registers all non-hidden commands that have a Run handler as MCP tools.
+.RE
+.PP
+Hook handling:
+.RS
+.TP
+.B HandleHook(r io.Reader, w io.Writer) error
+Reads a PreToolUse hook input from r, matches against all registered
+ToolMapping declarations, and writes a deny response to w when a match
+is found. Silent allow (no output) when nothing matches. See
+.BR go-mcp-hooks (7).
+.RE
+.PP
+Artifact generation:
+.RS
+.TP
+.B GenerateAll(dir string) error
+Writes all artifacts to standard paths under dir: plugin.json, mappings.json,
+hooks, manpages (man1), and shell completions (bash, zsh, fish).
+.TP
+.B GenerateAllWithSkills(dir, skillsDir string) error
+Like GenerateAll, plus discovers skills and includes them in plugin.json.
+.TP
+.B GenerateManpages(dir string) error
+Writes roff manpages to {dir}/share/man/man1/.
+.TP
+.B GenerateCompletions(dir string) error
+Writes bash, zsh, and fish completion scripts.
+.RE
+.SS Command
+.nf
+type Command struct {
+    Name            string
+    Aliases         []string
+    Description     Description
+    Hidden          bool
+    Title           string
+    Annotations     *protocol.ToolAnnotations
+    Execution       *protocol.ToolExecution
+    Params          []Param
+    MapsTools       []ToolMapping
+    Examples        []Example
+    EnvVars         []EnvVar
+    Files           []FilePath
+    SeeAlso         []string
+    PassthroughArgs bool
+    Run             func(ctx, args, Prompter) (*Result, error)
+    RunCLI          func(ctx, args) error
+}
+.fi
+.PP
+Methods:
+.RS
+.TP
+.B RequiredParams() []Param
+Returns only params marked as required.
+.TP
+.B OptionalParams() []Param
+Returns only params not marked as required.
+.TP
+.B InputSchema() json.RawMessage
+Returns a JSON Schema describing this command's parameters.
+.RE
+.SS Param
+.nf
+type Param struct {
+    Name        string
+    Short       byte      // single-char flag alias
+    Type        ParamType
+    Description string
+    Required    bool
+    Default     any
+    Completer   func() map[string]string
+}
+.fi
+.SS ParamType
+.nf
+const (
+    String ParamType = iota
+    Int
+    Bool
+    Float
+    Array
+)
+.fi
+.PP
+.B JSONSchemaType() string
+\(em returns "string", "integer", "boolean", "number", or "array".
+.SS Description
+.nf
+type Description struct {
+    Short string // manpage NAME, completion text, MCP description
+    Long  string // manpage DESCRIPTION, --help output
+}
+.fi
+.SS ToolMapping
+Declares a tool interception: which Claude Code built-in tool to replace,
+and the conditions under which to intercept.
+.nf
+type ToolMapping struct {
+    Replaces        string   // "Read", "Grep", "Glob", "Bash"
+    Extensions      []string // e.g. [".go", ".py"]
+    CommandPrefixes []string // e.g. ["git status"]
+    UseWhen         string   // shown in denial reason
+}
+.fi
+.SS Example
+.nf
+type Example struct {
+    Description string
+    Command     string // may be multi-line
+    Output      string // optional
+}
+.fi
+.SS EnvVar
+.nf
+type EnvVar struct {
+    Name        string
+    Description string
+    Default     string
+}
+.fi
+.SS FilePath
+.nf
+type FilePath struct {
+    Path        string
+    Description string
+}
+.fi
+.SS ManpageFile
+.nf
+type ManpageFile struct {
+    Source  fs.FS  // filesystem to read from
+    Path   string // path within Source
+    Section int   // man section (1, 5, 7, etc.)
+    Name   string // installed filename
+}
+.fi
+.SH EXAMPLES
+Create an app with two commands, bash interception, and context-saving:
+.PP
+.nf
+app := command.NewApp("fileinfo", "File metadata MCP server")
+app.Version = "0.1.0"
+app.Examples = []command.Example{
+    {
+        Description: "Inspect a file and list its directory",
+        Command:     "fileinfo stat --path=src/main.go\\nfileinfo ls --path=src/",
+    },
+}
+
+app.AddCommand(&command.Command{
+    Name: "stat",
+    Description: command.Description{
+        Short: "Get file metadata",
+        Long:  "Returns size, permissions, and modification time.",
+    },
+    Params: []command.Param{
+        {Name: "path", Type: command.String, Required: true},
+        {Name: "format", Type: command.String, Default: "text"},
+    },
+    MapsTools: []command.ToolMapping{
+        {Replaces: "Bash", CommandPrefixes: []string{"stat "}},
+    },
+    Run: handleStat,
+})
+
+// Run as MCP server
+registry := server.NewToolRegistry()
+app.RegisterMCPTools(registry)
+t := transport.NewStdio(os.Stdin, os.Stdout)
+srv, _ := server.New(t, server.Options{
+    ServerName: app.Name, Tools: registry,
+})
+srv.Run(context.Background())
+.fi
+.SH SEE ALSO
+.BR go-mcp (7),
+.BR go-mcp-server (7),
+.BR go-mcp-hooks (7),
+.BR go-mcp-output (7),
+.BR go-mcp-purse (7)

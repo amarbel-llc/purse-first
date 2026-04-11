@@ -235,5 +235,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   workspace vendor builds with a shared `vendorHash`
 - **bob:creating-packages** --- Packaging an MCP server for distribution via
   purse-first
-- **bob:go-cli-framework** --- Building Go MCP servers with go-mcp (the Go
+- **go-mcp(7)** --- Building Go MCP servers with go-mcp (the Go
   counterpart to rust-mcp)

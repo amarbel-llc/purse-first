@@ -10,7 +10,7 @@ version: 0.1.0
 
 MCP tools that return unbounded output waste context window tokens and degrade agent performance. Context-saving adds output-limiting parameters so callers can request only the data they need. Every MCP tool that can produce large output should implement one of two patterns.
 
-For Go implementations of these patterns, see the **bob:go-cli-framework** skill (Context-Saving in Go section).
+For Go implementations of these patterns, see **go-mcp-output(7)**.
 For packaging your MCP server after adding context-saving, see the **bob:creating-packages** skill.
 
 ## When to Apply
@@ -203,6 +203,6 @@ For detailed implementation examples from nix-mcp (a Rust MCP server), consult:
 
 ## Related Skills
 
-- **bob:go-cli-framework** — Go implementations of pagination and truncation via the `output` package
+- **go-mcp-output(7)** — Go implementations of pagination and truncation via the `output` package
 - **bob:creating-packages** — Packaging your MCP server for distribution via purse-first
 - **bob:overview** — Framework orientation and concept definitions

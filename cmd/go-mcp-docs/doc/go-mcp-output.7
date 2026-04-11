@@ -1,0 +1,110 @@
+.TH GO-MCP-OUTPUT 7 "2026-04-10" "go-mcp 0.0.9" "Go MCP Framework"
+.SH NAME
+go-mcp-output \- context-saving utilities for limiting tool output size
+.SH SYNOPSIS
+.nf
+import "github.com/amarbel-llc/purse-first/libs/go-mcp/output"
+.fi
+.SH DESCRIPTION
+The
+.B output
+package provides Go implementations of context-saving patterns for
+MCP tools. Use these in Run handlers to paginate arrays and truncate
+text, preventing large outputs from consuming agent context windows.
+.SH TYPES
+.SS Array Pagination
+.nf
+type ArrayLimits struct {
+    Limit  int `json:"limit,omitempty"`  // max items; 0 = unlimited
+    Offset int `json:"offset,omitempty"` // skip first N; 0 = none
+}
+
+type PaginationInfo struct {
+    Offset  int  `json:"offset"`
+    Limit   int  `json:"limit"`
+    Total   int  `json:"total"`
+    HasMore bool `json:"has_more"`
+}
+
+type LimitedArray[T any] struct {
+    Items      []T            `json:"items"`
+    Truncated  bool           `json:"truncated"`
+    TotalCount int            `json:"total_count"`
+    Pagination PaginationInfo `json:"pagination"`
+}
+.fi
+.TP
+.B LimitArray[T any](items []T, limits ArrayLimits) LimitedArray[T]
+Returns a subslice (no copy). Offset is clamped to the slice length.
+.SS Text Truncation
+.nf
+type TextLimits struct {
+    Head     int `json:"head,omitempty"`      // first N lines
+    Tail     int `json:"tail,omitempty"`      // last N lines
+    MaxLines int `json:"max_lines,omitempty"` // max total lines
+    MaxBytes int `json:"max_bytes,omitempty"` // max total bytes
+}
+
+type TruncationInfo struct {
+    OriginalBytes int    `json:"original_bytes"`
+    OriginalLines int    `json:"original_lines"`
+    KeptBytes     int    `json:"kept_bytes"`
+    KeptLines     int    `json:"kept_lines"`
+    Position      string `json:"position"` // "head", "tail", ""
+}
+
+type LimitedText struct {
+    Content        string          `json:"content"`
+    Truncated      bool            `json:"truncated"`
+    TruncationInfo *TruncationInfo `json:"truncation_info,omitempty"`
+}
+.fi
+.TP
+.B LimitText(input string, limits TextLimits) LimitedText
+Processing order: Head/Tail, then MaxLines, then MaxBytes.
+Head and Tail are mutually exclusive; Head takes priority.
+Truncation respects UTF-8 rune boundaries and prefers line boundaries.
+.SS Defaults
+.nf
+type Defaults struct {
+    MaxBytes int // 100,000
+    MaxLines int // 2,000
+    MaxItems int // 100
+}
+.fi
+.TP
+.B StandardDefaults() Defaults
+Returns the standard default limits.
+.TP
+.B (d Defaults) MergeTextLimits(user TextLimits) TextLimits
+Fills zero MaxBytes/MaxLines from defaults.
+.TP
+.B (d Defaults) MergeArrayLimits(user ArrayLimits) ArrayLimits
+Fills zero Limit from defaults.
+.SH EXAMPLES
+Paginate directory entries:
+.PP
+.nf
+defaults := output.StandardDefaults()
+limits := defaults.MergeArrayLimits(output.ArrayLimits{
+    Offset: params.Offset,
+    Limit:  params.Limit,
+})
+result := output.LimitArray(entries, limits)
+// result.Items, result.Pagination.HasMore, result.TotalCount
+.fi
+.PP
+Truncate command output:
+.PP
+.nf
+defaults := output.StandardDefaults()
+limits := defaults.MergeTextLimits(output.TextLimits{
+    Head: params.Head,
+    Tail: params.Tail,
+})
+result := output.LimitText(stdout, limits)
+// result.Content, result.Truncated, result.TruncationInfo
+.fi
+.SH SEE ALSO
+.BR go-mcp (7),
+.BR go-mcp-command (7)
