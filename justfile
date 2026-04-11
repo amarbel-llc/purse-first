@@ -46,6 +46,18 @@ test-race:
 test-go-mcp:
     {{cmd_nix_dev}} go test -v ./libs/go-mcp/...
 
+# Test dewey library (all layers including build-tag-gated test helpers)
+test-dewey:
+    {{cmd_nix_dev}} go test -tags test ./libs/dewey/...
+
+# Build dewey library (all layers + CLI tools)
+build-dewey:
+    {{cmd_nix_dev}} go build ./libs/dewey/...
+
+# Vet dewey library
+vet-dewey:
+    {{cmd_nix_dev}} go vet -tags test ./libs/dewey/...
+
 # Test rust-mcp library
 test-rust-mcp:
     cd libs/rust-mcp && {{cmd_nix_dev}} cargo test
@@ -113,6 +125,7 @@ check-template:
 test: \
     test-go \
     test-go-mcp \
+    test-dewey \
     test-rust-mcp \
     test-integration \
     test-lifecycle \

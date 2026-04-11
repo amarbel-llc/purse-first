@@ -1,6 +1,43 @@
 schema = 3
 
 [mod]
+  [mod.'c2sp.org/CCTV/age']
+    version = 'v0.0.0-20251208015420-e9274a7bdbfd'
+    hash = 'sha256-Ykf7JWhXxXhLMUz7Yo5lavzTW3bX/QEMLOp1rMfqHUk='
+    goVersion = '1.24rc2'
+
+  [mod.'filippo.io/age']
+    version = 'v1.3.1'
+    hash = 'sha256-Qs/q3zQYV0PukABBPf/aU5V1oOhw95NG6K301VYJk8A='
+    goVersion = '1.24.0'
+    vendorPackages = [
+      'filippo.io/age',
+      'filippo.io/age/internal/bech32',
+      'filippo.io/age/internal/format',
+      'filippo.io/age/internal/stream'
+    ]
+
+  [mod.'filippo.io/edwards25519']
+    version = 'v1.1.0'
+    hash = 'sha256-9ACANrgWZSd5HYPfDZHY8DVbPSC9LOMgy8deq3rDOoc='
+    goVersion = '1.20'
+
+  [mod.'filippo.io/hpke']
+    version = 'v0.4.0'
+    hash = 'sha256-xKPT2hMzz/i3xdDK3NKn6FOmfQPxIMgxCOmm8U1heY4='
+    goVersion = '1.24.0'
+    vendorPackages = [
+      'filippo.io/hpke',
+      'filippo.io/hpke/crypto',
+      'filippo.io/hpke/crypto/ecdh',
+      'filippo.io/hpke/internal/byteorder'
+    ]
+
+  [mod.'filippo.io/nistec']
+    version = 'v0.0.4'
+    hash = 'sha256-sW2rkJbyrutwmj2buZxHjk8SOHM+Pr3h15dx+nSwOs8='
+    goVersion = '1.24.0'
+
   [mod.'github.com/BurntSushi/toml']
     version = 'v1.6.0'
     hash = 'sha256-ptdUJvuc21ixeLt+M5way/na3aCnCO4MYHWulWp8NEY='
@@ -14,6 +51,17 @@ schema = 3
     version = 'v1.0.0'
     hash = 'sha256-8hKERAVV1Pew84kc9GkW23dcO8uIUx/+tJQLi+oPwqE='
     goVersion = '1.12'
+
+  [mod.'github.com/amarbel-llc/tommy']
+    version = 'v0.0.0-20260405143331-87255e87bf37'
+    hash = 'sha256-ElzACYuPmWpNk7bm4V8de18P+PqG+92X9aSxJg8gRUI='
+    goVersion = '1.26'
+    vendorPackages = [
+      'github.com/amarbel-llc/tommy/internal/lexer',
+      'github.com/amarbel-llc/tommy/internal/ringbuf',
+      'github.com/amarbel-llc/tommy/pkg/cst',
+      'github.com/amarbel-llc/tommy/pkg/document'
+    ]
 
   [mod.'github.com/atotto/clipboard']
     version = 'v0.1.4'
@@ -39,6 +87,14 @@ schema = 3
     version = 'v1.24.4'
     hash = 'sha256-Kjo3ZJKHxyJ8+59Zt/Z6ai0S4DTfbzpFZ5ArFIqfxmM='
     goVersion = '1.16'
+
+  [mod.'github.com/brandondube/tai']
+    version = 'v0.1.0'
+    hash = 'sha256-o32wvMW6waT/vJJkpjiCGxBNBUsqeAvnARhbsikRk50='
+    goVersion = '1.16'
+    vendorPackages = [
+      'github.com/brandondube/tai'
+    ]
 
   [mod.'github.com/catppuccin/go']
     version = 'v0.3.0'
@@ -162,6 +218,18 @@ schema = 3
     hash = 'sha256-BOCSIw9jbXCeDs28doL0HA00wsdWjbmyDS2+Yc3x0go='
     goVersion = '1.18'
 
+  [mod.'github.com/chzyer/logex']
+    version = 'v1.1.10'
+    hash = 'sha256-BNOaV/CFAqOymWW3R2m1sCikdCwFZM/pVkylzoeU6yI='
+
+  [mod.'github.com/chzyer/readline']
+    version = 'v0.0.0-20180603132655-2972be24d48e'
+    hash = 'sha256-2Uj5LGpHEbLQG3d/7z9AL8DknUBZyoTAMs4j+VVDmIA='
+
+  [mod.'github.com/chzyer/test']
+    version = 'v0.0.0-20180213035817-a1ea475d72b1'
+    hash = 'sha256-U0irpUSqegh7Nzg1ErPuyjESOcIXXOWf7ikKMbES2mY='
+
   [mod.'github.com/clipperhouse/displaywidth']
     version = 'v0.9.0'
     hash = 'sha256-9CNyTZPSncKQ7Y0my9DR4WYXDjtDHYNL512D691WDAM='
@@ -196,6 +264,11 @@ schema = 3
     hash = 'sha256-6oSurN/ZYr/KHxKKU6Qbw9w8CDKmPa8yL00pZ24H0AM='
     goVersion = '1.18'
 
+  [mod.'github.com/dave/jennifer']
+    version = 'v1.7.1'
+    hash = 'sha256-tKr4x0m+Nup2X9UyxIK+5ZXzrb1vyfPzc9hD2xh6H6g='
+    goVersion = '1.20'
+
   [mod.'github.com/dustin/go-humanize']
     version = 'v1.0.1'
     hash = 'sha256-yuvxYYngpfVkUg9yAmG99IUVmADTQA0tMbBXe0Fq0Mc='
@@ -220,9 +293,17 @@ schema = 3
     goVersion = '1.21'
 
   [mod.'github.com/google/renameio/v2']
-    version = 'v2.0.0'
-    hash = 'sha256-8TxXyvetHewzUC9s1H5Q7HY4S1goTBLpq7f8P8g9bI8='
+    version = 'v2.0.2'
+    hash = 'sha256-Z/6OUS9T9tCMm9nJLrMXUQ6cq3FiV/rS7v9/AYNkA7I='
+    goVersion = '1.25'
+
+  [mod.'github.com/google/shlex']
+    version = 'v0.0.0-20191202100458-e7afc7fbc510'
+    hash = 'sha256-1f392pCmS7AXVKXIC1SvKlYtK/rvW47F5CCkGT2G6JM='
     goVersion = '1.13'
+    vendorPackages = [
+      'github.com/google/shlex'
+    ]
 
   [mod.'github.com/inconshreveable/mousetrap']
     version = 'v1.1.0'
@@ -349,48 +430,167 @@ schema = 3
       'github.com/xo/terminfo'
     ]
 
+  [mod.'github.com/yuin/goldmark']
+    version = 'v1.4.13'
+    hash = 'sha256-GVwFKZY6moIS6I0ZGuio/WtDif+lkZRfqWS6b4AAJyI='
+    goVersion = '1.18'
+
+  [mod.'github.com/yuin/gopher-lua']
+    version = 'v1.1.2'
+    hash = 'sha256-2YMCxv7RO3uqq6OTjvE0kR9nTt+n2cF+MrLtGEW68po='
+    goVersion = '1.23'
+    vendorPackages = [
+      'github.com/yuin/gopher-lua',
+      'github.com/yuin/gopher-lua/ast',
+      'github.com/yuin/gopher-lua/parse',
+      'github.com/yuin/gopher-lua/pm'
+    ]
+
   [mod.'go.yaml.in/yaml/v3']
     version = 'v3.0.4'
     hash = 'sha256-NkGFiDPoCxbr3LFsI6OCygjjkY0rdmg5ggvVVwpyDQ4='
     goVersion = '1.16'
 
+  [mod.'golang.org/x/crypto']
+    version = 'v0.50.0'
+    hash = 'sha256-vC1BJT7+3UBWLyEE5n3to0NKhMo6m2HGow2HiFgpQLo='
+    goVersion = '1.25.0'
+    vendorPackages = [
+      'golang.org/x/crypto/blowfish',
+      'golang.org/x/crypto/chacha20',
+      'golang.org/x/crypto/chacha20poly1305',
+      'golang.org/x/crypto/curve25519',
+      'golang.org/x/crypto/hkdf',
+      'golang.org/x/crypto/internal/alias',
+      'golang.org/x/crypto/internal/poly1305',
+      'golang.org/x/crypto/pbkdf2',
+      'golang.org/x/crypto/scrypt',
+      'golang.org/x/crypto/ssh',
+      'golang.org/x/crypto/ssh/agent',
+      'golang.org/x/crypto/ssh/internal/bcrypt_pbkdf'
+    ]
+
   [mod.'golang.org/x/exp']
-    version = 'v0.0.0-20231006140011-7918f672742d'
-    hash = 'sha256-2SO1etTQ6UCUhADR5sgvDEDLHcj77pJKCIa/8mGDbAo='
-    goVersion = '1.20'
+    version = 'v0.0.0-20260410095643-746e56fc9e2f'
+    hash = 'sha256-JaDJGLIRoJjjvsg3dgfFuo7XApEJO2V4kUDmd58qTLI='
+    goVersion = '1.25.0'
+    vendorPackages = [
+      'golang.org/x/exp/constraints'
+    ]
 
   [mod.'golang.org/x/mod']
-    version = 'v0.32.0'
-    hash = 'sha256-4gbgIqTOo0vcYV3l4MIwmT/h8H9PXmcfrJ3z4B26Zl0='
-    goVersion = '1.24.0'
+    version = 'v0.35.0'
+    hash = 'sha256-ICEQxokHywOFInDPqoP+go9l1tZSz3roknF5SXPtNV4='
+    goVersion = '1.25.0'
+    vendorPackages = [
+      'golang.org/x/mod/semver'
+    ]
+
+  [mod.'golang.org/x/net']
+    version = 'v0.53.0'
+    hash = 'sha256-G9gKLmyaf6lIV429NKX+YlL6oUPJwlv+BrG6qGhzvmU='
+    goVersion = '1.25.0'
 
   [mod.'golang.org/x/sync']
-    version = 'v0.19.0'
-    hash = 'sha256-RbRZ+sKZUurOczGhhzOoY/sojTlta3H9XjL4PXX/cno='
-    goVersion = '1.24.0'
+    version = 'v0.20.0'
+    hash = 'sha256-ybcjhCfK6lroUM0yswUvWooW8MOQZBXyiSqoxG6Uy0Y='
+    goVersion = '1.25.0'
+    vendorPackages = [
+      'golang.org/x/sync/errgroup'
+    ]
 
   [mod.'golang.org/x/sys']
-    version = 'v0.40.0'
-    hash = 'sha256-KDe+wMr7dfMFwKMJEljzk+f82pQWFFPoFHivjD7qJGg='
-    goVersion = '1.24.0'
+    version = 'v0.43.0'
+    hash = 'sha256-aDQXqSTZES2l/132PBxhZN4ywldpPyfm7LByYCHzzwM='
+    goVersion = '1.25.0'
     vendorPackages = [
+      'golang.org/x/sys/cpu',
       'golang.org/x/sys/unix'
     ]
 
+  [mod.'golang.org/x/telemetry']
+    version = 'v0.0.0-20260409153401-be6f6cb8b1fa'
+    hash = 'sha256-NH3t7QaWURhZnwukd4+/w2VdFYpaF0dFTyKlKXuuKew='
+    goVersion = '1.25.0'
+
   [mod.'golang.org/x/term']
-    version = 'v0.32.0'
-    hash = 'sha256-4cM/vhb8EUrlfHidBRfjYEQlUQehXiydJN77YkQvAic='
-    goVersion = '1.23.0'
+    version = 'v0.42.0'
+    hash = 'sha256-FCiDvAfq7dgBGQuiDYDFJbj/JPawhrmPF2qdUEftQ1c='
+    goVersion = '1.25.0'
+    vendorPackages = [
+      'golang.org/x/term'
+    ]
 
   [mod.'golang.org/x/text']
-    version = 'v0.34.0'
-    hash = 'sha256-wGKd1JkeiFROibvo2kkAuQ7JajSIfV4utGaoGbTQhQM='
-    goVersion = '1.24.0'
+    version = 'v0.36.0'
+    hash = 'sha256-/0t9C6Mc8kYjxweFB0us2lGKo8GovHhBiq5nlMOppC0='
+    goVersion = '1.25.0'
+    vendorPackages = [
+      'golang.org/x/text/runes',
+      'golang.org/x/text/transform',
+      'golang.org/x/text/unicode/norm'
+    ]
 
   [mod.'golang.org/x/tools']
-    version = 'v0.41.0'
-    hash = 'sha256-/Plnksa1jSr4jYJc2oCH9fcjGbWocM7EYposMP0tScQ='
-    goVersion = '1.24.0'
+    version = 'v0.44.0'
+    hash = 'sha256-xuj5FLtSJsAojLLTLXtPdLAIFNTKoVFbDMuqRXmj2W4='
+    goVersion = '1.25.0'
+    vendorPackages = [
+      'golang.org/x/tools/go/analysis',
+      'golang.org/x/tools/go/analysis/checker',
+      'golang.org/x/tools/go/analysis/internal',
+      'golang.org/x/tools/go/analysis/internal/analysisflags',
+      'golang.org/x/tools/go/analysis/internal/checker',
+      'golang.org/x/tools/go/analysis/passes/ctrlflow',
+      'golang.org/x/tools/go/analysis/passes/inspect',
+      'golang.org/x/tools/go/analysis/singlechecker',
+      'golang.org/x/tools/go/analysis/unitchecker',
+      'golang.org/x/tools/go/ast/astutil',
+      'golang.org/x/tools/go/ast/edge',
+      'golang.org/x/tools/go/ast/inspector',
+      'golang.org/x/tools/go/cfg',
+      'golang.org/x/tools/go/gcexportdata',
+      'golang.org/x/tools/go/packages',
+      'golang.org/x/tools/go/types/objectpath',
+      'golang.org/x/tools/go/types/typeutil',
+      'golang.org/x/tools/internal/aliases',
+      'golang.org/x/tools/internal/analysis/driverutil',
+      'golang.org/x/tools/internal/astutil/free',
+      'golang.org/x/tools/internal/diff',
+      'golang.org/x/tools/internal/diff/lcs',
+      'golang.org/x/tools/internal/event',
+      'golang.org/x/tools/internal/event/core',
+      'golang.org/x/tools/internal/event/keys',
+      'golang.org/x/tools/internal/event/label',
+      'golang.org/x/tools/internal/facts',
+      'golang.org/x/tools/internal/gcimporter',
+      'golang.org/x/tools/internal/gocommand',
+      'golang.org/x/tools/internal/packagesinternal',
+      'golang.org/x/tools/internal/pkgbits',
+      'golang.org/x/tools/internal/stdlib',
+      'golang.org/x/tools/internal/typeparams',
+      'golang.org/x/tools/internal/typesinternal',
+      'golang.org/x/tools/internal/versions'
+    ]
+
+  [mod.'golang.org/x/tools/go/expect']
+    version = 'v0.1.1-deprecated'
+    hash = 'sha256-7JLwLMSzp9Eovnq7YBTv4Lgx8/FZnfMlx6ZkUdaW4dc='
+    goVersion = '1.23.0'
+
+  [mod.'golang.org/x/tools/go/packages/packagestest']
+    version = 'v0.1.1-deprecated'
+    hash = 'sha256-K3ljJg+gzsY/MAvrVSpWTzKlxOnXMCcsPHLQvH7JRbU='
+    goVersion = '1.23.0'
+
+  [mod.'golang.org/x/xerrors']
+    version = 'v0.0.0-20240903120638-7835f813f4da'
+    hash = 'sha256-bE7CcrnAvryNvM26ieJGXqbAtuLwHaGcmtVMsVnksqo='
+    goVersion = '1.18'
+    vendorPackages = [
+      'golang.org/x/xerrors',
+      'golang.org/x/xerrors/internal'
+    ]
 
   [mod.'gopkg.in/check.v1']
     version = 'v0.0.0-20161208181325-20d25e280405'
@@ -402,9 +602,9 @@ schema = 3
     goVersion = '1.21'
 
   [mod.'mvdan.cc/sh/v3']
-    version = 'v3.12.0'
-    hash = 'sha256-1T55DgxWYDG1Y3SyZYLmSdLQPMVC6LUp1yLH98wKhGk='
-    goVersion = '1.23.0'
+    version = 'v3.13.1'
+    hash = 'sha256-FM+2xpGELZLm4Gc09OE5Z3JeNLPMvzeb1wRcdAIeKy4='
+    goVersion = '1.25.0'
     vendorPackages = [
       'mvdan.cc/sh/v3/fileutil',
       'mvdan.cc/sh/v3/syntax'
