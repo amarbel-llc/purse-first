@@ -130,6 +130,21 @@ bump-version package version:
   gum log --level info "{{package}}: version bumped to {{version}}"
   gum log --level warn "Remember to update Cargo.toml and SKILL.md frontmatter if applicable"
 
+# Tag a library release. Usage: just tag-lib go-mcp 0.0.11 "feat: add EmbeddedResource types"
+tag-lib lib version message:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  tag="libs/{{lib}}/v{{version}}"
+  prev=$(git tag --sort=-v:refname -l "libs/{{lib}}/v*" | head -1)
+  if [[ -n "$prev" ]]; then
+    gum log --level info "Previous: $prev"
+    git log --oneline "$prev"..HEAD -- "libs/{{lib}}/"
+  fi
+  git tag -s -m "{{message}}" "$tag"
+  gum log --level info "Created tag: $tag"
+  git push origin "$tag"
+  gum log --level info "Pushed $tag"
+
 # Clean build artifacts
 clean:
     rm -f purse-first
