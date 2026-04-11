@@ -106,9 +106,7 @@
         skills = ./skills;
         packageToml = ./package.toml;
         pluginConfig = builtins.fromJSON (builtins.readFile ./marketplace-config.json);
-        devShellPackages = _system: _pkgs: pkgs-master: [
-          pkgs-master.claude-code
-        ];
+        devShellPackages = _system: _pkgs: _pkgs-master: [ ];
         devShellInputsFrom =
           system:
           let
