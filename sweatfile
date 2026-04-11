@@ -1,5 +1,6 @@
 # vim: ft=toml
 
 system-prompt = ""
-# [hooks]
-# stop = "just build test"
+
+[hooks]
+pre-merge = "just"
