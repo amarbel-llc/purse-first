@@ -144,6 +144,7 @@ tag-lib lib version message:
   gum log --level info "Created tag: $tag"
   git push origin "$tag"
   gum log --level info "Pushed $tag"
+  git tag -v "$tag"
 
 # Clean build artifacts
 clean:
