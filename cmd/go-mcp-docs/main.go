@@ -12,7 +12,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"github.com/amarbel-llc/purse-first/libs/dewey/golf/command"
 )
 
 func main() {
@@ -21,7 +21,7 @@ func main() {
 	}
 	dir := os.Args[1]
 
-	app := command.NewApp("go-mcp", "Zero-dependency Go library for MCP servers and CLI tools")
+	app := command.NewUtility("go-mcp", "Zero-dependency Go library for MCP servers and CLI tools")
 	app.Version = "0.0.9"
 
 	entries, err := fs.ReadDir(manpageFS, "doc")
