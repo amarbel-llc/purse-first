@@ -15,7 +15,7 @@ func TestGenerateAll(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
 		},
 		MapsTools: []ToolMapping{
@@ -55,7 +55,7 @@ func TestGenerateAllWithSkills(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "eval",
 		Description: Description{Short: "Evaluate nix expression"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "expr", Type: String, Description: "Nix expression", Required: true},
 		},
 	})
@@ -139,7 +139,7 @@ func TestGenerateAllWithSkillsEmptySkillsDir(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
 		},
 		MapsTools: []ToolMapping{
@@ -175,7 +175,7 @@ func newTestApp() *App {
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
 		},
 		MapsTools: []ToolMapping{
@@ -274,7 +274,7 @@ func TestHandleGeneratePluginWithSkillsDir(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "eval",
 		Description: Description{Short: "Evaluate nix expression"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "expr", Type: String, Description: "Nix expression", Required: true},
 		},
 	})

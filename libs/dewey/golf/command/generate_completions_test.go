@@ -13,7 +13,7 @@ func TestGenerateCompletionsBash(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
 		},
 	})
@@ -55,7 +55,7 @@ func TestGenerateCompletionsBashShortFlags(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
 			{Name: "verbose", Type: Bool, Description: "Verbose output", Short: 'v'},
 		},
@@ -87,7 +87,7 @@ func TestGenerateCompletionsFishShortFlags(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "verbose", Type: Bool, Description: "Verbose output", Short: 'v'},
 		},
 	})
@@ -141,7 +141,7 @@ func TestGenerateCompletionsCompleterBash(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "deploy",
 		Description: Description{Short: "Deploy app"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "target", Type: String, Description: "Deploy target"},
 			{
 				Name:        "env",
@@ -179,7 +179,7 @@ func TestGenerateCompletionsCompleterFish(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "deploy",
 		Description: Description{Short: "Deploy app"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "target", Type: String, Description: "Deploy target"},
 			{
 				Name:        "env",
@@ -225,7 +225,7 @@ func TestGenerateCompletionsNoCompleterNoChange(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo"},
 		},
 	})
@@ -256,7 +256,7 @@ func TestGenerateCompletionsPassthroughNoFlags(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "verbose", Type: Bool, Description: "Verbose output"},
 		},
 	})
@@ -335,7 +335,7 @@ func TestGenerateCompletionsAliases(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "start",
 		Description: Description{Short: "Start a session"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "pr", Type: String, Description: "PR number", Completer: func() map[string]string { return nil }},
 		},
 	})
@@ -550,7 +550,7 @@ func TestGenerateCompletionsAliasesPassthrough(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "run",
 		Description: Description{Short: "Run something"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "verbose", Type: Bool, Description: "Verbose output"},
 		},
 	})
@@ -598,7 +598,7 @@ func TestGenerateCompletionsAliasesFishCompleter(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "deploy",
 		Description: Description{Short: "Deploy app"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "target", Type: String, Description: "Deploy target"},
 			{
 				Name:        "env",
@@ -685,7 +685,7 @@ func TestGenerateCompletionsPositionalBash(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "start-gh_pr",
 		Description: Description{Short: "Start from PR"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{
 				Name: "pr", Type: String, Required: true, Description: "PR number",
 				Completer: func() map[string]string { return nil },
@@ -724,7 +724,7 @@ func TestGenerateCompletionsPositionalFish(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "start-gh_pr",
 		Description: Description{Short: "Start from PR"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{
 				Name: "pr", Type: String, Required: true, Description: "PR number",
 				Completer: func() map[string]string { return nil },
@@ -770,7 +770,7 @@ func TestGenerateCompletionsPositionalMultipleParams(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "deploy",
 		Description: Description{Short: "Deploy"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "target", Type: String, Description: "Deploy target"},
 			{
 				Name: "env", Type: String, Description: "Environment",
@@ -815,7 +815,7 @@ func TestGenerateCompletionsPositionalBoolSkipped(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "cmd",
 		Description: Description{Short: "A command"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{
 				Name: "flag", Type: Bool, Description: "A bool flag",
 				Completer: func() map[string]string { return nil },
@@ -858,7 +858,7 @@ func TestGenerateCompletionsPositionalFishAlias(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "start-gh_pr",
 		Description: Description{Short: "Start from PR"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{
 				Name: "pr", Type: String, Required: true, Description: "PR number",
 				Completer: func() map[string]string { return nil },

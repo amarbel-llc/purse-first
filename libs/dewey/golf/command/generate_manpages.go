@@ -107,7 +107,7 @@ func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Comman
 	if cmd.PassthroughArgs {
 		fmt.Fprintf(&b, ".RI [ args... ]\n")
 	} else {
-		for _, p := range cmd.Params {
+		for _, p := range cmd.OldParams {
 			flagStr := fmt.Sprintf("--%s", p.Name)
 			if p.Short != 0 {
 				flagStr = fmt.Sprintf("-%c | --%s", p.Short, p.Name)
@@ -127,9 +127,9 @@ func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Comman
 	fmt.Fprintf(&b, ".SH DESCRIPTION\n")
 	fmt.Fprintf(&b, "%s\n", desc)
 
-	if len(cmd.Params) > 0 && !cmd.PassthroughArgs {
+	if len(cmd.OldParams) > 0 && !cmd.PassthroughArgs {
 		fmt.Fprintf(&b, ".SH OPTIONS\n")
-		for _, p := range cmd.Params {
+		for _, p := range cmd.OldParams {
 			fmt.Fprintf(&b, ".TP\n")
 			label := fmt.Sprintf("--%s", p.Name)
 			if p.Short != 0 {

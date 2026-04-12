@@ -126,7 +126,7 @@ func TestGenerateManpageCommand(t *testing.T) {
 			Short: "Show working tree status",
 			Long:  "Show working tree status with machine-readable output.",
 		},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to the git repository", Required: true},
 			{Name: "verbose", Type: Bool, Description: "Show verbose output", Default: false},
 		},
@@ -250,7 +250,7 @@ func TestGenerateManpageShortFlags(t *testing.T) {
 			Short: "Show working tree status",
 			Long:  "Show working tree status with machine-readable output.",
 		},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to the git repository", Required: true},
 			{Name: "verbose", Type: Bool, Description: "Show verbose output", Short: 'v'},
 		},
@@ -293,7 +293,7 @@ func TestGenerateManpagePassthroughArgs(t *testing.T) {
 		Name:            "exec-claude",
 		Description:     Description{Short: "Execute claude with args"},
 		PassthroughArgs: true,
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "ignored", Type: String, Description: "This param should not appear"},
 		},
 	})
@@ -331,7 +331,7 @@ func TestManpageSectionOrdering(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "greet",
 		Description: Description{Short: "Say hello", Long: "Greet someone by name."},
-		Params:      []Param{{Name: "name", Type: String, Description: "Who to greet", Required: true}},
+		OldParams:   []OldParam{{Name: "name", Type: String, Description: "Who to greet", Required: true}},
 		Examples: []Example{
 			{Description: "Basic greeting", Command: "demo greet --name=world", Output: "Hello, world!"},
 		},

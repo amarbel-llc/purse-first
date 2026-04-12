@@ -18,7 +18,7 @@ func (a *App) addCompleteCommand() {
 	a.AddCommand(&Command{
 		Name:   "__complete",
 		Hidden: true,
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "command", Type: String, Required: true, Description: "Subcommand name"},
 			{Name: "param", Type: String, Required: true, Description: "Parameter name"},
 		},
@@ -36,7 +36,7 @@ func (a *App) addCompleteCommand() {
 				return nil // unknown command, no completions
 			}
 
-			for _, p := range cmd.Params {
+			for _, p := range cmd.OldParams {
 				if p.Name == params.Param && p.Completer != nil {
 					completions := p.Completer()
 					printCompletions(completions)

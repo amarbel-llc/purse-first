@@ -12,7 +12,7 @@ func TestRunCLIDispatchesRun(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "greet",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "name", Type: String, Description: "Name to greet", Required: true},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -83,7 +83,7 @@ func TestRunCLIBoolFlag(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "verbose", Type: Bool, Description: "Verbose output"},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -110,7 +110,7 @@ func TestRunCLIIntFlag(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "count", Type: Int, Description: "Count"},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -137,7 +137,7 @@ func TestRunCLIArrayFlag(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "tags", Type: Array, Description: "Tags"},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -162,7 +162,7 @@ func TestRunCLIArrayFlag(t *testing.T) {
 func TestRunCLIGlobalParams(t *testing.T) {
 	var format string
 	app := NewApp("test", "test app")
-	app.Params = []Param{
+	app.OldParams = []OldParam{
 		{Name: "format", Type: String, Description: "Output format"},
 	}
 	app.AddCommand(&Command{
@@ -199,7 +199,7 @@ func TestRunCLIEqualsFlag(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "name", Type: String, Description: "Name"},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -224,7 +224,7 @@ func TestRunCLIEqualsFlag(t *testing.T) {
 func TestRunCLIGlobalParamsAfterSubcommand(t *testing.T) {
 	var format string
 	app := NewApp("test", "test app")
-	app.Params = []Param{
+	app.OldParams = []OldParam{
 		{Name: "format", Type: String, Description: "Output format"},
 	}
 	app.AddCommand(&Command{
@@ -253,7 +253,7 @@ func TestRunCLIPositionalArg(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "open",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "target", Type: String, Description: "target path"},
 			{Name: "verbose", Type: Bool, Description: "verbose output"},
 		},
@@ -279,12 +279,12 @@ func TestRunCLIPositionalArg(t *testing.T) {
 func TestRunCLIPositionalArgWithFlags(t *testing.T) {
 	var target, format string
 	app := NewApp("test", "test app")
-	app.Params = []Param{
+	app.OldParams = []OldParam{
 		{Name: "format", Type: String, Description: "Output format"},
 	}
 	app.AddCommand(&Command{
 		Name: "open",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "target", Type: String, Description: "target path"},
 			{Name: "no-attach", Type: Bool, Description: "skip attach"},
 		},
@@ -340,7 +340,7 @@ func TestRunCLIShortBoolFlag(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "verbose", Type: Bool, Description: "Verbose output", Short: 'v'},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -367,7 +367,7 @@ func TestRunCLIShortStringFlag(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "name", Type: String, Description: "Name", Short: 'n'},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -394,7 +394,7 @@ func TestRunCLIShortFlagEquals(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "name", Type: String, Description: "Name", Short: 'n'},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -421,7 +421,7 @@ func TestRunCLIShortIntFlag(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "count", Type: Int, Description: "Count", Short: 'c'},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -448,7 +448,7 @@ func TestRunCLIShortArrayFlag(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "tags", Type: Array, Description: "Tags", Short: 't'},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -476,7 +476,7 @@ func TestRunCLIShortAndLongFlagsMixed(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "name", Type: String, Description: "Name", Short: 'n'},
 			{Name: "verbose", Type: Bool, Description: "Verbose", Short: 'v'},
 		},
@@ -507,7 +507,7 @@ func TestRunCLIShortAndLongFlagsMixed(t *testing.T) {
 func TestRunCLIShortFlagGlobal(t *testing.T) {
 	var format string
 	app := NewApp("test", "test app")
-	app.Params = []Param{
+	app.OldParams = []OldParam{
 		{Name: "format", Type: String, Description: "Output format", Short: 'f'},
 	}
 	app.AddCommand(&Command{
@@ -536,7 +536,7 @@ func TestRunCLIShortFlagUnknownPassedThrough(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "target", Type: String, Description: "Target"},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -570,7 +570,7 @@ func TestDuplicateShortFlagsPanic(t *testing.T) {
 	// Panic should fire at AddCommand, not at RunCLI.
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "verbose", Type: Bool, Description: "Verbose", Short: 'v'},
 			{Name: "version", Type: Bool, Description: "Version", Short: 'v'},
 		},
@@ -597,13 +597,13 @@ func TestShortFlagCollisionGlobalAndCommandPanics(t *testing.T) {
 	}()
 
 	app := NewApp("test", "test app")
-	app.Params = []Param{
+	app.OldParams = []OldParam{
 		{Name: "format", Type: String, Description: "Output format", Short: 'f'},
 	}
 	// This should panic at AddCommand because -f is already used by global param.
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "file", Type: String, Description: "File path", Short: 'f'},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -621,7 +621,7 @@ func TestBundledShortFlagsArePositional(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "target", Type: String, Description: "Target"},
 			{Name: "verbose", Type: Bool, Description: "Verbose", Short: 'v'},
 			{Name: "force", Type: Bool, Description: "Force", Short: 'f'},
@@ -658,7 +658,7 @@ func TestRunCLIShortFloatFlag(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "ratio", Type: Float, Description: "Ratio", Short: 'r'},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -685,7 +685,7 @@ func TestRunCLISingleDashLongBoolFlag(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "skip-empty", Type: Bool, Description: "Skip empty"},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -712,7 +712,7 @@ func TestRunCLISingleDashLongStringFlag(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "output-dir", Type: String, Description: "Output directory"},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -739,7 +739,7 @@ func TestRunCLISingleDashLongEqualsFlag(t *testing.T) {
 	app := NewApp("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "output-dir", Type: String, Description: "Output directory"},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -800,7 +800,7 @@ func TestRunCLICommandHelpFlag(t *testing.T) {
 			Short: "Start the server",
 			Long:  "Start the server and listen on stdin/stdout.",
 		},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "port", Type: Int, Description: "Port to listen on", Short: 'p'},
 			{Name: "verbose", Type: Bool, Description: "Verbose output"},
 		},
@@ -947,7 +947,7 @@ func TestRunCLIPassthroughArgsEmpty(t *testing.T) {
 func TestShortFlagNotInJSONSchema(t *testing.T) {
 	cmd := &Command{
 		Name: "status",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "verbose", Type: Bool, Description: "Verbose output", Short: 'v'},
 		},
 	}

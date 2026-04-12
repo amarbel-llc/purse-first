@@ -10,7 +10,7 @@ import (
 )
 
 // RunCLI parses CLI arguments, dispatches to the matched command handler,
-// and prints the result. Global params (App.Params) are parsed before
+// and prints the result. Global params (App.OldParams) are parsed before
 // the subcommand name; command params and global params are both accepted
 // after. Prefix subcommands joined by hyphens are resolved from
 // space-separated args (e.g. "perms check" → "perms-check").
@@ -19,7 +19,7 @@ import (
 // without invoking any handler.
 func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 	globalVals := make(map[string]any)
-	remaining, err := parseFlags(args, a.Params, globalVals)
+	remaining, err := parseFlags(args, a.OldParams, globalVals)
 	if err != nil {
 		return fmt.Errorf("parsing global flags: %w", err)
 	}
@@ -96,7 +96,7 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 
 	// Merge command params and global params so flags after the subcommand
 	// can include global params like --format.
-	allParams := append(cmd.Params, a.Params...)
+	allParams := append(cmd.OldParams, a.OldParams...)
 	positional, err := parseFlags(cmdArgs, allParams, cmdVals)
 	if err != nil {
 		return fmt.Errorf("parsing flags for %s: %w", name, err)
@@ -106,7 +106,7 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 	// in declaration order.
 	if len(positional) > 0 {
 		pi := 0
-		for _, param := range cmd.Params {
+		for _, param := range cmd.OldParams {
 			if pi >= len(positional) {
 				break
 			}
@@ -182,9 +182,9 @@ func (a *App) printCommandUsage(name string, cmd *Command) {
 	if cmd.Description.Long != "" {
 		fmt.Printf("%s\n\n", cmd.Description.Long)
 	}
-	if len(cmd.Params) > 0 {
+	if len(cmd.OldParams) > 0 {
 		fmt.Println("Options:")
-		for _, p := range cmd.Params {
+		for _, p := range cmd.OldParams {
 			flag := fmt.Sprintf("--%s", p.Name)
 			if p.Short != 0 {
 				flag = fmt.Sprintf("-%c, --%s", p.Short, p.Name)
@@ -205,7 +205,7 @@ func (a *App) printCommandUsage(name string, cmd *Command) {
 		sort.Slice(subs, func(i, j int) bool {
 			return subs[i].name < subs[j].name
 		})
-		if len(cmd.Params) > 0 {
+		if len(cmd.OldParams) > 0 {
 			fmt.Println()
 		}
 		fmt.Println("Subcommands:")
@@ -270,9 +270,9 @@ func flagLabel(arg string, key string) string {
 // unconsumed positional args. Non-flag args are collected but parsing
 // continues, so flags can appear after positional args (e.g. "open target
 // --format tap"). Short flags (-x) are resolved to their param name.
-func parseFlags(args []string, params []Param, vals map[string]any) ([]string, error) {
-	paramMap := make(map[string]Param)
-	shortMap := make(map[rune]Param)
+func parseFlags(args []string, params []OldParam, vals map[string]any) ([]string, error) {
+	paramMap := make(map[string]OldParam)
+	shortMap := make(map[rune]OldParam)
 	for _, p := range params {
 		paramMap[p.Name] = p
 		if p.Short != 0 {
@@ -284,7 +284,7 @@ func parseFlags(args []string, params []Param, vals map[string]any) ([]string, e
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 
-		var p Param
+		var p OldParam
 		var key, value string
 		var hasEquals, found bool
 

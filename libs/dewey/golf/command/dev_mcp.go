@@ -144,7 +144,7 @@ func (a *App) addDevMCPCommand() {
 		Description: Description{
 			Short: "Generate project-local MCP config for dev testing",
 		},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "suffix", Type: String, Description: "Suffix for the MCP server name", Default: "dev"},
 			{Name: "clean", Type: Bool, Description: "Remove generated dev artifacts", Default: false},
 		},

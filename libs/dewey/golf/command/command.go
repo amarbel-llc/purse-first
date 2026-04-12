@@ -83,9 +83,11 @@ type ToolMapping struct {
 	UseWhen         string   // shown to Claude in denial reason
 }
 
-// Param declares a single command parameter, used for CLI flags,
+// OldParam declares a single command parameter, used for CLI flags,
 // MCP JSON schema properties, manpage OPTIONS, and completions.
-type Param struct {
+//
+// Deprecated: use Flag[V], Arg[V], ArrayFlag, or ObjectFlag instead.
+type OldParam struct {
 	Name        string
 	Short       rune // single-character CLI alias (e.g. 'v' for -v); zero means none
 	Type        ParamType
@@ -93,7 +95,7 @@ type Param struct {
 	Required    bool
 	Default     any
 	Completer   func() map[string]string
-	Items       []Param // item schema for Array params (generates object items with properties)
+	Items       []OldParam // item schema for Array params (generates object items with properties)
 }
 
 // Example represents a single usage example for a command or app.
@@ -121,7 +123,7 @@ type Command struct {
 	// Execution describes task execution support for this tool.
 	Execution *protocol.ToolExecution
 
-	Params    []Param
+	OldParams []OldParam
 	MapsTools []ToolMapping
 	Examples  []Example
 
@@ -154,10 +156,12 @@ type Command struct {
 	RunCLI func(ctx context.Context, args json.RawMessage) error
 }
 
-// RequiredParams returns only the params marked as required.
-func (c *Command) RequiredParams() []Param {
-	var out []Param
-	for _, p := range c.Params {
+// RequiredOldParams returns only the old params marked as required.
+//
+// Deprecated: will be replaced when Command.OldParams migrates to Param interface.
+func (c *Command) RequiredOldParams() []OldParam {
+	var out []OldParam
+	for _, p := range c.OldParams {
 		if p.Required {
 			out = append(out, p)
 		}
@@ -165,10 +169,12 @@ func (c *Command) RequiredParams() []Param {
 	return out
 }
 
-// OptionalParams returns only the params not marked as required.
-func (c *Command) OptionalParams() []Param {
-	var out []Param
-	for _, p := range c.Params {
+// OptionalOldParams returns only the old params not marked as required.
+//
+// Deprecated: will be replaced when Command.OldParams migrates to Param interface.
+func (c *Command) OptionalOldParams() []OldParam {
+	var out []OldParam
+	for _, p := range c.OldParams {
 		if !p.Required {
 			out = append(out, p)
 		}

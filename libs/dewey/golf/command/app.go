@@ -12,7 +12,7 @@ type App struct {
 	MCPBinary         string    // binary name for plugin.json command; defaults to Name
 	PluginDescription string    // "description" in plugin.json; omitted if empty
 	PluginAuthor      string    // "author.name" in plugin.json; omitted if empty
-	Params            []Param   // global flags
+	OldParams         []OldParam // global flags
 	Examples          []Example // app-level workflow examples
 
 	// EnvVars are environment variables the app as a whole reads, rendered
@@ -55,11 +55,11 @@ func NewApp(name, short string) *App {
 // or if any command param's Short rune conflicts with a global param's Short rune.
 func (a *App) AddCommand(cmd *Command) {
 	// Check for short flag collisions between command params and global params.
-	for _, gp := range a.Params {
+	for _, gp := range a.OldParams {
 		if gp.Short == 0 {
 			continue
 		}
-		for _, cp := range cmd.Params {
+		for _, cp := range cmd.OldParams {
 			if cp.Short == gp.Short {
 				panic(fmt.Sprintf(
 					"short flag -%c on command %q param %q conflicts with global param %q",
@@ -71,7 +71,7 @@ func (a *App) AddCommand(cmd *Command) {
 
 	// Check for duplicate short flags within the command's own params.
 	shortSeen := make(map[rune]string)
-	for _, cp := range cmd.Params {
+	for _, cp := range cmd.OldParams {
 		if cp.Short == 0 {
 			continue
 		}

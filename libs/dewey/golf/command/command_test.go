@@ -58,30 +58,30 @@ func TestCommandParamsRequired(t *testing.T) {
 	cmd := Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
 			{Name: "verbose", Type: Bool, Description: "Verbose output"},
 		},
 	}
 
-	required := cmd.RequiredParams()
+	required := cmd.RequiredOldParams()
 	if len(required) != 1 {
-		t.Fatalf("RequiredParams() len = %d, want 1", len(required))
+		t.Fatalf("RequiredOldParams() len = %d, want 1", len(required))
 	}
 	if required[0].Name != "repo_path" {
-		t.Errorf("RequiredParams()[0].Name = %q, want %q", required[0].Name, "repo_path")
+		t.Errorf("RequiredOldParams()[0].Name = %q, want %q", required[0].Name, "repo_path")
 	}
 }
 
 func TestParamShortFieldZeroValueMeansNoShortFlag(t *testing.T) {
-	p := Param{Name: "verbose", Type: Bool, Description: "Verbose output"}
+	p := OldParam{Name: "verbose", Type: Bool, Description: "Verbose output"}
 	if p.Short != 0 {
 		t.Errorf("Short zero value = %q, want 0", p.Short)
 	}
 }
 
 func TestParamShortFieldSet(t *testing.T) {
-	p := Param{Name: "verbose", Type: Bool, Description: "Verbose output", Short: 'v'}
+	p := OldParam{Name: "verbose", Type: Bool, Description: "Verbose output", Short: 'v'}
 	if p.Short != 'v' {
 		t.Errorf("Short = %q, want 'v'", p.Short)
 	}

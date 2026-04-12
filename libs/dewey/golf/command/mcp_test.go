@@ -15,7 +15,7 @@ func TestAppRegisterMCPTools(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -70,7 +70,7 @@ func TestRegisterMCPToolsV1(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -124,7 +124,7 @@ func TestRegisterMCPToolsV1CallTool(t *testing.T) {
 
 	app.AddCommand(&Command{
 		Name: "echo",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "message", Type: String, Description: "Message to echo"},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -186,7 +186,7 @@ func TestAppMCPToolCall(t *testing.T) {
 
 	app.AddCommand(&Command{
 		Name: "echo",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "message", Type: String, Description: "Message to echo"},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -232,7 +232,7 @@ func TestRegisterMCPToolsV1Annotations(t *testing.T) {
 			IdempotentHint:  &idempotent,
 			OpenWorldHint:   &openWorld,
 		},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Required: true},
 		},
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {

@@ -11,7 +11,7 @@ func TestCompleteDispatchesToCompleter(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo"},
 			{
 				Name:        "branch",
@@ -52,7 +52,7 @@ func TestCompleteParamWithoutCompleterReturnsNoError(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo"},
 		},
 	})
@@ -84,7 +84,7 @@ func TestCompleteHandlerDirectly(t *testing.T) {
 	app.AddCommand(&Command{
 		Name:        "deploy",
 		Description: Description{Short: "Deploy app"},
-		Params: []Param{
+		OldParams: []OldParam{
 			{
 				Name:        "env",
 				Type:        String,

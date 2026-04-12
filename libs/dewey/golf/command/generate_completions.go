@@ -70,11 +70,11 @@ func (a *App) generateBashCompletion(dir string) error {
 			continue
 		}
 		var flags []string
-		var completableParams []Param
+		var completableParams []OldParam
 		// positionalCompletable: non-Bool params with Completer, in declaration
 		// order. Mirrors the positional assignment logic in cli.go.
-		var positionalCompletable []Param
-		for _, p := range c.cmd.Params {
+		var positionalCompletable []OldParam
+		for _, p := range c.cmd.OldParams {
 			flags = append(flags, "--"+p.Name)
 			if p.Short != 0 {
 				flags = append(flags, fmt.Sprintf("-%c", p.Short))
@@ -98,7 +98,7 @@ func (a *App) generateBashCompletion(dir string) error {
 				}
 				fmt.Fprintf(&b, "                *)\n")
 				if len(positionalCompletable) > 0 {
-					a.emitBashPositionalCompletions(&b, c.name, c.cmd.Params, positionalCompletable, flags)
+					a.emitBashPositionalCompletions(&b, c.name, c.cmd.OldParams, positionalCompletable, flags)
 				} else {
 					fmt.Fprintf(&b, "                    COMPREPLY=( $(compgen -W %q -- \"${cur}\") )\n", strings.Join(flags, " "))
 				}
@@ -218,14 +218,14 @@ func (a *App) generateFishCompletion(dir string) error {
 func (a *App) emitBashPositionalCompletions(
 	b *strings.Builder,
 	cmdName string,
-	allParams []Param,
-	positionalCompletable []Param,
+	allParams []OldParam,
+	positionalCompletable []OldParam,
 	flags []string,
 ) {
 	// Build a set of all non-Bool params for positional index counting.
 	// We need all non-Bool params (not just completable ones) to correctly
 	// compute which positional slot the cursor is at.
-	var allNonBool []Param
+	var allNonBool []OldParam
 	for _, p := range allParams {
 		if p.Type != Bool {
 			allNonBool = append(allNonBool, p)
@@ -253,7 +253,7 @@ func (a *App) emitBashPositionalCompletions(
 	// among all non-Bool params.
 	type posEntry struct {
 		index int
-		param Param
+		param OldParam
 	}
 	var entries []posEntry
 	for posIdx, nbp := range allNonBool {
@@ -287,7 +287,7 @@ func (a *App) emitFishParamCompletions(b *strings.Builder, cmdName string, cmds 
 		if c.cmd.PassthroughArgs {
 			continue
 		}
-		for _, p := range c.cmd.Params {
+		for _, p := range c.cmd.OldParams {
 			desc := strings.ReplaceAll(p.Description, "'", "\\'")
 			shortOpt := ""
 			if p.Short != 0 {
@@ -305,7 +305,7 @@ func (a *App) emitFishParamCompletions(b *strings.Builder, cmdName string, cmds 
 		// rule that fires when the flag form hasn't been used. This allows
 		// positional arg completion (e.g., `cmd 42<TAB>` instead of requiring
 		// `cmd --pr 42<TAB>`).
-		for _, p := range c.cmd.Params {
+		for _, p := range c.cmd.OldParams {
 			if p.Type == Bool || p.Completer == nil {
 				continue
 			}

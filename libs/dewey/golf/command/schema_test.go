@@ -8,7 +8,7 @@ import (
 func TestCommandInputSchema(t *testing.T) {
 	cmd := Command{
 		Name: "status",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
 			{Name: "verbose", Type: Bool, Description: "Verbose output"},
 		},
@@ -48,7 +48,7 @@ func TestCommandInputSchema(t *testing.T) {
 func TestCommandInputSchemaNoRequired(t *testing.T) {
 	cmd := Command{
 		Name: "ping",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "message", Type: String, Description: "Optional message"},
 		},
 	}
@@ -66,7 +66,7 @@ func TestCommandInputSchemaNoRequired(t *testing.T) {
 func TestCommandInputSchemaArray(t *testing.T) {
 	cmd := Command{
 		Name: "diff",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
 			{Name: "paths", Type: Array, Description: "Limit diff to specific paths"},
 		},
@@ -94,7 +94,7 @@ func TestCommandInputSchemaArray(t *testing.T) {
 func TestCommandInputSchemaObject(t *testing.T) {
 	cmd := Command{
 		Name: "exec",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "server", Type: String, Description: "Server name", Required: true},
 			{Name: "args", Type: Object, Description: "Arguments as JSON object"},
 		},
@@ -121,13 +121,13 @@ func TestCommandInputSchemaObject(t *testing.T) {
 func TestCommandInputSchemaArrayWithObjectItems(t *testing.T) {
 	cmd := Command{
 		Name: "rebase",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "repo_path", Type: String, Description: "Path to repo", Required: true},
 			{
 				Name: "todo", Type: Array,
 				Description: "Ordered list of rebase entries",
 				Required:    true,
-				Items: []Param{
+				Items: []OldParam{
 					{Name: "action", Type: String, Description: "Rebase action", Required: true},
 					{Name: "hash", Type: String, Description: "Commit hash", Required: true},
 					{Name: "message", Type: String, Description: "New commit message"},
@@ -195,7 +195,7 @@ func TestCommandInputSchemaArrayWithObjectItems(t *testing.T) {
 func TestCommandInputSchemaWithDefault(t *testing.T) {
 	cmd := Command{
 		Name: "serve",
-		Params: []Param{
+		OldParams: []OldParam{
 			{Name: "port", Type: Int, Description: "Port number", Default: 8080},
 		},
 	}

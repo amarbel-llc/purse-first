@@ -3,10 +3,12 @@ package command
 import "github.com/amarbel-llc/purse-first/libs/dewey/0/interfaces"
 
 type (
-	// Arg declares metadata for a single positional argument.
+	// OldArg declares metadata for a single positional argument.
 	// Mirrors the flag pattern: flagSet.Var(&cmd.RepoId, "repo", "usage")
-	// becomes Arg{Name: "repo-id", Value: &ids.RepoId{}, ...}
-	Arg struct {
+	// becomes OldArg{Name: "repo-id", Value: &ids.RepoId{}, ...}
+	//
+	// Deprecated: use Arg[V] from param.go instead.
+	OldArg struct {
 		// Name is used in synopsis, error messages, and as MCP schema property
 		// key. Should match the string passed to PopArg(name).
 		Name        string
@@ -28,20 +30,20 @@ type (
 		Value interfaces.FlagValue
 	}
 
-	// ArgGroup is a named set of args contributed by a command or component.
-	// Commands compose ArgGroups from their embedded components.
-	ArgGroup struct {
-		Name        string // e.g. "query" (empty for inline groups)
-		Description string // group-level description for docs
-		Args        []Arg
+	// OldArgGroup is a named set of args contributed by a command or component.
+	//
+	// Deprecated: use Arg[V] from param.go instead.
+	OldArgGroup struct {
+		Name        string
+		Description string
+		Args        []OldArg
 	}
 
 	// CommandWithArgs is the opt-in interface for declarative arg metadata.
-	// Commands that implement this get improved manpage SYNOPSIS/ARGUMENTS
-	// sections and auto-generated MCP schemas. Commands that don't continue
-	// to work as before.
+	//
+	// Deprecated: use CommandWithParams instead.
 	CommandWithArgs interface {
-		GetArgs() []ArgGroup
+		GetArgs() []OldArgGroup
 	}
 )
 

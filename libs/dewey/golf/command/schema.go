@@ -29,7 +29,7 @@ func (c *Command) InputSchema() json.RawMessage {
 		Properties: make(map[string]schemaProperty),
 	}
 
-	for _, p := range c.Params {
+	for _, p := range c.OldParams {
 		prop := schemaProperty{
 			Type:        p.Type.JSONSchemaType(),
 			Description: p.Description,
