@@ -107,6 +107,11 @@ func (u *Utility) addName(name string, cmd *Command) {
 	}
 }
 
+// GetName returns the utility's name.
+func (u *Utility) GetName() string {
+	return u.Name
+}
+
 // GetCommand looks up a command by name or alias.
 func (u *Utility) GetCommand(name string) (*Command, bool) {
 	cmd, ok := u.commands[name]
@@ -173,15 +178,26 @@ func (u *Utility) AddCmd(name string, cmd Cmd) {
 		}
 	}
 
-	if cwr, ok := cmd.(CommandWithResult); ok {
-		wrapped.Run = func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
-			errCtx := errors.MakeContextDefault()
-			req := Request{
-				Context:  errCtx,
-				Prompter: p,
-			}
+	wrapped.Run = func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+		errCtx := errors.MakeContextDefault()
+		input := makeInputFromJSON(args, wrapped.Params)
+		req := Request{
+			Context:  errCtx,
+			Utility:  u,
+			Prompter: p,
+			input:    &input,
+		}
+
+		if cwr, ok := cmd.(CommandWithResult); ok {
 			return cwr.RunResult(req)
 		}
+
+		cmd.Run(req)
+
+		if err := errCtx.Err(); err != nil {
+			return nil, err
+		}
+		return nil, nil
 	}
 
 	u.AddCommand(wrapped)

@@ -142,6 +142,13 @@ func TestAppMergeWithPrefixAllCommandsYieldsPrefixedName(t *testing.T) {
 	}
 }
 
+func TestUtilityGetName(t *testing.T) {
+	app := NewUtility("grit", "Git operations MCP server")
+	if got := app.GetName(); got != "grit" {
+		t.Errorf("GetName() = %q, want %q", got, "grit")
+	}
+}
+
 // --- AddCmd tests ---
 
 // stubCmd implements only Cmd (no optional interfaces).
@@ -193,9 +200,9 @@ func TestAddCmdBasic(t *testing.T) {
 	if cmd.Name != "do-thing" {
 		t.Errorf("cmd.Name = %q, want %q", cmd.Name, "do-thing")
 	}
-	// No Run set — CLI-only
-	if cmd.Run != nil {
-		t.Error("stubCmd should not have Run set (no CommandWithResult)")
+	// Run is always set — AddCmd bridges plain Cmd to Command.Run
+	if cmd.Run == nil {
+		t.Error("stubCmd should have Run set via AddCmd bridge")
 	}
 }
 
@@ -245,6 +252,99 @@ func TestAddCmdWithResult(t *testing.T) {
 	if result.Text != "hello" {
 		t.Errorf("result.Text = %q, want %q", result.Text, "hello")
 	}
+}
+
+func TestAddCmdSetsUtilityOnRequest(t *testing.T) {
+	app := NewUtility("madder", "blob store")
+
+	var gotUtility *Utility
+	app.AddCmd("cat", &captureCmd{onRun: func(req Request) {
+		gotUtility = req.Utility
+	}})
+
+	cmd, _ := app.GetCommand("cat")
+	if cmd.Run == nil {
+		t.Fatal("plain Cmd should have Run set via AddCmd")
+	}
+
+	_, _ = cmd.Run(t.Context(), nil, StubPrompter{})
+	if gotUtility == nil {
+		t.Fatal("req.Utility was nil")
+	}
+	if gotUtility.GetName() != "madder" {
+		t.Errorf("req.Utility.GetName() = %q, want %q", gotUtility.GetName(), "madder")
+	}
+}
+
+func TestAddCmdPlainCmdHasRun(t *testing.T) {
+	app := NewUtility("test", "test")
+
+	var ran bool
+	app.AddCmd("do-thing", &captureCmd{onRun: func(req Request) {
+		ran = true
+	}})
+
+	cmd, _ := app.GetCommand("do-thing")
+	if cmd.Run == nil {
+		t.Fatal("plain Cmd should have Run set")
+	}
+
+	_, _ = cmd.Run(t.Context(), nil, StubPrompter{})
+	if !ran {
+		t.Error("Cmd.Run was not called")
+	}
+}
+
+func TestAddCmdPopulatesInputFromJSON(t *testing.T) {
+	app := NewUtility("test", "test")
+
+	var gotArg string
+	cmd := &captureParamCmd{
+		params: []Param{
+			StringArg{Name: "path", Description: "File path", Required: true},
+		},
+		onRun: func(req Request) {
+			gotArg = req.PopArg("path")
+		},
+	}
+	app.AddCmd("open", cmd)
+
+	c, _ := app.GetCommand("open")
+	argsJSON := []byte(`{"path": "/tmp/foo"}`)
+	_, err := c.Run(t.Context(), argsJSON, StubPrompter{})
+	if err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	if gotArg != "/tmp/foo" {
+		t.Errorf("PopArg(path) = %q, want %q", gotArg, "/tmp/foo")
+	}
+}
+
+// captureCmd implements Cmd and captures the Request for assertions.
+type captureCmd struct {
+	onRun func(Request)
+}
+
+func (c *captureCmd) Run(req Request) {
+	if c.onRun != nil {
+		c.onRun(req)
+	}
+}
+
+// captureParamCmd implements Cmd + CommandWithParams.
+type captureParamCmd struct {
+	params []Param
+	onRun  func(Request)
+}
+
+func (c *captureParamCmd) Run(req Request) {
+	if c.onRun != nil {
+		c.onRun(req)
+	}
+}
+
+func (c *captureParamCmd) GetParams() []Param {
+	return c.params
 }
 
 func TestAddCmdPanicsOnDuplicate(t *testing.T) {
