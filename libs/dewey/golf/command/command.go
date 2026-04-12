@@ -123,7 +123,15 @@ type Command struct {
 	// Execution describes task execution support for this tool.
 	Execution *protocol.ToolExecution
 
+	// Params declares parameters using the new sealed Param interface
+	// (Flag[V], Arg[V], ArrayFlag, ObjectFlag). Used by InputSchema()
+	// and CLI dispatch when non-empty.
+	Params []Param
+
+	// OldParams is the deprecated flat-struct parameter list.
+	// Used by generators until they migrate to the Param interface.
 	OldParams []OldParam
+
 	MapsTools []ToolMapping
 	Examples  []Example
 
@@ -154,6 +162,28 @@ type Command struct {
 	// RunCLI handles CLI-only invocations. Commands with only RunCLI
 	// are not registered as MCP tools or included in plugin.json.
 	RunCLI func(ctx context.Context, args json.RawMessage) error
+}
+
+// RequiredParams returns only the new Param entries marked as required.
+func (c *Command) RequiredParams() []Param {
+	var out []Param
+	for _, p := range c.Params {
+		if p.paramRequired() {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// OptionalParams returns only the new Param entries not marked as required.
+func (c *Command) OptionalParams() []Param {
+	var out []Param
+	for _, p := range c.Params {
+		if !p.paramRequired() {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 // RequiredOldParams returns only the old params marked as required.
