@@ -30,21 +30,6 @@ type (
 		Value interfaces.FlagValue
 	}
 
-	// OldArgGroup is a named set of args contributed by a command or component.
-	//
-	// Deprecated: use Arg[V] from param.go instead.
-	OldArgGroup struct {
-		Name        string
-		Description string
-		Args        []OldArg
-	}
-
-	// CommandWithArgs is the opt-in interface for declarative arg metadata.
-	//
-	// Deprecated: use CommandWithParams instead.
-	CommandWithArgs interface {
-		GetArgs() []OldArgGroup
-	}
 )
 
 type (
