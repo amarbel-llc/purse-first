@@ -5,6 +5,12 @@ import (
 	"github.com/amarbel-llc/purse-first/libs/dewey/charlie/values"
 )
 
+// Completer is an iterator that yields Completion values for shell
+// tab-completion and MCP enum hints. Using an iterator instead of
+// returning a map allows streaming large completion sets without
+// loading everything into memory.
+type ParamCompleter = interfaces.Seq[Completion]
+
 // Param is the sealed interface for command parameters. Concrete types
 // are Flag[V], Arg[V], ArrayFlag, and ObjectFlag. External packages
 // define new value types (V) freely but cannot add new structural kinds.
@@ -40,12 +46,13 @@ type Flag[V interfaces.FlagValue] struct {
 	Description string
 	Required    bool
 	EnumValues  []string
-	Short       rune
-	Default     any
-	Completer   func() map[string]string
+	Short     rune
+	Default   any
+	Completer ParamCompleter
 }
 
-func (f Flag[V]) paramName() string        { return f.Name }
+func (f Flag[V]) flagCompleter() ParamCompleter { return f.Completer }
+func (f Flag[V]) paramName() string             { return f.Name }
 func (f Flag[V]) paramDescription() string { return f.Description }
 func (f Flag[V]) paramRequired() bool      { return f.Required }
 func (f Flag[V]) paramDefault() any        { return f.Default }

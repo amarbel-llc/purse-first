@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
 )
 
 // addCompleteCommand registers the hidden __complete subcommand that provides
@@ -36,11 +35,24 @@ func (u *Utility) addCompleteCommand() {
 				return nil // unknown command, no completions
 			}
 
+			// Check old params
 			for _, p := range cmd.OldParams {
 				if p.Name == params.Param && p.Completer != nil {
 					completions := p.Completer()
-					printCompletions(completions)
+					printOldCompletions(completions)
 					return nil
+				}
+			}
+
+			// Check new params
+			for _, p := range cmd.Params {
+				if f, ok := p.(interface{ flagCompleter() ParamCompleter }); ok {
+					if p.paramName() == params.Param {
+						if c := f.flagCompleter(); c != nil {
+							printCompletions(c)
+							return nil
+						}
+					}
 				}
 			}
 
@@ -49,21 +61,25 @@ func (u *Utility) addCompleteCommand() {
 	})
 }
 
-// printCompletions writes completion candidates as tab-separated lines to stdout.
-// Keys are sorted for deterministic output.
-func printCompletions(completions map[string]string) {
+// printCompletions writes completion candidates from an iterator to stdout.
+func printCompletions(completions ParamCompleter) {
+	for c := range completions {
+		if c.Description != "" {
+			fmt.Fprintf(os.Stdout, "%s\t%s\n", c.Value, c.Description)
+		} else {
+			fmt.Fprintln(os.Stdout, c.Value)
+		}
+	}
+}
+
+// printOldCompletions writes completion candidates from a map to stdout.
+// Deprecated: used by OldParam completers.
+func printOldCompletions(completions map[string]string) {
 	if len(completions) == 0 {
 		return
 	}
 
-	keys := make([]string, 0, len(completions))
-	for k := range completions {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	for _, k := range keys {
-		desc := completions[k]
+	for k, desc := range completions {
 		if desc != "" {
 			fmt.Fprintf(os.Stdout, "%s\t%s\n", k, desc)
 		} else {
