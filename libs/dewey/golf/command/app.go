@@ -1,6 +1,13 @@
 package command
 
-import "fmt"
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/bravo/errors"
+	"github.com/amarbel-llc/purse-first/libs/dewey/golf/protocol"
+)
 
 // App holds the command registry and top-level metadata for a CLI/MCP application.
 type App struct {
@@ -135,6 +142,49 @@ func (a *App) VisibleCommands() func(yield func(string, *Command) bool) {
 			}
 		}
 	}
+}
+
+// AddCmd wraps a dodder-style Cmd into a *Command and registers it.
+// Metadata is extracted from opt-in interfaces:
+//   - CommandWithDescription → Command.Description
+//   - CommandWithParams → Command.Params
+//   - CommandWithMCPAnnotations → Command.Annotations
+//   - CommandWithResult → Command.Run (enables MCP tool registration)
+//
+// Commands implementing only Cmd (not CommandWithResult) are CLI-only.
+func (a *App) AddCmd(name string, cmd Cmd) {
+	wrapped := &Command{
+		Name: name,
+	}
+
+	if cwp, ok := cmd.(CommandWithDescription); ok {
+		wrapped.Description = cwp.GetDescription()
+	}
+
+	if cwp, ok := cmd.(CommandWithParams); ok {
+		wrapped.Params = cwp.GetParams()
+	}
+
+	if cwa, ok := cmd.(CommandWithMCPAnnotations); ok {
+		ann := cwa.GetMCPAnnotations()
+		wrapped.Annotations = &protocol.ToolAnnotations{
+			ReadOnlyHint:    &ann.ReadOnly,
+			DestructiveHint: &ann.Destructive,
+		}
+	}
+
+	if cwr, ok := cmd.(CommandWithResult); ok {
+		wrapped.Run = func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			errCtx := errors.MakeContextDefault()
+			req := Request{
+				Context:  errCtx,
+				Prompter: p,
+			}
+			return cwr.RunResult(req)
+		}
+	}
+
+	a.AddCommand(wrapped)
 }
 
 // MergeWithPrefix adds all commands from another App, prefixed with the given string.
