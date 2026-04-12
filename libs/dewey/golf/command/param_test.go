@@ -31,9 +31,9 @@ func TestFlagJSONSchemaType(t *testing.T) {
 		p    Param
 		want string
 	}{
-		{"string flag", StringFlag{param: param[*values.String]{Name: "path"}}, "string"},
-		{"int flag", IntFlag{param: param[*values.Int]{Name: "count"}}, "integer"},
-		{"bool flag", BoolFlag{param: param[*values.Bool]{Name: "verbose"}}, "boolean"},
+		{"string flag", StringFlag{Name: "path"}, "string"},
+		{"int flag", IntFlag{Name: "count"}, "integer"},
+		{"bool flag", BoolFlag{Name: "verbose"}, "boolean"},
 		{"array flag", ArrayFlag{Name: "paths"}, "array"},
 		{"object flag", ObjectFlag{Name: "args"}, "object"},
 	}
@@ -47,34 +47,34 @@ func TestFlagJSONSchemaType(t *testing.T) {
 }
 
 func TestArgJSONSchemaType(t *testing.T) {
-	p := StringArg{param: param[*values.String]{Name: "repo-id"}}
+	p := StringArg{Name: "repo-id"}
 	if got := p.jsonSchemaType(); got != "string" {
 		t.Errorf("jsonSchemaType() = %q, want %q", got, "string")
 	}
 
-	p2 := IntArg{param: param[*values.Int]{Name: "count"}}
+	p2 := IntArg{Name: "count"}
 	if got := p2.jsonSchemaType(); got != "integer" {
 		t.Errorf("jsonSchemaType() = %q, want %q", got, "integer")
 	}
 }
 
 func TestParamName(t *testing.T) {
-	f := StringFlag{param: param[*values.String]{Name: "repo_path"}}
+	f := StringFlag{Name: "repo_path"}
 	if got := f.paramName(); got != "repo_path" {
 		t.Errorf("paramName() = %q, want %q", got, "repo_path")
 	}
 
-	a := StringArg{param: param[*values.String]{Name: "file"}}
+	a := StringArg{Name: "file"}
 	if got := a.paramName(); got != "file" {
 		t.Errorf("paramName() = %q, want %q", got, "file")
 	}
 }
 
 func TestParamEnumValues(t *testing.T) {
-	f := StringFlag{param: param[*values.String]{
+	f := StringFlag{
 		Name:       "format",
 		EnumValues: []string{"json", "text", "tap"},
-	}}
+	}
 	ev := f.enumValues()
 	if len(ev) != 3 {
 		t.Fatalf("enumValues() len = %d, want 3", len(ev))
@@ -84,24 +84,21 @@ func TestParamEnumValues(t *testing.T) {
 	}
 
 	// No enum
-	f2 := StringFlag{param: param[*values.String]{Name: "path"}}
+	f2 := StringFlag{Name: "path"}
 	if ev := f2.enumValues(); ev != nil {
 		t.Errorf("enumValues() = %v, want nil", ev)
 	}
 }
 
 func TestFlagDefault(t *testing.T) {
-	f := IntFlag{
-		param:   param[*values.Int]{Name: "port"},
-		Default: 8080,
-	}
+	f := IntFlag{Name: "port", Default: 8080}
 	if got := f.paramDefault(); got != 8080 {
 		t.Errorf("paramDefault() = %v, want 8080", got)
 	}
 }
 
 func TestArgNoDefault(t *testing.T) {
-	a := StringArg{param: param[*values.String]{Name: "file"}}
+	a := StringArg{Name: "file"}
 	if got := a.paramDefault(); got != nil {
 		t.Errorf("paramDefault() = %v, want nil", got)
 	}
@@ -109,9 +106,9 @@ func TestArgNoDefault(t *testing.T) {
 
 func TestConcreteAliasesAreUsable(t *testing.T) {
 	// Verify aliases work for construction without explicit type params.
-	_ = StringFlag{param: param[*values.String]{Name: "path", Description: "File path", Required: true}, Short: 'p'}
-	_ = IntFlag{param: param[*values.Int]{Name: "count", Description: "Number of items"}, Default: 10}
-	_ = BoolFlag{param: param[*values.Bool]{Name: "verbose", Description: "Verbose output"}, Short: 'v'}
-	_ = StringArg{param: param[*values.String]{Name: "repo-id", Description: "Repository ID", Required: true}}
-	_ = IntArg{param: param[*values.Int]{Name: "line", Description: "Line number", Required: true}}
+	_ = StringFlag{Name: "path", Description: "File path", Required: true, Short: 'p'}
+	_ = IntFlag{Name: "count", Description: "Number of items", Default: 10}
+	_ = BoolFlag{Name: "verbose", Description: "Verbose output", Short: 'v'}
+	_ = StringArg{Name: "repo-id", Description: "Repository ID", Required: true}
+	_ = IntArg{Name: "line", Description: "Line number", Required: true}
 }

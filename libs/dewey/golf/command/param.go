@@ -21,22 +21,8 @@ type Param interface {
 	isParam()
 }
 
-// param is the shared base for generic param types.
-type param[V interfaces.FlagValue] struct {
-	Name        string
-	Description string
-	Required    bool
-	EnumValues  []string
-}
-
-func (p param[V]) paramName() string        { return p.Name }
-func (p param[V]) paramDescription() string  { return p.Description }
-func (p param[V]) paramRequired() bool       { return p.Required }
-func (p param[V]) paramDefault() any         { return nil }
-func (p param[V]) enumValues() []string      { return p.EnumValues }
-func (p param[V]) isParam()                  {}
-
-func (p param[V]) jsonSchemaType() string {
+// schemaTypeOf returns the JSON Schema type for a FlagValue type parameter.
+func schemaTypeOf[V interfaces.FlagValue]() string {
 	var zero V
 	switch any(zero).(type) {
 	case *values.Int:
@@ -50,19 +36,39 @@ func (p param[V]) jsonSchemaType() string {
 
 // Flag is a named CLI flag (--name / -n), also an MCP schema property.
 type Flag[V interfaces.FlagValue] struct {
-	param[V]
-	Short     rune
-	Default   any
-	Completer func() map[string]string
+	Name        string
+	Description string
+	Required    bool
+	EnumValues  []string
+	Short       rune
+	Default     any
+	Completer   func() map[string]string
 }
 
-func (f Flag[V]) paramDefault() any { return f.Default }
+func (f Flag[V]) paramName() string        { return f.Name }
+func (f Flag[V]) paramDescription() string { return f.Description }
+func (f Flag[V]) paramRequired() bool      { return f.Required }
+func (f Flag[V]) paramDefault() any        { return f.Default }
+func (f Flag[V]) enumValues() []string     { return f.EnumValues }
+func (f Flag[V]) jsonSchemaType() string   { return schemaTypeOf[V]() }
+func (f Flag[V]) isParam()                 {}
 
 // Arg is a positional CLI argument, also an MCP schema property.
 type Arg[V interfaces.FlagValue] struct {
-	param[V]
-	Variadic bool // consumes all remaining positional args; must be last
+	Name        string
+	Description string
+	Required    bool
+	EnumValues  []string
+	Variadic    bool // consumes all remaining positional args; must be last
 }
+
+func (a Arg[V]) paramName() string        { return a.Name }
+func (a Arg[V]) paramDescription() string { return a.Description }
+func (a Arg[V]) paramRequired() bool      { return a.Required }
+func (a Arg[V]) paramDefault() any        { return nil }
+func (a Arg[V]) enumValues() []string     { return a.EnumValues }
+func (a Arg[V]) jsonSchemaType() string   { return schemaTypeOf[V]() }
+func (a Arg[V]) isParam()                 {}
 
 // ArrayFlag is a repeated/array flag with nested item schema.
 type ArrayFlag struct {
@@ -74,12 +80,12 @@ type ArrayFlag struct {
 }
 
 func (a ArrayFlag) paramName() string        { return a.Name }
-func (a ArrayFlag) paramDescription() string  { return a.Description }
-func (a ArrayFlag) paramRequired() bool       { return a.Required }
-func (a ArrayFlag) paramDefault() any         { return nil }
-func (a ArrayFlag) jsonSchemaType() string    { return "array" }
-func (a ArrayFlag) enumValues() []string      { return nil }
-func (a ArrayFlag) isParam()                  {}
+func (a ArrayFlag) paramDescription() string { return a.Description }
+func (a ArrayFlag) paramRequired() bool      { return a.Required }
+func (a ArrayFlag) paramDefault() any        { return nil }
+func (a ArrayFlag) jsonSchemaType() string   { return "array" }
+func (a ArrayFlag) enumValues() []string     { return nil }
+func (a ArrayFlag) isParam()                 {}
 
 // ObjectFlag is a freeform JSON object flag.
 type ObjectFlag struct {
@@ -89,12 +95,12 @@ type ObjectFlag struct {
 }
 
 func (o ObjectFlag) paramName() string        { return o.Name }
-func (o ObjectFlag) paramDescription() string  { return o.Description }
-func (o ObjectFlag) paramRequired() bool       { return o.Required }
-func (o ObjectFlag) paramDefault() any         { return nil }
-func (o ObjectFlag) jsonSchemaType() string    { return "object" }
-func (o ObjectFlag) enumValues() []string      { return nil }
-func (o ObjectFlag) isParam()                  {}
+func (o ObjectFlag) paramDescription() string { return o.Description }
+func (o ObjectFlag) paramRequired() bool      { return o.Required }
+func (o ObjectFlag) paramDefault() any        { return nil }
+func (o ObjectFlag) jsonSchemaType() string   { return "object" }
+func (o ObjectFlag) enumValues() []string     { return nil }
+func (o ObjectFlag) isParam()                 {}
 
 // Concrete aliases for common param types.
 type (

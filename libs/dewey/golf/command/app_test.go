@@ -1,10 +1,6 @@
 package command
 
-import (
-	"testing"
-
-	"github.com/amarbel-llc/purse-first/libs/dewey/charlie/values"
-)
+import "testing"
 
 func TestAppAddCommand(t *testing.T) {
 	app := NewUtility("grit", "Git operations MCP server")
@@ -170,8 +166,8 @@ func (paramCmd) GetDescription() Description {
 }
 func (paramCmd) GetParams() []Param {
 	return []Param{
-		StringFlag{param: param[*values.String]{Name: "path", Description: "File path", Required: true}, Short: 'p'},
-		BoolFlag{param: param[*values.Bool]{Name: "verbose", Description: "Verbose output"}, Short: 'v'},
+		StringFlag{Name: "path", Description: "File path", Required: true, Short: 'p'},
+		BoolFlag{Name: "verbose", Description: "Verbose output", Short: 'v'},
 	}
 }
 

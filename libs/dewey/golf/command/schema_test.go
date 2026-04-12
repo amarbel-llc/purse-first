@@ -3,8 +3,6 @@ package command
 import (
 	"encoding/json"
 	"testing"
-
-	"github.com/amarbel-llc/purse-first/libs/dewey/charlie/values"
 )
 
 func TestCommandInputSchema(t *testing.T) {
@@ -220,8 +218,8 @@ func TestNewParamInputSchema(t *testing.T) {
 	cmd := Command{
 		Name: "status",
 		Params: []Param{
-			StringFlag{param: param[*values.String]{Name: "repo_path", Description: "Path to repo", Required: true}},
-			BoolFlag{param: param[*values.Bool]{Name: "verbose", Description: "Verbose output"}},
+			StringFlag{Name: "repo_path", Description: "Path to repo", Required: true},
+			BoolFlag{Name: "verbose", Description: "Verbose output"},
 		},
 	}
 
@@ -257,11 +255,11 @@ func TestNewParamInputSchemaEnum(t *testing.T) {
 	cmd := Command{
 		Name: "list",
 		Params: []Param{
-			StringFlag{param: param[*values.String]{
+			StringFlag{
 				Name:        "format",
 				Description: "Output format",
 				EnumValues:  []string{"json", "text", "tap"},
-			}},
+			},
 		},
 	}
 
@@ -289,8 +287,8 @@ func TestNewParamInputSchemaPositionalArg(t *testing.T) {
 	cmd := Command{
 		Name: "open",
 		Params: []Param{
-			StringArg{param: param[*values.String]{Name: "target", Description: "Target to open", Required: true}},
-			StringFlag{param: param[*values.String]{Name: "format", Description: "Output format"}},
+			StringArg{Name: "target", Description: "Target to open", Required: true},
+			StringFlag{Name: "format", Description: "Output format"},
 		},
 	}
 
@@ -317,7 +315,7 @@ func TestNewParamInputSchemaArrayFlag(t *testing.T) {
 	cmd := Command{
 		Name: "diff",
 		Params: []Param{
-			StringFlag{param: param[*values.String]{Name: "repo_path", Description: "Path to repo", Required: true}},
+			StringFlag{Name: "repo_path", Description: "Path to repo", Required: true},
 			ArrayFlag{Name: "paths", Description: "Limit diff to specific paths"},
 		},
 	}
@@ -343,15 +341,15 @@ func TestNewParamInputSchemaArrayFlagWithObjectItems(t *testing.T) {
 	cmd := Command{
 		Name: "rebase",
 		Params: []Param{
-			StringFlag{param: param[*values.String]{Name: "repo_path", Description: "Path to repo", Required: true}},
+			StringFlag{Name: "repo_path", Description: "Path to repo", Required: true},
 			ArrayFlag{
 				Name:        "todo",
 				Description: "Ordered list of rebase entries",
 				Required:    true,
 				Items: []Param{
-					StringFlag{param: param[*values.String]{Name: "action", Description: "Rebase action", Required: true}},
-					StringFlag{param: param[*values.String]{Name: "hash", Description: "Commit hash", Required: true}},
-					StringFlag{param: param[*values.String]{Name: "message", Description: "New commit message"}},
+					StringFlag{Name: "action", Description: "Rebase action", Required: true},
+					StringFlag{Name: "hash", Description: "Commit hash", Required: true},
+					StringFlag{Name: "message", Description: "New commit message"},
 				},
 			},
 		},
@@ -386,7 +384,7 @@ func TestNewParamInputSchemaObjectFlag(t *testing.T) {
 	cmd := Command{
 		Name: "exec",
 		Params: []Param{
-			StringFlag{param: param[*values.String]{Name: "server", Description: "Server name", Required: true}},
+			StringFlag{Name: "server", Description: "Server name", Required: true},
 			ObjectFlag{Name: "args", Description: "Arguments as JSON object"},
 		},
 	}
@@ -410,7 +408,7 @@ func TestNewParamInputSchemaWithDefault(t *testing.T) {
 	cmd := Command{
 		Name: "serve",
 		Params: []Param{
-			IntFlag{param: param[*values.Int]{Name: "port", Description: "Port number"}, Default: 8080},
+			IntFlag{Name: "port", Description: "Port number", Default: 8080},
 		},
 	}
 
