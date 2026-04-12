@@ -9,7 +9,7 @@ import (
 
 func TestRunCLIDispatchesRun(t *testing.T) {
 	var called bool
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "greet",
 		OldParams: []OldParam{
@@ -36,7 +36,7 @@ func TestRunCLIDispatchesRun(t *testing.T) {
 
 func TestRunCLIDispatchesRunCLI(t *testing.T) {
 	var called bool
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "open",
 		RunCLI: func(ctx context.Context, args json.RawMessage) error {
@@ -56,7 +56,7 @@ func TestRunCLIDispatchesRunCLI(t *testing.T) {
 
 func TestRunCLIPrefersRunCLIOverRun(t *testing.T) {
 	var ranCLI bool
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "dual",
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -80,7 +80,7 @@ func TestRunCLIPrefersRunCLIOverRun(t *testing.T) {
 
 func TestRunCLIBoolFlag(t *testing.T) {
 	var got bool
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -107,7 +107,7 @@ func TestRunCLIBoolFlag(t *testing.T) {
 
 func TestRunCLIIntFlag(t *testing.T) {
 	var got int
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -134,7 +134,7 @@ func TestRunCLIIntFlag(t *testing.T) {
 
 func TestRunCLIArrayFlag(t *testing.T) {
 	var got []string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -161,7 +161,7 @@ func TestRunCLIArrayFlag(t *testing.T) {
 
 func TestRunCLIGlobalParams(t *testing.T) {
 	var format string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.OldParams = []OldParam{
 		{Name: "format", Type: String, Description: "Output format"},
 	}
@@ -187,7 +187,7 @@ func TestRunCLIGlobalParams(t *testing.T) {
 }
 
 func TestRunCLIUnknownCommand(t *testing.T) {
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	err := app.RunCLI(context.Background(), []string{"nonexistent"}, StubPrompter{})
 	if err == nil {
 		t.Error("expected error for unknown command")
@@ -196,7 +196,7 @@ func TestRunCLIUnknownCommand(t *testing.T) {
 
 func TestRunCLIEqualsFlag(t *testing.T) {
 	var got string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -223,7 +223,7 @@ func TestRunCLIEqualsFlag(t *testing.T) {
 
 func TestRunCLIGlobalParamsAfterSubcommand(t *testing.T) {
 	var format string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.OldParams = []OldParam{
 		{Name: "format", Type: String, Description: "Output format"},
 	}
@@ -250,7 +250,7 @@ func TestRunCLIGlobalParamsAfterSubcommand(t *testing.T) {
 
 func TestRunCLIPositionalArg(t *testing.T) {
 	var got string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "open",
 		OldParams: []OldParam{
@@ -278,7 +278,7 @@ func TestRunCLIPositionalArg(t *testing.T) {
 
 func TestRunCLIPositionalArgWithFlags(t *testing.T) {
 	var target, format string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.OldParams = []OldParam{
 		{Name: "format", Type: String, Description: "Output format"},
 	}
@@ -314,9 +314,9 @@ func TestRunCLIPositionalArgWithFlags(t *testing.T) {
 
 func TestRunCLIPrefixSubcommand(t *testing.T) {
 	var called bool
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 
-	sub := NewApp("perms", "Manage permissions")
+	sub := NewUtility("perms", "Manage permissions")
 	sub.AddCommand(&Command{
 		Name: "check",
 		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
@@ -337,7 +337,7 @@ func TestRunCLIPrefixSubcommand(t *testing.T) {
 
 func TestRunCLIShortBoolFlag(t *testing.T) {
 	var got bool
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -364,7 +364,7 @@ func TestRunCLIShortBoolFlag(t *testing.T) {
 
 func TestRunCLIShortStringFlag(t *testing.T) {
 	var got string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -391,7 +391,7 @@ func TestRunCLIShortStringFlag(t *testing.T) {
 
 func TestRunCLIShortFlagEquals(t *testing.T) {
 	var got string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -418,7 +418,7 @@ func TestRunCLIShortFlagEquals(t *testing.T) {
 
 func TestRunCLIShortIntFlag(t *testing.T) {
 	var got int
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -445,7 +445,7 @@ func TestRunCLIShortIntFlag(t *testing.T) {
 
 func TestRunCLIShortArrayFlag(t *testing.T) {
 	var got []string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -473,7 +473,7 @@ func TestRunCLIShortArrayFlag(t *testing.T) {
 func TestRunCLIShortAndLongFlagsMixed(t *testing.T) {
 	var name string
 	var verbose bool
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -506,7 +506,7 @@ func TestRunCLIShortAndLongFlagsMixed(t *testing.T) {
 
 func TestRunCLIShortFlagGlobal(t *testing.T) {
 	var format string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.OldParams = []OldParam{
 		{Name: "format", Type: String, Description: "Output format", Short: 'f'},
 	}
@@ -533,7 +533,7 @@ func TestRunCLIShortFlagGlobal(t *testing.T) {
 
 func TestRunCLIShortFlagUnknownPassedThrough(t *testing.T) {
 	var got string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -566,7 +566,7 @@ func TestDuplicateShortFlagsPanic(t *testing.T) {
 		}
 	}()
 
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	// Panic should fire at AddCommand, not at RunCLI.
 	app.AddCommand(&Command{
 		Name: "cmd",
@@ -596,7 +596,7 @@ func TestShortFlagCollisionGlobalAndCommandPanics(t *testing.T) {
 		}
 	}()
 
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.OldParams = []OldParam{
 		{Name: "format", Type: String, Description: "Output format", Short: 'f'},
 	}
@@ -618,7 +618,7 @@ func TestShortFlagCollisionGlobalAndCommandPanics(t *testing.T) {
 // flags, so -vf is not expanded into -v -f.
 func TestBundledShortFlagsArePositional(t *testing.T) {
 	var got string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -655,7 +655,7 @@ func TestBundledShortFlagsArePositional(t *testing.T) {
 
 func TestRunCLIShortFloatFlag(t *testing.T) {
 	var got float64
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -682,7 +682,7 @@ func TestRunCLIShortFloatFlag(t *testing.T) {
 
 func TestRunCLISingleDashLongBoolFlag(t *testing.T) {
 	var got bool
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -709,7 +709,7 @@ func TestRunCLISingleDashLongBoolFlag(t *testing.T) {
 
 func TestRunCLISingleDashLongStringFlag(t *testing.T) {
 	var got string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -736,7 +736,7 @@ func TestRunCLISingleDashLongStringFlag(t *testing.T) {
 
 func TestRunCLISingleDashLongEqualsFlag(t *testing.T) {
 	var got string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name: "cmd",
 		OldParams: []OldParam{
@@ -762,7 +762,7 @@ func TestRunCLISingleDashLongEqualsFlag(t *testing.T) {
 }
 
 func TestRunCLIHelpFlag(t *testing.T) {
-	app := NewApp("myapp", "My application")
+	app := NewUtility("myapp", "My application")
 	app.Description.Long = "A longer description of my application."
 	app.AddCommand(&Command{
 		Name:        "serve",
@@ -793,7 +793,7 @@ func TestRunCLIHelpFlag(t *testing.T) {
 }
 
 func TestRunCLICommandHelpFlag(t *testing.T) {
-	app := NewApp("myapp", "My application")
+	app := NewUtility("myapp", "My application")
 	app.AddCommand(&Command{
 		Name: "serve",
 		Description: Description{
@@ -829,9 +829,9 @@ func TestRunCLICommandHelpFlag(t *testing.T) {
 }
 
 func TestRunCLIPrefixSubcommandHelpFlag(t *testing.T) {
-	app := NewApp("myapp", "My application")
+	app := NewUtility("myapp", "My application")
 
-	sub := NewApp("mcp", "MCP server")
+	sub := NewUtility("mcp", "MCP server")
 	sub.AddCommand(&Command{
 		Name:        "stdio",
 		Description: Description{Short: "MCP over stdio"},
@@ -862,7 +862,7 @@ func TestRunCLIPrefixSubcommandHelpFlag(t *testing.T) {
 
 func TestRunCLIPassthroughArgs(t *testing.T) {
 	var got []string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name:            "exec-claude",
 		Description:     Description{Short: "Execute claude with args"},
@@ -888,7 +888,7 @@ func TestRunCLIPassthroughArgs(t *testing.T) {
 
 func TestRunCLIPassthroughArgsWithDashes(t *testing.T) {
 	var got []string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name:            "exec-claude",
 		Description:     Description{Short: "Execute claude with args"},
@@ -920,7 +920,7 @@ func TestRunCLIPassthroughArgsWithDashes(t *testing.T) {
 
 func TestRunCLIPassthroughArgsEmpty(t *testing.T) {
 	var got []string
-	app := NewApp("test", "test app")
+	app := NewUtility("test", "test app")
 	app.AddCommand(&Command{
 		Name:            "exec-claude",
 		Description:     Description{Short: "Execute claude with args"},

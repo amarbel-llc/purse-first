@@ -27,13 +27,13 @@ type hooksManifest struct {
 }
 
 // GenerateHooks writes hooks/hooks.json and hooks/pre-tool-use to
-// {dir}/{app.Name}/hooks/. The hooks.json matcher is built from the unique
+// {dir}/{u.Name}/hooks/. The hooks.json matcher is built from the unique
 // set of Replaces values across all ToolMappings. If no commands have tool
 // mappings, no files are written.
-func (a *App) GenerateHooks(dir string) error {
+func (u *Utility) GenerateHooks(dir string) error {
 	replacesSet := make(map[string]bool)
 
-	for _, cmd := range a.AllCommands() {
+	for _, cmd := range u.AllCommands() {
 		if cmd.Hidden {
 			continue
 		}
@@ -53,7 +53,7 @@ func (a *App) GenerateHooks(dir string) error {
 	sort.Strings(sorted)
 	matcher := strings.Join(sorted, "|")
 
-	hooksDir := filepath.Join(dir, a.Name, "hooks")
+	hooksDir := filepath.Join(dir, u.Name, "hooks")
 	if err := os.MkdirAll(hooksDir, 0o755); err != nil {
 		return fmt.Errorf("creating hooks directory: %w", err)
 	}

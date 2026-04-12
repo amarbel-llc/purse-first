@@ -15,7 +15,7 @@ import (
 // and commands_dodder packages to alias a concrete version for their own use
 type Request struct {
 	errors.Context
-	Utility  Utility
+	Utility  *Utility
 	FlagSet  *flags.FlagSet
 	Prompter Prompter
 

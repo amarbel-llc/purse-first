@@ -137,8 +137,8 @@ func cleanDevMCP(projectDir string) error {
 	return nil
 }
 
-func (a *App) addDevMCPCommand() {
-	a.AddCommand(&Command{
+func (u *Utility) addDevMCPCommand() {
+	u.AddCommand(&Command{
 		Name:   "dev-mcp",
 		Hidden: true,
 		Description: Description{

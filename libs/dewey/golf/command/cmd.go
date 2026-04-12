@@ -22,7 +22,7 @@ type (
 
 	// CommandWithResult is implemented by Cmd types that can return a
 	// structured Result for MCP tool responses. Commands implementing
-	// this interface get registered as MCP tools via App.AddCmd.
+	// this interface get registered as MCP tools via Utility.AddCmd.
 	// Commands implementing only Cmd (not CommandWithResult) are CLI-only.
 	CommandWithResult interface {
 		RunResult(Request) (*Result, error)

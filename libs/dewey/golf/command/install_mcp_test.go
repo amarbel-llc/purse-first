@@ -8,7 +8,7 @@ import (
 )
 
 func TestInstallMCPCreatesNewConfig(t *testing.T) {
-	app := NewApp("chrest", "Chrome REST client")
+	app := NewUtility("chrest", "Chrome REST client")
 	app.MCPArgs = []string{"mcp"}
 
 	configPath := filepath.Join(t.TempDir(), ".claude.json")
@@ -39,7 +39,7 @@ func TestInstallMCPPreservesExistingEntries(t *testing.T) {
 	}
 	writeTestConfig(t, configPath, existing)
 
-	app := NewApp("grit", "Git MCP server")
+	app := NewUtility("grit", "Git MCP server")
 
 	if err := app.installMCPTo("/nix/store/xyz-grit/bin/grit", configPath); err != nil {
 		t.Fatalf("installMCPTo: %v", err)
@@ -69,7 +69,7 @@ func TestInstallMCPUpdatesExistingEntry(t *testing.T) {
 	}
 	writeTestConfig(t, configPath, existing)
 
-	app := NewApp("chrest", "Chrome REST client")
+	app := NewUtility("chrest", "Chrome REST client")
 	app.MCPArgs = []string{"mcp"}
 
 	if err := app.installMCPTo("/nix/store/new-chrest/bin/chrest", configPath); err != nil {
@@ -82,7 +82,7 @@ func TestInstallMCPUpdatesExistingEntry(t *testing.T) {
 }
 
 func TestInstallMCPWithEmptyArgs(t *testing.T) {
-	app := NewApp("simple", "Simple server")
+	app := NewUtility("simple", "Simple server")
 	// MCPArgs not set — should use empty slice
 
 	configPath := filepath.Join(t.TempDir(), ".claude.json")
@@ -105,7 +105,7 @@ func TestInstallMCPPreservesNonServerFields(t *testing.T) {
 	}
 	writeTestConfig(t, configPath, existing)
 
-	app := NewApp("test", "Test server")
+	app := NewUtility("test", "Test server")
 	if err := app.installMCPTo("/usr/bin/test", configPath); err != nil {
 		t.Fatalf("installMCPTo: %v", err)
 	}

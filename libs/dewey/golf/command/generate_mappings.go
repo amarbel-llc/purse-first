@@ -24,14 +24,14 @@ type mappingFile struct {
 	Mappings []mappingEntry `json:"mappings"`
 }
 
-// GenerateMappings writes a mappings.json file to {dir}/{app.Name}/mappings.json.
+// GenerateMappings writes a mappings.json file to {dir}/{u.Name}/mappings.json.
 // Only commands with MapsTools declarations are included. Each ToolMapping on a
 // command produces a separate mapping entry. If no commands have tool mappings,
 // no file is written.
-func (a *App) GenerateMappings(dir string) error {
+func (u *Utility) GenerateMappings(dir string) error {
 	var entries []mappingEntry
 
-	for name, cmd := range a.AllCommands() {
+	for name, cmd := range u.AllCommands() {
 		if cmd.Hidden {
 			continue
 		}
@@ -43,7 +43,7 @@ func (a *App) GenerateMappings(dir string) error {
 				Tools: []mappingToolSuggestion{
 					{Name: name, UseWhen: tm.UseWhen},
 				},
-				Reason: "Use the " + a.Name + " MCP tool instead",
+				Reason: "Use the " + u.Name + " MCP tool instead",
 			})
 		}
 	}
@@ -53,11 +53,11 @@ func (a *App) GenerateMappings(dir string) error {
 	}
 
 	mf := mappingFile{
-		Server:   a.Name,
+		Server:   u.Name,
 		Mappings: entries,
 	}
 
-	pluginDir := filepath.Join(dir, a.Name)
+	pluginDir := filepath.Join(dir, u.Name)
 	if err := os.MkdirAll(pluginDir, 0o755); err != nil {
 		return err
 	}

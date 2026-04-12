@@ -28,27 +28,27 @@ type pluginManifest struct {
 	Skills      []string                   `json:"skills,omitempty"`
 }
 
-func (a *App) buildPluginManifest() pluginManifest {
-	cmdName := a.Name
-	if a.MCPBinary != "" {
-		cmdName = a.MCPBinary
+func (u *Utility) buildPluginManifest() pluginManifest {
+	cmdName := u.Name
+	if u.MCPBinary != "" {
+		cmdName = u.MCPBinary
 	}
 
 	manifest := pluginManifest{
-		Name:        a.Name,
-		Description: a.PluginDescription,
+		Name:        u.Name,
+		Description: u.PluginDescription,
 		McpServers: map[string]pluginMcpServer{
-			a.Name: {
+			u.Name: {
 				Type:    "stdio",
 				Command: cmdName,
-				Args:    a.MCPArgs,
+				Args:    u.MCPArgs,
 			},
 		},
-		Skills: a.pluginSkills,
+		Skills: u.pluginSkills,
 	}
 
-	if a.PluginAuthor != "" {
-		manifest.Author = &pluginAuthor{Name: a.PluginAuthor}
+	if u.PluginAuthor != "" {
+		manifest.Author = &pluginAuthor{Name: u.PluginAuthor}
 	}
 
 	return manifest
@@ -56,8 +56,8 @@ func (a *App) buildPluginManifest() pluginManifest {
 
 // WritePluginJSON marshals the plugin manifest as indented JSON to w.
 // No files are written; no side effects beyond the write.
-func (a *App) WritePluginJSON(w io.Writer) error {
-	manifest := a.buildPluginManifest()
+func (u *Utility) WritePluginJSON(w io.Writer) error {
+	manifest := u.buildPluginManifest()
 
 	data, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
@@ -69,11 +69,11 @@ func (a *App) WritePluginJSON(w io.Writer) error {
 	return err
 }
 
-// GeneratePlugin writes a plugin.json manifest to {dir}/{app.Name}/.claude-plugin/plugin.json.
-func (a *App) GeneratePlugin(dir string) error {
-	manifest := a.buildPluginManifest()
+// GeneratePlugin writes a plugin.json manifest to {dir}/{u.Name}/.claude-plugin/plugin.json.
+func (u *Utility) GeneratePlugin(dir string) error {
+	manifest := u.buildPluginManifest()
 
-	pluginDir := filepath.Join(dir, a.Name, ".claude-plugin")
+	pluginDir := filepath.Join(dir, u.Name, ".claude-plugin")
 	if err := os.MkdirAll(pluginDir, 0o755); err != nil {
 		return err
 	}

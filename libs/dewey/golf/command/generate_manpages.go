@@ -11,21 +11,21 @@ import (
 
 // GenerateManpages writes roff-formatted manpages to {dir}/share/man/man1/.
 // One page per app ({name}.1) and one per non-hidden command ({name}-{cmd}.1).
-func (a *App) GenerateManpages(dir string) error {
+func (u *Utility) GenerateManpages(dir string) error {
 	manDir := filepath.Join(dir, "share", "man", "man1")
 	if err := os.MkdirAll(manDir, 0o755); err != nil {
 		return err
 	}
 
-	if err := a.writeAppManpage(manDir); err != nil {
+	if err := u.writeAppManpage(manDir); err != nil {
 		return err
 	}
 
-	for name, cmd := range a.AllCommands() {
+	for name, cmd := range u.AllCommands() {
 		if cmd.Hidden {
 			continue
 		}
-		if err := a.writeCommandManpage(manDir, name, cmd); err != nil {
+		if err := u.writeCommandManpage(manDir, name, cmd); err != nil {
 			return err
 		}
 	}
@@ -33,24 +33,24 @@ func (a *App) GenerateManpages(dir string) error {
 	return nil
 }
 
-func (a *App) writeAppManpage(dir string) error {
+func (u *Utility) writeAppManpage(dir string) error {
 	var b strings.Builder
 	date := time.Now().Format("2006-01-02")
-	name := strings.ToUpper(a.Name)
+	name := strings.ToUpper(u.Name)
 
-	fmt.Fprintf(&b, ".TH %s 1 %q %q\n", name, date, a.Name+" "+a.Version)
+	fmt.Fprintf(&b, ".TH %s 1 %q %q\n", name, date, u.Name+" "+u.Version)
 	fmt.Fprintf(&b, ".SH NAME\n")
-	fmt.Fprintf(&b, "%s \\- %s\n", a.Name, a.Description.Short)
+	fmt.Fprintf(&b, "%s \\- %s\n", u.Name, u.Description.Short)
 
 	// SYNOPSIS
 	fmt.Fprintf(&b, ".SH SYNOPSIS\n")
-	fmt.Fprintf(&b, ".B %s\n", a.Name)
+	fmt.Fprintf(&b, ".B %s\n", u.Name)
 	fmt.Fprintf(&b, ".I command\n")
 	fmt.Fprintf(&b, ".RI [ options ]\n")
 
-	if a.Description.Long != "" {
+	if u.Description.Long != "" {
 		fmt.Fprintf(&b, ".SH DESCRIPTION\n")
-		fmt.Fprintf(&b, "%s\n", a.Description.Long)
+		fmt.Fprintf(&b, "%s\n", u.Description.Long)
 	}
 
 	type namedCmd struct {
@@ -58,7 +58,7 @@ func (a *App) writeAppManpage(dir string) error {
 		cmd  *Command
 	}
 	var cmds []namedCmd
-	for cmdName, cmd := range a.VisibleCommands() {
+	for cmdName, cmd := range u.VisibleCommands() {
 		cmds = append(cmds, namedCmd{cmdName, cmd})
 	}
 	sort.Slice(cmds, func(i, j int) bool {
@@ -74,36 +74,36 @@ func (a *App) writeAppManpage(dir string) error {
 		}
 	}
 
-	writeExamples(&b, a.Examples)
-	writeEnvironment(&b, a.EnvVars)
-	writeFiles(&b, a.Files)
+	writeExamples(&b, u.Examples)
+	writeEnvironment(&b, u.EnvVars)
+	writeFiles(&b, u.Files)
 
 	if len(cmds) > 0 {
 		fmt.Fprintf(&b, ".SH SEE ALSO\n")
 		var refs []string
 		for _, nc := range cmds {
-			refs = append(refs, fmt.Sprintf(".BR %s-%s (1)", a.Name, nc.name))
+			refs = append(refs, fmt.Sprintf(".BR %s-%s (1)", u.Name, nc.name))
 		}
 		fmt.Fprintf(&b, "%s\n", strings.Join(refs, ",\n"))
 	}
 
-	path := filepath.Join(dir, a.Name+".1")
+	path := filepath.Join(dir, u.Name+".1")
 	return os.WriteFile(path, []byte(b.String()), 0o644)
 }
 
-func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Command) error {
+func (u *Utility) writeCommandManpage(dir string, registeredName string, cmd *Command) error {
 	var b strings.Builder
 	date := time.Now().Format("2006-01-02")
-	fullName := a.Name + "-" + registeredName
+	fullName := u.Name + "-" + registeredName
 	upperName := strings.ToUpper(fullName)
 
-	fmt.Fprintf(&b, ".TH %s 1 %q %q\n", upperName, date, a.Name+" "+a.Version)
+	fmt.Fprintf(&b, ".TH %s 1 %q %q\n", upperName, date, u.Name+" "+u.Version)
 	fmt.Fprintf(&b, ".SH NAME\n")
 	fmt.Fprintf(&b, "%s \\- %s\n", fullName, cmd.Description.Short)
 
 	// SYNOPSIS
 	fmt.Fprintf(&b, ".SH SYNOPSIS\n")
-	fmt.Fprintf(&b, ".B %s %s\n", a.Name, registeredName)
+	fmt.Fprintf(&b, ".B %s %s\n", u.Name, registeredName)
 	if cmd.PassthroughArgs {
 		fmt.Fprintf(&b, ".RI [ args... ]\n")
 	} else {
@@ -157,7 +157,7 @@ func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Comman
 
 	fmt.Fprintf(&b, ".SH SEE ALSO\n")
 	var seeAlsoRefs []string
-	seeAlsoRefs = append(seeAlsoRefs, fmt.Sprintf(".BR %s (1)", a.Name))
+	seeAlsoRefs = append(seeAlsoRefs, fmt.Sprintf(".BR %s (1)", u.Name))
 	for _, ref := range cmd.SeeAlso {
 		seeAlsoRefs = append(seeAlsoRefs, fmt.Sprintf(".BR %s (1)", ref))
 	}

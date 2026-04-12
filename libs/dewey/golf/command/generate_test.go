@@ -9,7 +9,7 @@ import (
 )
 
 func TestGenerateAll(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 	app.Version = "0.1.0"
 
 	app.AddCommand(&Command{
@@ -47,7 +47,7 @@ func TestGenerateAll(t *testing.T) {
 }
 
 func TestGenerateAllWithSkills(t *testing.T) {
-	app := NewApp("chix", "Nix MCP server")
+	app := NewUtility("chix", "Nix MCP server")
 	app.Version = "0.1.0"
 	app.PluginDescription = "Nix MCP server and skills"
 	app.PluginAuthor = "friedenberg"
@@ -133,7 +133,7 @@ func TestGenerateAllWithSkills(t *testing.T) {
 }
 
 func TestGenerateAllWithSkillsEmptySkillsDir(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 	app.Version = "0.1.0"
 
 	app.AddCommand(&Command{
@@ -169,8 +169,8 @@ func TestGenerateAllWithSkillsEmptySkillsDir(t *testing.T) {
 	}
 }
 
-func newTestApp() *App {
-	app := NewApp("grit", "Git operations")
+func newTestApp() *Utility {
+	app := NewUtility("grit", "Git operations")
 	app.Version = "0.1.0"
 	app.AddCommand(&Command{
 		Name:        "status",
@@ -269,7 +269,7 @@ func TestHandleGeneratePluginStdoutWritesNoFiles(t *testing.T) {
 }
 
 func TestHandleGeneratePluginWithSkillsDir(t *testing.T) {
-	app := NewApp("chix", "Nix MCP server")
+	app := NewUtility("chix", "Nix MCP server")
 	app.Version = "0.1.0"
 	app.AddCommand(&Command{
 		Name:        "eval",

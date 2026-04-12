@@ -32,10 +32,10 @@ type commandMapping struct {
 
 // allToolMappings collects every ToolMapping from every registered command,
 // paired with the canonical command name.
-func (a *App) allToolMappings() []commandMapping {
+func (u *Utility) allToolMappings() []commandMapping {
 	var out []commandMapping
 
-	for name, cmd := range a.AllCommands() {
+	for name, cmd := range u.AllCommands() {
 		for _, tm := range cmd.MapsTools {
 			out = append(out, commandMapping{
 				commandName: name,
@@ -54,7 +54,7 @@ func (a *App) allToolMappings() []commandMapping {
 // Follows RFC-0001 section 2.2 fail-open: on any error (I/O failure, parse
 // error, unexpected input), returns nil so the caller exits 0. Errors are
 // logged to stderr but never surfaced as non-zero exit codes.
-func (a *App) HandleHook(r io.Reader, w io.Writer) error {
+func (u *Utility) HandleHook(r io.Reader, w io.Writer) error {
 	var hi hookInput
 	if err := json.NewDecoder(r).Decode(&hi); err != nil {
 		log.Printf("hook: ignoring decode error (fail-open): %v", err)
@@ -64,7 +64,7 @@ func (a *App) HandleHook(r io.Reader, w io.Writer) error {
 	filePath := extractString(hi.ToolInput, "file_path", "path", "pattern")
 	command := extractString(hi.ToolInput, "command")
 
-	cms := a.allToolMappings()
+	cms := u.allToolMappings()
 
 	commands := []string{command}
 	if hi.ToolName == "Bash" && command != "" {
@@ -92,7 +92,7 @@ func (a *App) HandleHook(r io.Reader, w io.Writer) error {
 	}
 
 	toolName := fmt.Sprintf("mcp__plugin_%s_%s__%s",
-		a.Name, a.Name, matchedCM.commandName)
+		u.Name, u.Name, matchedCM.commandName)
 
 	reason := fmt.Sprintf("Use the MCP tool instead:\n- %s: %s",
 		toolName, matchedCM.mapping.UseWhen)

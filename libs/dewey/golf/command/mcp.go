@@ -11,8 +11,8 @@ import (
 // RegisterMCPTools registers all non-hidden commands as MCP tools
 // in the given ToolRegistry, using each command's description and
 // auto-generated JSON schema.
-func (a *App) RegisterMCPTools(registry *server.ToolRegistry) {
-	for name, cmd := range a.AllCommands() {
+func (u *Utility) RegisterMCPTools(registry *server.ToolRegistry) {
+	for name, cmd := range u.AllCommands() {
 		if cmd.Hidden || cmd.Run == nil {
 			continue
 		}
@@ -35,8 +35,8 @@ func (a *App) RegisterMCPTools(registry *server.ToolRegistry) {
 
 // RegisterMCPToolsV1 registers all non-hidden commands as V1 MCP tools
 // in the given ToolRegistryV1.
-func (a *App) RegisterMCPToolsV1(registry *server.ToolRegistryV1) {
-	for name, cmd := range a.AllCommands() {
+func (u *Utility) RegisterMCPToolsV1(registry *server.ToolRegistryV1) {
+	for name, cmd := range u.AllCommands() {
 		if cmd.Hidden || cmd.Run == nil {
 			continue
 		}

@@ -9,8 +9,8 @@ import (
 	"github.com/amarbel-llc/purse-first/libs/dewey/golf/protocol"
 )
 
-// App holds the command registry and top-level metadata for a CLI/MCP application.
-type App struct {
+// Utility holds the command registry and top-level metadata for a CLI/MCP application.
+type Utility struct {
 	Name              string
 	Aliases           []string // Aliases are additional binary names that should get shell completions
 	Description       Description
@@ -43,26 +43,26 @@ type App struct {
 	pluginSkills   []string // discovered skill paths for plugin.json
 }
 
-// NewApp creates a new App with the given name and short description.
-func NewApp(name, short string) *App {
-	a := &App{
+// NewUtility creates a new Utility with the given name and short description.
+func NewUtility(name, short string) *Utility {
+	u := &Utility{
 		Name:           name,
 		Description:    Description{Short: short},
 		commands:       make(map[string]*Command),
 		canonicalNames: make(map[*Command]string),
 	}
 
-	a.addDevMCPCommand()
-	a.addCompleteCommand()
+	u.addDevMCPCommand()
+	u.addCompleteCommand()
 
-	return a
+	return u
 }
 
 // AddCommand registers a command and its aliases. Panics on duplicate names
 // or if any command param's Short rune conflicts with a global param's Short rune.
-func (a *App) AddCommand(cmd *Command) {
+func (u *Utility) AddCommand(cmd *Command) {
 	// Check for short flag collisions between command params and global params.
-	for _, gp := range a.OldParams {
+	for _, gp := range u.OldParams {
 		if gp.Short == 0 {
 			continue
 		}
@@ -91,39 +91,39 @@ func (a *App) AddCommand(cmd *Command) {
 		shortSeen[cp.Short] = cp.Name
 	}
 
-	a.addName(cmd.Name, cmd)
+	u.addName(cmd.Name, cmd)
 	for _, alias := range cmd.Aliases {
-		a.addName(alias, cmd)
+		u.addName(alias, cmd)
 	}
 }
 
-func (a *App) addName(name string, cmd *Command) {
-	if _, ok := a.commands[name]; ok {
+func (u *Utility) addName(name string, cmd *Command) {
+	if _, ok := u.commands[name]; ok {
 		panic(fmt.Sprintf("command added more than once: %s", name))
 	}
-	a.commands[name] = cmd
-	if _, ok := a.canonicalNames[cmd]; !ok {
-		a.canonicalNames[cmd] = name
+	u.commands[name] = cmd
+	if _, ok := u.canonicalNames[cmd]; !ok {
+		u.canonicalNames[cmd] = name
 	}
 }
 
 // GetCommand looks up a command by name or alias.
-func (a *App) GetCommand(name string) (*Command, bool) {
-	cmd, ok := a.commands[name]
+func (u *Utility) GetCommand(name string) (*Command, bool) {
+	cmd, ok := u.commands[name]
 	return cmd, ok
 }
 
 // AllCommands iterates over all registered commands (including hidden).
 // Each unique command is yielded once even if it has aliases.
-func (a *App) AllCommands() func(yield func(string, *Command) bool) {
+func (u *Utility) AllCommands() func(yield func(string, *Command) bool) {
 	return func(yield func(string, *Command) bool) {
 		seen := make(map[*Command]bool)
-		for _, cmd := range a.commands {
+		for _, cmd := range u.commands {
 			if seen[cmd] {
 				continue
 			}
 			seen[cmd] = true
-			if !yield(a.canonicalNames[cmd], cmd) {
+			if !yield(u.canonicalNames[cmd], cmd) {
 				return
 			}
 		}
@@ -131,9 +131,9 @@ func (a *App) AllCommands() func(yield func(string, *Command) bool) {
 }
 
 // VisibleCommands iterates over non-hidden commands.
-func (a *App) VisibleCommands() func(yield func(string, *Command) bool) {
+func (u *Utility) VisibleCommands() func(yield func(string, *Command) bool) {
 	return func(yield func(string, *Command) bool) {
-		for name, cmd := range a.AllCommands() {
+		for name, cmd := range u.AllCommands() {
 			if cmd.Hidden {
 				continue
 			}
@@ -152,7 +152,7 @@ func (a *App) VisibleCommands() func(yield func(string, *Command) bool) {
 //   - CommandWithResult → Command.Run (enables MCP tool registration)
 //
 // Commands implementing only Cmd (not CommandWithResult) are CLI-only.
-func (a *App) AddCmd(name string, cmd Cmd) {
+func (u *Utility) AddCmd(name string, cmd Cmd) {
 	wrapped := &Command{
 		Name: name,
 	}
@@ -184,17 +184,17 @@ func (a *App) AddCmd(name string, cmd Cmd) {
 		}
 	}
 
-	a.AddCommand(wrapped)
+	u.AddCommand(wrapped)
 }
 
-// MergeWithPrefix adds all commands from another App, prefixed with the given string.
-func (a *App) MergeWithPrefix(other *App, prefix string) {
+// MergeWithPrefix adds all commands from another Utility, prefixed with the given string.
+func (u *Utility) MergeWithPrefix(other *Utility, prefix string) {
 	for name, cmd := range other.AllCommands() {
 		key := name
 		if prefix != "" {
 			key = prefix + "-" + name
 		}
-		a.addName(key, cmd)
-		a.canonicalNames[cmd] = key
+		u.addName(key, cmd)
+		u.canonicalNames[cmd] = key
 	}
 }

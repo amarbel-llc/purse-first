@@ -7,7 +7,7 @@ import (
 )
 
 func TestCompleteDispatchesToCompleter(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
@@ -37,7 +37,7 @@ func TestCompleteDispatchesToCompleter(t *testing.T) {
 }
 
 func TestCompleteUnknownCommandReturnsNoError(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 
 	err := app.RunCLI(context.Background(), []string{
 		"__complete", "--command", "nonexistent", "--param", "foo",
@@ -48,7 +48,7 @@ func TestCompleteUnknownCommandReturnsNoError(t *testing.T) {
 }
 
 func TestCompleteParamWithoutCompleterReturnsNoError(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
@@ -66,7 +66,7 @@ func TestCompleteParamWithoutCompleterReturnsNoError(t *testing.T) {
 }
 
 func TestCompleteIsHidden(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 
 	for name, cmd := range app.AllCommands() {
 		if name == "__complete" {
@@ -80,7 +80,7 @@ func TestCompleteIsHidden(t *testing.T) {
 }
 
 func TestCompleteHandlerDirectly(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 	app.AddCommand(&Command{
 		Name:        "deploy",
 		Description: Description{Short: "Deploy app"},

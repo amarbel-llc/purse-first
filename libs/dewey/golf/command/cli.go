@@ -10,39 +10,39 @@ import (
 )
 
 // RunCLI parses CLI arguments, dispatches to the matched command handler,
-// and prints the result. Global params (App.OldParams) are parsed before
+// and prints the result. Global params (Utility.OldParams) are parsed before
 // the subcommand name; command params and global params are both accepted
 // after. Prefix subcommands joined by hyphens are resolved from
 // space-separated args (e.g. "perms check" → "perms-check").
 //
 // The flags -h, --help, and the bare word "help" print usage and return
 // without invoking any handler.
-func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
+func (u *Utility) RunCLI(ctx context.Context, args []string, p Prompter) error {
 	globalVals := make(map[string]any)
-	remaining, err := parseFlags(args, a.OldParams, globalVals)
+	remaining, err := parseFlags(args, u.OldParams, globalVals)
 	if err != nil {
 		return fmt.Errorf("parsing global flags: %w", err)
 	}
 
 	if len(remaining) == 0 {
-		a.printUsage()
+		u.printUsage()
 		return nil
 	}
 
 	if isHelpArg(remaining[0]) {
-		a.printUsage()
+		u.printUsage()
 		return nil
 	}
 
 	name := remaining[0]
 	cmdArgs := remaining[1:]
 
-	cmd, ok := a.GetCommand(name)
+	cmd, ok := u.GetCommand(name)
 	if ok {
 		// Resolve deeper prefix subcommands: "mcp stdio" → "mcp-stdio"
 		for len(cmdArgs) > 0 && !strings.HasPrefix(cmdArgs[0], "-") {
 			deeper := name + "-" + cmdArgs[0]
-			if deeperCmd, found := a.GetCommand(deeper); found {
+			if deeperCmd, found := u.GetCommand(deeper); found {
 				name = deeper
 				cmd = deeperCmd
 				cmdArgs = cmdArgs[1:]
@@ -55,7 +55,7 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 		// "perms check" → "perms-check"
 		for i := 1; i < len(remaining); i++ {
 			name = name + "-" + remaining[i]
-			if cmd, ok = a.GetCommand(name); ok {
+			if cmd, ok = u.GetCommand(name); ok {
 				cmdArgs = remaining[i+1:]
 				break
 			}
@@ -66,7 +66,7 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 	}
 
 	if hasHelpFlag(cmdArgs) {
-		a.printCommandUsage(name, cmd)
+		u.printCommandUsage(name, cmd)
 		return nil
 	}
 
@@ -96,7 +96,7 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 
 	// Merge command params and global params so flags after the subcommand
 	// can include global params like --format.
-	allParams := append(cmd.OldParams, a.OldParams...)
+	allParams := append(cmd.OldParams, u.OldParams...)
 	positional, err := parseFlags(cmdArgs, allParams, cmdVals)
 	if err != nil {
 		return fmt.Errorf("parsing flags for %s: %w", name, err)
@@ -141,9 +141,9 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 
 	// Commands with subcommands but no handler show usage.
 	prefix := name + "-"
-	for n := range a.commands {
+	for n := range u.commands {
 		if strings.HasPrefix(n, prefix) {
-			a.printCommandUsage(name, cmd)
+			u.printCommandUsage(name, cmd)
 			return nil
 		}
 	}
@@ -176,9 +176,9 @@ func hasHelpFlag(args []string) bool {
 	return false
 }
 
-func (a *App) printCommandUsage(name string, cmd *Command) {
+func (u *Utility) printCommandUsage(name string, cmd *Command) {
 	displayName := strings.ReplaceAll(name, "-", " ")
-	fmt.Printf("%s %s — %s\n\n", a.Name, displayName, cmd.Description.Short)
+	fmt.Printf("%s %s — %s\n\n", u.Name, displayName, cmd.Description.Short)
 	if cmd.Description.Long != "" {
 		fmt.Printf("%s\n\n", cmd.Description.Long)
 	}
@@ -196,7 +196,7 @@ func (a *App) printCommandUsage(name string, cmd *Command) {
 	// List subcommands (commands starting with name-)
 	prefix := name + "-"
 	var subs []sortedCommand
-	for n, c := range a.VisibleCommands() {
+	for n, c := range u.VisibleCommands() {
 		if strings.HasPrefix(n, prefix) {
 			subs = append(subs, sortedCommand{strings.TrimPrefix(n, prefix), c})
 		}
@@ -215,13 +215,13 @@ func (a *App) printCommandUsage(name string, cmd *Command) {
 	}
 }
 
-func (a *App) printUsage() {
-	fmt.Printf("%s — %s\n\n", a.Name, a.Description.Short)
-	if a.Description.Long != "" {
-		fmt.Printf("%s\n\n", a.Description.Long)
+func (u *Utility) printUsage() {
+	fmt.Printf("%s — %s\n\n", u.Name, u.Description.Short)
+	if u.Description.Long != "" {
+		fmt.Printf("%s\n\n", u.Description.Long)
 	}
 
-	cmds := a.sortedVisibleCommands()
+	cmds := u.sortedVisibleCommands()
 
 	// Identify group prefixes: commands whose name is a prefix of other commands.
 	groups := make(map[string]bool)

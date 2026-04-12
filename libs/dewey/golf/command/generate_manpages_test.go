@@ -10,7 +10,7 @@ import (
 )
 
 func TestGenerateManpageApp(t *testing.T) {
-	app := NewApp("grit", "Git operations MCP server")
+	app := NewUtility("grit", "Git operations MCP server")
 	app.Version = "0.1.0"
 	app.Description.Long = "An MCP server exposing git operations."
 	app.Examples = []Example{
@@ -118,7 +118,7 @@ func TestCommandExamplesField(t *testing.T) {
 }
 
 func TestGenerateManpageCommand(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 
 	app.AddCommand(&Command{
 		Name: "status",
@@ -197,7 +197,7 @@ func TestGenerateManpageCommand(t *testing.T) {
 }
 
 func TestGenerateManpageCommandNoExamples(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 	app.AddCommand(&Command{
 		Name:        "log",
 		Description: Description{Short: "Show commit history"},
@@ -219,7 +219,7 @@ func TestGenerateManpageCommandNoExamples(t *testing.T) {
 }
 
 func TestGenerateManpageAppNoExamples(t *testing.T) {
-	app := NewApp("mytool", "A simple tool")
+	app := NewUtility("mytool", "A simple tool")
 	app.Version = "0.1.0"
 	app.AddCommand(&Command{
 		Name:        "run",
@@ -242,7 +242,7 @@ func TestGenerateManpageAppNoExamples(t *testing.T) {
 }
 
 func TestGenerateManpageShortFlags(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 
 	app.AddCommand(&Command{
 		Name: "status",
@@ -288,7 +288,7 @@ func TestGenerateManpageShortFlags(t *testing.T) {
 }
 
 func TestGenerateManpagePassthroughArgs(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 	app.AddCommand(&Command{
 		Name:            "exec-claude",
 		Description:     Description{Short: "Execute claude with args"},
@@ -321,7 +321,7 @@ func TestGenerateManpagePassthroughArgs(t *testing.T) {
 }
 
 func TestManpageSectionOrdering(t *testing.T) {
-	app := NewApp("demo", "Demo tool")
+	app := NewUtility("demo", "Demo tool")
 	app.Version = "1.0.0"
 	app.Description.Long = "A demonstration tool."
 	app.Examples = []Example{
@@ -380,7 +380,7 @@ func TestManpageSectionOrdering(t *testing.T) {
 }
 
 func TestGenerateManpageAppEnvVarsAndFiles(t *testing.T) {
-	app := NewApp("lux", "LSP multiplexer")
+	app := NewUtility("lux", "LSP multiplexer")
 	app.Version = "0.1.0"
 	app.EnvVars = []EnvVar{
 		{
@@ -460,7 +460,7 @@ func TestGenerateManpageAppEnvVarsAndFiles(t *testing.T) {
 }
 
 func TestGenerateManpageCommandEnvVarsAndFiles(t *testing.T) {
-	app := NewApp("lux", "LSP multiplexer")
+	app := NewUtility("lux", "LSP multiplexer")
 	app.AddCommand(&Command{
 		Name:        "config-edit",
 		Description: Description{Short: "Edit lux configuration"},
@@ -495,7 +495,7 @@ func TestGenerateManpageCommandEnvVarsAndFiles(t *testing.T) {
 }
 
 func TestGenerateManpageNoEnvVarsOrFiles(t *testing.T) {
-	app := NewApp("plain", "no env/files")
+	app := NewUtility("plain", "no env/files")
 	app.AddCommand(&Command{
 		Name:        "run",
 		Description: Description{Short: "Run it"},
@@ -522,7 +522,7 @@ func TestGenerateManpageNoEnvVarsOrFiles(t *testing.T) {
 }
 
 func TestGenerateManpageCommandSeeAlso(t *testing.T) {
-	app := NewApp("lux", "LSP multiplexer")
+	app := NewUtility("lux", "LSP multiplexer")
 	app.AddCommand(&Command{
 		Name:        "hover",
 		Description: Description{Short: "Show hover info"},
@@ -572,7 +572,7 @@ func TestGenerateManpageCommandSeeAlso(t *testing.T) {
 }
 
 func TestInstallExtraManpagesMapFS(t *testing.T) {
-	app := NewApp("moxy", "moxy proxy")
+	app := NewUtility("moxy", "moxy proxy")
 	mfs := fstest.MapFS{
 		"cmd/moxy/moxyfile.5": &fstest.MapFile{
 			Data: []byte(".Dd March 31, 2026\n.Dt MOXYFILE 5\n.Sh NAME\n"),
@@ -623,7 +623,7 @@ func TestInstallExtraManpagesDirFS(t *testing.T) {
 		t.Fatalf("write source: %v", err)
 	}
 
-	app := NewApp("foo", "foo tool")
+	app := NewUtility("foo", "foo tool")
 	app.ExtraManpages = []ManpageFile{
 		{Source: os.DirFS(srcDir), Path: "doc/foo.1", Section: 1, Name: "foo.1"},
 	}
@@ -659,7 +659,7 @@ func TestInstallExtraManpagesValidationErrors(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			app := NewApp("t", "test")
+			app := NewUtility("t", "test")
 			app.ExtraManpages = []ManpageFile{tc.mf}
 			err := app.GenerateAll(t.TempDir())
 			if err == nil {

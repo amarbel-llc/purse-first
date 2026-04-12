@@ -9,7 +9,7 @@ import (
 )
 
 func TestGenerateHooksCreatesHooksJSON(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 
 	app.AddCommand(&Command{
 		Name:        "status",
@@ -80,7 +80,7 @@ func TestGenerateHooksCreatesHooksJSON(t *testing.T) {
 }
 
 func TestGenerateHooksSkipsWhenNoMappings(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 	app.AddCommand(&Command{Name: "foo", Description: Description{Short: "a command"}})
 
 	dir := t.TempDir()
@@ -95,7 +95,7 @@ func TestGenerateHooksSkipsWhenNoMappings(t *testing.T) {
 }
 
 func TestGenerateHooksCreatesBinaryWrapper(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 
 	app.AddCommand(&Command{
 		Name:        "status",
@@ -135,7 +135,7 @@ func TestGenerateHooksCreatesBinaryWrapper(t *testing.T) {
 }
 
 func TestGenerateHooksMatcher(t *testing.T) {
-	app := NewApp("lux", "LSP multiplexer")
+	app := NewUtility("lux", "LSP multiplexer")
 
 	app.AddCommand(&Command{
 		Name:        "hover",

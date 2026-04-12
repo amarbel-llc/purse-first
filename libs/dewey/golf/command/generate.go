@@ -23,14 +23,14 @@ import (
 //	{dir}/share/bash-completion/completions/{name}
 //	{dir}/share/zsh/site-functions/_{name}
 //	{dir}/share/fish/vendor_completions.d/{name}.fish
-func (a *App) GenerateAll(dir string) error {
-	return a.GenerateAllWithSkills(dir, "")
+func (u *Utility) GenerateAll(dir string) error {
+	return u.GenerateAllWithSkills(dir, "")
 }
 
 // GenerateAllWithSkills writes all artifacts like GenerateAll, and when
 // skillsDir is non-empty, discovers skills by globbing {skillsDir}/*/SKILL.md,
 // copies the skill directories into the output, and includes them in plugin.json.
-func (a *App) GenerateAllWithSkills(dir, skillsDir string) error {
+func (u *Utility) GenerateAllWithSkills(dir, skillsDir string) error {
 	purseDir := filepath.Join(dir, "share", "purse-first")
 
 	if skillsDir != "" {
@@ -39,43 +39,43 @@ func (a *App) GenerateAllWithSkills(dir, skillsDir string) error {
 			return fmt.Errorf("discovering skills: %w", err)
 		}
 
-		a.pluginSkills = skills
+		u.pluginSkills = skills
 
 		// Copy skills into {dir}/share/purse-first/{name}/skills/
-		dst := filepath.Join(purseDir, a.Name, "skills")
+		dst := filepath.Join(purseDir, u.Name, "skills")
 		if err := copyDir(skillsDir, dst); err != nil {
 			return fmt.Errorf("copying skills: %w", err)
 		}
 	}
 
-	if err := a.GeneratePlugin(purseDir); err != nil {
+	if err := u.GeneratePlugin(purseDir); err != nil {
 		return err
 	}
 
-	if err := a.GenerateMappings(purseDir); err != nil {
+	if err := u.GenerateMappings(purseDir); err != nil {
 		return err
 	}
 
-	if err := a.GenerateHooks(purseDir); err != nil {
+	if err := u.GenerateHooks(purseDir); err != nil {
 		return err
 	}
 
-	if err := a.GenerateManpages(dir); err != nil {
+	if err := u.GenerateManpages(dir); err != nil {
 		return err
 	}
 
-	if err := a.InstallExtraManpages(dir); err != nil {
+	if err := u.InstallExtraManpages(dir); err != nil {
 		return err
 	}
 
-	return a.GenerateCompletions(dir)
+	return u.GenerateCompletions(dir)
 }
 
 // InstallExtraManpages copies each ExtraManpages entry from its source fs.FS
 // to {dir}/share/man/man{Section}/{Name}. The framework does not parse or
 // modify the file contents — bytes are written verbatim.
-func (a *App) InstallExtraManpages(dir string) error {
-	for i, mf := range a.ExtraManpages {
+func (u *Utility) InstallExtraManpages(dir string) error {
+	for i, mf := range u.ExtraManpages {
 		if mf.Source == nil {
 			return fmt.Errorf("ExtraManpages[%d]: Source is nil", i)
 		}
@@ -114,7 +114,7 @@ func (a *App) InstallExtraManpages(dir string) error {
 //   - >1 args: error
 //
 // The --skills-dir flag is parsed from args when present.
-func (a *App) HandleGeneratePlugin(args []string, stdout io.Writer) error {
+func (u *Utility) HandleGeneratePlugin(args []string, stdout io.Writer) error {
 	fs := flag.NewFlagSet("generate-plugin", flag.ContinueOnError)
 	skillsDir := fs.String("skills-dir", "", "path to skills directory")
 
@@ -126,12 +126,12 @@ func (a *App) HandleGeneratePlugin(args []string, stdout io.Writer) error {
 
 	switch len(remaining) {
 	case 0:
-		return a.GenerateAllWithSkills(".", *skillsDir)
+		return u.GenerateAllWithSkills(".", *skillsDir)
 	case 1:
 		if remaining[0] == "-" {
-			return a.WritePluginJSON(stdout)
+			return u.WritePluginJSON(stdout)
 		}
-		return a.GenerateAllWithSkills(remaining[0], *skillsDir)
+		return u.GenerateAllWithSkills(remaining[0], *skillsDir)
 	default:
 		return fmt.Errorf("generate-plugin: expected 0 or 1 arguments, got %d", len(remaining))
 	}

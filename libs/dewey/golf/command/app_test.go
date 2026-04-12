@@ -7,7 +7,7 @@ import (
 )
 
 func TestAppAddCommand(t *testing.T) {
-	app := NewApp("grit", "Git operations MCP server")
+	app := NewUtility("grit", "Git operations MCP server")
 
 	app.AddCommand(&Command{
 		Name:        "status",
@@ -24,7 +24,7 @@ func TestAppAddCommand(t *testing.T) {
 }
 
 func TestAppAddCommandWithAliases(t *testing.T) {
-	app := NewApp("dodder", "Zettelkasten CLI")
+	app := NewUtility("dodder", "Zettelkasten CLI")
 
 	app.AddCommand(&Command{
 		Name:    "checkin",
@@ -39,7 +39,7 @@ func TestAppAddCommandWithAliases(t *testing.T) {
 }
 
 func TestAppAddCommandPanicsOnDuplicate(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 	app.AddCommand(&Command{Name: "foo"})
 
 	defer func() {
@@ -52,8 +52,8 @@ func TestAppAddCommandPanicsOnDuplicate(t *testing.T) {
 }
 
 func TestAppMergeWithPrefix(t *testing.T) {
-	parent := NewApp("dodder", "main")
-	child := NewApp("madder", "blob store")
+	parent := NewUtility("dodder", "main")
+	child := NewUtility("madder", "blob store")
 
 	child.AddCommand(&Command{Name: "cat"})
 	child.AddCommand(&Command{Name: "ls"})
@@ -69,7 +69,7 @@ func TestAppMergeWithPrefix(t *testing.T) {
 }
 
 func TestAppAllCommands(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 	app.AddCommand(&Command{Name: "a"})
 	app.AddCommand(&Command{Name: "b"})
 	app.AddCommand(&Command{Name: "c", Hidden: true})
@@ -92,7 +92,7 @@ func TestAppAllCommands(t *testing.T) {
 }
 
 func TestAppAllCommandsYieldsCanonicalName(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 	app.AddCommand(&Command{
 		Name:    "checkin",
 		Aliases: []string{"add", "save"},
@@ -106,7 +106,7 @@ func TestAppAllCommandsYieldsCanonicalName(t *testing.T) {
 }
 
 func TestAppVisibleCommandsYieldsCanonicalName(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 	app.AddCommand(&Command{
 		Name:    "status",
 		Aliases: []string{"st"},
@@ -120,8 +120,8 @@ func TestAppVisibleCommandsYieldsCanonicalName(t *testing.T) {
 }
 
 func TestAppMergeWithPrefixAllCommandsYieldsPrefixedName(t *testing.T) {
-	parent := NewApp("dodder", "main")
-	child := NewApp("perms", "permissions")
+	parent := NewUtility("dodder", "main")
+	child := NewUtility("perms", "permissions")
 
 	child.AddCommand(&Command{Name: "list"})
 	child.AddCommand(&Command{Name: "grant"})
@@ -187,7 +187,7 @@ func (resultCmd) RunResult(req Request) (*Result, error) {
 }
 
 func TestAddCmdBasic(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 	app.AddCmd("do-thing", stubCmd{})
 
 	cmd, ok := app.GetCommand("do-thing")
@@ -204,7 +204,7 @@ func TestAddCmdBasic(t *testing.T) {
 }
 
 func TestAddCmdWithDescription(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 	app.AddCmd("described", describedCmd{})
 
 	cmd, _ := app.GetCommand("described")
@@ -217,7 +217,7 @@ func TestAddCmdWithDescription(t *testing.T) {
 }
 
 func TestAddCmdWithParams(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 	app.AddCmd("parameterized", paramCmd{})
 
 	cmd, _ := app.GetCommand("parameterized")
@@ -233,7 +233,7 @@ func TestAddCmdWithParams(t *testing.T) {
 }
 
 func TestAddCmdWithResult(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 	app.AddCmd("greet", resultCmd{})
 
 	cmd, _ := app.GetCommand("greet")
@@ -252,7 +252,7 @@ func TestAddCmdWithResult(t *testing.T) {
 }
 
 func TestAddCmdPanicsOnDuplicate(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 	app.AddCmd("foo", stubCmd{})
 
 	defer func() {

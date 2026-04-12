@@ -10,7 +10,7 @@ import (
 )
 
 func TestAppRegisterMCPTools(t *testing.T) {
-	app := NewApp("grit", "Git MCP server")
+	app := NewUtility("grit", "Git MCP server")
 
 	app.AddCommand(&Command{
 		Name:        "status",
@@ -65,7 +65,7 @@ func TestAppRegisterMCPTools(t *testing.T) {
 }
 
 func TestRegisterMCPToolsV1(t *testing.T) {
-	app := NewApp("grit", "Git MCP server")
+	app := NewUtility("grit", "Git MCP server")
 
 	app.AddCommand(&Command{
 		Name:        "status",
@@ -120,7 +120,7 @@ func TestRegisterMCPToolsV1(t *testing.T) {
 }
 
 func TestRegisterMCPToolsV1CallTool(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 
 	app.AddCommand(&Command{
 		Name: "echo",
@@ -156,7 +156,7 @@ func TestRegisterMCPToolsV1CallTool(t *testing.T) {
 }
 
 func TestResultToMCPV1JSON(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 
 	app.AddCommand(&Command{
 		Name: "json-cmd",
@@ -182,7 +182,7 @@ func TestResultToMCPV1JSON(t *testing.T) {
 }
 
 func TestAppMCPToolCall(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 
 	app.AddCommand(&Command{
 		Name: "echo",
@@ -215,7 +215,7 @@ func TestAppMCPToolCall(t *testing.T) {
 }
 
 func TestRegisterMCPToolsV1Annotations(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 
 	readOnly := true
 	destructive := false

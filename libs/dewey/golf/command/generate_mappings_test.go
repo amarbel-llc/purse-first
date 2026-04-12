@@ -8,7 +8,7 @@ import (
 )
 
 func TestGenerateMappings(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 
 	app.AddCommand(&Command{
 		Name:        "status",
@@ -72,7 +72,7 @@ func TestGenerateMappings(t *testing.T) {
 }
 
 func TestGenerateMappingsWithExtensions(t *testing.T) {
-	app := NewApp("lux", "LSP multiplexer")
+	app := NewUtility("lux", "LSP multiplexer")
 
 	app.AddCommand(&Command{
 		Name:        "hover",
@@ -135,7 +135,7 @@ func TestGenerateMappingsWithExtensions(t *testing.T) {
 }
 
 func TestGenerateMappingsNoMappings(t *testing.T) {
-	app := NewApp("test", "test")
+	app := NewUtility("test", "test")
 	app.AddCommand(&Command{Name: "foo"})
 
 	dir := t.TempDir()

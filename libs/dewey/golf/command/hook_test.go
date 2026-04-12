@@ -8,7 +8,7 @@ import (
 )
 
 func TestHandleHookDeniesMatch(t *testing.T) {
-	app := NewApp("grit", "Git MCP server")
+	app := NewUtility("grit", "Git MCP server")
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show working tree status"},
@@ -57,7 +57,7 @@ func TestHandleHookDeniesMatch(t *testing.T) {
 }
 
 func TestHandleHookAllowsNoMatch(t *testing.T) {
-	app := NewApp("grit", "Git MCP server")
+	app := NewUtility("grit", "Git MCP server")
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show working tree status"},
@@ -90,7 +90,7 @@ func TestHandleHookAllowsNoMatch(t *testing.T) {
 }
 
 func TestHandleHookExtractsFilePath(t *testing.T) {
-	app := NewApp("lux", "LSP multiplexer MCP server")
+	app := NewUtility("lux", "LSP multiplexer MCP server")
 	app.AddCommand(&Command{
 		Name:        "hover",
 		Description: Description{Short: "Get hover information"},
@@ -134,7 +134,7 @@ func TestHandleHookExtractsFilePath(t *testing.T) {
 }
 
 func TestHandleHookMatchesGitWithGlobalOptions(t *testing.T) {
-	app := NewApp("grit", "Git MCP server")
+	app := NewUtility("grit", "Git MCP server")
 	app.AddCommand(&Command{
 		Name:        "diff",
 		Description: Description{Short: "Show changes"},
@@ -216,7 +216,7 @@ func TestHandleHookMatchesGitWithGlobalOptions(t *testing.T) {
 }
 
 func TestHandleHookMatchesCompoundCommand(t *testing.T) {
-	app := NewApp("grit", "Git MCP server")
+	app := NewUtility("grit", "Git MCP server")
 	app.AddCommand(&Command{
 		Name:        "log",
 		Description: Description{Short: "Show commit history"},

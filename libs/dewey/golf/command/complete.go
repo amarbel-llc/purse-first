@@ -14,8 +14,8 @@ import (
 //
 // Usage: appname __complete --command <subcmd> --param <paramname>
 // Output: tab-separated "value\tdescription" lines, one per completion candidate.
-func (a *App) addCompleteCommand() {
-	a.AddCommand(&Command{
+func (u *Utility) addCompleteCommand() {
+	u.AddCommand(&Command{
 		Name:   "__complete",
 		Hidden: true,
 		OldParams: []OldParam{
@@ -31,7 +31,7 @@ func (a *App) addCompleteCommand() {
 				return fmt.Errorf("parsing __complete args: %w", err)
 			}
 
-			cmd, ok := a.GetCommand(params.Command)
+			cmd, ok := u.GetCommand(params.Command)
 			if !ok {
 				return nil // unknown command, no completions
 			}

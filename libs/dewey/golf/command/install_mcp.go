@@ -11,7 +11,7 @@ import (
 // It resolves the running binary's absolute path, reads the existing
 // config, merges an entry using the app's Name and MCPArgs, and writes
 // the result back.
-func (a *App) InstallMCP() error {
+func (u *Utility) InstallMCP() error {
 	exe, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("resolving executable: %w", err)
@@ -29,10 +29,10 @@ func (a *App) InstallMCP() error {
 
 	configPath := filepath.Join(home, ".claude.json")
 
-	return a.installMCPTo(resolved, configPath)
+	return u.installMCPTo(resolved, configPath)
 }
 
-func (a *App) installMCPTo(binaryPath, configPath string) error {
+func (u *Utility) installMCPTo(binaryPath, configPath string) error {
 	config, err := readUserMCPConfig(configPath)
 	if err != nil {
 		return err
@@ -43,7 +43,7 @@ func (a *App) installMCPTo(binaryPath, configPath string) error {
 		mcpServers = make(map[string]any)
 	}
 
-	args := a.MCPArgs
+	args := u.MCPArgs
 	if args == nil {
 		args = []string{}
 	}
@@ -54,14 +54,14 @@ func (a *App) installMCPTo(binaryPath, configPath string) error {
 		"env":     map[string]any{},
 	}
 
-	mcpServers[a.Name] = entry
+	mcpServers[u.Name] = entry
 	config["mcpServers"] = mcpServers
 
 	if err := writeUserMCPConfig(configPath, config); err != nil {
 		return err
 	}
 
-	fmt.Printf("installed %s MCP server to %s\n", a.Name, configPath)
+	fmt.Printf("installed %s MCP server to %s\n", u.Name, configPath)
 	return nil
 }
 

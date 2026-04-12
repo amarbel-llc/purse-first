@@ -48,8 +48,8 @@ type (
 )
 
 type (
-	// MCPAnnotations declares MCP tool hints without importing go-mcp
-	// protocol types, keeping the golf layer dependency-free.
+	// MCPAnnotations declares MCP tool hints without importing protocol types
+	// directly, keeping the golf layer dependency-free.
 	MCPAnnotations struct {
 		ReadOnly    bool
 		Destructive bool

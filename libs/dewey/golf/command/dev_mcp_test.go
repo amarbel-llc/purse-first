@@ -101,7 +101,7 @@ func TestDevMCPGeneratesArtifacts(t *testing.T) {
 }
 
 func TestAppHasDevMCPCommand(t *testing.T) {
-	app := NewApp("lux", "LSP multiplexer")
+	app := NewUtility("lux", "LSP multiplexer")
 
 	cmd, ok := app.GetCommand("dev-mcp")
 	if !ok {

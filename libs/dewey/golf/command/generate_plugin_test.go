@@ -8,7 +8,7 @@ import (
 )
 
 func TestGeneratePlugin(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 	app.Version = "0.1.0"
 
 	app.AddCommand(&Command{
@@ -47,7 +47,7 @@ func TestGeneratePlugin(t *testing.T) {
 }
 
 func TestGeneratePluginWithArgs(t *testing.T) {
-	app := NewApp("lux", "LSP multiplexer")
+	app := NewUtility("lux", "LSP multiplexer")
 	app.MCPArgs = []string{"mcp-stdio"}
 
 	dir := t.TempDir()
@@ -68,7 +68,7 @@ func TestGeneratePluginWithArgs(t *testing.T) {
 }
 
 func TestGeneratePluginUsesMCPBinary(t *testing.T) {
-	app := NewApp("sweatshop", "Worktree manager")
+	app := NewUtility("sweatshop", "Worktree manager")
 	app.MCPBinary = "sweatshop-mcp"
 
 	dir := t.TempDir()
@@ -88,7 +88,7 @@ func TestGeneratePluginUsesMCPBinary(t *testing.T) {
 }
 
 func TestGeneratePluginDefaultsMCPBinaryToName(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 
 	dir := t.TempDir()
 	if err := app.GeneratePlugin(dir); err != nil {
@@ -107,7 +107,7 @@ func TestGeneratePluginDefaultsMCPBinaryToName(t *testing.T) {
 }
 
 func TestGeneratePluginWithDescriptionAndAuthor(t *testing.T) {
-	app := NewApp("chix", "Nix MCP server")
+	app := NewUtility("chix", "Nix MCP server")
 	app.PluginDescription = "Nix MCP server and skills for Claude Code"
 	app.PluginAuthor = "friedenberg"
 
@@ -131,7 +131,7 @@ func TestGeneratePluginWithDescriptionAndAuthor(t *testing.T) {
 }
 
 func TestGeneratePluginOmitsEmptyDescriptionAndAuthor(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 
 	dir := t.TempDir()
 	if err := app.GeneratePlugin(dir); err != nil {

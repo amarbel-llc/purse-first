@@ -10,14 +10,14 @@ import (
 
 // GenerateCompletions writes shell completion scripts for bash, zsh, and fish
 // to standard paths under {dir}/share/.
-func (a *App) GenerateCompletions(dir string) error {
-	if err := a.generateBashCompletion(dir); err != nil {
+func (u *Utility) GenerateCompletions(dir string) error {
+	if err := u.generateBashCompletion(dir); err != nil {
 		return err
 	}
-	if err := a.generateZshCompletion(dir); err != nil {
+	if err := u.generateZshCompletion(dir); err != nil {
 		return err
 	}
-	return a.generateFishCompletion(dir)
+	return u.generateFishCompletion(dir)
 }
 
 type sortedCommand struct {
@@ -25,9 +25,9 @@ type sortedCommand struct {
 	cmd  *Command
 }
 
-func (a *App) sortedVisibleCommands() []sortedCommand {
+func (u *Utility) sortedVisibleCommands() []sortedCommand {
 	var cmds []sortedCommand
-	for name, cmd := range a.VisibleCommands() {
+	for name, cmd := range u.VisibleCommands() {
 		cmds = append(cmds, sortedCommand{name, cmd})
 	}
 	sort.Slice(cmds, func(i, j int) bool {
@@ -36,17 +36,17 @@ func (a *App) sortedVisibleCommands() []sortedCommand {
 	return cmds
 }
 
-func (a *App) generateBashCompletion(dir string) error {
+func (u *Utility) generateBashCompletion(dir string) error {
 	bashDir := filepath.Join(dir, "share", "bash-completion", "completions")
 	if err := os.MkdirAll(bashDir, 0o755); err != nil {
 		return err
 	}
 
-	cmds := a.sortedVisibleCommands()
+	cmds := u.sortedVisibleCommands()
 
 	var b strings.Builder
-	fmt.Fprintf(&b, "# bash completion for %s\n\n", a.Name)
-	fmt.Fprintf(&b, "_%s() {\n", a.Name)
+	fmt.Fprintf(&b, "# bash completion for %s\n\n", u.Name)
+	fmt.Fprintf(&b, "_%s() {\n", u.Name)
 	fmt.Fprintf(&b, "    local cur prev commands\n")
 	fmt.Fprintf(&b, "    COMPREPLY=()\n")
 	fmt.Fprintf(&b, "    cur=\"${COMP_WORDS[COMP_CWORD]}\"\n")
@@ -93,12 +93,12 @@ func (a *App) generateBashCompletion(dir string) error {
 				for _, p := range completableParams {
 					fmt.Fprintf(&b, "                --%s)\n", p.Name)
 					fmt.Fprintf(&b, "                    COMPREPLY=( $(compgen -W \"$(%s __complete --command %s --param %s)\" -- \"${cur}\") )\n",
-						a.Name, c.name, p.Name)
+						u.Name, c.name, p.Name)
 					fmt.Fprintf(&b, "                    ;;\n")
 				}
 				fmt.Fprintf(&b, "                *)\n")
 				if len(positionalCompletable) > 0 {
-					a.emitBashPositionalCompletions(&b, c.name, c.cmd.OldParams, positionalCompletable, flags)
+					u.emitBashPositionalCompletions(&b, c.name, c.cmd.OldParams, positionalCompletable, flags)
 				} else {
 					fmt.Fprintf(&b, "                    COMPREPLY=( $(compgen -W %q -- \"${cur}\") )\n", strings.Join(flags, " "))
 				}
@@ -112,16 +112,16 @@ func (a *App) generateBashCompletion(dir string) error {
 	}
 	fmt.Fprintf(&b, "    esac\n")
 	fmt.Fprintf(&b, "}\n\n")
-	fmt.Fprintf(&b, "complete -F _%s %s\n", a.Name, a.Name)
-	for _, alias := range a.Aliases {
-		fmt.Fprintf(&b, "complete -F _%s %s\n", a.Name, alias)
+	fmt.Fprintf(&b, "complete -F _%s %s\n", u.Name, u.Name)
+	for _, alias := range u.Aliases {
+		fmt.Fprintf(&b, "complete -F _%s %s\n", u.Name, alias)
 	}
 
 	content := []byte(b.String())
-	if err := os.WriteFile(filepath.Join(bashDir, a.Name), content, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(bashDir, u.Name), content, 0o644); err != nil {
 		return err
 	}
-	for _, alias := range a.Aliases {
+	for _, alias := range u.Aliases {
 		if err := os.WriteFile(filepath.Join(bashDir, alias), content, 0o644); err != nil {
 			return err
 		}
@@ -129,17 +129,17 @@ func (a *App) generateBashCompletion(dir string) error {
 	return nil
 }
 
-func (a *App) generateZshCompletion(dir string) error {
+func (u *Utility) generateZshCompletion(dir string) error {
 	zshDir := filepath.Join(dir, "share", "zsh", "site-functions")
 	if err := os.MkdirAll(zshDir, 0o755); err != nil {
 		return err
 	}
 
-	cmds := a.sortedVisibleCommands()
+	cmds := u.sortedVisibleCommands()
 
 	var b strings.Builder
-	fmt.Fprintf(&b, "#compdef %s\n\n", a.Name)
-	fmt.Fprintf(&b, "_%s() {\n", a.Name)
+	fmt.Fprintf(&b, "#compdef %s\n\n", u.Name)
+	fmt.Fprintf(&b, "_%s() {\n", u.Name)
 	fmt.Fprintf(&b, "    local -a commands\n")
 	fmt.Fprintf(&b, "    commands=(\n")
 	for _, c := range cmds {
@@ -149,16 +149,16 @@ func (a *App) generateZshCompletion(dir string) error {
 	fmt.Fprintf(&b, "    )\n\n")
 	fmt.Fprintf(&b, "    _describe 'command' commands\n")
 	fmt.Fprintf(&b, "}\n\n")
-	fmt.Fprintf(&b, "_%s\n", a.Name)
-	for _, alias := range a.Aliases {
-		fmt.Fprintf(&b, "compdef _%s %s\n", a.Name, alias)
+	fmt.Fprintf(&b, "_%s\n", u.Name)
+	for _, alias := range u.Aliases {
+		fmt.Fprintf(&b, "compdef _%s %s\n", u.Name, alias)
 	}
 
 	content := []byte(b.String())
-	if err := os.WriteFile(filepath.Join(zshDir, "_"+a.Name), content, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(zshDir, "_"+u.Name), content, 0o644); err != nil {
 		return err
 	}
-	for _, alias := range a.Aliases {
+	for _, alias := range u.Aliases {
 		if err := os.WriteFile(filepath.Join(zshDir, "_"+alias), content, 0o644); err != nil {
 			return err
 		}
@@ -166,33 +166,33 @@ func (a *App) generateZshCompletion(dir string) error {
 	return nil
 }
 
-func (a *App) generateFishCompletion(dir string) error {
+func (u *Utility) generateFishCompletion(dir string) error {
 	fishDir := filepath.Join(dir, "share", "fish", "vendor_completions.d")
 	if err := os.MkdirAll(fishDir, 0o755); err != nil {
 		return err
 	}
 
-	cmds := a.sortedVisibleCommands()
+	cmds := u.sortedVisibleCommands()
 
 	var b strings.Builder
-	fmt.Fprintf(&b, "# fish completion for %s\n\n", a.Name)
-	fmt.Fprintf(&b, "complete -c %s -f\n\n", a.Name)
+	fmt.Fprintf(&b, "# fish completion for %s\n\n", u.Name)
+	fmt.Fprintf(&b, "complete -c %s -f\n\n", u.Name)
 
 	for _, c := range cmds {
 		desc := strings.ReplaceAll(c.cmd.Description.Short, "'", "\\'")
 		fmt.Fprintf(&b, "complete -c %s -n '__fish_use_subcommand' -a %s -d '%s'\n",
-			a.Name, c.name, desc)
+			u.Name, c.name, desc)
 	}
 
-	a.emitFishParamCompletions(&b, a.Name, cmds)
+	u.emitFishParamCompletions(&b, u.Name, cmds)
 
-	if err := os.WriteFile(filepath.Join(fishDir, a.Name+".fish"), []byte(b.String()), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(fishDir, u.Name+".fish"), []byte(b.String()), 0o644); err != nil {
 		return err
 	}
 
-	for _, alias := range a.Aliases {
+	for _, alias := range u.Aliases {
 		var ab strings.Builder
-		fmt.Fprintf(&ab, "# fish completion for %s (alias of %s)\n\n", alias, a.Name)
+		fmt.Fprintf(&ab, "# fish completion for %s (alias of %s)\n\n", alias, u.Name)
 		fmt.Fprintf(&ab, "complete -c %s -f\n\n", alias)
 
 		for _, c := range cmds {
@@ -201,7 +201,7 @@ func (a *App) generateFishCompletion(dir string) error {
 				alias, c.name, desc)
 		}
 
-		a.emitFishParamCompletions(&ab, alias, cmds)
+		u.emitFishParamCompletions(&ab, alias, cmds)
 
 		if err := os.WriteFile(filepath.Join(fishDir, alias+".fish"), []byte(ab.String()), 0o644); err != nil {
 			return err
@@ -215,7 +215,7 @@ func (a *App) generateFishCompletion(dir string) error {
 // positional args typed so far and calls __complete for the corresponding
 // positional param. This mirrors the positional assignment logic in cli.go:
 // non-flag args are assigned to non-Bool params in declaration order.
-func (a *App) emitBashPositionalCompletions(
+func (u *Utility) emitBashPositionalCompletions(
 	b *strings.Builder,
 	cmdName string,
 	allParams []OldParam,
@@ -269,7 +269,7 @@ func (a *App) emitBashPositionalCompletions(
 	for _, e := range entries {
 		fmt.Fprintf(b, "                        %d)\n", e.index)
 		fmt.Fprintf(b, "                            COMPREPLY=( $(compgen -W \"$(%s __complete --command %s --param %s)\" -- \"${cur}\") )\n",
-			a.Name, cmdName, e.param.Name)
+			u.Name, cmdName, e.param.Name)
 		fmt.Fprintf(b, "                            ;;\n")
 	}
 	fmt.Fprintf(b, "                        *)\n")
@@ -282,7 +282,7 @@ func (a *App) emitBashPositionalCompletions(
 // commands, including positional completion rules for non-Bool params with
 // Completer. cmdName is the command name to use in `complete -c` (the primary
 // binary name or an alias).
-func (a *App) emitFishParamCompletions(b *strings.Builder, cmdName string, cmds []sortedCommand) {
+func (u *Utility) emitFishParamCompletions(b *strings.Builder, cmdName string, cmds []sortedCommand) {
 	for _, c := range cmds {
 		if c.cmd.PassthroughArgs {
 			continue
@@ -296,7 +296,7 @@ func (a *App) emitFishParamCompletions(b *strings.Builder, cmdName string, cmds 
 			completerArg := ""
 			if p.Completer != nil {
 				completerArg = fmt.Sprintf(" -ra '(%s __complete --command %s --param %s)'",
-					a.Name, c.name, p.Name)
+					u.Name, c.name, p.Name)
 			}
 			fmt.Fprintf(b, "complete -c %s -n '__fish_seen_subcommand_from %s' -l %s%s -d '%s'%s\n",
 				cmdName, c.name, p.Name, shortOpt, desc, completerArg)
@@ -311,7 +311,7 @@ func (a *App) emitFishParamCompletions(b *strings.Builder, cmdName string, cmds 
 			}
 			desc := strings.ReplaceAll(p.Description, "'", "\\'")
 			fmt.Fprintf(b, "complete -c %s -n '__fish_seen_subcommand_from %s; and not __fish_contains_opt %s' -ra '(%s __complete --command %s --param %s)' -d '%s'\n",
-				cmdName, c.name, p.Name, a.Name, c.name, p.Name, desc)
+				cmdName, c.name, p.Name, u.Name, c.name, p.Name, desc)
 		}
 	}
 }

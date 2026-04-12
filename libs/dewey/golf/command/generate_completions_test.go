@@ -8,7 +8,7 @@ import (
 )
 
 func TestGenerateCompletionsBash(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 
 	app.AddCommand(&Command{
 		Name:        "status",
@@ -50,7 +50,7 @@ func TestGenerateCompletionsBash(t *testing.T) {
 }
 
 func TestGenerateCompletionsBashShortFlags(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 
 	app.AddCommand(&Command{
 		Name:        "status",
@@ -82,7 +82,7 @@ func TestGenerateCompletionsBashShortFlags(t *testing.T) {
 }
 
 func TestGenerateCompletionsFishShortFlags(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 
 	app.AddCommand(&Command{
 		Name:        "status",
@@ -110,7 +110,7 @@ func TestGenerateCompletionsFishShortFlags(t *testing.T) {
 }
 
 func TestGenerateCompletionsZsh(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
@@ -137,7 +137,7 @@ func TestGenerateCompletionsZsh(t *testing.T) {
 }
 
 func TestGenerateCompletionsCompleterBash(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 	app.AddCommand(&Command{
 		Name:        "deploy",
 		Description: Description{Short: "Deploy app"},
@@ -175,7 +175,7 @@ func TestGenerateCompletionsCompleterBash(t *testing.T) {
 }
 
 func TestGenerateCompletionsCompleterFish(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 	app.AddCommand(&Command{
 		Name:        "deploy",
 		Description: Description{Short: "Deploy app"},
@@ -221,7 +221,7 @@ func TestGenerateCompletionsCompleterFish(t *testing.T) {
 
 func TestGenerateCompletionsNoCompleterNoChange(t *testing.T) {
 	// Verify that params without Completer produce the same output as before
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
@@ -251,7 +251,7 @@ func TestGenerateCompletionsNoCompleterNoChange(t *testing.T) {
 }
 
 func TestGenerateCompletionsPassthroughNoFlags(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 
 	app.AddCommand(&Command{
 		Name:        "status",
@@ -302,7 +302,7 @@ func TestGenerateCompletionsPassthroughNoFlags(t *testing.T) {
 }
 
 func TestGenerateCompletionsFish(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 	app.AddCommand(&Command{
 		Name:        "status",
 		Description: Description{Short: "Show status"},
@@ -329,7 +329,7 @@ func TestGenerateCompletionsFish(t *testing.T) {
 }
 
 func TestGenerateCompletionsAliases(t *testing.T) {
-	app := NewApp("spinclass", "Worktree session manager")
+	app := NewUtility("spinclass", "Worktree session manager")
 	app.Aliases = []string{"sc"}
 
 	app.AddCommand(&Command{
@@ -384,7 +384,7 @@ func TestGenerateCompletionsAliases(t *testing.T) {
 }
 
 func TestGenerateCompletionsMultipleAliases(t *testing.T) {
-	app := NewApp("spinclass", "Worktree session manager")
+	app := NewUtility("spinclass", "Worktree session manager")
 	app.Aliases = []string{"sc", "spin"}
 
 	app.AddCommand(&Command{
@@ -444,7 +444,7 @@ func TestGenerateCompletionsMultipleAliases(t *testing.T) {
 }
 
 func TestGenerateCompletionsNoAliasesUnchanged(t *testing.T) {
-	app := NewApp("grit", "Git operations")
+	app := NewUtility("grit", "Git operations")
 	// No aliases set — verify no extra files or lines
 
 	app.AddCommand(&Command{
@@ -503,7 +503,7 @@ func TestGenerateCompletionsNoAliasesUnchanged(t *testing.T) {
 }
 
 func TestGenerateCompletionsAliasesHiddenCommands(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 	app.Aliases = []string{"ma"}
 
 	app.AddCommand(&Command{
@@ -544,7 +544,7 @@ func TestGenerateCompletionsAliasesHiddenCommands(t *testing.T) {
 }
 
 func TestGenerateCompletionsAliasesPassthrough(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 	app.Aliases = []string{"ma"}
 
 	app.AddCommand(&Command{
@@ -592,7 +592,7 @@ func TestGenerateCompletionsAliasesPassthrough(t *testing.T) {
 }
 
 func TestGenerateCompletionsAliasesFishCompleter(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 	app.Aliases = []string{"ma"}
 
 	app.AddCommand(&Command{
@@ -638,7 +638,7 @@ func TestGenerateCompletionsAliasesFishCompleter(t *testing.T) {
 }
 
 func TestGenerateCompletionsAliasesPrimaryFileContainsAliasLines(t *testing.T) {
-	app := NewApp("spinclass", "Worktree session manager")
+	app := NewUtility("spinclass", "Worktree session manager")
 	app.Aliases = []string{"sc"}
 
 	app.AddCommand(&Command{
@@ -681,7 +681,7 @@ func TestGenerateCompletionsAliasesPrimaryFileContainsAliasLines(t *testing.T) {
 }
 
 func TestGenerateCompletionsPositionalBash(t *testing.T) {
-	app := NewApp("sc", "Worktree manager")
+	app := NewUtility("sc", "Worktree manager")
 	app.AddCommand(&Command{
 		Name:        "start-gh_pr",
 		Description: Description{Short: "Start from PR"},
@@ -720,7 +720,7 @@ func TestGenerateCompletionsPositionalBash(t *testing.T) {
 }
 
 func TestGenerateCompletionsPositionalFish(t *testing.T) {
-	app := NewApp("sc", "Worktree manager")
+	app := NewUtility("sc", "Worktree manager")
 	app.AddCommand(&Command{
 		Name:        "start-gh_pr",
 		Description: Description{Short: "Start from PR"},
@@ -766,7 +766,7 @@ func TestGenerateCompletionsPositionalFish(t *testing.T) {
 }
 
 func TestGenerateCompletionsPositionalMultipleParams(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 	app.AddCommand(&Command{
 		Name:        "deploy",
 		Description: Description{Short: "Deploy"},
@@ -811,7 +811,7 @@ func TestGenerateCompletionsPositionalMultipleParams(t *testing.T) {
 }
 
 func TestGenerateCompletionsPositionalBoolSkipped(t *testing.T) {
-	app := NewApp("myapp", "My app")
+	app := NewUtility("myapp", "My app")
 	app.AddCommand(&Command{
 		Name:        "cmd",
 		Description: Description{Short: "A command"},
@@ -853,7 +853,7 @@ func TestGenerateCompletionsPositionalBoolSkipped(t *testing.T) {
 }
 
 func TestGenerateCompletionsPositionalFishAlias(t *testing.T) {
-	app := NewApp("spinclass", "Worktree manager")
+	app := NewUtility("spinclass", "Worktree manager")
 	app.Aliases = []string{"sc"}
 	app.AddCommand(&Command{
 		Name:        "start-gh_pr",
