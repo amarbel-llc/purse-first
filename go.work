@@ -3,7 +3,6 @@ go 1.26
 use (
 	.
 	./libs/dewey
-	./libs/dewey/golf/command/huh
 	./libs/go-mcp
 	./libs/go-mcp/command/huh
 )
