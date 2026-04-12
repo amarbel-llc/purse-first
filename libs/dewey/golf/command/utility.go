@@ -178,7 +178,7 @@ func (utility Utility) Run(
 				return
 			}
 
-			req, ok := utility.MakeRequest(ctx, cmd, flagSet)
+			req, ok := utility.MakeRequest(ctx, cmd, flagSet, StubPrompter{})
 
 			if !ok {
 				return
@@ -233,6 +233,7 @@ func (utility Utility) MakeRequest(
 	ctx errors.Context,
 	cmd Cmd,
 	flagSet *flags.FlagSet,
+	prompter Prompter,
 ) (request Request, ok bool) {
 	input := CommandLineInput{
 		Args: collections_slice.String(flagSet.Args()),
@@ -244,10 +245,11 @@ func (utility Utility) MakeRequest(
 	}
 
 	req := Request{
-		Utility: utility,
-		Context: ctx,
-		FlagSet: flagSet,
-		input:   &input,
+		Utility:  utility,
+		Context:  ctx,
+		FlagSet:  flagSet,
+		Prompter: prompter,
+		input:    &input,
 	}
 
 	return req, true
