@@ -1,6 +1,4 @@
 # vim: ft=toml
 
-system-prompt = ""
-
 [hooks]
 pre-merge = "just"
