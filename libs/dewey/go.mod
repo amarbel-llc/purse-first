@@ -4,6 +4,7 @@ go 1.26
 
 require (
 	filippo.io/age v1.3.1
+	github.com/DataDog/zstd v1.5.7
 	github.com/amarbel-llc/tommy v0.0.0-20260405143331-87255e87bf37
 	github.com/brandondube/tai v0.1.0
 	github.com/charmbracelet/huh v0.8.0

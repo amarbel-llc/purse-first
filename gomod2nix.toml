@@ -47,6 +47,14 @@ schema = 3
       'github.com/BurntSushi/toml/internal'
     ]
 
+  [mod.'github.com/DataDog/zstd']
+    version = 'v1.5.7'
+    hash = 'sha256-GlSZOyix7Ct7tOKmSKpGckDjMhTtiYPBTpoWdwGLx5M='
+    goVersion = '1.14'
+    vendorPackages = [
+      'github.com/DataDog/zstd'
+    ]
+
   [mod.'github.com/MakeNowJust/heredoc']
     version = 'v1.0.0'
     hash = 'sha256-8hKERAVV1Pew84kc9GkW23dcO8uIUx/+tJQLi+oPwqE='
