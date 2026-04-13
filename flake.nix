@@ -106,7 +106,10 @@
         skills = ./skills;
         packageToml = ./package.toml;
         pluginConfig = builtins.fromJSON (builtins.readFile ./marketplace-config.json);
-        devShellPackages = _system: pkgs: _pkgs-master: [ pkgs.openssh ];
+        devShellPackages = _system: pkgs: _pkgs-master: [
+          pkgs.gum
+          pkgs.openssh
+        ];
         devShellInputsFrom =
           system:
           let
