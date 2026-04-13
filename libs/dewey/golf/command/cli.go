@@ -94,30 +94,54 @@ func (u *Utility) RunCLI(ctx context.Context, args []string, p Prompter) error {
 		cmdVals[k] = v
 	}
 
+	// Build the flag list for parsing. Commands using the new Param API
+	// (via AddCmd) set cmd.Params; legacy commands set cmd.OldParams.
+	cmdOldParams := cmd.OldParams
+	if len(cmdOldParams) == 0 && len(cmd.Params) > 0 {
+		cmdOldParams = flagParamsToOldParams(cmd.Params)
+	}
+
 	// Merge command params and global params so flags after the subcommand
 	// can include global params like --format.
-	allParams := append(cmd.OldParams, u.OldParams...)
+	allParams := append(cmdOldParams, u.OldParams...)
 	positional, err := parseFlags(cmdArgs, allParams, cmdVals)
 	if err != nil {
 		return fmt.Errorf("parsing flags for %s: %w", name, err)
 	}
 
 	// Assign positional args to command params that weren't set by flags,
-	// in declaration order.
+	// in declaration order. For the new Param API, iterate Arg params;
+	// for legacy OldParams, iterate all non-Bool params.
 	if len(positional) > 0 {
 		pi := 0
-		for _, param := range cmd.OldParams {
-			if pi >= len(positional) {
-				break
+		if len(cmd.OldParams) == 0 && len(cmd.Params) > 0 {
+			for _, param := range cmd.Params {
+				if pi >= len(positional) {
+					break
+				}
+				if !param.isPositional() {
+					continue
+				}
+				if _, set := cmdVals[param.paramName()]; set {
+					continue
+				}
+				cmdVals[param.paramName()] = positional[pi]
+				pi++
 			}
-			if _, set := cmdVals[param.Name]; set {
-				continue
+		} else {
+			for _, param := range cmd.OldParams {
+				if pi >= len(positional) {
+					break
+				}
+				if _, set := cmdVals[param.Name]; set {
+					continue
+				}
+				if param.Type == Bool {
+					continue
+				}
+				cmdVals[param.Name] = positional[pi]
+				pi++
 			}
-			if param.Type == Bool {
-				continue
-			}
-			cmdVals[param.Name] = positional[pi]
-			pi++
 		}
 	}
 
@@ -386,4 +410,41 @@ func parseFlags(args []string, params []OldParam, vals map[string]any) ([]string
 	}
 
 	return remaining, nil
+}
+
+// flagParamsToOldParams converts non-positional Param entries to OldParam
+// so they can be parsed by parseFlags. Positional (Arg) params are skipped.
+func flagParamsToOldParams(params []Param) []OldParam {
+	var out []OldParam
+	for _, p := range params {
+		if p.isPositional() {
+			continue
+		}
+		out = append(out, OldParam{
+			Name:        p.paramName(),
+			Short:       p.paramShort(),
+			Type:        schemaTypeToParamType(p.jsonSchemaType()),
+			Description: p.paramDescription(),
+			Required:    p.paramRequired(),
+		})
+	}
+	return out
+}
+
+// schemaTypeToParamType converts a JSON Schema type string to a ParamType.
+func schemaTypeToParamType(s string) ParamType {
+	switch s {
+	case "integer":
+		return Int
+	case "boolean":
+		return Bool
+	case "number":
+		return Float
+	case "array":
+		return Array
+	case "object":
+		return Object
+	default:
+		return String
+	}
 }

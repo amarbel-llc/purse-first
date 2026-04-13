@@ -24,6 +24,8 @@ type Param interface {
 	paramDefault() any
 	jsonSchemaType() string
 	enumValues() []string
+	isPositional() bool // true for Arg, false for Flag/ArrayFlag/ObjectFlag
+	paramShort() rune   // short flag rune; 0 for positional args
 	isParam()
 }
 
@@ -46,19 +48,21 @@ type Flag[V interfaces.FlagValue] struct {
 	Description string
 	Required    bool
 	EnumValues  []string
-	Short     rune
-	Default   any
-	Completer ParamCompleter
+	Short       rune
+	Default     any
+	Completer   ParamCompleter
 }
 
 func (f Flag[V]) flagCompleter() ParamCompleter { return f.Completer }
 func (f Flag[V]) paramName() string             { return f.Name }
-func (f Flag[V]) paramDescription() string { return f.Description }
-func (f Flag[V]) paramRequired() bool      { return f.Required }
-func (f Flag[V]) paramDefault() any        { return f.Default }
-func (f Flag[V]) enumValues() []string     { return f.EnumValues }
-func (f Flag[V]) jsonSchemaType() string   { return schemaTypeOf[V]() }
-func (f Flag[V]) isParam()                 {}
+func (f Flag[V]) paramDescription() string      { return f.Description }
+func (f Flag[V]) paramRequired() bool           { return f.Required }
+func (f Flag[V]) paramDefault() any             { return f.Default }
+func (f Flag[V]) enumValues() []string          { return f.EnumValues }
+func (f Flag[V]) jsonSchemaType() string        { return schemaTypeOf[V]() }
+func (f Flag[V]) isPositional() bool            { return false }
+func (f Flag[V]) paramShort() rune              { return f.Short }
+func (f Flag[V]) isParam()                      {}
 
 // Arg is a positional CLI argument, also an MCP schema property.
 type Arg[V interfaces.FlagValue] struct {
@@ -75,6 +79,8 @@ func (a Arg[V]) paramRequired() bool      { return a.Required }
 func (a Arg[V]) paramDefault() any        { return nil }
 func (a Arg[V]) enumValues() []string     { return a.EnumValues }
 func (a Arg[V]) jsonSchemaType() string   { return schemaTypeOf[V]() }
+func (a Arg[V]) isPositional() bool       { return true }
+func (a Arg[V]) paramShort() rune         { return 0 }
 func (a Arg[V]) isParam()                 {}
 
 // ArrayFlag is a repeated/array flag with nested item schema.
@@ -92,6 +98,8 @@ func (a ArrayFlag) paramRequired() bool      { return a.Required }
 func (a ArrayFlag) paramDefault() any        { return nil }
 func (a ArrayFlag) jsonSchemaType() string   { return "array" }
 func (a ArrayFlag) enumValues() []string     { return nil }
+func (a ArrayFlag) isPositional() bool       { return false }
+func (a ArrayFlag) paramShort() rune         { return a.Short }
 func (a ArrayFlag) isParam()                 {}
 
 // ObjectFlag is a freeform JSON object flag.
@@ -107,6 +115,8 @@ func (o ObjectFlag) paramRequired() bool      { return o.Required }
 func (o ObjectFlag) paramDefault() any        { return nil }
 func (o ObjectFlag) jsonSchemaType() string   { return "object" }
 func (o ObjectFlag) enumValues() []string     { return nil }
+func (o ObjectFlag) isPositional() bool       { return false }
+func (o ObjectFlag) paramShort() rune         { return 0 }
 func (o ObjectFlag) isParam()                 {}
 
 // Concrete aliases for common param types.

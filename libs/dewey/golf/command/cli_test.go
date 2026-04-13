@@ -944,6 +944,86 @@ func TestRunCLIPassthroughArgsEmpty(t *testing.T) {
 	}
 }
 
+// --- AddCmd + RunCLI integration tests ---
+// These tests verify that commands registered via AddCmd (using the new Param
+// API) work correctly through RunCLI's flag parsing and positional mapping.
+
+func TestRunCLIWithParamArgPositionalOnly(t *testing.T) {
+	app := NewUtility("test", "test app")
+
+	var gotArg string
+	app.AddCmd("open", &captureParamCmd{
+		params: []Param{
+			StringArg{Name: "path", Description: "File path", Required: true},
+		},
+		onRun: func(req Request) {
+			gotArg = req.PopArg("path")
+		},
+	})
+
+	err := app.RunCLI(t.Context(), []string{"open", "/tmp/foo"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI error: %v", err)
+	}
+	if gotArg != "/tmp/foo" {
+		t.Errorf("PopArg(path) = %q, want %q", gotArg, "/tmp/foo")
+	}
+}
+
+func TestRunCLIWithParamFlagsBeforeArg(t *testing.T) {
+	app := NewUtility("test", "test app")
+
+	var gotArg, gotFlag string
+	app.AddCmd("init", &captureParamCmd{
+		params: []Param{
+			StringFlag{Name: "encryption", Description: "Encryption type"},
+			StringArg{Name: "store-id", Description: "Store ID", Required: true},
+		},
+		onRun: func(req Request) {
+			gotFlag = req.PopArg("encryption")
+			gotArg = req.PopArg("store-id")
+		},
+	})
+
+	err := app.RunCLI(t.Context(), []string{"init", "-encryption", "none", ".default"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI error: %v", err)
+	}
+	if gotFlag != "none" {
+		t.Errorf("PopArg(encryption) = %q, want %q", gotFlag, "none")
+	}
+	if gotArg != ".default" {
+		t.Errorf("PopArg(store-id) = %q, want %q", gotArg, ".default")
+	}
+}
+
+func TestRunCLIWithParamArgBeforeFlags(t *testing.T) {
+	app := NewUtility("test", "test app")
+
+	var gotArg, gotFlag string
+	app.AddCmd("init", &captureParamCmd{
+		params: []Param{
+			StringFlag{Name: "encryption", Description: "Encryption type"},
+			StringArg{Name: "store-id", Description: "Store ID", Required: true},
+		},
+		onRun: func(req Request) {
+			gotFlag = req.PopArg("encryption")
+			gotArg = req.PopArg("store-id")
+		},
+	})
+
+	err := app.RunCLI(t.Context(), []string{"init", ".default", "-encryption", "none"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI error: %v", err)
+	}
+	if gotFlag != "none" {
+		t.Errorf("PopArg(encryption) = %q, want %q", gotFlag, "none")
+	}
+	if gotArg != ".default" {
+		t.Errorf("PopArg(store-id) = %q, want %q", gotArg, ".default")
+	}
+}
+
 func TestShortFlagNotInJSONSchema(t *testing.T) {
 	cmd := &Command{
 		Name: "status",
