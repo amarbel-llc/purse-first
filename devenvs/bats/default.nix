@@ -17,6 +17,7 @@ in
   devShells.default = pkgs.mkShell {
     packages = [
       pkgs.bats
+      pkgs.gitMinimal
       pkgs.parallel
       pkgs.shellcheck
       pkgs.shfmt
