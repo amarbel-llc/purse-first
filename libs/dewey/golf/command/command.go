@@ -151,7 +151,14 @@ type Command struct {
 	// componentFlags holds OldParam entries collected from SetFlagDefinitions
 	// at AddCmd registration time. RunCLI merges them into the parseFlags
 	// param list so flags registered via the Go flag pattern are visible.
+	// Used only by legacy (non-AddCmd) commands; AddCmd commands use
+	// runFromCLI which parses via FlagSet directly.
 	componentFlags []OldParam
+
+	// runFromCLI handles CLI dispatch for AddCmd commands without JSON
+	// serialization. Receives raw args after subcommand resolution.
+	// Set by AddCmd. RunCLI prefers this over Run when set.
+	runFromCLI func(ctx context.Context, args []string, p Prompter) (*Result, error)
 
 	// PassthroughArgs disables flag parsing for this command. All arguments
 	// after the command name are passed raw as {"args": [...]} to the handler.

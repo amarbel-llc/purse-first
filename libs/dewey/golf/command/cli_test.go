@@ -1106,6 +1106,58 @@ func TestParseFlagsDoubleDashTerminatesFlags(t *testing.T) {
 	}
 }
 
+func TestRunCLIVariadicArg(t *testing.T) {
+	app := NewUtility("test", "test app")
+
+	var gotArgs []string
+	app.AddCmd("sync", &captureParamCmd{
+		params: []Param{
+			StringArg{Name: "store-ids", Description: "Store IDs", Variadic: true},
+		},
+		onRun: func(req Request) {
+			gotArgs = req.PopArgs()
+		},
+	})
+
+	err := app.RunCLI(t.Context(), []string{"sync", ".default", ".sha256", ".backup"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI error: %v", err)
+	}
+	if len(gotArgs) != 3 {
+		t.Fatalf("PopArgs() returned %d args, want 3: %v", len(gotArgs), gotArgs)
+	}
+	if gotArgs[0] != ".default" || gotArgs[1] != ".sha256" || gotArgs[2] != ".backup" {
+		t.Errorf("PopArgs() = %v, want [.default .sha256 .backup]", gotArgs)
+	}
+}
+
+func TestRunCLIVariadicArgWithFlags(t *testing.T) {
+	app := NewUtility("test", "test app")
+
+	var gotVerbose, gotArgs string
+	app.AddCmd("sync", &captureParamCmd{
+		params: []Param{
+			BoolFlag{Name: "verbose", Description: "Verbose", Short: 'v'},
+			StringArg{Name: "store-ids", Description: "Store IDs", Variadic: true},
+		},
+		onRun: func(req Request) {
+			gotVerbose = req.PopArg("verbose")
+			gotArgs = strings.Join(req.PopArgs(), ",")
+		},
+	})
+
+	err := app.RunCLI(t.Context(), []string{"sync", "-v", ".default", ".sha256"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI error: %v", err)
+	}
+	if gotVerbose != "true" {
+		t.Errorf("verbose = %q, want %q", gotVerbose, "true")
+	}
+	if gotArgs != ".default,.sha256" {
+		t.Errorf("store-ids = %q, want %q", gotArgs, ".default,.sha256")
+	}
+}
+
 func TestShortFlagNotInJSONSchema(t *testing.T) {
 	cmd := &Command{
 		Name: "status",

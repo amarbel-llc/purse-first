@@ -72,6 +72,16 @@ func (u *Utility) RunCLI(ctx context.Context, args []string, p Prompter) error {
 		return nil
 	}
 
+	// AddCmd commands use FlagSet-based parsing — no JSON round-trip.
+	if cmd.runFromCLI != nil {
+		result, err := cmd.runFromCLI(ctx, cmdArgs, p)
+		if err != nil {
+			return err
+		}
+		printResult(result)
+		return nil
+	}
+
 	if cmd.PassthroughArgs {
 		argsJSON, err := json.Marshal(map[string]any{"args": cmdArgs})
 		if err != nil {

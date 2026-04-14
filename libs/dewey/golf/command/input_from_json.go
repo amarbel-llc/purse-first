@@ -32,6 +32,16 @@ func makeInputFromJSON(raw json.RawMessage, params []Param) CommandLineInput {
 			continue
 		}
 
+		// Variadic args arrive as JSON arrays from MCP.
+		if p.isVariadic() {
+			var arr []string
+			if err := json.Unmarshal(v, &arr); err == nil {
+				args.Append(arr...)
+				continue
+			}
+			// Fall through: if it's not an array, treat as single value.
+		}
+
 		var s string
 		if err := json.Unmarshal(v, &s); err != nil {
 			// Not a string — try to use the raw JSON representation.

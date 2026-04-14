@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/amarbel-llc/purse-first/libs/dewey/0/interfaces"
+	"github.com/amarbel-llc/purse-first/libs/dewey/bravo/collections_slice"
 	"github.com/amarbel-llc/purse-first/libs/dewey/bravo/errors"
 	"github.com/amarbel-llc/purse-first/libs/dewey/charlie/flags"
 	"github.com/amarbel-llc/purse-first/libs/dewey/golf/protocol"
@@ -180,16 +181,170 @@ func (u *Utility) AddCmd(name string, cmd Cmd) {
 		}
 	}
 
-	// Collect flag definitions from SetFlagDefinitions so parseFlags
-	// can recognize them. The actual values are applied at runtime
-	// via a real FlagSet (see below).
 	ccw, hasComponentFlags := cmd.(interfaces.CommandComponentWriter)
+
+	// Collect flag definitions for legacy parseFlags path (componentFlags)
+	// and for the runFromCLI FlagSet registration.
 	if hasComponentFlags {
 		collector := &flagDefCollector{}
 		ccw.SetFlagDefinitions(collector)
 		wrapped.componentFlags = collector.params
 	}
 
+	// runFromCLI: CLI dispatch without JSON serialization.
+	// FlagSet is the sole parsing backend.
+	wrapped.runFromCLI = func(ctx context.Context, args []string, p Prompter) (*Result, error) {
+		errCtx := errors.MakeContextDefault()
+
+		// 1. Create FlagSet and register ALL flags.
+		fs := flags.NewFlagSet(name, flags.ContinueOnError)
+
+		// Register GetParams() flags as temporary variables.
+		type paramFlag struct {
+			name string
+			str  *string
+			b    *bool
+			i    *int
+		}
+		var paramFlags []paramFlag
+
+		for _, param := range wrapped.Params {
+			if param.isPositional() {
+				continue
+			}
+			pn := param.paramName()
+			short := param.paramShort()
+			switch param.jsonSchemaType() {
+			case "boolean":
+				b := new(bool)
+				defVal := false
+				if d, ok := param.paramDefault().(bool); ok {
+					defVal = d
+				}
+				fs.BoolVar(b, pn, defVal, param.paramDescription())
+				if short != 0 {
+					fs.BoolVar(b, string(short), defVal, param.paramDescription())
+				}
+				paramFlags = append(paramFlags, paramFlag{name: pn, b: b})
+			case "integer":
+				i := new(int)
+				defVal := 0
+				if d, ok := param.paramDefault().(int); ok {
+					defVal = d
+				}
+				fs.IntVar(i, pn, defVal, param.paramDescription())
+				if short != 0 {
+					fs.IntVar(i, string(short), defVal, param.paramDescription())
+				}
+				paramFlags = append(paramFlags, paramFlag{name: pn, i: i})
+			default: // string
+				s := new(string)
+				defVal := ""
+				if d, ok := param.paramDefault().(string); ok {
+					defVal = d
+				}
+				fs.StringVar(s, pn, defVal, param.paramDescription())
+				if short != 0 {
+					fs.StringVar(s, string(short), defVal, param.paramDescription())
+				}
+				paramFlags = append(paramFlags, paramFlag{name: pn, str: s})
+			}
+		}
+
+		// Register SetFlagDefinitions flags (pointers into cmd struct).
+		if hasComponentFlags {
+			ccw.SetFlagDefinitions(fs)
+		}
+
+		// Register global flags so they're recognized after the subcommand.
+		for _, gp := range u.OldParams {
+			switch gp.Type {
+			case Bool:
+				b := new(bool)
+				fs.BoolVar(b, gp.Name, false, gp.Description)
+				if gp.Short != 0 {
+					fs.BoolVar(b, string(gp.Short), false, gp.Description)
+				}
+			case Int:
+				i := new(int)
+				fs.IntVar(i, gp.Name, 0, gp.Description)
+				if gp.Short != 0 {
+					fs.IntVar(i, string(gp.Short), 0, gp.Description)
+				}
+			default:
+				s := new(string)
+				fs.StringVar(s, gp.Name, "", gp.Description)
+				if gp.Short != 0 {
+					fs.StringVar(s, string(gp.Short), "", gp.Description)
+				}
+			}
+		}
+
+		// 2. Parse.
+		if err := fs.Parse(args); err != nil {
+			return nil, fmt.Errorf("parsing flags for %s: %w", name, err)
+		}
+		positional := fs.Args()
+
+		// 3. Build CommandLineInput.Args from params in declaration order.
+		var cliArgs collections_slice.String
+		pi := 0
+		for _, param := range wrapped.Params {
+			pn := param.paramName()
+
+			if !param.isPositional() {
+				// Flag: read value from FlagSet.
+				if f := fs.Lookup(pn); f != nil {
+					cliArgs.Append(f.Value.String())
+				}
+				continue
+			}
+
+			// Positional arg.
+			if pi >= len(positional) {
+				continue
+			}
+			if param.isVariadic() {
+				cliArgs.Append(positional[pi:]...)
+				pi = len(positional)
+				break
+			}
+			cliArgs.Append(positional[pi])
+			pi++
+		}
+
+		input := CommandLineInput{Args: cliArgs}
+		req := Request{
+			Context:  errCtx,
+			Utility:  u,
+			Prompter: p,
+			FlagSet:  fs,
+			input:    &input,
+		}
+
+		// 4. Dispatch through errCtx.Run.
+		if cwr, ok := cmd.(CommandWithResult); ok {
+			var result *Result
+			var resultErr error
+			err := errCtx.Run(func(_ errors.Context) {
+				result, resultErr = cwr.RunResult(req)
+			})
+			if err != nil {
+				return nil, err
+			}
+			return result, resultErr
+		}
+
+		err := errCtx.Run(func(_ errors.Context) {
+			cmd.Run(req)
+		})
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	}
+
+	// Run: MCP dispatch via JSON (kept for MCP tool invocations).
 	wrapped.Run = func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
 		errCtx := errors.MakeContextDefault()
 		input := makeInputFromJSON(args, wrapped.Params)
@@ -200,8 +355,7 @@ func (u *Utility) AddCmd(name string, cmd Cmd) {
 			input:    &input,
 		}
 
-		// Apply parsed flag values to the command struct via a real
-		// FlagSet, which sets the pointers registered by SetFlagDefinitions.
+		// Apply SetFlagDefinitions values from JSON to struct pointers.
 		if hasComponentFlags {
 			applyComponentFlags(ccw, name, args)
 		}
