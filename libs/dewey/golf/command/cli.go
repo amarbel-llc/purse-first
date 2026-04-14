@@ -291,9 +291,12 @@ func flagLabel(arg string, key string) string {
 }
 
 // parseFlags extracts --flag and -x values from args into vals, returning
-// unconsumed positional args. Non-flag args are collected but parsing
-// continues, so flags can appear after positional args (e.g. "open target
-// --format tap"). Short flags (-x) are resolved to their param name.
+// unconsumed positional args. Flags must precede positional args: once a
+// non-flag token is encountered (not starting with "-"), it and all remaining
+// tokens are returned as positional. "--" explicitly terminates flag parsing.
+// Unrecognized flag-like tokens (starting with "-" but not matching any param)
+// are collected as positional but do not terminate flag parsing.
+// Short flags (-x) are resolved to their param name.
 func parseFlags(args []string, params []OldParam, vals map[string]any) ([]string, error) {
 	paramMap := make(map[string]OldParam)
 	shortMap := make(map[rune]OldParam)
@@ -307,6 +310,12 @@ func parseFlags(args []string, params []OldParam, vals map[string]any) ([]string
 	var remaining []string
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
+
+		// "--" terminates flag parsing; everything after is positional.
+		if arg == "--" {
+			remaining = append(remaining, args[i+1:]...)
+			return remaining, nil
+		}
 
 		var p OldParam
 		var key, value string
@@ -343,8 +352,9 @@ func parseFlags(args []string, params []OldParam, vals map[string]any) ([]string
 			}
 
 		default:
-			remaining = append(remaining, arg)
-			continue
+			// Non-flag token: this and everything after is positional.
+			remaining = append(remaining, args[i:]...)
+			return remaining, nil
 		}
 
 		if !found {

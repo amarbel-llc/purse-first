@@ -300,7 +300,8 @@ func TestRunCLIPositionalArgWithFlags(t *testing.T) {
 		},
 	})
 
-	err := app.RunCLI(context.Background(), []string{"open", "eng/worktrees/repo/branch", "--format", "tap"}, StubPrompter{})
+	// Flags must precede positional args (POSIX convention).
+	err := app.RunCLI(context.Background(), []string{"open", "--format", "tap", "eng/worktrees/repo/branch"}, StubPrompter{})
 	if err != nil {
 		t.Fatalf("RunCLI: %v", err)
 	}
@@ -997,30 +998,111 @@ func TestRunCLIWithParamFlagsBeforeArg(t *testing.T) {
 	}
 }
 
-func TestRunCLIWithParamArgBeforeFlags(t *testing.T) {
+func TestRunCLIWithParamArgBeforeFlagsIgnoresTrailingFlags(t *testing.T) {
+	// Flags after positional args are treated as positional (POSIX convention).
 	app := NewUtility("test", "test app")
 
-	var gotArg, gotFlag string
-	app.AddCmd("init", &captureParamCmd{
-		params: []Param{
+	var gotJSON json.RawMessage
+	app.AddCommand(&Command{
+		Name: "init",
+		Params: []Param{
 			StringFlag{Name: "encryption", Description: "Encryption type"},
 			StringArg{Name: "store-id", Description: "Store ID", Required: true},
 		},
-		onRun: func(req Request) {
-			gotFlag = req.PopArg("encryption")
-			gotArg = req.PopArg("store-id")
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			gotJSON = args
+			return nil, nil
 		},
 	})
 
+	// ".default" is a non-flag token, so "-encryption" and "none" after it
+	// are treated as positional, not flags. encryption stays unset.
 	err := app.RunCLI(t.Context(), []string{"init", ".default", "-encryption", "none"}, StubPrompter{})
 	if err != nil {
 		t.Fatalf("RunCLI error: %v", err)
 	}
-	if gotFlag != "none" {
-		t.Errorf("PopArg(encryption) = %q, want %q", gotFlag, "none")
+
+	var vals map[string]any
+	json.Unmarshal(gotJSON, &vals)
+
+	if _, set := vals["encryption"]; set {
+		t.Errorf("encryption should not be set (flags after positional are not parsed), got %v", vals["encryption"])
+	}
+	if vals["store-id"] != ".default" {
+		t.Errorf("store-id = %v, want %q", vals["store-id"], ".default")
+	}
+}
+
+// --- Flags-before-positionals enforcement (issue #39) ---
+
+func TestRunCLIFlagsBeforeArgExactReproduction(t *testing.T) {
+	// Exact reproduction from #39: two flags (string + bool=value) before positional.
+	app := NewUtility("test", "test app")
+
+	var gotArg, gotEncryption string
+	var gotLock bool
+	app.AddCmd("init", &captureParamCmd{
+		params: []Param{
+			StringFlag{Name: "encryption", Description: "Encryption type"},
+			BoolFlag{Name: "lock-internal-files", Description: "Lock internal files"},
+			StringArg{Name: "store-id", Description: "Store ID", Required: true},
+		},
+		onRun: func(req Request) {
+			gotEncryption = req.PopArg("encryption")
+			gotLock = req.PopArg("lock-internal-files") == "true"
+			gotArg = req.PopArg("store-id")
+		},
+	})
+
+	err := app.RunCLI(t.Context(), []string{"init", "-encryption", "none", "-lock-internal-files=false", ".default"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI error: %v", err)
+	}
+	if gotEncryption != "none" {
+		t.Errorf("encryption = %q, want %q", gotEncryption, "none")
+	}
+	if gotLock {
+		t.Errorf("lock-internal-files = true, want false")
 	}
 	if gotArg != ".default" {
-		t.Errorf("PopArg(store-id) = %q, want %q", gotArg, ".default")
+		t.Errorf("store-id = %q, want %q", gotArg, ".default")
+	}
+}
+
+func TestParseFlagsStopsAfterFirstPositional(t *testing.T) {
+	params := []OldParam{
+		{Name: "format", Type: String, Description: "Output format"},
+	}
+
+	vals := make(map[string]any)
+	remaining, err := parseFlags([]string{"positional", "--format", "tap"}, params, vals)
+	if err != nil {
+		t.Fatalf("parseFlags error: %v", err)
+	}
+	// Once "positional" is seen (non-flag), everything after is positional.
+	if _, set := vals["format"]; set {
+		t.Error("--format should NOT be parsed as a flag after a positional arg")
+	}
+	if len(remaining) != 3 {
+		t.Errorf("remaining = %v, want 3 items", remaining)
+	}
+}
+
+func TestParseFlagsDoubleDashTerminatesFlags(t *testing.T) {
+	params := []OldParam{
+		{Name: "verbose", Type: Bool, Description: "Verbose"},
+	}
+
+	vals := make(map[string]any)
+	remaining, err := parseFlags([]string{"--", "--verbose", "file.txt"}, params, vals)
+	if err != nil {
+		t.Fatalf("parseFlags error: %v", err)
+	}
+	if _, set := vals["verbose"]; set {
+		t.Error("--verbose should NOT be parsed after --")
+	}
+	if len(remaining) != 2 || remaining[0] != "--verbose" || remaining[1] != "file.txt" {
+		t.Errorf("remaining = %v, want [--verbose file.txt]", remaining)
 	}
 }
 
