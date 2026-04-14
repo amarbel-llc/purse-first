@@ -189,12 +189,21 @@ func (u *Utility) AddCmd(name string, cmd Cmd) {
 		}
 
 		if cwr, ok := cmd.(CommandWithResult); ok {
-			return cwr.RunResult(req)
+			var result *Result
+			var resultErr error
+			err := errCtx.Run(func(_ errors.Context) {
+				result, resultErr = cwr.RunResult(req)
+			})
+			if err != nil {
+				return nil, err
+			}
+			return result, resultErr
 		}
 
-		cmd.Run(req)
-
-		if err := errCtx.Err(); err != nil {
+		err := errCtx.Run(func(_ errors.Context) {
+			cmd.Run(req)
+		})
+		if err != nil {
 			return nil, err
 		}
 		return nil, nil

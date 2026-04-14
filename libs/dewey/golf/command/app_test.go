@@ -1,6 +1,10 @@
 package command
 
-import "testing"
+import (
+	"fmt"
+	"strings"
+	"testing"
+)
 
 func TestAppAddCommand(t *testing.T) {
 	app := NewUtility("grit", "Git operations MCP server")
@@ -345,6 +349,59 @@ func (c *captureParamCmd) Run(req Request) {
 
 func (c *captureParamCmd) GetParams() []Param {
 	return c.params
+}
+
+// --- ContextState panic recovery (issue #40) ---
+
+// cancellingCmd calls Cancel(err) which triggers the ContextState panic flow.
+type cancellingCmd struct{}
+
+func (cancellingCmd) Run(req Request) {
+	req.Cancel(fmt.Errorf("something went wrong"))
+}
+
+func (cancellingCmd) GetDescription() Description {
+	return Description{Short: "A command that cancels"}
+}
+
+func TestAddCmdRecoversCancelPanic(t *testing.T) {
+	app := NewUtility("test", "test")
+	app.AddCmd("fail", cancellingCmd{})
+
+	cmd, _ := app.GetCommand("fail")
+	_, err := cmd.Run(t.Context(), nil, StubPrompter{})
+	if err == nil {
+		t.Fatal("expected error from Cancel, got nil")
+	}
+	if !strings.Contains(err.Error(), "something went wrong") {
+		t.Errorf("error = %q, want it to contain %q", err.Error(), "something went wrong")
+	}
+}
+
+// cancellingResultCmd implements CommandWithResult and calls Cancel.
+type cancellingResultCmd struct{}
+
+func (cancellingResultCmd) Run(req Request) {}
+func (cancellingResultCmd) GetDescription() Description {
+	return Description{Short: "A result command that cancels"}
+}
+func (cancellingResultCmd) RunResult(req Request) (*Result, error) {
+	req.Cancel(fmt.Errorf("result went wrong"))
+	return nil, nil // unreachable — Cancel panics
+}
+
+func TestAddCmdRecoversCancelPanicInRunResult(t *testing.T) {
+	app := NewUtility("test", "test")
+	app.AddCmd("fail-result", cancellingResultCmd{})
+
+	cmd, _ := app.GetCommand("fail-result")
+	_, err := cmd.Run(t.Context(), nil, StubPrompter{})
+	if err == nil {
+		t.Fatal("expected error from Cancel in RunResult, got nil")
+	}
+	if !strings.Contains(err.Error(), "result went wrong") {
+		t.Errorf("error = %q, want it to contain %q", err.Error(), "result went wrong")
+	}
 }
 
 func TestAddCmdPanicsOnDuplicate(t *testing.T) {
