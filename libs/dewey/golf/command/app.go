@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/amarbel-llc/purse-first/libs/dewey/0/interfaces"
 	"github.com/amarbel-llc/purse-first/libs/dewey/bravo/errors"
+	"github.com/amarbel-llc/purse-first/libs/dewey/charlie/flags"
 	"github.com/amarbel-llc/purse-first/libs/dewey/golf/protocol"
 )
 
@@ -15,12 +17,12 @@ type Utility struct {
 	Aliases           []string // Aliases are additional binary names that should get shell completions
 	Description       Description
 	Version           string
-	MCPArgs           []string  // extra args passed to the binary in plugin manifests
-	MCPBinary         string    // binary name for plugin.json command; defaults to Name
-	PluginDescription string    // "description" in plugin.json; omitted if empty
-	PluginAuthor      string    // "author.name" in plugin.json; omitted if empty
+	MCPArgs           []string   // extra args passed to the binary in plugin manifests
+	MCPBinary         string     // binary name for plugin.json command; defaults to Name
+	PluginDescription string     // "description" in plugin.json; omitted if empty
+	PluginAuthor      string     // "author.name" in plugin.json; omitted if empty
 	OldParams         []OldParam // global flags
-	Examples          []Example // app-level workflow examples
+	Examples          []Example  // app-level workflow examples
 
 	// EnvVars are environment variables the app as a whole reads, rendered
 	// into the app manpage's ENVIRONMENT section.
@@ -178,6 +180,16 @@ func (u *Utility) AddCmd(name string, cmd Cmd) {
 		}
 	}
 
+	// Collect flag definitions from SetFlagDefinitions so parseFlags
+	// can recognize them. The actual values are applied at runtime
+	// via a real FlagSet (see below).
+	ccw, hasComponentFlags := cmd.(interfaces.CommandComponentWriter)
+	if hasComponentFlags {
+		collector := &flagDefCollector{}
+		ccw.SetFlagDefinitions(collector)
+		wrapped.componentFlags = collector.params
+	}
+
 	wrapped.Run = func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
 		errCtx := errors.MakeContextDefault()
 		input := makeInputFromJSON(args, wrapped.Params)
@@ -186,6 +198,12 @@ func (u *Utility) AddCmd(name string, cmd Cmd) {
 			Utility:  u,
 			Prompter: p,
 			input:    &input,
+		}
+
+		// Apply parsed flag values to the command struct via a real
+		// FlagSet, which sets the pointers registered by SetFlagDefinitions.
+		if hasComponentFlags {
+			applyComponentFlags(ccw, name, args)
 		}
 
 		if cwr, ok := cmd.(CommandWithResult); ok {
@@ -210,6 +228,37 @@ func (u *Utility) AddCmd(name string, cmd Cmd) {
 	}
 
 	u.AddCommand(wrapped)
+}
+
+// applyComponentFlags creates a real FlagSet, registers the command's flags
+// via SetFlagDefinitions, then applies values from the parsed JSON args to
+// the FlagSet. This sets the command struct's field pointers.
+func applyComponentFlags(ccw interfaces.CommandComponentWriter, name string, args json.RawMessage) {
+	if len(args) == 0 {
+		return
+	}
+
+	var vals map[string]json.RawMessage
+	if err := json.Unmarshal(args, &vals); err != nil {
+		return
+	}
+
+	fs := flags.NewFlagSet(name, flags.ContinueOnError)
+	ccw.SetFlagDefinitions(fs)
+
+	for flagName, rawVal := range vals {
+		if fs.Lookup(flagName) == nil {
+			continue
+		}
+		// Try string unmarshal first (handles JSON "foo").
+		// For non-strings (bool, int), use the raw JSON representation
+		// which is already the right format for FlagSet.Set().
+		var s string
+		if err := json.Unmarshal(rawVal, &s); err != nil {
+			s = string(rawVal)
+		}
+		fs.Set(flagName, s)
+	}
 }
 
 // MergeWithPrefix adds all commands from another Utility, prefixed with the given string.

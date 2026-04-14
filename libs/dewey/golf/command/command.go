@@ -148,6 +148,11 @@ type Command struct {
 	// section alongside the automatic back-reference to the parent app page.
 	SeeAlso []string
 
+	// componentFlags holds OldParam entries collected from SetFlagDefinitions
+	// at AddCmd registration time. RunCLI merges them into the parseFlags
+	// param list so flags registered via the Go flag pattern are visible.
+	componentFlags []OldParam
+
 	// PassthroughArgs disables flag parsing for this command. All arguments
 	// after the command name are passed raw as {"args": [...]} to the handler.
 	// Passthrough commands appear in help, manpages, and completions but have

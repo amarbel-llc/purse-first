@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/0/interfaces"
 )
 
 // RunCLI parses CLI arguments, dispatches to the matched command handler,
@@ -101,9 +103,10 @@ func (u *Utility) RunCLI(ctx context.Context, args []string, p Prompter) error {
 		cmdOldParams = flagParamsToOldParams(cmd.Params)
 	}
 
-	// Merge command params and global params so flags after the subcommand
-	// can include global params like --format.
-	allParams := append(cmdOldParams, u.OldParams...)
+	// Merge command params, component flags, and global params so flags
+	// after the subcommand can include global params like --format.
+	allParams := append(cmdOldParams, cmd.componentFlags...)
+	allParams = append(allParams, u.OldParams...)
 	positional, err := parseFlags(cmdArgs, allParams, cmdVals)
 	if err != nil {
 		return fmt.Errorf("parsing flags for %s: %w", name, err)
@@ -457,4 +460,35 @@ func schemaTypeToParamType(s string) ParamType {
 	default:
 		return String
 	}
+}
+
+// flagDefCollector implements CLIFlagDefinitions to collect flag names and
+// types from SetFlagDefinitions without a real FlagSet. The collected
+// OldParam entries let parseFlags recognize these flags.
+type flagDefCollector struct {
+	params []OldParam
+}
+
+func (c *flagDefCollector) BoolVar(_ *bool, name string, _ bool, desc string) {
+	c.params = append(c.params, OldParam{Name: name, Type: Bool, Description: desc})
+}
+
+func (c *flagDefCollector) StringVar(_ *string, name string, _ string, desc string) {
+	c.params = append(c.params, OldParam{Name: name, Type: String, Description: desc})
+}
+
+func (c *flagDefCollector) IntVar(_ *int, name string, _ int, desc string) {
+	c.params = append(c.params, OldParam{Name: name, Type: Int, Description: desc})
+}
+
+func (c *flagDefCollector) Var(value interfaces.FlagValue, name string, desc string) {
+	t := String
+	if bf, ok := value.(interface{ IsBoolFlag() bool }); ok && bf.IsBoolFlag() {
+		t = Bool
+	}
+	c.params = append(c.params, OldParam{Name: name, Type: t, Description: desc})
+}
+
+func (c *flagDefCollector) Func(name, desc string, _ func(string) error) {
+	c.params = append(c.params, OldParam{Name: name, Type: String, Description: desc})
 }

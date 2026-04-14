@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/0/interfaces"
 )
 
 func TestAppAddCommand(t *testing.T) {
@@ -175,6 +177,7 @@ func (paramCmd) Run(Request) {}
 func (paramCmd) GetDescription() Description {
 	return Description{Short: "Parameterized command"}
 }
+
 func (paramCmd) GetParams() []Param {
 	return []Param{
 		StringFlag{Name: "path", Description: "File path", Required: true, Short: 'p'},
@@ -189,6 +192,7 @@ func (resultCmd) Run(Request) {}
 func (resultCmd) GetDescription() Description {
 	return Description{Short: "Returns a result"}
 }
+
 func (resultCmd) RunResult(req Request) (*Result, error) {
 	return TextResult("hello"), nil
 }
@@ -385,6 +389,7 @@ func (cancellingResultCmd) Run(req Request) {}
 func (cancellingResultCmd) GetDescription() Description {
 	return Description{Short: "A result command that cancels"}
 }
+
 func (cancellingResultCmd) RunResult(req Request) (*Result, error) {
 	req.Cancel(fmt.Errorf("result went wrong"))
 	return nil, nil // unreachable — Cancel panics
@@ -401,6 +406,53 @@ func TestAddCmdRecoversCancelPanicInRunResult(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "result went wrong") {
 		t.Errorf("error = %q, want it to contain %q", err.Error(), "result went wrong")
+	}
+}
+
+// --- SetFlagDefinitions bridge (issue #42) ---
+
+// flagDefCmd uses GetParams() for a positional arg and SetFlagDefinitions for flags.
+// This reproduces the pattern from madder's Init command.
+type flagDefCmd struct {
+	encryption        string
+	lockInternalFiles bool
+}
+
+func (c *flagDefCmd) Run(req Request) {}
+
+func (c *flagDefCmd) GetDescription() Description {
+	return Description{Short: "Command with SetFlagDefinitions"}
+}
+
+func (c *flagDefCmd) GetParams() []Param {
+	return []Param{
+		StringArg{Name: "store-id", Description: "Store ID", Required: true},
+	}
+}
+
+func (c *flagDefCmd) SetFlagDefinitions(fs interfaces.CLIFlagDefinitions) {
+	fs.StringVar(&c.encryption, "encryption", "age", "Encryption type")
+	fs.BoolVar(&c.lockInternalFiles, "lock-internal-files", true, "Lock internal files")
+}
+
+func TestAddCmdSetFlagDefinitionsFlagsBeforeArg(t *testing.T) {
+	app := NewUtility("test", "test app")
+
+	cmd := &flagDefCmd{}
+	app.AddCmd("init", cmd)
+
+	// Flags before positional arg — this is the exact reproduction from #42.
+	err := app.RunCLI(t.Context(), []string{
+		"init", "-encryption", "none", "-lock-internal-files=false", ".default",
+	}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI error: %v", err)
+	}
+	if cmd.encryption != "none" {
+		t.Errorf("encryption = %q, want %q", cmd.encryption, "none")
+	}
+	if cmd.lockInternalFiles {
+		t.Errorf("lock-internal-files = true, want false")
 	}
 }
 
