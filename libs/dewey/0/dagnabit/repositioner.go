@@ -8,12 +8,25 @@ import (
 
 // Repositioner orchestrates dependency reading, topological sorting,
 // level mapping, and package moving.
+//
+// ComponentDepth controls node path interpretation:
+//   - 3 (default): prefix/level/package — move rebuilds as prefix/newLevel/package
+//   - 2: level/package — move rebuilds as newLevel/package
 type Repositioner struct {
-	Reader  DependencyReader
-	Mapper  LevelMapper
-	Mover   PackageMover
-	DryRun  bool
-	Verbose bool
+	Reader         DependencyReader
+	Mapper         LevelMapper
+	Mover          PackageMover
+	DryRun         bool
+	Verbose        bool
+	ComponentDepth int
+}
+
+func (repositioner *Repositioner) componentDepth() int {
+	if repositioner.ComponentDepth < 2 {
+		return 3
+	}
+
+	return repositioner.ComponentDepth
 }
 
 func (repositioner *Repositioner) Run() error {
@@ -61,6 +74,8 @@ func (repositioner *Repositioner) runPrefix(prefix string, edges []Edge) error {
 		return sorted[i].node < sorted[j].node
 	})
 
+	depth := repositioner.componentDepth()
+
 	for _, nh := range sorted {
 		node := nh.node
 		height := nh.height
@@ -69,55 +84,36 @@ func (repositioner *Repositioner) runPrefix(prefix string, edges []Edge) error {
 			return fmt.Errorf("mapping height %d for %s: %w", height, node, err)
 		}
 
-		currentLevel := extractLevel(node)
+		parts := strings.SplitN(node, "/", depth)
+
+		var currentLevel, packageName, dstPath string
+
+		switch depth {
+		case 3:
+			// prefix/level/package
+			currentLevel = parts[1]
+			packageName = parts[2]
+			dstPath = parts[0] + "/" + requiredLevel + "/" + packageName
+		case 2:
+			// level/package
+			currentLevel = parts[0]
+			packageName = parts[1]
+			dstPath = requiredLevel + "/" + packageName
+		}
 
 		if currentLevel == requiredLevel {
 			continue
 		}
 
-		treePrefix := extractTreePrefix(node)
-		packageName := extractPackageName(node)
-		srcPath := node
-		dstPath := treePrefix + "/" + requiredLevel + "/" + packageName
-
 		if repositioner.DryRun {
-			fmt.Printf("would move: %s -> %s\n", srcPath, dstPath)
+			fmt.Printf("would move: %s -> %s\n", node, dstPath)
 			continue
 		}
 
-		if err := repositioner.Mover.MovePackage(srcPath, dstPath); err != nil {
-			return fmt.Errorf("moving %s to %s: %w", srcPath, dstPath, err)
+		if err := repositioner.Mover.MovePackage(node, dstPath); err != nil {
+			return fmt.Errorf("moving %s to %s: %w", node, dstPath, err)
 		}
 	}
 
 	return nil
-}
-
-// extractTreePrefix returns the first path component (e.g., "lib" from "lib/_/ohio_buffer").
-func extractTreePrefix(path string) string {
-	if idx := strings.IndexByte(path, '/'); idx >= 0 {
-		return path[:idx]
-	}
-
-	return path
-}
-
-// extractLevel returns the second path component (e.g., "_" from "lib/_/ohio_buffer").
-func extractLevel(path string) string {
-	parts := strings.SplitN(path, "/", 3)
-	if len(parts) < 2 {
-		return path
-	}
-
-	return parts[1]
-}
-
-// extractPackageName returns the third path component (e.g., "ohio_buffer" from "lib/_/ohio_buffer").
-func extractPackageName(path string) string {
-	parts := strings.SplitN(path, "/", 3)
-	if len(parts) < 3 {
-		return path
-	}
-
-	return parts[2]
 }

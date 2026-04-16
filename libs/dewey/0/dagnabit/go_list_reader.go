@@ -17,10 +17,23 @@ import (
 // Dir is the working directory to run `go list` from.
 // PackagePrefixes are directory prefixes containing packages (e.g., ["lib", "internal"]).
 // Node names in returned edges include the prefix (e.g., "lib/_/ohio_buffer").
+//
+// ComponentDepth controls how many path components identify a package node:
+//   - 3 (default): prefix/level/package (e.g., "lib/alfa/errors")
+//   - 2: level/package (e.g., "alfa/errors") — for repos where NATO levels are top-level dirs
 type GoListReader struct {
 	ModulePath      string
 	Dir             string
 	PackagePrefixes []string
+	ComponentDepth  int
+}
+
+func (goListReader GoListReader) componentDepth() int {
+	if goListReader.ComponentDepth < 2 {
+		return 3
+	}
+
+	return goListReader.ComponentDepth
 }
 
 func (goListReader GoListReader) ReadDependencies() (map[string][]Edge, error) {
@@ -77,8 +90,9 @@ func (goListReader GoListReader) readPrefix(prefix string) ([]Edge, error) {
 			continue
 		}
 
-		source := trimToThreeComponents(
+		source := trimToNComponents(
 			strings.TrimPrefix(sourceFull, goListReader.ModulePath+"/"),
+			goListReader.componentDepth(),
 		)
 
 		if source == "" {
@@ -92,8 +106,9 @@ func (goListReader GoListReader) readPrefix(prefix string) ([]Edge, error) {
 				continue
 			}
 
-			target := trimToThreeComponents(
+			target := trimToNComponents(
 				strings.TrimPrefix(imp, goListReader.ModulePath+"/"),
+				goListReader.componentDepth(),
 			)
 
 			if target == "" || target == source {
@@ -155,13 +170,13 @@ func listPatternsForPrefix(dir, prefix string) ([]string, error) {
 	return patterns, nil
 }
 
-// trimToThreeComponents returns the first three path components (e.g.,
-// "lib/alfa/errors/context" -> "lib/alfa/errors"). Returns "" if fewer than 3.
-func trimToThreeComponents(path string) string {
-	parts := strings.SplitN(path, "/", 4)
-	if len(parts) < 3 {
+// trimToNComponents returns the first n path components (e.g., n=3:
+// "lib/alfa/errors/context" -> "lib/alfa/errors"). Returns "" if fewer than n.
+func trimToNComponents(path string, n int) string {
+	parts := strings.SplitN(path, "/", n+1)
+	if len(parts) < n {
 		return ""
 	}
 
-	return parts[0] + "/" + parts[1] + "/" + parts[2]
+	return strings.Join(parts[:n], "/")
 }
