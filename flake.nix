@@ -48,6 +48,7 @@
           || baseName == "go.work"
           || baseName == "go.work.sum"
           || baseName == "gomod2nix.toml"
+          || nixpkgs.lib.hasSuffix ".1" baseName
           || nixpkgs.lib.hasSuffix ".7" baseName;
       };
 
@@ -139,9 +140,28 @@
         system:
         let
           devenvs = buildDevenvs system;
+          goPkgs = import nixpkgs {
+            inherit system;
+            overlays = [ gomod2nix.overlays.default ];
+          };
+          pkgs-master = import nixpkgs-master { inherit system; };
+          mkGoModule = import ./lib/mkGoWorkspaceModule.nix {
+            pkgs = goPkgs;
+            go = pkgs-master.go_1_26;
+            inherit goWorkspaceSrc;
+          };
         in
         {
-          packages = marketplaceOutputs.packages.${system} or { };
+          packages = (marketplaceOutputs.packages.${system} or { }) // {
+            dagnabit = mkGoModule {
+              pname = "dagnabit";
+              version = "0.1.0";
+              subPackages = [ "cmd/dagnabit" ];
+              postInstall = ''
+                install -Dm644 $src/cmd/dagnabit/dagnabit.1 $out/share/man/man1/dagnabit.1
+              '';
+            };
+          };
 
           devShells = {
             default = marketplaceOutputs.devShells.${system}.default;

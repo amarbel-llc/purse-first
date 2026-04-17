@@ -276,6 +276,9 @@ schema = 3
     version = 'v1.7.1'
     hash = 'sha256-tKr4x0m+Nup2X9UyxIK+5ZXzrb1vyfPzc9hD2xh6H6g='
     goVersion = '1.20'
+    vendorPackages = [
+      'github.com/dave/jennifer/jen'
+    ]
 
   [mod.'github.com/dustin/go-humanize']
     version = 'v1.0.1'
