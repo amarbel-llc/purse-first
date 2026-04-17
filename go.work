@@ -2,7 +2,6 @@ go 1.26
 
 use (
 	.
-	./cmd/dagnabit
 	./libs/dewey
 	./libs/go-mcp
 	./libs/go-mcp/command/huh
