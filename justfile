@@ -159,6 +159,59 @@ tag-lib lib version message:
   gum log --level info "Pushed $tag"
   git tag -v "$tag"
 
+[group('explore')]
+explore-dagnabit-export:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT
+    gum log --level info "Copying dewey to $tmp"
+    cp -r libs/dewey/* "$tmp/"
+    cd "$tmp"
+    # Move NATO levels into internal/
+    mkdir -p internal
+    for d in 0 alfa bravo charlie delta echo foxtrot golf; do
+      [[ -d "$d" ]] && mv "$d" internal/
+    done
+    # Rewrite import paths
+    for level in 0 alfa bravo charlie delta echo foxtrot golf; do
+      find . -name '*.go' -exec sed -i "s|libs/dewey/${level}/|libs/dewey/internal/${level}/|g" {} +
+    done
+    # Ensure go 1.26 toolchain is used (generic function aliases require it)
+    sed -i '/^go 1.26$/a toolchain go1.26.1' go.mod
+    gum log --level info "Verifying internal/ compiles"
+    GOWORK=off go build ./internal/... 2>&1
+    gum log --level info "Running dagnabit export"
+    GOWORK=off "{{justfile_directory()}}/build/dagnabit" export ./internal/... 2>&1
+    gum log --level info "Building pkgs/"
+    # Try building; on failure, isolate one package for debugging
+    if ! GOWORK=off go build ./pkgs/... 2>&1; then
+      gum log --level warn "Full build failed. Isolating pkgs/reset..."
+      gum log --level info "go env:"
+      GOWORK=off go env GOVERSION GOTOOLCHAIN GOWORK 2>&1
+      gum log --level info "go.mod head:"
+      head -5 go.mod
+      gum log --level info "pkgs/reset/main.go:"
+      cat pkgs/reset/main.go
+      gum log --level info "Testing equivalent standalone module..."
+      mkdir -p /tmp/dagnabit-mvp/{internal/0/reset,pkgs/reset}
+      cp internal/0/reset/main.go /tmp/dagnabit-mvp/internal/0/reset/
+      cp pkgs/reset/main.go /tmp/dagnabit-mvp/pkgs/reset/
+      sed -i "s|github.com/amarbel-llc/purse-first/libs/dewey|dagnabit-mvp|g" /tmp/dagnabit-mvp/pkgs/reset/main.go /tmp/dagnabit-mvp/internal/0/reset/main.go
+      cp go.mod /tmp/dagnabit-mvp/go.mod
+      sed -i "s|github.com/amarbel-llc/purse-first/libs/dewey|dagnabit-mvp|g" /tmp/dagnabit-mvp/go.mod
+      cp go.sum /tmp/dagnabit-mvp/go.sum
+      cd /tmp/dagnabit-mvp
+      # Strip toolchain directive to test if that's the cause
+      sed -i '/^toolchain/d' go.mod
+      GOWORK=off go mod tidy 2>&1
+      gum log --level info "MVP go.mod (no toolchain):"
+      head -5 go.mod
+      GOWORK=off go build ./pkgs/reset/ 2>&1 && gum log --level info "MVP builds OK (no toolchain)" || gum log --level error "MVP also fails (no toolchain)"
+      exit 1
+    fi
+    gum log --level info "All pkgs/ facades compile"
+
 # Clean build artifacts
 clean:
     rm -f purse-first
