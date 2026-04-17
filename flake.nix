@@ -11,13 +11,13 @@
       # Upstream PR: https://github.com/nix-community/gomod2nix (no go.work tracking issue yet).
       url = "github:amarbel-llc/gomod2nix";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "utils";
     };
     crane.url = "github:ipetkov/crane";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    fh.url = "https://flakehub.com/f/DeterminateSystems/fh/*.tar.gz";
   };
 
   outputs =
@@ -29,7 +29,6 @@
       gomod2nix,
       crane,
       rust-overlay,
-      fh,
     }:
     let
       mkMarketplace = import ./lib/mkMarketplace.nix;
