@@ -22,9 +22,17 @@ type Utility struct {
 	MCPBinary         string     // binary name for plugin.json command; defaults to Name
 	PluginDescription string     // "description" in plugin.json; omitted if empty
 	PluginAuthor      string     // "author.name" in plugin.json; omitted if empty
+
+
+	commands       map[string]*Command
+	canonicalNames map[*Command]string
+	pluginSkills   []string // discovered skill paths for plugin.json
+
+	// TODO this should be migrated into the new model
 	OldParams         []OldParam // global flags
 	Examples          []Example  // app-level workflow examples
 
+	// TODO The below should be moved to a dedicated embedded manpage struct
 	// EnvVars are environment variables the app as a whole reads, rendered
 	// into the app manpage's ENVIRONMENT section.
 	EnvVars []EnvVar
@@ -40,10 +48,6 @@ type Utility struct {
 	// authors choose any dialect (man(7), mdoc(7), or pre-rendered output
 	// from scdoc/ronn/asciidoctor).
 	ExtraManpages []ManpageFile
-
-	commands       map[string]*Command
-	canonicalNames map[*Command]string
-	pluginSkills   []string // discovered skill paths for plugin.json
 }
 
 // NewUtility creates a new Utility with the given name and short description.
