@@ -7,10 +7,9 @@ dagnabit \- reposition Go packages by dependency depth and generate export facad
 .RB [ \-v ]
 .RB [ \-depth
 .IR N ]
-.RB [ \-prefixes
-.IR list ]
 .RB [ \-module
 .IR path ]
+.IR prefix ...
 .PP
 .B dagnabit export
 .RB [ \-n ]
@@ -82,6 +81,12 @@ Place this directive in a source file within an internal package.
 Run
 .B go generate
 to invoke dagnabit for that package.
+.SH POSITIONAL ARGUMENTS
+.TP
+.IR prefix ...
+One or more package tree prefixes to analyze (e.g.
+.BR lib ", " internal ", " src ).
+At least one prefix is required for the reposition subcommand.
 .SH OPTIONS
 .SS "Reposition options"
 .TP
@@ -97,10 +102,6 @@ Path component depth: 3 for
 (default), 2 for
 .IR level/package .
 Use depth 2 for repos where NATO levels are top-level directories.
-.TP
-.BI \-prefixes " list"
-Comma-separated package tree prefixes to analyze (default:
-.BR lib,internal ).
 .TP
 .BI \-module " path"
 Go module path. Read from
@@ -123,12 +124,14 @@ if empty.
 .SH EXAMPLES
 Reposition packages in a repo with
 .I lib/
-prefix:
+and
+.I internal/
+prefixes:
 .PP
 .RS
 .nf
 cd myproject
-dagnabit -n -v
+dagnabit -n -v lib internal
 .fi
 .RE
 .PP
@@ -136,7 +139,7 @@ Reposition packages in a repo where NATO levels are top-level:
 .PP
 .RS
 .nf
-dagnabit -n -v -depth 2 -prefixes 0,alfa,bravo,charlie
+dagnabit -n -v -depth 2 0 alfa bravo charlie
 .fi
 .RE
 .PP

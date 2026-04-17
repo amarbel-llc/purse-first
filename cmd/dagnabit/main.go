@@ -25,7 +25,6 @@ func runReposition() {
 	var dryRun bool
 	var verbose bool
 	var modulePath string
-	var packagePrefixes string
 	var depth int
 
 	flag.BoolVar(&dryRun, "n", false, "show what would be moved without moving")
@@ -33,9 +32,22 @@ func runReposition() {
 	flag.BoolVar(&verbose, "v", false, "enable verbose output")
 	flag.BoolVar(&verbose, "verbose", false, "enable verbose output")
 	flag.StringVar(&modulePath, "module", "", "Go module path (read from go.mod if empty)")
-	flag.StringVar(&packagePrefixes, "prefixes", "lib,internal", "comma-separated package tree prefixes to analyze")
 	flag.IntVar(&depth, "depth", 3, "path component depth: 3 for prefix/level/package, 2 for level/package")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: dagnabit [flags] <prefix>...\n\n")
+		fmt.Fprintf(os.Stderr, "Positional arguments:\n")
+		fmt.Fprintf(os.Stderr, "  prefix   package tree prefixes to analyze (e.g. lib internal src)\n\n")
+		fmt.Fprintf(os.Stderr, "Flags:\n")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
+
+	prefixes := flag.Args()
+	if len(prefixes) == 0 {
+		fmt.Fprintf(os.Stderr, "error: at least one prefix path is required\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	dir, err := os.Getwd()
 	if err != nil {
@@ -47,14 +59,6 @@ func runReposition() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
-	}
-
-	var prefixes []string
-	for _, p := range strings.Split(packagePrefixes, ",") {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			prefixes = append(prefixes, p)
-		}
 	}
 
 	reader := &dagnabit.GoListReader{
