@@ -66,7 +66,7 @@ func runReposition() {
 
 	mapper := dagnabit.MakeNATOLevelMapper()
 
-	mover := &dagnabit.JustMover{Dir: dir}
+	mover := &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
 
 	r := &dagnabit.Repositioner{
 		Reader:         reader,
