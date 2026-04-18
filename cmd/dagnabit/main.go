@@ -32,6 +32,7 @@ func runReposition() {
 	var verbose bool
 	var modulePath string
 	var depth int
+	var initial bool
 
 	flag.BoolVar(&dryRun, "n", false, "show what would be moved without moving")
 	flag.BoolVar(&dryRun, "dry-run", false, "show what would be moved without moving")
@@ -39,6 +40,7 @@ func runReposition() {
 	flag.BoolVar(&verbose, "verbose", false, "enable verbose output")
 	flag.StringVar(&modulePath, "module", "", "Go module path (read from go.mod if empty)")
 	flag.IntVar(&depth, "depth", 3, "path component depth: 3 for prefix/level/package, 2 for level/package")
+	flag.BoolVar(&initial, "initial", false, "insert a NATO level segment into a flat <prefix>/<pkg> layout (forces depth=2)")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: dagnabit [flags] <prefix>...\n\n")
 		fmt.Fprintf(os.Stderr, "Positional arguments:\n")
@@ -47,6 +49,10 @@ func runReposition() {
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	if initial {
+		depth = 2
+	}
 
 	prefixes := flag.Args()
 	if len(prefixes) == 0 {
@@ -79,6 +85,11 @@ func runReposition() {
 
 	mover := &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
 
+	mode := dagnabit.ModeReposition
+	if initial {
+		mode = dagnabit.ModeInitial
+	}
+
 	r := &dagnabit.Repositioner{
 		Reader:         reader,
 		Mapper:         mapper,
@@ -86,6 +97,7 @@ func runReposition() {
 		DryRun:         dryRun,
 		Verbose:        verbose,
 		ComponentDepth: depth,
+		Mode:           mode,
 	}
 
 	if err := r.Run(); err != nil {

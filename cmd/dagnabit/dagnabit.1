@@ -7,6 +7,7 @@ dagnabit \- reposition Go packages by dependency depth and generate export facad
 .RB [ \-v ]
 .RB [ \-depth
 .IR N ]
+.RB [ \-\-initial ]
 .RB [ \-module
 .IR path ]
 .IR prefix ...
@@ -138,6 +139,17 @@ Path component depth: 3 for
 (default), 2 for
 .IR level/package .
 Use depth 2 for repos where NATO levels are top-level directories.
+Implied (and overridden) by
+.BR \-\-initial .
+.TP
+.B \-\-initial
+Initial tiering of a flat
+.I <prefix>/<pkg>
+layout. Inserts a NATO level segment into every package path based on
+its dependency height, producing
+.IR <prefix>/<level>/<pkg> .
+Implies
+.BR "\-depth 2" .
 .TP
 .BI \-module " path"
 Go module path. Read from
@@ -195,6 +207,17 @@ Reposition packages in a repo where NATO levels are top-level:
 .RS
 .nf
 dagnabit -n -v -depth 2 0 alfa bravo charlie
+.fi
+.RE
+.PP
+Initial tiering of a flat
+.I internal/<pkg>
+layout (produces
+.IR internal/0/<pkg> ", " internal/alfa/<pkg> ", \fR\(aq.\(aq\fP\ etc.):
+.PP
+.RS
+.nf
+dagnabit -n -v --initial internal
 .fi
 .RE
 .PP

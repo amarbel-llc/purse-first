@@ -237,6 +237,114 @@ func TestRepositionerCrossPrefixEdgesIgnored(t *testing.T) {
 	}
 }
 
+func TestRepositionerInitialModeInsertsLevelSegment(t *testing.T) {
+	// Flat layout: internal/a depends on internal/b, so heights are
+	// { internal/b: 0, internal/a: 1 }. Initial mode inserts the level
+	// segment: internal/b -> internal/level0/b, internal/a -> internal/level1/a.
+	reader := stubReader{
+		edgesByPrefix: map[string][]Edge{
+			"internal": {
+				{Source: "internal/a", Target: "internal/b"},
+			},
+		},
+	}
+
+	mapper := sliceLevelMapper{levels: []string{"level0", "level1"}}
+	mover := &recordingMover{}
+
+	r := Repositioner{
+		Reader:         reader,
+		Mapper:         mapper,
+		Mover:          mover,
+		ComponentDepth: 2,
+		Mode:           ModeInitial,
+	}
+
+	if err := r.Run(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(mover.moves) != 2 {
+		t.Fatalf("expected 2 moves in initial mode, got %d: %v", len(mover.moves), mover.moves)
+	}
+
+	expected0 := "internal/a -> internal/level1/a"
+	expected1 := "internal/b -> internal/level0/b"
+
+	// Sorted by height ascending, then node name ascending.
+	// b (height 0) sorts before a (height 1).
+	if mover.moves[0] != expected1 {
+		t.Errorf("move[0]: expected %q, got %q", expected1, mover.moves[0])
+	}
+
+	if mover.moves[1] != expected0 {
+		t.Errorf("move[1]: expected %q, got %q", expected0, mover.moves[1])
+	}
+}
+
+func TestRepositionerInitialModeRejectsDepth3(t *testing.T) {
+	reader := stubReader{
+		edgesByPrefix: map[string][]Edge{
+			"internal": {
+				{Source: "internal/a/x", Target: "internal/b/y"},
+			},
+		},
+	}
+
+	mapper := sliceLevelMapper{levels: []string{"level0", "level1"}}
+	mover := &recordingMover{}
+
+	r := Repositioner{
+		Reader:         reader,
+		Mapper:         mapper,
+		Mover:          mover,
+		ComponentDepth: 3,
+		Mode:           ModeInitial,
+	}
+
+	err := r.Run()
+	if err == nil {
+		t.Fatal("expected error for ModeInitial with ComponentDepth=3, got nil")
+	}
+
+	if !strings.Contains(err.Error(), "ComponentDepth=2") {
+		t.Errorf("expected error to mention ComponentDepth=2 requirement, got %q", err.Error())
+	}
+}
+
+func TestRepositionerInitialModeAlwaysMoves(t *testing.T) {
+	// A leaf package (no deps, height 0) maps to the "level0" level.
+	// Even though the package name happens to contain the literal string
+	// "level0" as a suffix, initial mode never short-circuits — it always
+	// produces a move because there is no pre-existing level segment.
+	reader := stubReader{
+		edgesByPrefix: map[string][]Edge{
+			"internal": {
+				{Source: "internal/level0", Target: "internal/other"},
+			},
+		},
+	}
+
+	mapper := sliceLevelMapper{levels: []string{"level0", "level1"}}
+	mover := &recordingMover{}
+
+	r := Repositioner{
+		Reader:         reader,
+		Mapper:         mapper,
+		Mover:          mover,
+		ComponentDepth: 2,
+		Mode:           ModeInitial,
+	}
+
+	if err := r.Run(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(mover.moves) != 2 {
+		t.Fatalf("expected 2 moves, got %d: %v", len(mover.moves), mover.moves)
+	}
+}
+
 func TestRepositionerMultiplePrefixesSortedIndependently(t *testing.T) {
 	reader := stubReader{
 		edgesByPrefix: map[string][]Edge{

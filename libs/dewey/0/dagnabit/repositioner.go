@@ -6,12 +6,30 @@ import (
 	"strings"
 )
 
+// ModeReposition (default) rebalances packages that already sit in a tiered
+// layout — <prefix>/<oldLevel>/<pkg> or <oldLevel>/<pkg> — into the NATO
+// level dictated by their dependency height.
+const ModeReposition = "reposition"
+
+// ModeInitial inserts a NATO level segment into a flat <prefix>/<pkg> layout,
+// producing <prefix>/<newLevel>/<pkg>. Every package is moved; there is no
+// "already at the right level" short-circuit. Requires ComponentDepth == 2.
+const ModeInitial = "initial"
+
 // Repositioner orchestrates dependency reading, topological sorting,
 // level mapping, and package moving.
 //
-// ComponentDepth controls node path interpretation:
+// Mode selects the path-arithmetic strategy:
+//   - ModeReposition / "" (default): rebalance a tiered layout.
+//   - ModeInitial: insert a level segment into a flat layout (requires
+//     ComponentDepth == 2).
+//
+// ComponentDepth controls node path interpretation in ModeReposition:
 //   - 3 (default): prefix/level/package — move rebuilds as prefix/newLevel/package
 //   - 2: level/package — move rebuilds as newLevel/package
+//
+// In ModeInitial, ComponentDepth MUST be 2 and nodes are interpreted as
+// <prefix>/<pkg>, producing <prefix>/<newLevel>/<pkg>.
 type Repositioner struct {
 	Reader         DependencyReader
 	Mapper         LevelMapper
@@ -19,6 +37,15 @@ type Repositioner struct {
 	DryRun         bool
 	Verbose        bool
 	ComponentDepth int
+	Mode           string
+}
+
+func (repositioner *Repositioner) mode() string {
+	if repositioner.Mode == "" {
+		return ModeReposition
+	}
+
+	return repositioner.Mode
 }
 
 func (repositioner *Repositioner) componentDepth() int {
@@ -75,6 +102,15 @@ func (repositioner *Repositioner) runPrefix(prefix string, edges []Edge) error {
 	})
 
 	depth := repositioner.componentDepth()
+	mode := repositioner.mode()
+
+	if mode == ModeInitial && depth != 2 {
+		return fmt.Errorf(
+			"mode %q requires ComponentDepth=2 (source layout <prefix>/<pkg>), got %d",
+			mode,
+			depth,
+		)
+	}
 
 	for _, nh := range sorted {
 		node := nh.node
@@ -84,25 +120,35 @@ func (repositioner *Repositioner) runPrefix(prefix string, edges []Edge) error {
 			return fmt.Errorf("mapping height %d for %s: %w", height, node, err)
 		}
 
-		parts := strings.SplitN(node, "/", depth)
+		var currentLevel, dstPath string
 
-		var currentLevel, packageName, dstPath string
+		switch mode {
+		case ModeInitial:
+			parts := strings.SplitN(node, "/", 2)
+			if len(parts) != 2 {
+				return fmt.Errorf("initial mode: expected <prefix>/<pkg>, got %q", node)
+			}
 
-		switch depth {
-		case 3:
-			// prefix/level/package
-			currentLevel = parts[1]
-			packageName = parts[2]
-			dstPath = parts[0] + "/" + requiredLevel + "/" + packageName
-		case 2:
-			// level/package
-			currentLevel = parts[0]
-			packageName = parts[1]
-			dstPath = requiredLevel + "/" + packageName
-		}
+			// Always move — no level segment exists yet.
+			dstPath = parts[0] + "/" + requiredLevel + "/" + parts[1]
 
-		if currentLevel == requiredLevel {
-			continue
+		default:
+			parts := strings.SplitN(node, "/", depth)
+
+			switch depth {
+			case 3:
+				// prefix/level/package
+				currentLevel = parts[1]
+				dstPath = parts[0] + "/" + requiredLevel + "/" + parts[2]
+			case 2:
+				// level/package
+				currentLevel = parts[0]
+				dstPath = requiredLevel + "/" + parts[1]
+			}
+
+			if currentLevel == requiredLevel {
+				continue
+			}
 		}
 
 		if repositioner.DryRun {
