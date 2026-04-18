@@ -7,6 +7,7 @@ import (
 
 	"github.com/amarbel-llc/purse-first/libs/dewey/0/dagnabit"
 	go_module "github.com/amarbel-llc/purse-first/libs/dewey/0/go_module"
+	nato_levels "github.com/amarbel-llc/purse-first/libs/dewey/0/nato_levels"
 )
 
 func main() {
@@ -79,7 +80,7 @@ func runReposition() {
 		Verbose:         verbose,
 	}
 
-	mapper := dagnabit.MakeNATOLevelMapper()
+	mapper := nato_levels.MakeNATOLevelMapper()
 
 	mover := &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
 

@@ -1,4 +1,4 @@
-package dagnabit
+package nato_levels
 
 import "testing"
 

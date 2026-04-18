@@ -1,4 +1,7 @@
-package dagnabit
+// Package nato_levels maps non-negative integer heights to NATO phonetic
+// level names ("0", "alfa", "bravo", ... "zulu"), used by dewey tooling to
+// tier Go packages by dependency depth.
+package nato_levels
 
 import "fmt"
 
