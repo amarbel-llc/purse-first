@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	topological_sort "github.com/amarbel-llc/purse-first/libs/dewey/0/topological_sort"
 )
 
 // TODO: refactor to use golang.org/x/tools/go/packages for direct
@@ -42,8 +44,8 @@ func (goListReader GoListReader) componentDepth() int {
 	return goListReader.ComponentDepth
 }
 
-func (goListReader GoListReader) ReadDependencies() (map[string][]Edge, error) {
-	edgesByPrefix := make(map[string][]Edge)
+func (goListReader GoListReader) ReadDependencies() (map[string][]topological_sort.Edge, error) {
+	edgesByPrefix := make(map[string][]topological_sort.Edge)
 
 	for _, prefix := range goListReader.PackagePrefixes {
 		edges, err := goListReader.readPrefix(prefix)
@@ -57,7 +59,7 @@ func (goListReader GoListReader) ReadDependencies() (map[string][]Edge, error) {
 	return edgesByPrefix, nil
 }
 
-func (goListReader GoListReader) readPrefix(prefix string) ([]Edge, error) {
+func (goListReader GoListReader) readPrefix(prefix string) ([]topological_sort.Edge, error) {
 	patterns, err := listPatternsForPrefix(goListReader.Dir, prefix)
 	if err != nil {
 		return nil, err
@@ -78,8 +80,8 @@ func (goListReader GoListReader) readPrefix(prefix string) ([]Edge, error) {
 
 	depth := goListReader.componentDepth()
 	prefixFilter := goListReader.ModulePath + "/" + prefix + "/"
-	seen := make(map[Edge]struct{})
-	var edges []Edge
+	seen := make(map[topological_sort.Edge]struct{})
+	var edges []topological_sort.Edge
 	matchedSources := 0
 	droppedSources := 0
 
@@ -136,7 +138,7 @@ func (goListReader GoListReader) readPrefix(prefix string) ([]Edge, error) {
 				continue
 			}
 
-			edge := Edge{Source: source, Target: target}
+			edge := topological_sort.Edge{Source: source, Target: target}
 
 			if _, ok := seen[edge]; ok {
 				continue

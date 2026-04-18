@@ -1,17 +1,27 @@
-package dagnabit
+// Package topological_sort implements Kahn's algorithm over a directed
+// graph of named edges, returning each node's height in the DAG. Leaf
+// nodes (nothing depending on them) have height 0; their dependents have
+// height 1; and so on. A cycle in the input produces an error.
+package topological_sort
 
 import "fmt"
 
-// TopologicalSort performs Kahn's algorithm on the given edges and returns
-// a map from node name to its height in the dependency DAG. Leaf nodes
-// (no dependencies) have height 0. Returns an error if a cycle is detected.
-func TopologicalSort(edges []Edge) (map[string]int, error) {
+// Edge is a directed dependency: Source depends on Target.
+type Edge struct {
+	Source string
+	Target string
+}
+
+// Sort runs Kahn's algorithm on edges and returns a map from node name
+// to its height in the dependency DAG. Returns an error if a cycle is
+// detected.
+func Sort(edges []Edge) (map[string]int, error) {
 	if len(edges) == 0 {
 		return make(map[string]int), nil
 	}
 
 	// Build adjacency list (reverse: dependency -> dependents) and in-degree map
-	dependents := make(map[string][]string) // dep -> list of packages that depend on it
+	dependents := make(map[string][]string) // dep -> list of nodes that depend on it
 	inDegree := make(map[string]int)
 	allNodes := make(map[string]struct{})
 

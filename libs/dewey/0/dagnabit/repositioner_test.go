@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	topological_sort "github.com/amarbel-llc/purse-first/libs/dewey/0/topological_sort"
 )
 
 type stubReader struct {
-	edgesByPrefix map[string][]Edge
+	edgesByPrefix map[string][]topological_sort.Edge
 }
 
-func (stubReader stubReader) ReadDependencies() (map[string][]Edge, error) {
+func (stubReader stubReader) ReadDependencies() (map[string][]topological_sort.Edge, error) {
 	return stubReader.edgesByPrefix, nil
 }
 
@@ -37,9 +39,9 @@ func (m *recordingMover) MovePackage(src, dst string) error {
 
 func TestRepositionerMovesPackageToCorrectLevel(t *testing.T) {
 	reader := stubReader{
-		edgesByPrefix: map[string][]Edge{
+		edgesByPrefix: map[string][]topological_sort.Edge{
 			"tree": {
-				{Source: "tree/level0/pkg_a", Target: "tree/level0/pkg_b"},
+				topological_sort.Edge{Source: "tree/level0/pkg_a", Target: "tree/level0/pkg_b"},
 			},
 		},
 	}
@@ -71,9 +73,9 @@ func TestRepositionerMovesPackageToCorrectLevel(t *testing.T) {
 
 func TestRepositionerSkipsCorrectlyPlacedPackages(t *testing.T) {
 	reader := stubReader{
-		edgesByPrefix: map[string][]Edge{
+		edgesByPrefix: map[string][]topological_sort.Edge{
 			"tree": {
-				{Source: "tree/level1/pkg_a", Target: "tree/level0/pkg_b"},
+				topological_sort.Edge{Source: "tree/level1/pkg_a", Target: "tree/level0/pkg_b"},
 			},
 		},
 	}
@@ -98,9 +100,9 @@ func TestRepositionerSkipsCorrectlyPlacedPackages(t *testing.T) {
 
 func TestRepositionerDryRunDoesNotMove(t *testing.T) {
 	reader := stubReader{
-		edgesByPrefix: map[string][]Edge{
+		edgesByPrefix: map[string][]topological_sort.Edge{
 			"tree": {
-				{Source: "tree/level0/pkg_a", Target: "tree/level0/pkg_b"},
+				topological_sort.Edge{Source: "tree/level0/pkg_a", Target: "tree/level0/pkg_b"},
 			},
 		},
 	}
@@ -149,16 +151,16 @@ type errorReader struct {
 	err error
 }
 
-func (errorReader errorReader) ReadDependencies() (map[string][]Edge, error) {
+func (errorReader errorReader) ReadDependencies() (map[string][]topological_sort.Edge, error) {
 	return nil, errorReader.err
 }
 
 func TestRepositionerCycleError(t *testing.T) {
 	reader := stubReader{
-		edgesByPrefix: map[string][]Edge{
+		edgesByPrefix: map[string][]topological_sort.Edge{
 			"tree": {
-				{Source: "tree/level0/pkg_a", Target: "tree/level0/pkg_b"},
-				{Source: "tree/level0/pkg_b", Target: "tree/level0/pkg_a"},
+				topological_sort.Edge{Source: "tree/level0/pkg_a", Target: "tree/level0/pkg_b"},
+				topological_sort.Edge{Source: "tree/level0/pkg_b", Target: "tree/level0/pkg_a"},
 			},
 		},
 	}
@@ -185,9 +187,9 @@ func TestRepositionerCycleError(t *testing.T) {
 func TestRepositionerMapperError(t *testing.T) {
 	// With only 1 level defined, height 1 is out of range
 	reader := stubReader{
-		edgesByPrefix: map[string][]Edge{
+		edgesByPrefix: map[string][]topological_sort.Edge{
 			"tree": {
-				{Source: "tree/level0/pkg_a", Target: "tree/level0/pkg_b"},
+				topological_sort.Edge{Source: "tree/level0/pkg_a", Target: "tree/level0/pkg_b"},
 			},
 		},
 	}
@@ -213,7 +215,7 @@ func TestRepositionerMapperError(t *testing.T) {
 
 func TestRepositionerCrossPrefixEdgesIgnored(t *testing.T) {
 	reader := stubReader{
-		edgesByPrefix: map[string][]Edge{
+		edgesByPrefix: map[string][]topological_sort.Edge{
 			"treeA": {},
 			"treeB": {},
 		},
@@ -242,9 +244,9 @@ func TestRepositionerInitialModeInsertsLevelSegment(t *testing.T) {
 	// { internal/b: 0, internal/a: 1 }. Initial mode inserts the level
 	// segment: internal/b -> internal/level0/b, internal/a -> internal/level1/a.
 	reader := stubReader{
-		edgesByPrefix: map[string][]Edge{
+		edgesByPrefix: map[string][]topological_sort.Edge{
 			"internal": {
-				{Source: "internal/a", Target: "internal/b"},
+				topological_sort.Edge{Source: "internal/a", Target: "internal/b"},
 			},
 		},
 	}
@@ -284,9 +286,9 @@ func TestRepositionerInitialModeInsertsLevelSegment(t *testing.T) {
 
 func TestRepositionerInitialModeRejectsDepth3(t *testing.T) {
 	reader := stubReader{
-		edgesByPrefix: map[string][]Edge{
+		edgesByPrefix: map[string][]topological_sort.Edge{
 			"internal": {
-				{Source: "internal/a/x", Target: "internal/b/y"},
+				topological_sort.Edge{Source: "internal/a/x", Target: "internal/b/y"},
 			},
 		},
 	}
@@ -318,9 +320,9 @@ func TestRepositionerInitialModeAlwaysMoves(t *testing.T) {
 	// "level0" as a suffix, initial mode never short-circuits — it always
 	// produces a move because there is no pre-existing level segment.
 	reader := stubReader{
-		edgesByPrefix: map[string][]Edge{
+		edgesByPrefix: map[string][]topological_sort.Edge{
 			"internal": {
-				{Source: "internal/level0", Target: "internal/other"},
+				topological_sort.Edge{Source: "internal/level0", Target: "internal/other"},
 			},
 		},
 	}
@@ -347,12 +349,12 @@ func TestRepositionerInitialModeAlwaysMoves(t *testing.T) {
 
 func TestRepositionerMultiplePrefixesSortedIndependently(t *testing.T) {
 	reader := stubReader{
-		edgesByPrefix: map[string][]Edge{
+		edgesByPrefix: map[string][]topological_sort.Edge{
 			"lib": {
-				{Source: "lib/level0/pkg_a", Target: "lib/level0/pkg_b"},
+				topological_sort.Edge{Source: "lib/level0/pkg_a", Target: "lib/level0/pkg_b"},
 			},
 			"internal": {
-				{Source: "internal/level0/pkg_c", Target: "internal/level0/pkg_d"},
+				topological_sort.Edge{Source: "internal/level0/pkg_c", Target: "internal/level0/pkg_d"},
 			},
 		},
 	}

@@ -1,15 +1,13 @@
 package dagnabit
 
-// Edge represents a directed dependency: Source depends on Target.
-type Edge struct {
-	Source string
-	Target string
-}
+import (
+	topological_sort "github.com/amarbel-llc/purse-first/libs/dewey/0/topological_sort"
+)
 
 // DependencyReader produces directed edges from a codebase,
 // grouped by tree prefix (e.g., "lib", "internal").
 type DependencyReader interface {
-	ReadDependencies() (map[string][]Edge, error)
+	ReadDependencies() (map[string][]topological_sort.Edge, error)
 }
 
 // LevelMapper assigns names to topological heights.

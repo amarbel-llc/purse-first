@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	topological_sort "github.com/amarbel-llc/purse-first/libs/dewey/0/topological_sort"
 )
 
 // writeFlatModule creates a minimal module with a flat internal/<pkg> layout:
@@ -124,7 +126,7 @@ func TestGoListReaderFlatLayoutDepth2Succeeds(t *testing.T) {
 		t.Fatalf("expected 1 edge, got %d: %v", len(edges), edges)
 	}
 
-	want := Edge{Source: "internal/bar", Target: "internal/foo"}
+	want := topological_sort.Edge{Source: "internal/bar", Target: "internal/foo"}
 	if edges[0] != want {
 		t.Errorf("expected edge %+v, got %+v", want, edges[0])
 	}
@@ -150,7 +152,7 @@ func TestGoListReaderTieredLayoutDepth3Succeeds(t *testing.T) {
 		t.Fatalf("expected 1 edge, got %d: %v", len(edges), edges)
 	}
 
-	want := Edge{Source: "internal/bravo/bar", Target: "internal/alfa/foo"}
+	want := topological_sort.Edge{Source: "internal/bravo/bar", Target: "internal/alfa/foo"}
 	if edges[0] != want {
 		t.Errorf("expected edge %+v, got %+v", want, edges[0])
 	}

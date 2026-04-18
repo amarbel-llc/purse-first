@@ -1,17 +1,17 @@
-package dagnabit
+package topological_sort
 
 import (
 	"testing"
 )
 
-func TestTopologicalSortLinearChain(t *testing.T) {
+func TestSortLinearChain(t *testing.T) {
 	// a -> b -> c (a depends on b, b depends on c)
 	edges := []Edge{
 		{Source: "a", Target: "b"},
 		{Source: "b", Target: "c"},
 	}
 
-	heights, err := TopologicalSort(edges)
+	heights, err := Sort(edges)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -21,7 +21,7 @@ func TestTopologicalSortLinearChain(t *testing.T) {
 	assertHeight(t, heights, "a", 2)
 }
 
-func TestTopologicalSortDiamondDependency(t *testing.T) {
+func TestSortDiamondDependency(t *testing.T) {
 	// d depends on both b and c; both b and c depend on a
 	edges := []Edge{
 		{Source: "d", Target: "b"},
@@ -30,7 +30,7 @@ func TestTopologicalSortDiamondDependency(t *testing.T) {
 		{Source: "c", Target: "a"},
 	}
 
-	heights, err := TopologicalSort(edges)
+	heights, err := Sort(edges)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -41,13 +41,13 @@ func TestTopologicalSortDiamondDependency(t *testing.T) {
 	assertHeight(t, heights, "d", 2)
 }
 
-func TestTopologicalSortDisconnectedComponents(t *testing.T) {
+func TestSortDisconnectedComponents(t *testing.T) {
 	edges := []Edge{
 		{Source: "a", Target: "b"},
 		{Source: "c", Target: "d"},
 	}
 
-	heights, err := TopologicalSort(edges)
+	heights, err := Sort(edges)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -58,20 +58,20 @@ func TestTopologicalSortDisconnectedComponents(t *testing.T) {
 	assertHeight(t, heights, "c", 1)
 }
 
-func TestTopologicalSortCycleDetection(t *testing.T) {
+func TestSortCycleDetection(t *testing.T) {
 	edges := []Edge{
 		{Source: "a", Target: "b"},
 		{Source: "b", Target: "a"},
 	}
 
-	_, err := TopologicalSort(edges)
+	_, err := Sort(edges)
 	if err == nil {
 		t.Fatal("expected cycle error, got nil")
 	}
 }
 
-func TestTopologicalSortEmpty(t *testing.T) {
-	heights, err := TopologicalSort(nil)
+func TestSortEmpty(t *testing.T) {
+	heights, err := Sort(nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -81,12 +81,12 @@ func TestTopologicalSortEmpty(t *testing.T) {
 	}
 }
 
-func TestTopologicalSortSingleNode(t *testing.T) {
+func TestSortSingleNode(t *testing.T) {
 	edges := []Edge{
 		{Source: "a", Target: "b"},
 	}
 
-	heights, err := TopologicalSort(edges)
+	heights, err := Sort(edges)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	topological_sort "github.com/amarbel-llc/purse-first/libs/dewey/0/topological_sort"
 )
 
 // ModeReposition (default) rebalances packages that already sit in a tiered
@@ -78,8 +80,8 @@ func (repositioner *Repositioner) Run() error {
 	return nil
 }
 
-func (repositioner *Repositioner) runPrefix(prefix string, edges []Edge) error {
-	heights, err := TopologicalSort(edges)
+func (repositioner *Repositioner) runPrefix(prefix string, edges []topological_sort.Edge) error {
+	heights, err := topological_sort.Sort(edges)
 	if err != nil {
 		return fmt.Errorf("topological sort for %s: %w", prefix, err)
 	}
