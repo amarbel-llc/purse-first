@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/amarbel-llc/purse-first/libs/dewey/0/dagnabit"
+	go_list "github.com/amarbel-llc/purse-first/libs/dewey/0/go_list"
 	go_module "github.com/amarbel-llc/purse-first/libs/dewey/0/go_module"
 	nato_levels "github.com/amarbel-llc/purse-first/libs/dewey/0/nato_levels"
 )
@@ -72,7 +73,7 @@ func runReposition() {
 		os.Exit(1)
 	}
 
-	reader := &dagnabit.GoListReader{
+	reader := &go_list.Reader{
 		Dir:             dir,
 		ModulePath:      modulePath,
 		PackagePrefixes: prefixes,
@@ -214,4 +215,3 @@ func runExport() {
 		}
 	}
 }
-

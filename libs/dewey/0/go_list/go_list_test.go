@@ -1,4 +1,4 @@
-package dagnabit
+package go_list
 
 import (
 	"bytes"
@@ -10,6 +10,20 @@ import (
 
 	topological_sort "github.com/amarbel-llc/purse-first/libs/dewey/0/topological_sort"
 )
+
+// writeFile creates a file with parents under dir.
+func writeFile(t *testing.T, dir, relPath, content string) {
+	t.Helper()
+
+	abs := filepath.Join(dir, relPath)
+	if err := os.MkdirAll(filepath.Dir(abs), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(abs, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
 
 // writeFlatModule creates a minimal module with a flat internal/<pkg> layout:
 //
@@ -84,7 +98,7 @@ func Y() int { return foo.X() }
 func TestGoListReaderErrorsOnFlatLayoutWithDefaultDepth(t *testing.T) {
 	dir := writeFlatModule(t)
 
-	reader := GoListReader{
+	reader := Reader{
 		Dir:             dir,
 		ModulePath:      "example.com/m",
 		PackagePrefixes: []string{"internal"},
@@ -109,7 +123,7 @@ func TestGoListReaderErrorsOnFlatLayoutWithDefaultDepth(t *testing.T) {
 func TestGoListReaderFlatLayoutDepth2Succeeds(t *testing.T) {
 	dir := writeFlatModule(t)
 
-	reader := GoListReader{
+	reader := Reader{
 		Dir:             dir,
 		ModulePath:      "example.com/m",
 		PackagePrefixes: []string{"internal"},
@@ -135,7 +149,7 @@ func TestGoListReaderFlatLayoutDepth2Succeeds(t *testing.T) {
 func TestGoListReaderTieredLayoutDepth3Succeeds(t *testing.T) {
 	dir := writeTieredModule(t)
 
-	reader := GoListReader{
+	reader := Reader{
 		Dir:             dir,
 		ModulePath:      "example.com/m",
 		PackagePrefixes: []string{"internal"},
@@ -161,7 +175,7 @@ func TestGoListReaderTieredLayoutDepth3Succeeds(t *testing.T) {
 func TestGoListReaderVerboseLogsSkippedSources(t *testing.T) {
 	dir := writeFlatModule(t)
 
-	reader := GoListReader{
+	reader := Reader{
 		Dir:             dir,
 		ModulePath:      "example.com/m",
 		PackagePrefixes: []string{"internal"},

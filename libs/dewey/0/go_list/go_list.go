@@ -1,4 +1,7 @@
-package dagnabit
+// Package go_list reads a Go module's internal import graph by shelling
+// out to `go list` and returns it as a map of prefix to edge slice suitable
+// for topological_sort.Sort.
+package go_list
 
 import (
 	"bufio"
@@ -14,7 +17,7 @@ import (
 // TODO: refactor to use golang.org/x/tools/go/packages for direct
 // programmatic access to the import graph instead of shelling out.
 
-// GoListReader reads Go package dependencies by shelling out to `go list`.
+// Reader reads Go package dependencies by shelling out to `go list`.
 // ModulePath is the Go module path (e.g., "code.linenisgreat.com/dodder/go").
 // Dir is the working directory to run `go list` from.
 // PackagePrefixes are directory prefixes containing packages (e.g., ["lib", "internal"]).
@@ -28,7 +31,7 @@ import (
 // ComponentDepth components are logged to stderr. Independent of Verbose,
 // a prefix that matched sources in `go list` output but produced zero edges
 // (because every source was too short) returns an error.
-type GoListReader struct {
+type Reader struct {
 	ModulePath      string
 	Dir             string
 	PackagePrefixes []string
@@ -36,19 +39,19 @@ type GoListReader struct {
 	Verbose         bool
 }
 
-func (goListReader GoListReader) componentDepth() int {
-	if goListReader.ComponentDepth < 2 {
+func (reader Reader) componentDepth() int {
+	if reader.ComponentDepth < 2 {
 		return 3
 	}
 
-	return goListReader.ComponentDepth
+	return reader.ComponentDepth
 }
 
-func (goListReader GoListReader) ReadDependencies() (map[string][]topological_sort.Edge, error) {
+func (reader Reader) ReadDependencies() (map[string][]topological_sort.Edge, error) {
 	edgesByPrefix := make(map[string][]topological_sort.Edge)
 
-	for _, prefix := range goListReader.PackagePrefixes {
-		edges, err := goListReader.readPrefix(prefix)
+	for _, prefix := range reader.PackagePrefixes {
+		edges, err := reader.readPrefix(prefix)
 		if err != nil {
 			return nil, err
 		}
@@ -59,8 +62,8 @@ func (goListReader GoListReader) ReadDependencies() (map[string][]topological_so
 	return edgesByPrefix, nil
 }
 
-func (goListReader GoListReader) readPrefix(prefix string) ([]topological_sort.Edge, error) {
-	patterns, err := listPatternsForPrefix(goListReader.Dir, prefix)
+func (reader Reader) readPrefix(prefix string) ([]topological_sort.Edge, error) {
+	patterns, err := listPatternsForPrefix(reader.Dir, prefix)
 	if err != nil {
 		return nil, err
 	}
@@ -71,15 +74,15 @@ func (goListReader GoListReader) readPrefix(prefix string) ([]topological_sort.E
 	)
 
 	cmd := exec.Command("go", args...)
-	cmd.Dir = goListReader.Dir
+	cmd.Dir = reader.Dir
 
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("go list %s: %w", prefix, err)
 	}
 
-	depth := goListReader.componentDepth()
-	prefixFilter := goListReader.ModulePath + "/" + prefix + "/"
+	depth := reader.componentDepth()
+	prefixFilter := reader.ModulePath + "/" + prefix + "/"
 	seen := make(map[topological_sort.Edge]struct{})
 	var edges []topological_sort.Edge
 	matchedSources := 0
@@ -103,12 +106,12 @@ func (goListReader GoListReader) readPrefix(prefix string) ([]topological_sort.E
 
 		matchedSources++
 
-		sourceRel := strings.TrimPrefix(sourceFull, goListReader.ModulePath+"/")
+		sourceRel := strings.TrimPrefix(sourceFull, reader.ModulePath+"/")
 		source := trimToNComponents(sourceRel, depth)
 
 		if source == "" {
 			droppedSources++
-			if goListReader.Verbose {
+			if reader.Verbose {
 				fmt.Fprintf(
 					os.Stderr,
 					"dagnabit: skipping %s: only %d path components, need %d (try --depth=%d or --initial)\n",
@@ -130,7 +133,7 @@ func (goListReader GoListReader) readPrefix(prefix string) ([]topological_sort.E
 			}
 
 			target := trimToNComponents(
-				strings.TrimPrefix(imp, goListReader.ModulePath+"/"),
+				strings.TrimPrefix(imp, reader.ModulePath+"/"),
 				depth,
 			)
 
