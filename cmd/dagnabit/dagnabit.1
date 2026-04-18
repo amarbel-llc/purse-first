@@ -18,10 +18,19 @@ dagnabit \- reposition Go packages by dependency depth and generate export facad
 .RB [ \-module
 .IR path ]
 .RI [ packages... ]
+.PP
+.B dagnabit move
+.RB [ \-n ]
+.RB [ \-v ]
+.RB [ \-\-force ]
+.RB [ \-module
+.IR path ]
+.IR src
+.IR dst
 .SH DESCRIPTION
 .B dagnabit
-is a Go code organization tool with two subcommands: repositioning
-and export facade generation.
+is a Go code organization tool with three subcommands: repositioning,
+export facade generation, and package relocation.
 .PP
 Without a subcommand,
 .B dagnabit
@@ -55,6 +64,33 @@ Code generation uses
 Analyze and reposition packages based on dependency depth.
 Must be run from a directory containing
 .IR go.mod .
+.SS "move"
+Relocate a single Go package from
+.I src
+to
+.I dst
+(both relative to the module root). When the leaf directory name differs
+between
+.I src
+and
+.IR dst ,
+.B move
+performs type-aware rewrites of the package's
+.B package
+declaration and of qualified references (e.g.,
+.IB oldLeaf .X
+\(->
+.IB newLeaf .X )
+in every caller, using
+.B golang.org/x/tools/go/packages
+to discriminate package uses from local variables, aliased imports, and
+dot-imports.
+.PP
+A pre-move analysis aborts if
+.B packages.Load
+reports any type errors in the module. Pass
+.B \-\-force
+to proceed anyway.
 .SS "export"
 Generate
 .I pkgs/
@@ -107,6 +143,25 @@ Use depth 2 for repos where NATO levels are top-level directories.
 Go module path. Read from
 .I go.mod
 if empty.
+.SS "Move options"
+.TP
+.BR \-n ", " \-\-dry\-run
+Show what would be moved without moving. Prints counts of package-decl
+rewrites and qualified-reference rewrite sites.
+.TP
+.BR \-v ", " \-\-verbose
+Enable verbose output on stderr.
+.TP
+.B \-\-force
+Proceed even if
+.B packages.Load
+reports type errors. Rewrites may miss call sites in packages with type
+errors; use only when the errors are unrelated to the moved package.
+.TP
+.BI \-module " path"
+Go module path. Read from
+.I go.mod
+if empty.
 .SS "Export options"
 .TP
 .BR \-n ", " \-\-dry\-run
@@ -140,6 +195,31 @@ Reposition packages in a repo where NATO levels are top-level:
 .RS
 .nf
 dagnabit -n -v -depth 2 0 alfa bravo charlie
+.fi
+.RE
+.PP
+Relocate a package with a leaf rename (rewrites package decl, imports,
+and qualified references in callers):
+.PP
+.RS
+.nf
+dagnabit move internal/foo internal/bar
+.fi
+.RE
+.PP
+Relocate without renaming the leaf (same leaf, imports-only rewrite):
+.PP
+.RS
+.nf
+dagnabit move internal/alfa/foo internal/bravo/foo
+.fi
+.RE
+.PP
+Dry-run a move to preview what would change:
+.PP
+.RS
+.nf
+dagnabit move -n internal/foo internal/bar
 .fi
 .RE
 .PP

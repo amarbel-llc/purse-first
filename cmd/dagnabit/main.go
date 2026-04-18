@@ -18,6 +18,12 @@ func main() {
 		return
 	}
 
+	if len(os.Args) > 1 && os.Args[0] != "-" && os.Args[1] == "move" {
+		os.Args = append(os.Args[:1], os.Args[2:]...)
+		runMove()
+		return
+	}
+
 	runReposition()
 }
 
@@ -83,6 +89,67 @@ func runReposition() {
 	}
 
 	if err := r.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func runMove() {
+	moveFlags := flag.NewFlagSet("move", flag.ExitOnError)
+
+	var dryRun bool
+	var verbose bool
+	var modulePath string
+	var force bool
+
+	moveFlags.BoolVar(&dryRun, "n", false, "show what would be moved without moving")
+	moveFlags.BoolVar(&dryRun, "dry-run", false, "show what would be moved without moving")
+	moveFlags.BoolVar(&verbose, "v", false, "enable verbose output")
+	moveFlags.BoolVar(&verbose, "verbose", false, "enable verbose output")
+	moveFlags.StringVar(&modulePath, "module", "", "Go module path (read from go.mod if empty)")
+	moveFlags.BoolVar(&force, "force", false, "proceed even if packages.Load reports type errors")
+	moveFlags.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: dagnabit move [flags] <src> <dst>\n\n")
+		fmt.Fprintf(os.Stderr, "Positional arguments:\n")
+		fmt.Fprintf(os.Stderr, "  src   package path relative to module root (e.g. internal/foo)\n")
+		fmt.Fprintf(os.Stderr, "  dst   destination path relative to module root (e.g. internal/bar)\n\n")
+		fmt.Fprintf(os.Stderr, "Flags:\n")
+		moveFlags.PrintDefaults()
+	}
+
+	moveFlags.Parse(os.Args[1:])
+
+	args := moveFlags.Args()
+	if len(args) != 2 {
+		fmt.Fprintf(os.Stderr, "error: move requires exactly 2 positional arguments (src and dst)\n\n")
+		moveFlags.Usage()
+		os.Exit(1)
+	}
+
+	src := args[0]
+	dst := args[1]
+
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+
+	modulePath, err = resolveModulePath(dir, modulePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+
+	mover := &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
+
+	opts := dagnabit.MoveOptions{
+		DryRun:          dryRun,
+		Verbose:         verbose,
+		AllowTypeErrors: force,
+	}
+
+	if err := mover.MovePackageRename(src, dst, opts); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}

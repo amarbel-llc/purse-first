@@ -1,0 +1,332 @@
+package dagnabit
+
+import (
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+// initModuleRepo creates a git-initialized module at t.TempDir() with a local
+// go.work shadowing any outer workspace (nix-shell TMPDIR may be nested in a
+// worktree with its own go.work).
+func initModuleRepo(t *testing.T) string {
+	t.Helper()
+
+	dir := initTestRepo(t)
+
+	writeFile(t, dir, "go.mod", "module example.com/m\n\ngo 1.21\n")
+	writeFile(t, dir, "go.work", "go 1.21\n\nuse .\n")
+
+	return dir
+}
+
+// writeLeafRenameFixture populates dir with a module shaped like:
+//
+//	go.mod, go.work
+//	internal/foo/foo.go                  package foo; func X() int { return 1 }
+//	cmd/plain/main.go                    uses foo.X() unaliased
+//	cmd/shadowed/main.go                 local `foo := 99`, separate call foo.X()
+//	cmd/aliased/main.go                  import bar "...foo"; bar.X()
+//	cmd/dotted/main.go                   . "...foo"; X() bare
+func writeLeafRenameFixture(t *testing.T, dir string) {
+	t.Helper()
+
+	writeFile(
+		t,
+		dir,
+		"internal/foo/foo.go",
+		"package foo\n\nfunc X() int { return 1 }\n",
+	)
+
+	writeFile(
+		t,
+		dir,
+		"cmd/plain/main.go",
+		`package main
+
+import (
+	"fmt"
+
+	"example.com/m/internal/foo"
+)
+
+func main() {
+	fmt.Println(foo.X())
+}
+`,
+	)
+
+	writeFile(
+		t,
+		dir,
+		"cmd/shadowed/main.go",
+		`package main
+
+import (
+	"fmt"
+
+	"example.com/m/internal/foo"
+)
+
+func local() int {
+	foo := 99
+	return foo
+}
+
+func main() {
+	fmt.Println(local(), foo.X())
+}
+`,
+	)
+
+	writeFile(
+		t,
+		dir,
+		"cmd/aliased/main.go",
+		`package main
+
+import (
+	"fmt"
+
+	bar "example.com/m/internal/foo"
+)
+
+func main() {
+	fmt.Println(bar.X())
+}
+`,
+	)
+
+	writeFile(
+		t,
+		dir,
+		"cmd/dotted/main.go",
+		`package main
+
+import (
+	"fmt"
+
+	. "example.com/m/internal/foo"
+)
+
+func main() {
+	fmt.Println(X())
+}
+`,
+	)
+}
+
+func goBuildAll(t *testing.T, dir string) {
+	t.Helper()
+
+	cmd := exec.Command("go", "build", "./...")
+	cmd.Dir = dir
+
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("go build ./... failed in %s: %v\n%s", dir, err, out)
+	}
+}
+
+func TestMovePackageRenameFullLeafRenameAllScenarios(t *testing.T) {
+	dir := initModuleRepo(t)
+	writeLeafRenameFixture(t, dir)
+	commitAll(t, dir, "initial")
+
+	goBuildAll(t, dir) // sanity: baseline compiles
+
+	mover := &GitMover{Dir: dir, ModulePath: "example.com/m"}
+
+	err := mover.MovePackageRename(
+		"internal/foo",
+		"internal/bar",
+		MoveOptions{},
+	)
+	if err != nil {
+		t.Fatalf("MovePackageRename: %v", err)
+	}
+
+	// Package declaration rewritten.
+	fooContent := readFile(t, dir, "internal/bar/foo.go")
+	if !strings.Contains(fooContent, "package bar") {
+		t.Errorf("expected moved package to declare `package bar`, got:\n%s", fooContent)
+	}
+
+	if strings.Contains(fooContent, "package foo") {
+		t.Errorf("moved package should not contain `package foo`, got:\n%s", fooContent)
+	}
+
+	// Plain caller: import rewritten AND qualified ref rewritten.
+	plain := readFile(t, dir, "cmd/plain/main.go")
+	if !strings.Contains(plain, `"example.com/m/internal/bar"`) {
+		t.Errorf("plain caller: expected new import, got:\n%s", plain)
+	}
+
+	if !strings.Contains(plain, "bar.X()") {
+		t.Errorf("plain caller: expected bar.X() rewrite, got:\n%s", plain)
+	}
+
+	if strings.Contains(plain, "foo.X()") {
+		t.Errorf("plain caller: foo.X() should have been rewritten, got:\n%s", plain)
+	}
+
+	// Shadowed caller: package use rewritten but local var `foo` untouched.
+	shadowed := readFile(t, dir, "cmd/shadowed/main.go")
+	if !strings.Contains(shadowed, `"example.com/m/internal/bar"`) {
+		t.Errorf("shadowed: expected new import, got:\n%s", shadowed)
+	}
+
+	if !strings.Contains(shadowed, "bar.X()") {
+		t.Errorf("shadowed: expected bar.X() rewrite, got:\n%s", shadowed)
+	}
+
+	if !strings.Contains(shadowed, "foo := 99") {
+		t.Errorf("shadowed: local `foo := 99` must be preserved, got:\n%s", shadowed)
+	}
+
+	// Aliased caller: import path rewrites but identifier stays `bar`.
+	aliased := readFile(t, dir, "cmd/aliased/main.go")
+	if !strings.Contains(aliased, `bar "example.com/m/internal/bar"`) {
+		t.Errorf("aliased: expected bar alias preserved with new path, got:\n%s", aliased)
+	}
+
+	if !strings.Contains(aliased, "bar.X()") {
+		t.Errorf("aliased: bar.X() must be preserved, got:\n%s", aliased)
+	}
+
+	// Dotted caller: import path rewrites, no selector change.
+	dotted := readFile(t, dir, "cmd/dotted/main.go")
+	if !strings.Contains(dotted, `. "example.com/m/internal/bar"`) {
+		t.Errorf("dotted: expected dot import with new path, got:\n%s", dotted)
+	}
+
+	if !strings.Contains(dotted, "fmt.Println(X())") {
+		t.Errorf("dotted: bare X() should be preserved, got:\n%s", dotted)
+	}
+
+	// Compilation guarantee.
+	goBuildAll(t, dir)
+}
+
+func TestMovePackageRenameSameLeafDelegatesToMovePackage(t *testing.T) {
+	dir := initModuleRepo(t)
+
+	writeFile(
+		t,
+		dir,
+		"internal/alfa/foo/foo.go",
+		"package foo\n\nfunc X() int { return 1 }\n",
+	)
+	writeFile(
+		t,
+		dir,
+		"cmd/main.go",
+		`package main
+
+import (
+	"fmt"
+
+	"example.com/m/internal/alfa/foo"
+)
+
+func main() {
+	fmt.Println(foo.X())
+}
+`,
+	)
+
+	commitAll(t, dir, "initial")
+
+	mover := &GitMover{Dir: dir, ModulePath: "example.com/m"}
+
+	err := mover.MovePackageRename(
+		"internal/alfa/foo",
+		"internal/bravo/foo",
+		MoveOptions{},
+	)
+	if err != nil {
+		t.Fatalf("MovePackageRename: %v", err)
+	}
+
+	content := readFile(t, dir, "cmd/main.go")
+	if !strings.Contains(content, `"example.com/m/internal/bravo/foo"`) {
+		t.Errorf("expected rewritten import, got:\n%s", content)
+	}
+
+	if !strings.Contains(content, "foo.X()") {
+		t.Errorf("foo.X() should be preserved (same leaf), got:\n%s", content)
+	}
+
+	goBuildAll(t, dir)
+}
+
+func TestMovePackageRenameDryRunMakesNoChanges(t *testing.T) {
+	dir := initModuleRepo(t)
+	writeLeafRenameFixture(t, dir)
+	commitAll(t, dir, "initial")
+
+	mover := &GitMover{Dir: dir, ModulePath: "example.com/m"}
+
+	err := mover.MovePackageRename(
+		"internal/foo",
+		"internal/bar",
+		MoveOptions{DryRun: true},
+	)
+	if err != nil {
+		t.Fatalf("MovePackageRename dry-run: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(dir, "internal/bar")); !os.IsNotExist(err) {
+		t.Errorf("dry-run must not create internal/bar (err: %v)", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(dir, "internal/foo/foo.go")); err != nil {
+		t.Errorf("dry-run must preserve internal/foo/foo.go: %v", err)
+	}
+
+	plain := readFile(t, dir, "cmd/plain/main.go")
+	if !strings.Contains(plain, "foo.X()") {
+		t.Errorf("dry-run must preserve foo.X(), got:\n%s", plain)
+	}
+}
+
+func TestMovePackageRenameTypeErrorsAbortWithoutForce(t *testing.T) {
+	dir := initModuleRepo(t)
+
+	// Create a package with a deliberate type error that does not involve
+	// the moved package — analyzeLeafRename should still refuse.
+	writeFile(
+		t,
+		dir,
+		"internal/foo/foo.go",
+		"package foo\n\nfunc X() int { return 1 }\n",
+	)
+	writeFile(
+		t,
+		dir,
+		"cmd/broken/main.go",
+		"package main\n\nfunc main() { undefinedSymbol() }\n",
+	)
+	commitAll(t, dir, "initial")
+
+	mover := &GitMover{Dir: dir, ModulePath: "example.com/m"}
+
+	err := mover.MovePackageRename(
+		"internal/foo",
+		"internal/bar",
+		MoveOptions{},
+	)
+	if err == nil {
+		t.Fatal("expected error due to type errors in module, got nil")
+	}
+
+	if !strings.Contains(err.Error(), "--force") {
+		t.Errorf("expected error to hint at --force, got %q", err.Error())
+	}
+
+	// Still intact.
+	if _, err := os.Stat(filepath.Join(dir, "internal/foo/foo.go")); err != nil {
+		t.Errorf("foo.go should still exist after aborted move: %v", err)
+	}
+}
