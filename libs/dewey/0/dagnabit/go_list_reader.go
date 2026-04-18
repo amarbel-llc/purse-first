@@ -153,10 +153,10 @@ func (goListReader GoListReader) readPrefix(prefix string) ([]Edge, error) {
 
 	if matchedSources > 0 && droppedSources == matchedSources {
 		return nil, fmt.Errorf(
-			"no edges computed for prefix %q: all %d sources under %s/ had fewer than %d path components (try --depth=2 or --initial for flat layouts)",
+			"no edges computed for prefix %q: all %d sources under %s had fewer than %d path components (try --depth=2 or --initial for flat layouts)",
 			prefix,
 			droppedSources,
-			prefixFilter,
+			strings.TrimSuffix(prefixFilter, "/"),
 			depth,
 		)
 	}

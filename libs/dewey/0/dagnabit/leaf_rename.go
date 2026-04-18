@@ -60,7 +60,11 @@ func analyzeLeafRename(
 			packages.NeedTypesInfo |
 			packages.NeedDeps |
 			packages.NeedImports,
-		Env: os.Environ(),
+		// Include test variants so qualified refs in _test.go files
+		// (both internal `package foo` tests and external
+		// `package foo_test` tests) are found and rewritten.
+		Tests: true,
+		Env:   os.Environ(),
 	}
 
 	pkgs, err := packages.Load(cfg, "./...")
@@ -113,13 +117,27 @@ func analyzeLeafRename(
 		)
 	}
 
-	for _, f := range moved.CompiledGoFiles {
-		abs, err := filepath.Abs(f)
-		if err != nil {
-			return nil, fmt.Errorf("resolving %s: %w", f, err)
+	// Enumerate .go files directly under the source directory, including
+	// test files (which packages.Load's NeedCompiledGoFiles mode drops).
+	srcAbs, err := filepath.Abs(filepath.Join(dir, src))
+	if err != nil {
+		return nil, fmt.Errorf("resolving src dir: %w", err)
+	}
+
+	entries, err := os.ReadDir(srcAbs)
+	if err != nil {
+		return nil, fmt.Errorf("reading src dir %s: %w", srcAbs, err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
+			continue
 		}
 
-		plan.MovedPkgFiles = append(plan.MovedPkgFiles, abs)
+		plan.MovedPkgFiles = append(
+			plan.MovedPkgFiles,
+			filepath.Join(srcAbs, entry.Name()),
+		)
 	}
 
 	fset := moved.Fset

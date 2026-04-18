@@ -291,6 +291,100 @@ func TestMovePackageRenameDryRunMakesNoChanges(t *testing.T) {
 	}
 }
 
+func TestMovePackageRenameHandlesTestFiles(t *testing.T) {
+	dir := initModuleRepo(t)
+
+	writeFile(
+		t,
+		dir,
+		"internal/foo/foo.go",
+		"package foo\n\nfunc X() int { return 1 }\n",
+	)
+
+	// Internal test file (package foo): sees unexported symbols via the
+	// same package name.
+	writeFile(
+		t,
+		dir,
+		"internal/foo/internal_test.go",
+		`package foo
+
+import "testing"
+
+func TestInternal(t *testing.T) {
+	if X() != 1 {
+		t.Fatal("bad")
+	}
+}
+`,
+	)
+
+	// External test file (package foo_test): imports the package and uses
+	// qualified refs.
+	writeFile(
+		t,
+		dir,
+		"internal/foo/external_test.go",
+		`package foo_test
+
+import (
+	"testing"
+
+	"example.com/m/internal/foo"
+)
+
+func TestExternal(t *testing.T) {
+	if foo.X() != 1 {
+		t.Fatal("bad")
+	}
+}
+`,
+	)
+
+	commitAll(t, dir, "initial")
+
+	mover := &GitMover{Dir: dir, ModulePath: "example.com/m"}
+
+	err := mover.MovePackageRename(
+		"internal/foo",
+		"internal/bar",
+		MoveOptions{},
+	)
+	if err != nil {
+		t.Fatalf("MovePackageRename: %v", err)
+	}
+
+	internalTest := readFile(t, dir, "internal/bar/internal_test.go")
+	if !strings.Contains(internalTest, "package bar") {
+		t.Errorf("internal test: expected `package bar`, got:\n%s", internalTest)
+	}
+
+	if strings.Contains(internalTest, "package foo") {
+		t.Errorf("internal test: `package foo` should be rewritten, got:\n%s", internalTest)
+	}
+
+	externalTest := readFile(t, dir, "internal/bar/external_test.go")
+	if !strings.Contains(externalTest, "package bar_test") {
+		t.Errorf("external test: expected `package bar_test`, got:\n%s", externalTest)
+	}
+
+	if !strings.Contains(externalTest, `"example.com/m/internal/bar"`) {
+		t.Errorf("external test: expected new import, got:\n%s", externalTest)
+	}
+
+	if !strings.Contains(externalTest, "bar.X()") {
+		t.Errorf("external test: qualified ref should be rewritten, got:\n%s", externalTest)
+	}
+
+	// Compilation guarantee (go test compiles the test binary).
+	cmd := exec.Command("go", "test", "-run", "^$", "./...")
+	cmd.Dir = dir
+
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("go test -run ^$ ./... failed: %v\n%s", err, out)
+	}
+}
+
 func TestMovePackageRenameTypeErrorsAbortWithoutForce(t *testing.T) {
 	dir := initModuleRepo(t)
 

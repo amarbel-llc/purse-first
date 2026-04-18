@@ -67,9 +67,9 @@ func (m *GitMover) MovePackageRename(src, dst string, opts MoveOptions) error {
 
 		fmt.Fprintf(
 			os.Stderr,
-			"dagnabit: leaf rename %s -> %s: %d pkg files, %d qualified-ref sites in %d callers\n",
+			"dagnabit: leaf rename %s -> %s: %d qualified-ref sites in %d callers\n",
 			oldLeaf, newLeaf,
-			len(plan.MovedPkgFiles), nSites, len(plan.CallerSites),
+			nSites, len(plan.CallerSites),
 		)
 	}
 
@@ -77,14 +77,14 @@ func (m *GitMover) MovePackageRename(src, dst string, opts MoveOptions) error {
 		return err
 	}
 
-	movedFiles := make(map[string]bool, len(plan.MovedPkgFiles))
-	for _, oldAbs := range plan.MovedPkgFiles {
-		movedFiles[remapMovedPath(oldAbs, m.Dir, src, dst)] = true
-	}
-
 	callerSites := make(map[string][]leafRewriteSite, len(plan.CallerSites))
 	for oldAbs, ss := range plan.CallerSites {
 		callerSites[remapMovedPath(oldAbs, m.Dir, src, dst)] = ss
+	}
+
+	dstAbs, err := filepath.Abs(filepath.Join(m.Dir, dst))
+	if err != nil {
+		return fmt.Errorf("resolving dst: %w", err)
 	}
 
 	err = filepath.Walk(m.Dir, func(path string, info os.FileInfo, werr error) error {
@@ -110,7 +110,14 @@ func (m *GitMover) MovePackageRename(src, dst string, opts MoveOptions) error {
 			return err
 		}
 
-		return rewriteFileForLeafRename(path, plan, callerSites[abs], movedFiles[abs])
+		// A file belongs to the moved package when its parent directory
+		// is exactly the destination directory. Subpackage files (in
+		// dstDir/sub/...) have their own package declaration and are not
+		// rewritten. Using the filesystem check instead of packages.Load
+		// naturally includes _test.go files that NeedCompiledGoFiles drops.
+		isMovedPkgFile := filepath.Dir(abs) == dstAbs
+
+		return rewriteFileForLeafRename(path, plan, callerSites[abs], isMovedPkgFile)
 	})
 	if err != nil {
 		return fmt.Errorf("rewriting files: %w", err)
@@ -176,9 +183,37 @@ func rewriteFileForLeafRename(
 		}
 	}
 
-	if isMovedPkgFile && f.Name != nil && f.Name.Name == plan.OldLeaf {
-		f.Name.Name = plan.NewLeaf
-		changed = true
+	if isMovedPkgFile && f.Name != nil {
+		switch f.Name.Name {
+		case plan.OldLeaf:
+			f.Name.Name = plan.NewLeaf
+			changed = true
+		case plan.OldLeaf + "_test":
+			// External test package (package foo_test) — rename to match.
+			f.Name.Name = plan.NewLeaf + "_test"
+			changed = true
+		}
+
+		// Rewrite the godoc-style doc comment attached to the package
+		// declaration: "// Package oldLeaf ..." -> "// Package newLeaf ...".
+		if f.Doc != nil {
+			oldMarker := "// Package " + plan.OldLeaf
+			newMarker := "// Package " + plan.NewLeaf
+
+			for _, c := range f.Doc.List {
+				if c.Text == oldMarker {
+					c.Text = newMarker
+					changed = true
+
+					continue
+				}
+
+				if strings.HasPrefix(c.Text, oldMarker+" ") {
+					c.Text = newMarker + strings.TrimPrefix(c.Text, oldMarker)
+					changed = true
+				}
+			}
+		}
 	}
 
 	if len(sites) > 0 {
