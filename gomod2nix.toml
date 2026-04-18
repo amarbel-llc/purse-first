@@ -515,6 +515,7 @@ schema = 3
     hash = 'sha256-aDQXqSTZES2l/132PBxhZN4ywldpPyfm7LByYCHzzwM='
     goVersion = '1.25.0'
     vendorPackages = [
+      'golang.org/x/sys/cpu',
       'golang.org/x/sys/unix'
     ]
 

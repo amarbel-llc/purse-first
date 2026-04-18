@@ -1,14 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/amarbel-llc/purse-first/libs/dewey/0/dagnabit"
+	go_module "github.com/amarbel-llc/purse-first/libs/dewey/0/go_module"
 )
 
 func main() {
@@ -67,7 +65,7 @@ func runReposition() {
 		os.Exit(1)
 	}
 
-	modulePath, err = resolveModulePath(dir, modulePath)
+	modulePath, err = go_module.ResolveModulePath(dir, modulePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
@@ -147,7 +145,7 @@ func runMove() {
 		os.Exit(1)
 	}
 
-	modulePath, err = resolveModulePath(dir, modulePath)
+	modulePath, err = go_module.ResolveModulePath(dir, modulePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
@@ -186,7 +184,7 @@ func runExport() {
 		os.Exit(1)
 	}
 
-	modulePath, err = resolveModulePath(dir, modulePath)
+	modulePath, err = go_module.ResolveModulePath(dir, modulePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
@@ -216,33 +214,3 @@ func runExport() {
 	}
 }
 
-func resolveModulePath(dir, modulePath string) (string, error) {
-	if modulePath != "" {
-		return modulePath, nil
-	}
-
-	goModPath := filepath.Join(dir, "go.mod")
-	if _, err := os.Stat(goModPath); os.IsNotExist(err) {
-		return "", fmt.Errorf("must be run from a directory containing go.mod")
-	}
-
-	return readModulePath(goModPath)
-}
-
-func readModulePath(goModPath string) (string, error) {
-	f, err := os.Open(goModPath)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if strings.HasPrefix(line, "module ") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "module ")), nil
-		}
-	}
-
-	return "", fmt.Errorf("no module directive found in %s", goModPath)
-}
