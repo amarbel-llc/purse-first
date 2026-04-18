@@ -66,6 +66,7 @@ func runReposition() {
 		ModulePath:      modulePath,
 		PackagePrefixes: prefixes,
 		ComponentDepth:  depth,
+		Verbose:         verbose,
 	}
 
 	mapper := dagnabit.MakeNATOLevelMapper()

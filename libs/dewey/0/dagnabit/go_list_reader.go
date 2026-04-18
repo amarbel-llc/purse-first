@@ -21,11 +21,17 @@ import (
 // ComponentDepth controls how many path components identify a package node:
 //   - 3 (default): prefix/level/package (e.g., "lib/alfa/errors")
 //   - 2: level/package (e.g., "alfa/errors") — for repos where NATO levels are top-level dirs
+//
+// When Verbose is true, sources dropped because their path has fewer than
+// ComponentDepth components are logged to stderr. Independent of Verbose,
+// a prefix that matched sources in `go list` output but produced zero edges
+// (because every source was too short) returns an error.
 type GoListReader struct {
 	ModulePath      string
 	Dir             string
 	PackagePrefixes []string
 	ComponentDepth  int
+	Verbose         bool
 }
 
 func (goListReader GoListReader) componentDepth() int {
@@ -70,9 +76,12 @@ func (goListReader GoListReader) readPrefix(prefix string) ([]Edge, error) {
 		return nil, fmt.Errorf("go list %s: %w", prefix, err)
 	}
 
+	depth := goListReader.componentDepth()
 	prefixFilter := goListReader.ModulePath + "/" + prefix + "/"
 	seen := make(map[Edge]struct{})
 	var edges []Edge
+	matchedSources := 0
+	droppedSources := 0
 
 	scanner := bufio.NewScanner(strings.NewReader(string(out)))
 
@@ -90,12 +99,24 @@ func (goListReader GoListReader) readPrefix(prefix string) ([]Edge, error) {
 			continue
 		}
 
-		source := trimToNComponents(
-			strings.TrimPrefix(sourceFull, goListReader.ModulePath+"/"),
-			goListReader.componentDepth(),
-		)
+		matchedSources++
+
+		sourceRel := strings.TrimPrefix(sourceFull, goListReader.ModulePath+"/")
+		source := trimToNComponents(sourceRel, depth)
 
 		if source == "" {
+			droppedSources++
+			if goListReader.Verbose {
+				fmt.Fprintf(
+					os.Stderr,
+					"dagnabit: skipping %s: only %d path components, need %d (try --depth=%d or --initial)\n",
+					sourceFull,
+					countComponents(sourceRel),
+					depth,
+					countComponents(sourceRel),
+				)
+			}
+
 			continue
 		}
 
@@ -108,7 +129,7 @@ func (goListReader GoListReader) readPrefix(prefix string) ([]Edge, error) {
 
 			target := trimToNComponents(
 				strings.TrimPrefix(imp, goListReader.ModulePath+"/"),
-				goListReader.componentDepth(),
+				depth,
 			)
 
 			if target == "" || target == source {
@@ -126,7 +147,31 @@ func (goListReader GoListReader) readPrefix(prefix string) ([]Edge, error) {
 		}
 	}
 
-	return edges, scanner.Err()
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	if matchedSources > 0 && droppedSources == matchedSources {
+		return nil, fmt.Errorf(
+			"no edges computed for prefix %q: all %d sources under %s/ had fewer than %d path components (try --depth=2 or --initial for flat layouts)",
+			prefix,
+			droppedSources,
+			prefixFilter,
+			depth,
+		)
+	}
+
+	return edges, nil
+}
+
+// countComponents returns the number of slash-separated components in path.
+// Empty string returns 0.
+func countComponents(path string) int {
+	if path == "" {
+		return 0
+	}
+
+	return strings.Count(path, "/") + 1
 }
 
 // listPatternsForPrefix returns go list patterns that cover all packages
