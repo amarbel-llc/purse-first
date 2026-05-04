@@ -25,11 +25,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1777893072,
-        "narHash": "sha256-362u3RpjHA1+lWH3S9IlE57YiiRxiE4/gKg34reuJH0=",
+        "lastModified": 1777898462,
+        "narHash": "sha256-YTul3DPH/GR1uAjY0r8yjNrbIp8k2GAc5SEB/1b6hGA=",
         "owner": "amarbel-llc",
         "repo": "gomod2nix",
-        "rev": "419f136ef1cb4992d9bde138d78cf5bd68a62a55",
+        "rev": "b270f94e47f303b98078362187d1504e32ee2917",
         "type": "github"
       },
       "original": {

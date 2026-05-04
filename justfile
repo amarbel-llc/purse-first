@@ -72,18 +72,9 @@ lint:
 
 # Sync go.work and regenerate gomod2nix.toml from go.mod / go.sum / go.work.
 # Run this whenever go dependencies change. Cheap and idempotent.
-#
-# Targets are passed explicitly to sidestep amarbel-llc/gomod2nix's
-# flake auto-discovery, which panics in CI on `nix flake show --json`
-# output with a non-object top-level entry. Tracked as upstream issue.
-# Keep this list aligned with the matrix systems built by CI.
 build-nix-gomod2nix:
     {{cmd_nix_dev}} go work sync
-    {{cmd_nix_dev}} gomod2nix \
-        --target linux/amd64 \
-        --target linux/arm64 \
-        --target darwin/amd64 \
-        --target darwin/arm64
+    {{cmd_nix_dev}} gomod2nix
 
 # Update go dependencies, tidy all modules, and refresh gomod2nix.toml
 deps: build-nix-gomod2nix
