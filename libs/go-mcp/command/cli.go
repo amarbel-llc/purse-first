@@ -155,6 +155,28 @@ func printResult(r *Result) {
 	if r == nil {
 		return
 	}
+	if len(r.Content) > 0 {
+		for _, block := range r.Content {
+			switch block.Type {
+			case "text":
+				if block.Text != "" {
+					fmt.Println(block.Text)
+				}
+			case "resource_link":
+				fmt.Println(block.URI)
+			case "resource":
+				if block.Resource == nil {
+					continue
+				}
+				if block.Resource.Text != "" {
+					fmt.Println(block.Resource.Text)
+				} else {
+					fmt.Println(block.Resource.URI)
+				}
+			}
+		}
+		return
+	}
 	if r.JSON != nil {
 		data, _ := json.MarshalIndent(r.JSON, "", "  ")
 		fmt.Println(string(data))

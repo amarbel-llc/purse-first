@@ -63,6 +63,12 @@ func (a *App) RegisterMCPToolsV1(registry *server.ToolRegistryV1) {
 }
 
 func resultToMCPV1(r *Result) *protocol.ToolCallResultV1 {
+	if len(r.Content) > 0 {
+		return &protocol.ToolCallResultV1{
+			Content: r.Content,
+			IsError: r.IsErr,
+		}
+	}
 	var text string
 	if r.JSON != nil {
 		data, _ := json.Marshal(r.JSON)

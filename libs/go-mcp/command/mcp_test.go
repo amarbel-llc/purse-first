@@ -214,6 +214,97 @@ func TestAppMCPToolCall(t *testing.T) {
 	}
 }
 
+func TestRegisterMCPToolsV1ResourceLink(t *testing.T) {
+	app := NewApp("test", "test")
+
+	app.AddCommand(&Command{
+		Name: "merge",
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			return MultiContentResult(
+				protocol.TextContentV1("ok 1 - merged\n  ---\n  output: spinclass://merge-output/abc123\n  ...\n"),
+				protocol.ResourceLinkContent(
+					"spinclass://merge-output/abc123",
+					"merge log",
+					"TAP output from the merge run",
+					"text/plain",
+				),
+			), nil
+		},
+	})
+
+	registry := server.NewToolRegistryV1()
+	app.RegisterMCPToolsV1(registry)
+
+	v1result, err := registry.CallToolV1(
+		context.Background(),
+		"merge",
+		json.RawMessage(`{}`),
+	)
+	if err != nil {
+		t.Fatalf("CallToolV1: %v", err)
+	}
+
+	if len(v1result.Content) != 2 {
+		t.Fatalf("Content len = %d, want 2", len(v1result.Content))
+	}
+	if v1result.Content[0].Type != "text" {
+		t.Errorf("Content[0].Type = %q, want %q", v1result.Content[0].Type, "text")
+	}
+	link := v1result.Content[1]
+	if link.Type != "resource_link" {
+		t.Errorf("Content[1].Type = %q, want %q", link.Type, "resource_link")
+	}
+	if link.URI != "spinclass://merge-output/abc123" {
+		t.Errorf("Content[1].URI = %q", link.URI)
+	}
+	if link.Name != "merge log" {
+		t.Errorf("Content[1].Name = %q", link.Name)
+	}
+	if link.MimeType != "text/plain" {
+		t.Errorf("Content[1].MimeType = %q", link.MimeType)
+	}
+	if v1result.IsError {
+		t.Error("unexpected IsError=true")
+	}
+}
+
+func TestRegisterMCPToolsV1ResourceLinkHelper(t *testing.T) {
+	app := NewApp("test", "test")
+
+	app.AddCommand(&Command{
+		Name: "open",
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			return ResourceLinkResult(
+				"file:///tmp/x.log",
+				"x.log",
+				"raw log",
+			), nil
+		},
+	})
+
+	registry := server.NewToolRegistryV1()
+	app.RegisterMCPToolsV1(registry)
+
+	v1result, err := registry.CallToolV1(
+		context.Background(),
+		"open",
+		json.RawMessage(`{}`),
+	)
+	if err != nil {
+		t.Fatalf("CallToolV1: %v", err)
+	}
+
+	if len(v1result.Content) != 1 {
+		t.Fatalf("Content len = %d, want 1", len(v1result.Content))
+	}
+	if v1result.Content[0].Type != "resource_link" {
+		t.Errorf("Type = %q, want %q", v1result.Content[0].Type, "resource_link")
+	}
+	if v1result.Content[0].URI != "file:///tmp/x.log" {
+		t.Errorf("URI = %q", v1result.Content[0].URI)
+	}
+}
+
 func TestRegisterMCPToolsV1Annotations(t *testing.T) {
 	app := NewApp("test", "test")
 
