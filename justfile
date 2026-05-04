@@ -72,9 +72,21 @@ lint:
 
 # Sync go.work and regenerate gomod2nix.toml from go.mod / go.sum / go.work.
 # Run this whenever go dependencies change. Cheap and idempotent.
+#
+# Targets are passed explicitly because gomod2nix's flake auto-discovery
+# silently fails to find any targets under CI's nix (Determinate v3.19),
+# causing it to fall through to host-only generation — the original
+# #69 symptom. amarbel-llc/gomod2nix#8 silenced an earlier panic but
+# did not actually make discovery work in that environment. Tracking
+# the underlying issue separately; keep this list aligned with the
+# matrix systems built by CI.
 build-nix-gomod2nix:
     {{cmd_nix_dev}} go work sync
-    {{cmd_nix_dev}} gomod2nix
+    {{cmd_nix_dev}} gomod2nix \
+        --target linux/amd64 \
+        --target linux/arm64 \
+        --target darwin/amd64 \
+        --target darwin/arm64
 
 # Update go dependencies, tidy all modules, and refresh gomod2nix.toml
 deps: build-nix-gomod2nix

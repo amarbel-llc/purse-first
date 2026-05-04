@@ -60,6 +60,22 @@ jobs:
         with:
           determinate: true
       - uses: DeterminateSystems/flakehub-cache-action@main
+      - name: Diagnostic dump for gomod2nix flake auto-discovery (refs gomod2nix#8)
+        # Captures `nix flake show --json --all-systems` output and the result
+        # of plain (no --target) `gomod2nix` to upstream-bug-grade fidelity. Runs
+        # before validation so the dump is in logs even when validation passes.
+        # Remove once gomod2nix auto-discovery is confirmed working under CI's nix.
+        continue-on-error: true
+        run: |
+          set -x
+          nix --version
+          nix flake show --json --all-systems > /tmp/flake-show.json 2> /tmp/flake-show.stderr || true
+          echo '--- flake-show.stderr ---'
+          cat /tmp/flake-show.stderr
+          echo '--- flake-show.json (pretty) ---'
+          nix develop --command jq . /tmp/flake-show.json || cat /tmp/flake-show.json
+          echo '--- gomod2nix (no --target) trial run ---'
+          nix develop --command bash -c 'cp gomod2nix.toml /tmp/gomod2nix.before; gomod2nix 2>&1 || true; diff -u /tmp/gomod2nix.before gomod2nix.toml | head -40 || true; cp /tmp/gomod2nix.before gomod2nix.toml'
       - name: Validate gomod2nix.toml is in sync with go.mod / go.sum / go.work
         run: |
           nix develop --command just build-nix-gomod2nix
