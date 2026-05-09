@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/amarbel-llc/purse-first/libs/dewey/0/interfaces"
@@ -160,16 +161,21 @@ func ParseCeilingDirectories(raw string) []string {
 	return ceilings
 }
 
-func IsAtOrAboveCeiling(dir string, ceilings []string) bool {
+func IsAboveCeiling(dir string, ceilings []string) bool {
 	cleaned := filepath.Clean(dir)
 
 	for _, ceiling := range ceilings {
-		if cleaned == ceiling || isParentOf(cleaned, ceiling) {
+		if isParentOf(cleaned, ceiling) {
 			return true
 		}
 	}
 
 	return false
+}
+
+func IsAtOrAboveCeiling(dir string, ceilings []string) bool {
+	return slices.Contains(ceilings, filepath.Clean(dir)) ||
+		IsAboveCeiling(dir, ceilings)
 }
 
 func isParentOf(parent, child string) bool {
@@ -203,16 +209,18 @@ func (initArgs InitArgs) getCwdXDGOverridePath() (string, bool) {
 			break
 		}
 
-		count++
-
 		parent := filepath.Dir(dir)
-
-		if IsAtOrAboveCeiling(parent, ceilings) {
+		if parent == dir {
 			break
 		}
 
 		dir = parent
 
+		if IsAboveCeiling(dir, ceilings) {
+			break
+		}
+
+		count++
 		if count > 100 {
 			panic("too deep")
 		}
