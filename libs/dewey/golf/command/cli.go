@@ -138,6 +138,11 @@ func (u *Utility) RunCLI(ctx context.Context, args []string, p Prompter) error {
 				if _, set := cmdVals[param.paramName()]; set {
 					continue
 				}
+				if param.isVariadic() {
+					cmdVals[param.paramName()] = positional[pi:]
+					pi = len(positional)
+					break
+				}
 				cmdVals[param.paramName()] = positional[pi]
 				pi++
 			}

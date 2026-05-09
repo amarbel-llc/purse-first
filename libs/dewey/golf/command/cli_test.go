@@ -1158,6 +1158,72 @@ func TestRunCLIVariadicArgWithFlags(t *testing.T) {
 	}
 }
 
+func TestRunCLIVariadicArgSerializesAsArray(t *testing.T) {
+	var got struct {
+		StoreIDs []string `json:"store-ids"`
+	}
+	var unmarshalErr error
+
+	app := NewUtility("test", "test app")
+	app.AddCommand(&Command{
+		Name: "sync",
+		Params: []Param{
+			StringArg{Name: "store-ids", Description: "Store IDs", Variadic: true},
+		},
+		RunCLI: func(ctx context.Context, args json.RawMessage) error {
+			unmarshalErr = json.Unmarshal(args, &got)
+			return nil
+		},
+	})
+
+	err := app.RunCLI(t.Context(), []string{"sync", ".default", ".sha256", ".backup"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if unmarshalErr != nil {
+		t.Fatalf("variadic args should serialize as []string, json.Unmarshal: %v", unmarshalErr)
+	}
+	want := []string{".default", ".sha256", ".backup"}
+	if len(got.StoreIDs) != len(want) {
+		t.Fatalf("store-ids = %v, want %v", got.StoreIDs, want)
+	}
+	for i, w := range want {
+		if got.StoreIDs[i] != w {
+			t.Errorf("store-ids[%d] = %q, want %q", i, got.StoreIDs[i], w)
+		}
+	}
+}
+
+func TestRunCLIVariadicArgEmptySerializesAsEmptyArray(t *testing.T) {
+	var got struct {
+		Items []string `json:"items"`
+	}
+	var unmarshalErr error
+
+	app := NewUtility("test", "test app")
+	app.AddCommand(&Command{
+		Name: "list",
+		Params: []Param{
+			StringArg{Name: "items", Description: "Items", Variadic: true},
+		},
+		RunCLI: func(ctx context.Context, args json.RawMessage) error {
+			unmarshalErr = json.Unmarshal(args, &got)
+			return nil
+		},
+	})
+
+	err := app.RunCLI(t.Context(), []string{"list"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if unmarshalErr != nil {
+		t.Fatalf("absent variadic should still unmarshal, got: %v", unmarshalErr)
+	}
+	if len(got.Items) != 0 {
+		t.Errorf("items = %v, want []", got.Items)
+	}
+}
+
 func TestShortFlagNotInJSONSchema(t *testing.T) {
 	cmd := &Command{
 		Name: "status",
