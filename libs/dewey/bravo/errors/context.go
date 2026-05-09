@@ -236,8 +236,8 @@ func ContextCloseAfter(ctx interfaces.ActiveContext, closer io.Closer) {
 }
 
 //go:noinline
-func ContextFlushAfter(ctx interfaces.ActiveContext, closer io.Closer) {
-	ctx.After(MakeFuncContextFromFuncErr(closer.Close))
+func ContextFlushAfter(ctx interfaces.ActiveContext, flusher Flusher) {
+	ctx.After(MakeFuncContextFromFuncErr(flusher.Flush))
 }
 
 // `Must` executes a function even if the context has been cancelled. If the
