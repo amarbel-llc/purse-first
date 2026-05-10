@@ -125,6 +125,12 @@ func (u *Utility) GetCommand(name string) (*Command, bool) {
 	return cmd, ok
 }
 
+// LenCmds returns the number of unique commands registered. Aliases share
+// a *Command and are counted once.
+func (u *Utility) LenCmds() int {
+	return len(u.canonicalNames)
+}
+
 // AllCommands iterates over all registered commands (including hidden).
 // Each unique command is yielded once even if it has aliases.
 func (u *Utility) AllCommands() func(yield func(string, *Command) bool) {

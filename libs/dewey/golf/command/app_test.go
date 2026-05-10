@@ -93,6 +93,59 @@ func TestAppAllCommands(t *testing.T) {
 	}
 }
 
+func TestAppLenCmdsMatchesAllCommandsCount(t *testing.T) {
+	app := NewUtility("test", "test")
+	app.AddCommand(&Command{Name: "a"})
+	app.AddCommand(&Command{Name: "b"})
+	app.AddCommand(&Command{Name: "c", Hidden: true})
+
+	count := 0
+	for range app.AllCommands() {
+		count++
+	}
+
+	if got := app.LenCmds(); got != count {
+		t.Errorf("LenCmds = %d, want %d (matching AllCommands iteration)", got, count)
+	}
+}
+
+func TestAppLenCmdsCountsAliasesOnce(t *testing.T) {
+	app := NewUtility("test", "test")
+	before := app.LenCmds()
+
+	app.AddCommand(&Command{
+		Name:    "checkin",
+		Aliases: []string{"add", "save"},
+	})
+
+	if got := app.LenCmds(); got != before+1 {
+		t.Errorf("LenCmds after AddCommand with 2 aliases = %d, want %d", got, before+1)
+	}
+}
+
+func TestAppLenCmdsAfterMergeWithPrefix(t *testing.T) {
+	parent := NewUtility("dodder", "main")
+	child := NewUtility("madder", "blob store")
+
+	child.AddCommand(&Command{Name: "cat"})
+	child.AddCommand(&Command{Name: "ls"})
+
+	before := parent.LenCmds()
+	parent.MergeWithPrefix(child, "blob_store")
+
+	count := 0
+	for range parent.AllCommands() {
+		count++
+	}
+
+	if got := parent.LenCmds(); got != count {
+		t.Errorf("LenCmds after MergeWithPrefix = %d, want %d (AllCommands count)", got, count)
+	}
+	if got := parent.LenCmds(); got <= before {
+		t.Errorf("LenCmds after MergeWithPrefix = %d, want > %d", got, before)
+	}
+}
+
 func TestAppAllCommandsYieldsCanonicalName(t *testing.T) {
 	app := NewUtility("test", "test")
 	app.AddCommand(&Command{
