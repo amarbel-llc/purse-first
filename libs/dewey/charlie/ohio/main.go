@@ -106,3 +106,34 @@ func (p pipedDecoderFrom) Close() (n int64, err error) {
 
 	return n, err
 }
+
+// PipedWriter is the symmetric mirror of PipedReader. Producers write to
+// the pipe via Write; consumers drain it once via WriteTo(out). Close on
+// the producer side signals EOF to a blocked WriteTo, which then returns.
+//
+// Unlike PipedReader, PipedWriter does not own a consuming goroutine —
+// the WriteTo call is the consumer. WriteTo must therefore be called for
+// the pipe to drain. If no consumer ever calls WriteTo, every Write will
+// block: io.Pipe is synchronous and has no internal buffer.
+type PipedWriter interface {
+	io.WriterTo
+	io.WriteCloser
+}
+
+type pipedWriterTo struct {
+	*io.PipeWriter
+	pr *io.PipeReader
+}
+
+func MakePipedWriterTo() PipedWriter {
+	pr, pw := io.Pipe()
+	return pipedWriterTo{PipeWriter: pw, pr: pr}
+}
+
+func (p pipedWriterTo) WriteTo(out io.Writer) (int64, error) {
+	n, err := io.Copy(out, p.pr)
+	if err != nil {
+		p.pr.CloseWithError(err)
+	}
+	return n, err
+}
