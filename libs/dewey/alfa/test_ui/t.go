@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -234,6 +235,88 @@ func (test *T) AssertError(err error) {
 	if err == nil {
 		test.fatalf(1, "expected an error but got none")
 	}
+}
+
+//go:noinline
+func (test *T) AssertErrorContains(expected string, err error) {
+	test.Helper()
+
+	if err == nil {
+		test.fatalf(1, "expected error containing %q but got none", expected)
+		return
+	}
+
+	if !strings.Contains(err.Error(), expected) {
+		test.fatalf(1, "expected error containing %q but got: %v", expected, err)
+	}
+}
+
+//go:noinline
+func (test *T) AssertLen(expected int, value any, msg string) {
+	test.Helper()
+
+	actual, ok := reflectLen(value)
+	if !ok {
+		test.fatalf(1, "AssertLen on unsupported type %T (%s)", value, msg)
+		return
+	}
+
+	if actual != expected {
+		test.fatalf(1, "expected len %d but got %d (%s)", expected, actual, msg)
+	}
+}
+
+//go:noinline
+func (test *T) AssertNil(value any, msg string) {
+	test.Helper()
+
+	if !isNil(value) {
+		test.fatalf(1, "expected nil but got %v (%s)", value, msg)
+	}
+}
+
+//go:noinline
+func (test *T) AssertNotNil(value any, msg string) {
+	test.Helper()
+
+	if isNil(value) {
+		test.fatalf(1, "expected non-nil (%s)", msg)
+	}
+}
+
+// reflectLen returns the length of value when it has a meaningful one
+// (slices, arrays, maps, channels, strings) or when it implements
+// `Len() int`. The second return is false for unsupported types so the
+// caller can fail with a clear diagnostic rather than panic.
+func reflectLen(value any) (int, bool) {
+	if l, ok := value.(interface{ Len() int }); ok {
+		return l.Len(), true
+	}
+
+	rv := reflect.ValueOf(value)
+	switch rv.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
+		return rv.Len(), true
+	}
+
+	return 0, false
+}
+
+// isNil reports whether value is nil at either the interface or the
+// underlying-type level. `(*T)(nil)` stored in an `any` is non-nil at
+// the interface level but logically nil — reflect handles that.
+func isNil(value any) bool {
+	if value == nil {
+		return true
+	}
+
+	rv := reflect.ValueOf(value)
+	switch rv.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return rv.IsNil()
+	}
+
+	return false
 }
 
 //go:noinline
