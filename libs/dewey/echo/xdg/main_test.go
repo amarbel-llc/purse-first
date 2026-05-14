@@ -116,6 +116,61 @@ func TestGetCwdXDGOverridePathWithoutCeilingWalksUp(t *testing.T) {
 	}
 }
 
+// Regression for #80: when the walked `dir` and the ceiling reach the same
+// canonical directory through different symlink chains, IsAboveCeiling must
+// match git's GIT_CEILING_DIRECTORIES contract and resolve symlinks on both
+// sides before comparing.
+//
+// IsAboveCeiling answers "is dir strictly an ancestor of any ceiling entry"
+// — i.e. the walk has gone past the ceiling and should stop. The bug shape
+// from the issue is that dir and ceiling share a canonical prefix but are
+// expressed through different symlink chains, so the lexical comparison
+// misses the relationship entirely.
+func TestIsAboveCeilingResolvesSymlinks(t *testing.T) {
+	tmp := t.TempDir()
+
+	realCeiling := filepath.Join(tmp, "real-ceiling")
+	mustMkdirAll(t, filepath.Join(realCeiling, "leaf"))
+
+	linkToCeiling := filepath.Join(tmp, "link-ceiling")
+	if err := os.Symlink(realCeiling, linkToCeiling); err != nil {
+		t.Fatalf("symlink %s -> %s: %v", linkToCeiling, realCeiling, err)
+	}
+
+	// dir == ceiling via different symlink chains.
+	if !IsAtOrAboveCeiling(realCeiling, []string{linkToCeiling}) {
+		t.Fatalf(
+			"expected %s to be at-or-above ceiling %s (same canonical path via symlink)",
+			realCeiling, linkToCeiling,
+		)
+	}
+
+	// dir is a strict ancestor of ceiling via different symlink chains.
+	above := filepath.Dir(realCeiling)
+	if !IsAboveCeiling(above, []string{linkToCeiling}) {
+		t.Fatalf(
+			"expected %s to be above ceiling %s (canonical parent via symlink)",
+			above, linkToCeiling,
+		)
+	}
+}
+
+// A ceiling entry that doesn't exist on disk should still bound the walk by
+// its cleaned string form rather than being silently dropped.
+func TestIsAboveCeilingFallsBackToCleanForNonExistentEntry(t *testing.T) {
+	tmp := t.TempDir()
+
+	missing := filepath.Join(tmp, "does-not-exist")
+	leaf := filepath.Join(missing, "leaf")
+
+	if IsAboveCeiling(leaf, []string{missing}) {
+		t.Fatalf("did not expect %s to be above %s", leaf, missing)
+	}
+	if !IsAtOrAboveCeiling(missing, []string{missing}) {
+		t.Fatalf("expected %s to be at-or-above itself", missing)
+	}
+}
+
 func TestGetCwdXDGOverridePathHonorsMultipleCeilings(t *testing.T) {
 	tmp := t.TempDir()
 

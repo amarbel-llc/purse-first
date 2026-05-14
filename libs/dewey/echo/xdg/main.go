@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"github.com/amarbel-llc/purse-first/libs/dewey/0/interfaces"
@@ -161,11 +160,16 @@ func ParseCeilingDirectories(raw string) []string {
 	return ceilings
 }
 
+// IsAboveCeiling reports whether dir is strictly an ancestor of any
+// ceiling entry. Both dir and each ceiling are symlink-resolved before
+// comparison, matching git's documented GIT_CEILING_DIRECTORIES contract.
+// Entries that fail to resolve (e.g. don't exist on disk) fall back to
+// filepath.Clean so the ceiling still bounds the walk by name.
 func IsAboveCeiling(dir string, ceilings []string) bool {
-	cleaned := filepath.Clean(dir)
+	resolvedDir := resolveOrClean(dir)
 
 	for _, ceiling := range ceilings {
-		if isParentOf(cleaned, ceiling) {
+		if isParentOf(resolvedDir, resolveOrClean(ceiling)) {
 			return true
 		}
 	}
@@ -174,8 +178,24 @@ func IsAboveCeiling(dir string, ceilings []string) bool {
 }
 
 func IsAtOrAboveCeiling(dir string, ceilings []string) bool {
-	return slices.Contains(ceilings, filepath.Clean(dir)) ||
-		IsAboveCeiling(dir, ceilings)
+	resolvedDir := resolveOrClean(dir)
+
+	for _, ceiling := range ceilings {
+		if resolveOrClean(ceiling) == resolvedDir {
+			return true
+		}
+	}
+
+	return IsAboveCeiling(dir, ceilings)
+}
+
+func resolveOrClean(path string) string {
+	resolved, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return filepath.Clean(path)
+	}
+
+	return resolved
 }
 
 func isParentOf(parent, child string) bool {
