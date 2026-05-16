@@ -54,11 +54,13 @@ func Make(b *String) (a *String, repool interfaces.FuncRepool) {
 // USE CAREFULLY!
 // This was copied from the runtime; see issues 23382 and 7921.
 //
-// go vet flags this as "possible misuse of unsafe.Pointer" — that's the
-// whole point. The XOR-with-0 dance hides the uintptr round-trip from the
-// escape analyzer, and the go:nocheckptr pragma matches the runtime's own
-// version of this helper. There is no public stdlib replacement as of
-// Go 1.26 (the runtime.NoEscape / unsafe.NoEscape proposals never landed).
+// `go vet` flags this as "possible misuse of unsafe.Pointer" — that is
+// the entire point of the helper. The cleanest replacement would be
+// `internal/abi.NoEscape` but Go 1.23+ rejects `//go:linkname` access
+// to that symbol from external packages, and no public
+// `runtime.NoEscape`/`unsafe.NoEscape` has landed yet (see
+// golang/go#58625, #70471). The vet warning is documented as prior
+// art in dewey's CLAUDE.md.
 //
 //go:nosplit
 //go:nocheckptr
