@@ -103,8 +103,6 @@ func (heap *Heap[ELEMENT, ELEMENT_PTR]) PopAndSave() (element ELEMENT_PTR, ok bo
 }
 
 func (heap *Heap[ELEMENT, ELEMENT_PTR]) popAndSave() (element ELEMENT_PTR, ok bool) {
-	// h.h.discardDupes()
-
 	if heap.private.Len() == 0 {
 		return element, ok
 	}
@@ -161,8 +159,6 @@ func (heap *Heap[ELEMENT, ELEMENT_PTR]) PopError() (element ELEMENT_PTR, err err
 func (heap *Heap[ELEMENT, ELEMENT_PTR]) Pop() (element ELEMENT_PTR, ok bool) {
 	heap.lock.Lock()
 	defer heap.lock.Unlock()
-
-	// h.h.discardDupes()
 
 	if heap.private.Len() == 0 {
 		return element, ok

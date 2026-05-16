@@ -1,7 +1,6 @@
 package heap
 
 import (
-	pkg_heap "container/heap"
 	"sort"
 
 	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
@@ -48,18 +47,6 @@ func (heap heapPrivate[ELEMENT, ELEMENT_PTR]) Swap(i, j int) {
 
 func (heap *heapPrivate[ELEMENT, ELEMENT_PTR]) Push(x any) {
 	heap.Elements = append(heap.Elements, x.(ELEMENT_PTR))
-}
-
-func (heap *heapPrivate[ELEMENT, ELEMENT_PTR]) discardDupes() {
-	panic("don't use this yet")
-
-	for heap.lastPopped != nil &&
-		heap.Len() > 0 &&
-		heap.equaler.Equals(heap.lastPopped, heap.Elements[0]) {
-		pkg_heap.Pop(heap)
-		// d := heap.Pop(h)
-		// log.Debug().Printf("discarded: %s", d)
-	}
 }
 
 func (heap *heapPrivate[ELEMENT, ELEMENT_PTR]) Pop() any {

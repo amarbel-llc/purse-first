@@ -1,48 +1,15 @@
 package files
 
-import (
-	"io/fs"
-	"os/exec"
-
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
-)
-
-func setUserChanges(paths []string, options userChangesOptions) (err error) {
-	return err
-	var args []string
-
-	if options.recursive {
-		args = append(args, "-R")
-	}
-
-	setting := "+i"
-
-	if options.allow {
-		setting = "-i"
-	}
-
-	args = append(args, setting)
-
-	// TODO-P2 change to syscall:
-	// https://github.com/snapcore/snapd/blob/master/osutil/chattr.go
-	// https://stackoverflow.com/questions/69542185/make-file-immutable-syscall-chflagsfilename
-	cmd := exec.Command(
-		"/usr/bin/chattr",
-		append(args, paths...)...,
-	)
-
-	var msg []byte
-
-	msg, err = cmd.CombinedOutput()
-	if err != nil {
-		if isNotExists(err, msg) {
-			err = fs.ErrNotExist
-		} else {
-			err = errors.ErrorWithStackf("failed to run chflags: %q, %#v", msg, options)
-		}
-
-		return err
-	}
-
-	return err
+// setUserChanges is a no-op on Linux. A shell-out to `chattr +i` /
+// `chattr -i` was attempted previously (see git history) but was
+// disabled because the implementation needs `CAP_LINUX_IMMUTABLE`
+// and a syscall path, not a chattr shell-out. The Darwin counterpart
+// is a working `chflags` shell-out; Linux awaits the syscall version.
+//
+// See chflags_darwin.go for the working implementation. The TODO
+// pointers in that file's comment apply here too.
+func setUserChanges(paths []string, options userChangesOptions) error {
+	_ = paths
+	_ = options
+	return nil
 }

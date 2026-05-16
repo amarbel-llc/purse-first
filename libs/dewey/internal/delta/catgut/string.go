@@ -54,6 +54,12 @@ func Make(b *String) (a *String, repool interfaces.FuncRepool) {
 // USE CAREFULLY!
 // This was copied from the runtime; see issues 23382 and 7921.
 //
+// go vet flags this as "possible misuse of unsafe.Pointer" — that's the
+// whole point. The XOR-with-0 dance hides the uintptr round-trip from the
+// escape analyzer, and the go:nocheckptr pragma matches the runtime's own
+// version of this helper. There is no public stdlib replacement as of
+// Go 1.26 (the runtime.NoEscape / unsafe.NoEscape proposals never landed).
+//
 //go:nosplit
 //go:nocheckptr
 func noescape(p unsafe.Pointer) unsafe.Pointer {
