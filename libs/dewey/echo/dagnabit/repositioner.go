@@ -154,13 +154,15 @@ func (repositioner *Repositioner) runPrefix(prefix string, edges []topological_s
 		}
 
 		if repositioner.DryRun {
-			fmt.Printf("would move: %s -> %s\n", node, dstPath)
+			emitMoveEvent("would-move", node, dstPath)
 			continue
 		}
 
 		if err := repositioner.Mover.MovePackage(node, dstPath); err != nil {
 			return fmt.Errorf("moving %s to %s: %w", node, dstPath, err)
 		}
+
+		emitMoveEvent("move", node, dstPath)
 	}
 
 	return nil

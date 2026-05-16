@@ -42,11 +42,16 @@ func (m *GitMover) MovePackageRename(src, dst string, opts MoveOptions) error {
 
 	if oldLeaf == newLeaf {
 		if opts.DryRun {
-			fmt.Printf("would move: %s -> %s (same leaf, import rewrites only)\n", src, dst)
+			emitMoveEvent("would-move", src, dst)
 			return nil
 		}
 
-		return m.MovePackage(src, dst)
+		if err := m.MovePackage(src, dst); err != nil {
+			return err
+		}
+
+		emitMoveEvent("move", src, dst)
+		return nil
 	}
 
 	plan, err := analyzeLeafRename(m.Dir, m.ModulePath, src, dst, opts.AllowTypeErrors)
@@ -55,7 +60,7 @@ func (m *GitMover) MovePackageRename(src, dst string, opts MoveOptions) error {
 	}
 
 	if opts.DryRun {
-		m.printLeafRenameDryRun(src, dst, plan)
+		emitMoveEvent("would-move", src, dst)
 		return nil
 	}
 
@@ -127,21 +132,8 @@ func (m *GitMover) MovePackageRename(src, dst string, opts MoveOptions) error {
 		return fmt.Errorf("formatting: %w", err)
 	}
 
+	emitMoveEvent("move", src, dst)
 	return nil
-}
-
-func (m *GitMover) printLeafRenameDryRun(src, dst string, plan *leafRenamePlan) {
-	nSites := 0
-	for _, ss := range plan.CallerSites {
-		nSites += len(ss)
-	}
-
-	fmt.Printf(
-		"would move: %s -> %s\n  package decl rewrites: %d files\n  qualified-ref rewrites: %d sites in %d caller files\n",
-		src, dst,
-		len(plan.MovedPkgFiles),
-		nSites, len(plan.CallerSites),
-	)
 }
 
 // rewriteFileForLeafRename parses path once, applies every applicable
