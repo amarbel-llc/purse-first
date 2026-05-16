@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/0/dagnabit"
+	"github.com/amarbel-llc/purse-first/libs/dewey/echo/dagnabit"
 	go_list "github.com/amarbel-llc/purse-first/libs/dewey/0/go_list"
 	go_module "github.com/amarbel-llc/purse-first/libs/dewey/0/go_module"
 	nato_levels "github.com/amarbel-llc/purse-first/libs/dewey/0/nato_levels"

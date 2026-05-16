@@ -12,7 +12,7 @@ this file.
 
 ### Battle-tested (safe to build on)
 
-- `0/dagnabit` — Go package mover (reposition / move / export), plus the
+- `echo/dagnabit` — Go package mover (reposition / move / export), plus the
   type-aware leaf-rename analysis via `golang.org/x/tools/go/packages`.
   Validated end-to-end on maneater.
 - `0/go_list` — shells `go list` and returns per-prefix dependency edges.

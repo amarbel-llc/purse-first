@@ -34,7 +34,7 @@ func ReadModulePath(goModPath string) (string, error) {
 		return "", err
 	}
 
-	defer f.Close()
+	defer f.Close() //defer:err-checked read-only
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {

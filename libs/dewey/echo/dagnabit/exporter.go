@@ -11,6 +11,8 @@ import (
 
 	jen "github.com/dave/jennifer/jen"
 	"golang.org/x/tools/go/packages"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/delta/files"
 )
 
 const exportDirective = "//go:generate dagnabit export"
@@ -640,7 +642,7 @@ func fileContainsDirective(path string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer f.Close()
+	defer files.CloseReadOnly(f)
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {

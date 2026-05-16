@@ -54,11 +54,20 @@ func run(pass *analysis.Pass) (any, error) {
 			return
 		}
 
-		pass.ReportRangef(
-			deferStmt,
-			"deferred call to %s discards its error return value",
-			callName(call),
-		)
+		name := callName(call)
+		if isCloseCall(call) {
+			pass.ReportRangef(
+				deferStmt,
+				"deferred call to %s discards its error return value; for read-only fds use files.CloseReadOnly, otherwise wrap with errors.DeferredCloser(&err, x) and switch to a named return",
+				name,
+			)
+		} else {
+			pass.ReportRangef(
+				deferStmt,
+				"deferred call to %s discards its error return value; wrap with one of errors.Deferred* (DeferredCloser, DeferredFlusher, Deferred, ...) and switch to a named return",
+				name,
+			)
+		}
 	})
 
 	return nil, nil
@@ -90,6 +99,14 @@ func callReturnsError(pass *analysis.Pass, call *ast.CallExpr) bool {
 	}
 
 	return false
+}
+
+func isCloseCall(call *ast.CallExpr) bool {
+	sel, ok := call.Fun.(*ast.SelectorExpr)
+	if !ok {
+		return false
+	}
+	return sel.Sel.Name == "Close"
 }
 
 func callName(call *ast.CallExpr) string {

@@ -58,6 +58,14 @@ build-dewey:
 vet-dewey:
     {{cmd_nix_dev}} go vet -tags test ./libs/dewey/...
 
+# Build one dewey analyzer (defererr|repool|seqerror) and run it via -vettool
+analyze-dewey name:
+    {{cmd_nix_dev}} go build -o build/{{name}} ./libs/dewey/cmd/{{name}}
+    {{cmd_nix_dev}} go vet -vettool={{justfile_directory()}}/build/{{name}} -tags test ./libs/dewey/...
+
+# Run all three dewey static analyzers
+analyze-dewey-all: (analyze-dewey "defererr") (analyze-dewey "repool") (analyze-dewey "seqerror")
+
 # Test rust-mcp library
 test-rust-mcp:
     cd libs/rust-mcp && {{cmd_nix_dev}} cargo test

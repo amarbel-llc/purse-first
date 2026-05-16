@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/bravo/errors"
 )
 
 // GitMover moves packages by running git mv and rewriting Go import paths.
@@ -125,12 +127,12 @@ func rewriteFileImports(path, oldPrefix, newPrefix string) error {
 	return writeFormattedFile(fset, f, path)
 }
 
-func writeFormattedFile(fset *token.FileSet, f *ast.File, path string) error {
+func writeFormattedFile(fset *token.FileSet, f *ast.File, path string) (err error) {
 	out, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("opening %s for writing: %w", path, err)
 	}
-	defer out.Close()
+	defer errors.DeferredCloser(&err, out)
 
 	if err := format.Node(out, fset, f); err != nil {
 		return fmt.Errorf("formatting %s: %w", path, err)

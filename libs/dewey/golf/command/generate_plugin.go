@@ -8,6 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/bravo/errors"
+	"github.com/amarbel-llc/purse-first/libs/dewey/delta/files"
 )
 
 type pluginMcpServer struct {
@@ -131,12 +134,12 @@ func copyDir(src, dst string) error {
 }
 
 // copyFile copies a single file from src to dst, preserving permissions.
-func copyFile(src, dst string) error {
+func copyFile(src, dst string) (err error) {
 	in, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("opening %s: %w", src, err)
 	}
-	defer in.Close()
+	defer files.CloseReadOnly(in)
 
 	info, err := in.Stat()
 	if err != nil {
@@ -147,7 +150,7 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("creating %s: %w", dst, err)
 	}
-	defer out.Close()
+	defer errors.DeferredCloser(&err, out)
 
 	if _, err := io.Copy(out, in); err != nil {
 		return fmt.Errorf("copying %s to %s: %w", src, dst, err)
