@@ -9,6 +9,7 @@ type (
 	Exporter         = internal.Exporter
 	GitMover         = internal.GitMover
 	LevelMapper      = internal.LevelMapper
+	MoveEvent        = internal.MoveEvent
 	MoveOptions      = internal.MoveOptions
 	PackageMover     = internal.PackageMover
 	Repositioner     = internal.Repositioner
@@ -20,6 +21,8 @@ var (
 )
 
 const (
+	EventMove      = internal.EventMove
+	EventWouldMove = internal.EventWouldMove
 	ModeInitial    = internal.ModeInitial
 	ModeReposition = internal.ModeReposition
 )

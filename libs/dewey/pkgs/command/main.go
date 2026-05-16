@@ -3,10 +3,9 @@
 package command
 
 import (
-	"iter"
-
 	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/command"
+	"iter"
 )
 
 type (
