@@ -1,3 +1,8 @@
+//go:build ignore
+
+// This file is an illustrative snippet for the creating-packages skill.
+// `//go:build ignore` keeps it out of `go build ./...` and `go test ./...`.
+
 package main
 
 import (
