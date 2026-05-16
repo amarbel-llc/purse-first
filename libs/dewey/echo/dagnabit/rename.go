@@ -32,6 +32,10 @@ func (m *GitMover) RenamePackage(
 		newLeaf = filepath.Base(src)
 	}
 
+	if err := ValidateTwoLayerLayout(m.Dir, m.ModulePath); err != nil {
+		return fmt.Errorf("precondition failed: %w", err)
+	}
+
 	if err := ValidateUniqueLeaves(m.Dir, m.ModulePath); err != nil {
 		return fmt.Errorf("precondition failed: %w", err)
 	}

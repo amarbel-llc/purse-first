@@ -95,3 +95,66 @@ func ValidateUniqueLeaves(dir, modulePath string) error {
 
 	return fmt.Errorf("%s", b.String())
 }
+
+// ValidateTwoLayerLayout loads every package in the module and reports an
+// error if any package's path within the module has more than two
+// components (e.g., `<branch>/<leaf>/<sub>` instead of `<branch>/<leaf>`).
+//
+// dagnabit's reposition machinery assumes a strict <branch>/<leaf> layout.
+// Sub-packages break that assumption: the level-mapping math treats every
+// path under `<branch>/<leaf>/` as the same node, so a sub-package's deps
+// silently get attributed to its parent leaf and the level computation
+// drifts. Forcing flatness keeps the model honest.
+//
+// Packages with fewer than two components (e.g., at the module root) are
+// ignored — Go's `testdata/` directories never appear here because
+// `packages.Load("./...")` skips them by convention.
+func ValidateTwoLayerLayout(dir, modulePath string) error {
+	cfg := &packages.Config{
+		Dir: dir,
+		Mode: packages.NeedName |
+			packages.NeedFiles,
+		Tests: false,
+		Env:   os.Environ(),
+	}
+
+	pkgs, err := packages.Load(cfg, "./...")
+	if err != nil {
+		return fmt.Errorf("packages.Load: %w", err)
+	}
+
+	var violations []string
+
+	for _, p := range pkgs {
+		if len(p.GoFiles) == 0 {
+			continue
+		}
+
+		if !strings.HasPrefix(p.PkgPath, modulePath+"/") {
+			continue
+		}
+
+		rel := strings.TrimPrefix(p.PkgPath, modulePath+"/")
+
+		if strings.Count(rel, "/") < 2 {
+			continue
+		}
+
+		violations = append(violations, rel)
+	}
+
+	if len(violations) == 0 {
+		return nil
+	}
+
+	sort.Strings(violations)
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "layout violations (dagnabit requires <branch>/<leaf>; sub-packages are not allowed):\n")
+
+	for _, v := range violations {
+		fmt.Fprintf(&b, "  %s\n", v)
+	}
+
+	return fmt.Errorf("%s", b.String())
+}
