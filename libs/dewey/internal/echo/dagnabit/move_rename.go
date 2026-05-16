@@ -42,7 +42,7 @@ func (m *GitMover) MovePackageRename(src, dst string, opts MoveOptions) error {
 
 	if oldLeaf == newLeaf {
 		if opts.DryRun {
-			emitMoveEvent("would-move", src, dst)
+			emitMoveEvent(EventWouldMove, src, dst)
 			return nil
 		}
 
@@ -50,7 +50,7 @@ func (m *GitMover) MovePackageRename(src, dst string, opts MoveOptions) error {
 			return err
 		}
 
-		emitMoveEvent("move", src, dst)
+		emitMoveEvent(EventMove, src, dst)
 		return nil
 	}
 
@@ -60,7 +60,7 @@ func (m *GitMover) MovePackageRename(src, dst string, opts MoveOptions) error {
 	}
 
 	if opts.DryRun {
-		emitMoveEvent("would-move", src, dst)
+		emitMoveEvent(EventWouldMove, src, dst)
 		return nil
 	}
 
@@ -98,8 +98,7 @@ func (m *GitMover) MovePackageRename(src, dst string, opts MoveOptions) error {
 		}
 
 		if info.IsDir() {
-			base := filepath.Base(path)
-			if base == ".git" || base == "vendor" || base == "node_modules" {
+			if shouldSkipWalkDir(filepath.Base(path)) {
 				return filepath.SkipDir
 			}
 
@@ -132,7 +131,7 @@ func (m *GitMover) MovePackageRename(src, dst string, opts MoveOptions) error {
 		return fmt.Errorf("formatting: %w", err)
 	}
 
-	emitMoveEvent("move", src, dst)
+	emitMoveEvent(EventMove, src, dst)
 	return nil
 }
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	topological_sort "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/topological_sort"
 	"golang.org/x/tools/go/packages"
@@ -32,11 +31,16 @@ func (m *GitMover) RenamePackage(
 		newLeaf = filepath.Base(src)
 	}
 
-	if err := ValidateTwoLayerLayout(m.Dir, m.ModulePath); err != nil {
+	pkgs, err := loadInModulePackages(m.Dir, m.ModulePath)
+	if err != nil {
+		return fmt.Errorf("precondition load: %w", err)
+	}
+
+	if err := validateTwoLayerLayoutPkgs(pkgs, m.ModulePath); err != nil {
 		return fmt.Errorf("precondition failed: %w", err)
 	}
 
-	if err := ValidateUniqueLeaves(m.Dir, m.ModulePath); err != nil {
+	if err := validateUniqueLeavesPkgs(pkgs, m.ModulePath); err != nil {
 		return fmt.Errorf("precondition failed: %w", err)
 	}
 
@@ -100,7 +104,7 @@ func (m *GitMover) computeRequiredLevel(
 		)
 	}
 
-	srcNode, ok := m.nodeFor(srcPkg.PkgPath)
+	srcNode, _, _, ok := branchLeafNode(srcPkg.PkgPath, m.ModulePath)
 	if !ok {
 		return "", fmt.Errorf(
 			"src %q is not a 2-layer package path (<branch>/<leaf>)",
@@ -108,9 +112,7 @@ func (m *GitMover) computeRequiredLevel(
 		)
 	}
 
-	// Walk transitively. Each in-module package contributes itself to the
-	// node set and edges from itself to each of its in-module imports.
-	nodes := map[string]bool{srcNode: true}
+	// Walk transitively, building the edge set of the constrained subgraph.
 	var edges []topological_sort.Edge
 	seenEdges := make(map[topological_sort.Edge]bool)
 	visited := make(map[string]bool)
@@ -122,10 +124,7 @@ func (m *GitMover) computeRequiredLevel(
 		}
 		visited[p.PkgPath] = true
 
-		fromNode, fromOK := m.nodeFor(p.PkgPath)
-		if fromOK {
-			nodes[fromNode] = true
-		}
+		fromNode, _, _, fromOK := branchLeafNode(p.PkgPath, m.ModulePath)
 
 		for _, dep := range p.Imports {
 			walk(dep)
@@ -134,7 +133,7 @@ func (m *GitMover) computeRequiredLevel(
 				continue
 			}
 
-			toNode, toOK := m.nodeFor(dep.PkgPath)
+			toNode, _, _, toOK := branchLeafNode(dep.PkgPath, m.ModulePath)
 			if !toOK || toNode == fromNode {
 				continue
 			}
@@ -165,20 +164,3 @@ func (m *GitMover) computeRequiredLevel(
 	return mapper.LevelName(height)
 }
 
-// nodeFor extracts the first two path components after stripping the module
-// path. Returns "" and false for packages outside the module, or paths with
-// fewer than two components (e.g., a package directly at module root).
-func (m *GitMover) nodeFor(pkgPath string) (string, bool) {
-	if !strings.HasPrefix(pkgPath, m.ModulePath+"/") {
-		return "", false
-	}
-
-	rel := strings.TrimPrefix(pkgPath, m.ModulePath+"/")
-	parts := strings.SplitN(rel, "/", 3)
-
-	if len(parts) < 2 {
-		return "", false
-	}
-
-	return parts[0] + "/" + parts[1], true
-}

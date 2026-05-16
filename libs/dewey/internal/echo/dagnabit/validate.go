@@ -2,7 +2,6 @@ package dagnabit
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 
@@ -18,58 +17,42 @@ import (
 // so docs and tooling can refer to packages as `*/<leaf>` without pinning
 // a level that may change as dependencies evolve.
 func ValidateUniqueLeaves(dir, modulePath string) error {
-	cfg := &packages.Config{
-		Dir: dir,
-		Mode: packages.NeedName |
-			packages.NeedFiles,
-		Tests: false,
-		Env:   os.Environ(),
-	}
-
-	pkgs, err := packages.Load(cfg, "./...")
+	pkgs, err := loadInModulePackages(dir, modulePath)
 	if err != nil {
-		return fmt.Errorf("packages.Load: %w", err)
+		return err
 	}
 
-	// leaf name -> sorted list of `<branch>/<leaf>` paths sharing it.
-	byLeaf := make(map[string][]string)
+	return validateUniqueLeavesPkgs(pkgs, modulePath)
+}
+
+func validateUniqueLeavesPkgs(pkgs []*packages.Package, modulePath string) error {
+	// leaf name -> set of `<branch>/<leaf>` paths sharing it.
+	byLeaf := make(map[string]map[string]struct{})
 
 	for _, p := range pkgs {
-		if len(p.GoFiles) == 0 {
+		node, _, leaf, ok := branchLeafNode(p.PkgPath, modulePath)
+		if !ok {
 			continue
 		}
 
-		if !strings.HasPrefix(p.PkgPath, modulePath+"/") {
-			continue
+		nodes := byLeaf[leaf]
+		if nodes == nil {
+			nodes = make(map[string]struct{})
+			byLeaf[leaf] = nodes
 		}
 
-		rel := strings.TrimPrefix(p.PkgPath, modulePath+"/")
-		parts := strings.SplitN(rel, "/", 3)
-
-		if len(parts) < 2 {
-			continue
-		}
-
-		node := parts[0] + "/" + parts[1]
-		leaf := parts[1]
-
-		byLeaf[leaf] = append(byLeaf[leaf], node)
+		nodes[node] = struct{}{}
 	}
 
 	var collisions [][]string
 
 	for leaf, nodes := range byLeaf {
-		uniq := make(map[string]bool, len(nodes))
-		for _, n := range nodes {
-			uniq[n] = true
-		}
-
-		if len(uniq) < 2 {
+		if len(nodes) < 2 {
 			continue
 		}
 
-		paths := make([]string, 0, len(uniq))
-		for n := range uniq {
+		paths := make([]string, 0, len(nodes))
+		for n := range nodes {
 			paths = append(paths, n)
 		}
 
@@ -110,30 +93,18 @@ func ValidateUniqueLeaves(dir, modulePath string) error {
 // ignored — Go's `testdata/` directories never appear here because
 // `packages.Load("./...")` skips them by convention.
 func ValidateTwoLayerLayout(dir, modulePath string) error {
-	cfg := &packages.Config{
-		Dir: dir,
-		Mode: packages.NeedName |
-			packages.NeedFiles,
-		Tests: false,
-		Env:   os.Environ(),
-	}
-
-	pkgs, err := packages.Load(cfg, "./...")
+	pkgs, err := loadInModulePackages(dir, modulePath)
 	if err != nil {
-		return fmt.Errorf("packages.Load: %w", err)
+		return err
 	}
 
+	return validateTwoLayerLayoutPkgs(pkgs, modulePath)
+}
+
+func validateTwoLayerLayoutPkgs(pkgs []*packages.Package, modulePath string) error {
 	var violations []string
 
 	for _, p := range pkgs {
-		if len(p.GoFiles) == 0 {
-			continue
-		}
-
-		if !strings.HasPrefix(p.PkgPath, modulePath+"/") {
-			continue
-		}
-
 		rel := strings.TrimPrefix(p.PkgPath, modulePath+"/")
 
 		if strings.Count(rel, "/") < 2 {

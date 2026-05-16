@@ -154,7 +154,7 @@ func (repositioner *Repositioner) runPrefix(prefix string, edges []topological_s
 		}
 
 		if repositioner.DryRun {
-			emitMoveEvent("would-move", node, dstPath)
+			emitMoveEvent(EventWouldMove, node, dstPath)
 			continue
 		}
 
@@ -162,7 +162,7 @@ func (repositioner *Repositioner) runPrefix(prefix string, edges []topological_s
 			return fmt.Errorf("moving %s to %s: %w", node, dstPath, err)
 		}
 
-		emitMoveEvent("move", node, dstPath)
+		emitMoveEvent(EventMove, node, dstPath)
 	}
 
 	return nil

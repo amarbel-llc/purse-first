@@ -68,8 +68,7 @@ func (m *GitMover) rewriteImports(oldPrefix, newPrefix string) error {
 		}
 
 		if info.IsDir() {
-			base := filepath.Base(path)
-			if base == ".git" || base == "vendor" || base == "node_modules" {
+			if shouldSkipWalkDir(filepath.Base(path)) {
 				return filepath.SkipDir
 			}
 

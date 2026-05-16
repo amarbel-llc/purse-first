@@ -34,10 +34,7 @@ func (exporter *Exporter) rewriteConsumers(
 		}
 
 		if info.IsDir() {
-			base := filepath.Base(path)
-
-			switch base {
-			case ".git", "vendor", "node_modules", "build", "result", ".tmp", ".direnv", "testdata":
+			if shouldSkipWalkDir(filepath.Base(path)) {
 				return filepath.SkipDir
 			}
 
