@@ -24,7 +24,83 @@ func main() {
 		return
 	}
 
+	if len(os.Args) > 1 && os.Args[0] != "-" && os.Args[1] == "rename" {
+		os.Args = append(os.Args[:1], os.Args[2:]...)
+		runRename()
+		return
+	}
+
 	runReposition()
+}
+
+func runRename() {
+	renameFlags := flag.NewFlagSet("rename", flag.ExitOnError)
+
+	var dryRun bool
+	var verbose bool
+	var modulePath string
+	var force bool
+
+	renameFlags.BoolVar(&dryRun, "n", false, "show what would happen without moving")
+	renameFlags.BoolVar(&dryRun, "dry-run", false, "show what would happen without moving")
+	renameFlags.BoolVar(&verbose, "v", false, "enable verbose output")
+	renameFlags.BoolVar(&verbose, "verbose", false, "enable verbose output")
+	renameFlags.StringVar(&modulePath, "module", "", "Go module path (read from go.mod if empty)")
+	renameFlags.BoolVar(&force, "force", false, "proceed even if packages.Load reports type errors")
+	renameFlags.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: dagnabit rename [flags] <src> [<new-leaf>]\n\n")
+		fmt.Fprintf(os.Stderr, "Repositions ONE package to the NATO level dictated by its\n")
+		fmt.Fprintf(os.Stderr, "transitive in-module dependencies, optionally renaming its leaf.\n")
+		fmt.Fprintf(os.Stderr, "Other packages are NOT moved.\n\n")
+		fmt.Fprintf(os.Stderr, "Positional arguments:\n")
+		fmt.Fprintf(os.Stderr, "  src        package path relative to module root (e.g. charlie/dagnabit)\n")
+		fmt.Fprintf(os.Stderr, "  new-leaf   new leaf directory name (optional; defaults to src's leaf)\n\n")
+		fmt.Fprintf(os.Stderr, "Flags:\n")
+		renameFlags.PrintDefaults()
+	}
+
+	renameFlags.Parse(os.Args[1:])
+
+	args := renameFlags.Args()
+	if len(args) < 1 || len(args) > 2 {
+		fmt.Fprintf(os.Stderr, "error: rename requires 1 or 2 positional arguments\n\n")
+		renameFlags.Usage()
+		os.Exit(1)
+	}
+
+	src := args[0]
+
+	var newLeaf string
+	if len(args) == 2 {
+		newLeaf = args[1]
+	}
+
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+
+	modulePath, err = go_module.ResolveModulePath(dir, modulePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+
+	mapper := nato_levels.MakeNATOLevelMapper()
+
+	mover := &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
+
+	opts := dagnabit.MoveOptions{
+		DryRun:          dryRun,
+		Verbose:         verbose,
+		AllowTypeErrors: force,
+	}
+
+	if err := mover.RenamePackage(src, newLeaf, mapper, opts); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func runReposition() {

@@ -52,3 +52,15 @@ func (m NATOLevelMapper) LevelName(height int) (string, error) {
 
 	return natoLevels[height], nil
 }
+
+// LevelIndex returns the inverse of LevelName: the height (0-based index)
+// for the given level name, or an error if the name is not a NATO level.
+func (m NATOLevelMapper) LevelIndex(name string) (int, error) {
+	for i, n := range natoLevels {
+		if n == name {
+			return i, nil
+		}
+	}
+
+	return -1, fmt.Errorf("unknown NATO level %q", name)
+}

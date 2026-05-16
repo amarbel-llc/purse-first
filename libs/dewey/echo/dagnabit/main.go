@@ -10,10 +10,11 @@ type DependencyReader interface {
 	ReadDependencies() (map[string][]topological_sort.Edge, error)
 }
 
-// LevelMapper assigns names to topological heights.
+// LevelMapper assigns names to topological heights and vice versa.
 // Height 0 is the lowest level (no internal dependencies).
 type LevelMapper interface {
 	LevelName(height int) (string, error)
+	LevelIndex(name string) (int, error)
 }
 
 // PackageMover executes the move of a package from one path to another.

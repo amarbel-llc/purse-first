@@ -28,6 +28,16 @@ func (m sliceLevelMapper) LevelName(height int) (string, error) {
 	return m.levels[height], nil
 }
 
+func (m sliceLevelMapper) LevelIndex(name string) (int, error) {
+	for i, n := range m.levels {
+		if n == name {
+			return i, nil
+		}
+	}
+
+	return -1, fmt.Errorf("unknown level %q", name)
+}
+
 type recordingMover struct {
 	moves []string
 }
