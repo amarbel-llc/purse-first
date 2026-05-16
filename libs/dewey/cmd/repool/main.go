@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/amarbel-llc/purse-first/libs/dewey/alfa/analyzer_repool"
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/analyzer_repool"
 	"golang.org/x/tools/go/analysis/singlechecker"
 )
 

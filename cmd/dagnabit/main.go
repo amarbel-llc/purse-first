@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/echo/dagnabit"
-	go_list "github.com/amarbel-llc/purse-first/libs/dewey/0/go_list"
-	go_module "github.com/amarbel-llc/purse-first/libs/dewey/0/go_module"
-	nato_levels "github.com/amarbel-llc/purse-first/libs/dewey/0/nato_levels"
+	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/dagnabit"
+	go_list "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/go_list"
+	go_module "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/go_module"
+	nato_levels "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/nato_levels"
 )
 
 func main() {
@@ -249,11 +249,13 @@ func runExport() {
 	var dryRun bool
 	var outputDir string
 	var modulePath string
+	var noRewriteConsumers bool
 
 	exportFlags.BoolVar(&dryRun, "n", false, "show what would be generated without writing files")
 	exportFlags.BoolVar(&dryRun, "dry-run", false, "show what would be generated without writing files")
 	exportFlags.StringVar(&outputDir, "output-dir", "pkgs", "output directory for generated facades (relative to module root)")
 	exportFlags.StringVar(&modulePath, "module", "", "Go module path (read from go.mod if empty)")
+	exportFlags.BoolVar(&noRewriteConsumers, "no-rewrite-consumers", false, "skip rewriting external workspace consumers' imports to the new facade path")
 	exportFlags.Parse(os.Args[1:])
 
 	dir, err := os.Getwd()
@@ -269,10 +271,11 @@ func runExport() {
 	}
 
 	exporter := &dagnabit.Exporter{
-		ModulePath: modulePath,
-		Dir:        dir,
-		OutputDir:  outputDir,
-		DryRun:     dryRun,
+		ModulePath:          modulePath,
+		Dir:                 dir,
+		OutputDir:           outputDir,
+		DryRun:              dryRun,
+		SkipConsumerRewrite: noRewriteConsumers,
 	}
 
 	args := exportFlags.Args()

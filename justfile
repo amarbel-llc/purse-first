@@ -66,6 +66,37 @@ analyze-dewey name:
 # Run all three dewey static analyzers
 analyze-dewey-all: (analyze-dewey "defererr") (analyze-dewey "repool") (analyze-dewey "seqerror")
 
+# Rebuild build/dagnabit from source. Not a dep of the dewey-* recipes
+# because those need to work mid-bootstrap when cmd/dagnabit's imports
+# may temporarily reference paths that don't compile yet. Run this
+# manually when you've changed dagnabit's source.
+dagnabit-build:
+    {{cmd_nix_dev}} go build -o {{justfile_directory()}}/build/dagnabit ./cmd/dagnabit
+
+# Dry-run a single-package rename: print the proposed move as NDJSON,
+# touch nothing on disk. `new_leaf` is optional; defaults to src's leaf.
+dewey-rename pkg new_leaf="":
+    cd {{justfile_directory()}}/libs/dewey && {{justfile_directory()}}/build/dagnabit rename -n {{pkg}} {{new_leaf}}
+
+# Apply a single-package rename. Emits an NDJSON `move` event on success.
+dewey-rename-apply pkg new_leaf="":
+    cd {{justfile_directory()}}/libs/dewey && {{justfile_directory()}}/build/dagnabit rename {{pkg}} {{new_leaf}}
+
+# Dry-run a full reposition of libs/dewey/internal/. Prints NDJSON
+# `would-move` events for each package that needs repositioning.
+dewey-reposition:
+    cd {{justfile_directory()}}/libs/dewey && {{justfile_directory()}}/build/dagnabit -n internal
+
+# Apply a full reposition of libs/dewey/internal/. Real moves print
+# NDJSON `move` events as they happen.
+dewey-reposition-apply:
+    cd {{justfile_directory()}}/libs/dewey && {{justfile_directory()}}/build/dagnabit internal
+
+# Generate a public facade in libs/dewey/pkgs/ for a single internal
+# package. `pkg` is the path inside libs/dewey, e.g. `internal/0/go_module`.
+dewey-export pkg:
+    cd {{justfile_directory()}}/libs/dewey && {{justfile_directory()}}/build/dagnabit export ./{{pkg}}
+
 # Test rust-mcp library
 test-rust-mcp:
     cd libs/rust-mcp && {{cmd_nix_dev}} cargo test

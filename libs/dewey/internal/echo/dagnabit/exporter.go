@@ -1,0 +1,672 @@
+package dagnabit
+
+import (
+	"bufio"
+	"fmt"
+	"go/types"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+
+	jen "github.com/dave/jennifer/jen"
+	"golang.org/x/tools/go/packages"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/files"
+)
+
+const exportDirective = "//go:generate dagnabit export"
+
+// Exporter generates pkgs/ facade files from internal packages.
+type Exporter struct {
+	ModulePath string
+	Dir        string
+	OutputDir  string
+	DryRun     bool
+
+	// SkipConsumerRewrite, when true, disables the post-export pass that
+	// walks the workspace looking for files outside this module that import
+	// the just-exported internal package and rewrites those imports to use
+	// the freshly-generated facade path. Default behavior is to do the
+	// rewrite — it's the natural follow-on to generating a facade.
+	SkipConsumerRewrite bool
+}
+
+func (exporter *Exporter) outputDir() string {
+	if exporter.OutputDir != "" {
+		return exporter.OutputDir
+	}
+
+	return "pkgs"
+}
+
+// ExportPackage generates a facade for a single package path (e.g.,
+// "./internal/alfa/blob_store_id" or "github.com/.../internal/alfa/blob_store_id").
+func (exporter *Exporter) ExportPackage(pkgPattern string) error {
+	cfg := &packages.Config{
+		Mode: packages.NeedName | packages.NeedTypes,
+		Dir:  exporter.Dir,
+	}
+
+	pkgs, err := packages.Load(cfg, pkgPattern)
+	if err != nil {
+		return fmt.Errorf("loading package %s: %w", pkgPattern, err)
+	}
+
+	if len(pkgs) == 0 {
+		return fmt.Errorf("no packages matched %s", pkgPattern)
+	}
+
+	for _, pkg := range pkgs {
+		if len(pkg.Errors) > 0 {
+			return fmt.Errorf("package %s has errors: %v", pkg.PkgPath, pkg.Errors[0])
+		}
+
+		if err := exporter.exportSinglePackage(pkg); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ScanAndExport walks internal/ looking for //go:generate dagnabit export
+// directives and generates facades for each discovered package.
+func (exporter *Exporter) ScanAndExport() error {
+	internalDir := filepath.Join(exporter.Dir, "internal")
+
+	pkgDirs, err := scanForExportDirectives(internalDir)
+	if err != nil {
+		return fmt.Errorf("scanning for export directives: %w", err)
+	}
+
+	if len(pkgDirs) == 0 {
+		fmt.Fprintf(os.Stderr, "no //go:generate dagnabit export directives found under internal/\n")
+		return nil
+	}
+
+	for _, dir := range pkgDirs {
+		rel, err := filepath.Rel(exporter.Dir, dir)
+		if err != nil {
+			return fmt.Errorf("computing relative path for %s: %w", dir, err)
+		}
+
+		pattern := "./" + rel
+		if err := exporter.ExportPackage(pattern); err != nil {
+			return fmt.Errorf("exporting %s: %w", pattern, err)
+		}
+	}
+
+	return nil
+}
+
+func (exporter *Exporter) exportSinglePackage(pkg *packages.Package) error {
+	importPath := pkg.PkgPath
+
+	relPath := strings.TrimPrefix(importPath, exporter.ModulePath+"/")
+	relPath = strings.TrimPrefix(relPath, "internal/")
+
+	// Strip the NATO level to get the facade subpath.
+	parts := strings.SplitN(relPath, "/", 2)
+
+	var facadeSubpath string
+	if len(parts) >= 2 {
+		facadeSubpath = parts[1]
+	} else {
+		facadeSubpath = parts[0]
+	}
+
+	facadePkgName := filepath.Base(facadeSubpath)
+
+	outputPath := filepath.Join(
+		exporter.Dir,
+		exporter.outputDir(),
+		facadeSubpath,
+		"main.go",
+	)
+
+	if exporter.DryRun {
+		scope := pkg.Types.Scope()
+		var nTypes, nVars, nFuncWrappers, nConsts int
+
+		for _, name := range scope.Names() {
+			obj := scope.Lookup(name)
+			if !obj.Exported() {
+				continue
+			}
+
+			switch obj := obj.(type) {
+			case *types.TypeName:
+				nTypes++
+			case *types.Func:
+				sig := obj.Type().(*types.Signature)
+				if sig.TypeParams() != nil && sig.TypeParams().Len() > 0 {
+					nFuncWrappers++
+				} else {
+					nVars++
+				}
+			case *types.Var:
+				nVars++
+			case *types.Const:
+				nConsts++
+			}
+		}
+
+		fmt.Printf("would generate: %s (%d types, %d vars, %d func wrappers, %d consts)\n",
+			outputPath, nTypes, nVars, nFuncWrappers, nConsts)
+		return nil
+	}
+
+	facadeCode, err := generateFacadeJen(facadePkgName, importPath, pkg.Types)
+	if err != nil {
+		return fmt.Errorf("generating facade for %s: %w", importPath, err)
+	}
+
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil {
+		return fmt.Errorf("creating output directory: %w", err)
+	}
+
+	if err := os.WriteFile(outputPath, facadeCode, 0o644); err != nil {
+		return fmt.Errorf("writing %s: %w", outputPath, err)
+	}
+
+	fmt.Printf("generated: %s\n", outputPath)
+
+	if exporter.SkipConsumerRewrite {
+		return nil
+	}
+
+	facadeImportPath := exporter.ModulePath + "/" + exporter.outputDir() + "/" + facadeSubpath
+	if err := exporter.rewriteConsumers(importPath, facadeImportPath); err != nil {
+		return fmt.Errorf("rewriting consumers: %w", err)
+	}
+
+	return nil
+}
+
+// generateFacadeJen produces a facade Go source file using jennifer for
+// proper import management.
+func generateFacadeJen(pkgName, importPath string, typePkg *types.Package) ([]byte, error) {
+	f := jen.NewFile(pkgName)
+	f.HeaderComment("Code generated by dagnabit; DO NOT EDIT.")
+
+	// Force the internal package to use "internal" as its import alias.
+	// This avoids collisions when the package name matches a stdlib package
+	// (e.g., internal/alfa/cmp vs stdlib cmp).
+	f.ImportAlias(importPath, "internal")
+
+	scope := typePkg.Scope()
+	names := scope.Names()
+
+	var (
+		typeStmts  []*jen.Statement
+		varStmts   []*jen.Statement
+		constStmts []*jen.Statement
+		funcStmts  []jen.Code
+	)
+
+	for _, name := range names {
+		obj := scope.Lookup(name)
+		if !obj.Exported() {
+			continue
+		}
+
+		switch obj := obj.(type) {
+		case *types.TypeName:
+			typeStmts = append(typeStmts, jenTypeAlias(name, importPath, obj))
+
+		case *types.Func:
+			sig := obj.Type().(*types.Signature)
+			if sig.TypeParams() != nil && sig.TypeParams().Len() > 0 {
+				if referencesUnexportedType(sig.Params()) || referencesUnexportedType(sig.Results()) {
+					// Skip: wrapper would expose unexported types in its signature
+					continue
+				}
+
+				funcStmts = append(funcStmts, jenFuncWrapper(name, importPath, sig))
+			} else {
+				varStmts = append(varStmts, jen.Id(name).Op("=").Qual(importPath, name))
+			}
+
+		case *types.Var:
+			varStmts = append(varStmts, jen.Id(name).Op("=").Qual(importPath, name))
+
+		case *types.Const:
+			constStmts = append(constStmts, jen.Id(name).Op("=").Qual(importPath, name))
+		}
+	}
+
+	if len(typeStmts) > 0 {
+		f.Type().DefsFunc(func(g *jen.Group) {
+			for _, s := range typeStmts {
+				g.Add(s)
+			}
+		})
+	}
+
+	if len(varStmts) > 0 {
+		f.Var().DefsFunc(func(g *jen.Group) {
+			for _, s := range varStmts {
+				g.Add(s)
+			}
+		})
+	}
+
+	if len(funcStmts) > 0 {
+		// Generic functions cannot be assigned to variables in Go.
+		// See https://github.com/golang/go/issues/52654
+		f.Comment("Generic function wrappers — Go does not support assigning")
+		f.Comment("generic functions to variables without instantiation.")
+		f.Comment("See https://github.com/golang/go/issues/52654")
+
+		for _, s := range funcStmts {
+			f.Add(s)
+		}
+	}
+
+	if len(constStmts) > 0 {
+		f.Const().DefsFunc(func(g *jen.Group) {
+			for _, s := range constStmts {
+				g.Add(s)
+			}
+		})
+	}
+
+	var buf strings.Builder
+	if err := f.Render(&buf); err != nil {
+		return nil, fmt.Errorf("rendering: %w", err)
+	}
+
+	return []byte(buf.String()), nil
+}
+
+// jenTypeAlias produces a type alias statement, handling generic types.
+func jenTypeAlias(name, importPath string, obj *types.TypeName) *jen.Statement {
+	var params *types.TypeParamList
+
+	switch t := obj.Type().(type) {
+	case *types.Named:
+		params = t.TypeParams()
+	case *types.Alias:
+		params = t.TypeParams()
+	}
+
+	if params == nil || params.Len() == 0 {
+		return jen.Id(name).Op("=").Qual(importPath, name)
+	}
+
+	// Generic type: type X[T any] = internal.X[T]
+	s := jen.Id(name)
+
+	s.TypesFunc(func(g *jen.Group) {
+		for i := 0; i < params.Len(); i++ {
+			p := params.At(i)
+			g.Add(jenTypeParam(p))
+		}
+	})
+
+	s.Op("=")
+
+	rhs := jen.Qual(importPath, name)
+	rhs.TypesFunc(func(g *jen.Group) {
+		for i := 0; i < params.Len(); i++ {
+			g.Add(jen.Id(params.At(i).Obj().Name()))
+		}
+	})
+
+	s.Add(rhs)
+
+	return s
+}
+
+// jenFuncWrapper produces a wrapper function for a generic function.
+func jenFuncWrapper(name, importPath string, sig *types.Signature) jen.Code {
+	params := sig.TypeParams()
+
+	stmt := jen.Func().Id(name)
+
+	// Type parameters
+	stmt.TypesFunc(func(g *jen.Group) {
+		for i := 0; i < params.Len(); i++ {
+			g.Add(jenTypeParam(params.At(i)))
+		}
+	})
+
+	// Function parameters
+	stmt.ParamsFunc(func(g *jen.Group) {
+		p := sig.Params()
+		for i := 0; i < p.Len(); i++ {
+			param := p.At(i)
+			paramName := param.Name()
+			if paramName == "" {
+				paramName = fmt.Sprintf("p%d", i)
+			}
+
+			if sig.Variadic() && i == p.Len()-1 {
+				// Variadic: last param is ...T, underlying is *types.Slice
+				sliceType := param.Type().(*types.Slice)
+				g.Add(jen.Id(paramName).Op("...").Add(jenType(sliceType.Elem())))
+			} else {
+				g.Add(jen.Id(paramName).Add(jenType(param.Type())))
+			}
+		}
+	})
+
+	// Return types
+	res := sig.Results()
+	if res.Len() > 0 {
+		if res.Len() == 1 && !isRealName(res.At(0).Name()) {
+			stmt.Add(jenType(res.At(0).Type()))
+		} else {
+			stmt.ParamsFunc(func(g *jen.Group) {
+				for i := 0; i < res.Len(); i++ {
+					r := res.At(i)
+					if isRealName(r.Name()) {
+						g.Add(jen.Id(r.Name()).Add(jenType(r.Type())))
+					} else {
+						g.Add(jenType(r.Type()))
+					}
+				}
+			})
+		}
+	}
+
+	// Body: return internal.Func[T, U](args...)
+	call := jen.Qual(importPath, name)
+	call.TypesFunc(func(g *jen.Group) {
+		for i := 0; i < params.Len(); i++ {
+			g.Add(jen.Id(params.At(i).Obj().Name()))
+		}
+	})
+	call.CallFunc(func(g *jen.Group) {
+		p := sig.Params()
+		for i := 0; i < p.Len(); i++ {
+			param := p.At(i)
+			paramName := param.Name()
+			if paramName == "" {
+				paramName = fmt.Sprintf("p%d", i)
+			}
+
+			if sig.Variadic() && i == p.Len()-1 {
+				g.Add(jen.Id(paramName).Op("..."))
+			} else {
+				g.Add(jen.Id(paramName))
+			}
+		}
+	})
+
+	if res.Len() > 0 {
+		stmt.Block(jen.Return(call))
+	} else {
+		stmt.Block(call)
+	}
+
+	return stmt
+}
+
+// referencesUnexportedType checks if any type in a tuple references an
+// unexported named type. Used to skip generic function wrappers whose
+// return types would expose private types from the internal package.
+func referencesUnexportedType(tuple *types.Tuple) bool {
+	for i := 0; i < tuple.Len(); i++ {
+		if containsUnexportedNamed(tuple.At(i).Type()) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func containsUnexportedNamed(t types.Type) bool {
+	switch t := t.(type) {
+	case *types.Named:
+		if t.Obj().Pkg() != nil && !t.Obj().Exported() {
+			return true
+		}
+
+		for i := 0; i < t.TypeArgs().Len(); i++ {
+			if containsUnexportedNamed(t.TypeArgs().At(i)) {
+				return true
+			}
+		}
+
+	case *types.Pointer:
+		return containsUnexportedNamed(t.Elem())
+
+	case *types.Slice:
+		return containsUnexportedNamed(t.Elem())
+
+	case *types.Map:
+		return containsUnexportedNamed(t.Key()) || containsUnexportedNamed(t.Elem())
+
+	case *types.Chan:
+		return containsUnexportedNamed(t.Elem())
+	}
+
+	return false
+}
+
+// isRealName returns true if the name is a real user-defined name,
+// not a synthetic name generated by go/types (e.g., "#rv1").
+func isRealName(name string) bool {
+	return name != "" && !strings.HasPrefix(name, "#")
+}
+
+// jenTypeParam renders a single type parameter declaration (e.g., "T any").
+func jenTypeParam(p *types.TypeParam) jen.Code {
+	return jen.Id(p.Obj().Name()).Add(jenType(p.Constraint()))
+}
+
+// jenType converts a go/types.Type to a jennifer code statement.
+// Jennifer handles import paths automatically via Qual.
+func jenType(t types.Type) jen.Code {
+	switch t := t.(type) {
+	case *types.Named:
+		pkg := t.Obj().Pkg()
+
+		var base *jen.Statement
+		if pkg == nil {
+			// Built-in type (e.g., error)
+			base = jen.Id(t.Obj().Name())
+		} else {
+			base = jen.Qual(pkg.Path(), t.Obj().Name())
+		}
+
+		// Handle type arguments for instantiated generics
+		if t.TypeArgs() != nil && t.TypeArgs().Len() > 0 {
+			base.TypesFunc(func(g *jen.Group) {
+				for i := 0; i < t.TypeArgs().Len(); i++ {
+					g.Add(jenType(t.TypeArgs().At(i)))
+				}
+			})
+		}
+
+		return base
+
+	case *types.Pointer:
+		return jen.Op("*").Add(jenType(t.Elem()))
+
+	case *types.Slice:
+		return jen.Index().Add(jenType(t.Elem()))
+
+	case *types.Array:
+		return jen.Index(jen.Lit(int(t.Len()))).Add(jenType(t.Elem()))
+
+	case *types.Map:
+		return jen.Map(jenType(t.Key())).Add(jenType(t.Elem()))
+
+	case *types.Chan:
+		switch t.Dir() {
+		case types.SendRecv:
+			return jen.Chan().Add(jenType(t.Elem()))
+		case types.SendOnly:
+			return jen.Chan().Op("<-").Add(jenType(t.Elem()))
+		case types.RecvOnly:
+			return jen.Op("<-").Chan().Add(jenType(t.Elem()))
+		}
+
+	case *types.Basic:
+		return jen.Id(t.Name())
+
+	case *types.Interface:
+		if t.Empty() {
+			return jen.Any()
+		}
+
+		// For complex interfaces used as constraints, render inline.
+		return jen.InterfaceFunc(func(g *jen.Group) {
+			for i := 0; i < t.NumEmbeddeds(); i++ {
+				g.Add(jenType(t.EmbeddedType(i)))
+			}
+
+			for i := 0; i < t.NumExplicitMethods(); i++ {
+				m := t.ExplicitMethod(i)
+				g.Add(jen.Id(m.Name()).Add(jenSignature(m.Type().(*types.Signature))))
+			}
+		})
+
+	case *types.Signature:
+		return jen.Func().Add(jenSignature(t))
+
+	case *types.Struct:
+		return jen.StructFunc(func(g *jen.Group) {
+			for i := 0; i < t.NumFields(); i++ {
+				field := t.Field(i)
+				g.Add(jen.Id(field.Name()).Add(jenType(field.Type())))
+			}
+		})
+
+	case *types.TypeParam:
+		return jen.Id(t.Obj().Name())
+
+	case *types.Union:
+		// Union types in constraints: T1 | T2 | ...
+		var parts []jen.Code
+		for i := 0; i < t.Len(); i++ {
+			term := t.Term(i)
+			code := jenType(term.Type())
+			if term.Tilde() {
+				code = jen.Op("~").Add(code)
+			}
+
+			parts = append(parts, code)
+		}
+
+		if len(parts) == 1 {
+			return parts[0]
+		}
+
+		s := parts[0].(*jen.Statement)
+		for _, p := range parts[1:] {
+			s = s.Op("|").Add(p)
+		}
+
+		return s
+
+	case *types.Alias:
+		return jenType(types.Unalias(t))
+	}
+
+	// Fallback: use string representation (shouldn't happen for well-typed code)
+	return jen.Id(t.String())
+}
+
+// jenSignature renders function params and results (without "func" keyword).
+func jenSignature(sig *types.Signature) jen.Code {
+	s := jen.ParamsFunc(func(g *jen.Group) {
+		p := sig.Params()
+		for i := 0; i < p.Len(); i++ {
+			param := p.At(i)
+			name := param.Name()
+
+			var paramCode jen.Code
+			if sig.Variadic() && i == p.Len()-1 {
+				sliceType := param.Type().(*types.Slice)
+				if isRealName(name) {
+					paramCode = jen.Id(name).Op("...").Add(jenType(sliceType.Elem()))
+				} else {
+					paramCode = jen.Op("...").Add(jenType(sliceType.Elem()))
+				}
+			} else if isRealName(name) {
+				paramCode = jen.Id(name).Add(jenType(param.Type()))
+			} else {
+				paramCode = jenType(param.Type())
+			}
+
+			g.Add(paramCode)
+		}
+	})
+
+	res := sig.Results()
+	if res.Len() == 1 && !isRealName(res.At(0).Name()) {
+		s.Add(jenType(res.At(0).Type()))
+	} else if res.Len() > 0 {
+		s.ParamsFunc(func(g *jen.Group) {
+			for i := 0; i < res.Len(); i++ {
+				r := res.At(i)
+				if isRealName(r.Name()) {
+					g.Add(jen.Id(r.Name()).Add(jenType(r.Type())))
+				} else {
+					g.Add(jenType(r.Type()))
+				}
+			}
+		})
+	}
+
+	return s
+}
+
+// scanForExportDirectives walks a directory tree and returns paths of
+// directories containing Go files with //go:generate dagnabit export.
+func scanForExportDirectives(root string) ([]string, error) {
+	seen := make(map[string]struct{})
+	var dirs []string
+
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() || !strings.HasSuffix(path, ".go") {
+			return nil
+		}
+
+		dir := filepath.Dir(path)
+		if _, ok := seen[dir]; ok {
+			return nil
+		}
+
+		has, err := fileContainsDirective(path)
+		if err != nil {
+			return fmt.Errorf("reading %s: %w", path, err)
+		}
+
+		if has {
+			seen[dir] = struct{}{}
+			dirs = append(dirs, dir)
+		}
+
+		return nil
+	})
+
+	sort.Strings(dirs)
+
+	return dirs, err
+}
+
+func fileContainsDirective(path string) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer files.CloseReadOnly(f)
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if strings.TrimSpace(scanner.Text()) == exportDirective {
+			return true, nil
+		}
+	}
+
+	return false, scanner.Err()
+}

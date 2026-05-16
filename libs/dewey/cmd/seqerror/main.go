@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/amarbel-llc/purse-first/libs/dewey/alfa/analyzer_seqerror"
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/analyzer_seqerror"
 	"golang.org/x/tools/go/analysis/singlechecker"
 )
 
