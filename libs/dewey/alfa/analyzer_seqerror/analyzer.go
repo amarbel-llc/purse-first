@@ -11,7 +11,7 @@
 // or propagated (passed to a yield function or other call). Discarding
 // the error with a blank identifier or omitting it entirely is reported
 // unless suppressed with a //seq:err-checked comment.
-package seqerror
+package analyzer_seqerror
 
 import (
 	"go/ast"

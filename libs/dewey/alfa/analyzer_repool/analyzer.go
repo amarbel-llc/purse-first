@@ -9,7 +9,7 @@
 // once when the caller is done with the pooled object, or the object
 // will leak. Discarding the repool function with a blank identifier
 // is reported unless suppressed with a //repool:owned comment.
-package repool
+package analyzer_repool
 
 import (
 	"go/ast"

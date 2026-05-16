@@ -10,7 +10,7 @@
 // commonly a bug — for example, defer file.Close() silently drops
 // write errors. Wrap the call in a closure that checks or assigns
 // the error, or suppress with a //defer:err-checked comment.
-package defererr
+package analyzer_defererr
 
 import (
 	"go/ast"
