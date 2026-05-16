@@ -32,6 +32,10 @@ func (m *GitMover) RenamePackage(
 		newLeaf = filepath.Base(src)
 	}
 
+	if err := ValidateUniqueLeaves(m.Dir, m.ModulePath); err != nil {
+		return fmt.Errorf("precondition failed: %w", err)
+	}
+
 	requiredLevel, err := m.computeRequiredLevel(src, mapper)
 	if err != nil {
 		return fmt.Errorf("computing required level for %s: %w", src, err)
@@ -65,7 +69,7 @@ func (m *GitMover) computeRequiredLevel(
 	srcImport := m.ModulePath + "/" + src
 
 	cfg := &packages.Config{
-		Dir:   m.Dir,
+		Dir: m.Dir,
 		Mode: packages.NeedName |
 			packages.NeedFiles |
 			packages.NeedImports |

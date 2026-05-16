@@ -4,6 +4,19 @@ A multi-tier Go library inside `purse-first`, organized under NATO-phonetic
 levels (`0/`, `alfa/`, `bravo/`, …, `golf/`) by dependency depth. Packages
 at level N may only depend on packages at lower levels within dewey.
 
+## Package naming convention
+
+Packages are referenced by their **leaf** name throughout this document,
+written as `*/<leaf>` (e.g. `*/dagnabit`, `*/go_list`). The branch (NATO
+level) is intentionally left as a wildcard because packages get
+repositioned across levels as their dependencies change — pinning the
+level in docs creates lies the moment `dagnabit rename` runs.
+
+**Leaf names MUST be unique across the entire dewey tree.** This is what
+makes `*/<leaf>` an unambiguous reference. `dagnabit` enforces this:
+attempting to introduce a second package with a leaf name already in use
+elsewhere in the tree is a build-time error.
+
 ## Stability tiers
 
 Not every package under this module is at the same maturity. When editing,
@@ -12,19 +25,19 @@ this file.
 
 ### Battle-tested (safe to build on)
 
-- `echo/dagnabit` — Go package mover (reposition / move / export), plus the
-  type-aware leaf-rename analysis via `golang.org/x/tools/go/packages`.
+- `*/dagnabit` — Go package mover (reposition / move / rename / export),
+  plus the type-aware leaf-rename analysis via `golang.org/x/tools/go/packages`.
   Validated end-to-end on maneater.
-- `0/go_list` — shells `go list` and returns per-prefix dependency edges.
+- `*/go_list` — shells `go list` and returns per-prefix dependency edges.
   Powers `dagnabit reposition`.
-- `0/go_module` — reads the `module` directive out of `go.mod`.
-- `0/nato_levels` — the NATO phonetic level table and the `LevelMapper`
+- `*/go_module` — reads the `module` directive out of `go.mod`.
+- `*/nato_levels` — the NATO phonetic level table and the `LevelMapper`
   implementation.
-- `0/topological_sort` — Kahn's algorithm on directed string edges.
+- `*/topological_sort` — Kahn's algorithm on directed string edges.
 
 ### Experimental (treat as a contract in flux)
 
-- `golf/command` — CLI framework (`Utility` + `Command` + param/flag
+- `*/command` — CLI framework (`Utility` + `Command` + param/flag
   definitions + MCP/hook integration). Was mainlined before the interface
   settled; expect rough edges and missing features. `cmd/dagnabit` is
   planned as the tracer bullet to mature it (see purse-first#45 and the
@@ -44,7 +57,7 @@ kept the public tool separate from reusable primitives.
 Use `just test-dewey` from the repo root. It runs `go test -tags test
 ./libs/dewey/...`. The `test` build tag gates helpers that must not ship to
 consumers. `just vet-dewey` is known to flag pre-existing issues in
-`delta/catgut`, `delta/heap`, and `delta/files`; treat those as prior art,
+`*/catgut`, `*/heap`, and `*/files`; treat those as prior art,
 not regressions you introduced.
 
 ## Related issues
