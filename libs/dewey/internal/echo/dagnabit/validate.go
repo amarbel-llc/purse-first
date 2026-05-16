@@ -105,6 +105,10 @@ func validateTwoLayerLayoutPkgs(pkgs []*packages.Package, modulePath string) err
 	var violations []string
 
 	for _, p := range pkgs {
+		if !strings.HasPrefix(p.PkgPath, modulePath+"/") {
+			continue
+		}
+
 		rel := strings.TrimPrefix(p.PkgPath, modulePath+"/")
 
 		if strings.Count(rel, "/") < 2 {
