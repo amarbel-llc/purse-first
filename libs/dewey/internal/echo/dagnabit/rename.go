@@ -27,6 +27,11 @@ func (m *GitMover) RenamePackage(
 	mapper LevelMapper,
 	opts MoveOptions,
 ) error {
+	// Normalize src so `./alfa/cmp` and `alfa/cmp` are treated identically.
+	// Otherwise the `dst == src` no-op guard below silently misses the
+	// `./`-prefixed form and we pay for a redundant MovePackageRename.
+	src = filepath.Clean(src)
+
 	if newLeaf == "" {
 		newLeaf = filepath.Base(src)
 	}

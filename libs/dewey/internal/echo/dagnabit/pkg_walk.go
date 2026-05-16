@@ -47,6 +47,10 @@ func loadInModulePackages(dir, modulePath string) ([]*packages.Package, error) {
 		return nil, fmt.Errorf("packages.Load: %w", err)
 	}
 
+	// In-place filter — reuses pkgs' backing array since packages.Load
+	// returns a fresh slice on every call. If a future caller ever
+	// pre-allocates and passes a slice through this helper, that
+	// contract changes.
 	out := pkgs[:0]
 	for _, p := range pkgs {
 		if len(p.GoFiles) == 0 {
