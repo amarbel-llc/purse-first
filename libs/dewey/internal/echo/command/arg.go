@@ -29,7 +29,6 @@ type (
 		// schema type and Value.Set() provides validation.
 		Value interfaces.FlagValue
 	}
-
 )
 
 type (

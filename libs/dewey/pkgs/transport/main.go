@@ -2,7 +2,7 @@
 
 package transport
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/transport"
+import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/transport"
 
 type (
 	Stdio     = internal.Stdio

@@ -6,8 +6,8 @@ import (
 	"io"
 	"sync"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/jsonrpc"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/transport"
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/jsonrpc"
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/transport"
 )
 
 // Server is an MCP server that handles protocol messages.

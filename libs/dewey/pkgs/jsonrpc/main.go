@@ -2,7 +2,7 @@
 
 package jsonrpc
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/jsonrpc"
+import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/jsonrpc"
 
 type (
 	Conn    = internal.Conn

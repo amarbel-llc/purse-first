@@ -2,7 +2,7 @@
 
 package go_list
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/go_list"
+import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/go_list"
 
 type (
 	Reader = internal.Reader

@@ -2,7 +2,7 @@
 
 package protocol
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/protocol"
+import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
 
 type (
 	BlobResourceContents                  = internal.BlobResourceContents

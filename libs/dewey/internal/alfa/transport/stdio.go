@@ -7,7 +7,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/jsonrpc"
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/jsonrpc"
 )
 
 // Stdio implements MCP stdio transport using newline-delimited JSON.

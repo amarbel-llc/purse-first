@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/jsonrpc"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/protocol"
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/jsonrpc"
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
 )
 
 func (h *Handler) handleInitializeV1(ctx context.Context, msg *jsonrpc.Message) (*jsonrpc.Message, error) {

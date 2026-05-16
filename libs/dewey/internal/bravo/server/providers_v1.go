@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/protocol"
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
 )
 
 // ToolProviderV1 extends ToolProvider with V1 capabilities.

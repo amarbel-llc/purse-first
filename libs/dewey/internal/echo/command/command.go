@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"io/fs"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/protocol"
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
 )
 
 // EnvVar declares an environment variable that an app or command reads,

@@ -344,7 +344,7 @@ func TestLimitStderrEmptyInput(t *testing.T) {
 func TestLimitStderrLargeInput(t *testing.T) {
 	// Build stderr larger than 100KB default
 	line := strings.Repeat("x", 99) + "\n" // 100 bytes per line
-	input := strings.Repeat(line, 1500)     // 150,000 bytes
+	input := strings.Repeat(line, 1500)    // 150,000 bytes
 
 	result := LimitStderr(input)
 	if !result.Truncated {

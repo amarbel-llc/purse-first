@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
 	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/collections_slice"
 	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
 	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/flags"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/protocol"
 )
 
 // Utility holds the command registry and top-level metadata for a CLI/MCP application.
@@ -18,19 +18,18 @@ type Utility struct {
 	Aliases           []string // Aliases are additional binary names that should get shell completions
 	Description       Description
 	Version           string
-	MCPArgs           []string   // extra args passed to the binary in plugin manifests
-	MCPBinary         string     // binary name for plugin.json command; defaults to Name
-	PluginDescription string     // "description" in plugin.json; omitted if empty
-	PluginAuthor      string     // "author.name" in plugin.json; omitted if empty
-
+	MCPArgs           []string // extra args passed to the binary in plugin manifests
+	MCPBinary         string   // binary name for plugin.json command; defaults to Name
+	PluginDescription string   // "description" in plugin.json; omitted if empty
+	PluginAuthor      string   // "author.name" in plugin.json; omitted if empty
 
 	commands       map[string]*Command
 	canonicalNames map[*Command]string
 	pluginSkills   []string // discovered skill paths for plugin.json
 
 	// TODO this should be migrated into the new model
-	OldParams         []OldParam // global flags
-	Examples          []Example  // app-level workflow examples
+	OldParams []OldParam // global flags
+	Examples  []Example  // app-level workflow examples
 
 	// TODO The below should be moved to a dedicated embedded manpage struct
 	// EnvVars are environment variables the app as a whole reads, rendered
