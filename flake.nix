@@ -160,6 +160,24 @@
                 install -Dm644 $src/cmd/dagnabit/dagnabit.1 $out/share/man/man1/dagnabit.1
               '';
             };
+
+            defererr = mkGoModule {
+              pname = "defererr";
+              version = "0.1.0";
+              subPackages = [ "libs/dewey/cmd/defererr" ];
+            };
+
+            repool = mkGoModule {
+              pname = "repool";
+              version = "0.1.0";
+              subPackages = [ "libs/dewey/cmd/repool" ];
+            };
+
+            seqerror = mkGoModule {
+              pname = "seqerror";
+              version = "0.1.0";
+              subPackages = [ "libs/dewey/cmd/seqerror" ];
+            };
           };
 
           devShells = {
