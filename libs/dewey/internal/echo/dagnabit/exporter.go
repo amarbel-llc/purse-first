@@ -17,6 +17,9 @@ import (
 
 const exportDirective = "//go:generate dagnabit export"
 
+// privateDirective marks a package as excluded from --library mode.
+const privateDirective = "//go:generate dagnabit private"
+
 // Exporter generates pkgs/ facade files from internal packages.
 type Exporter struct {
 	ModulePath string
@@ -94,6 +97,70 @@ func (exporter *Exporter) ScanAndExport() error {
 		pattern := "./" + rel
 		if err := exporter.ExportPackage(pattern); err != nil {
 			return fmt.Errorf("exporting %s: %w", pattern, err)
+		}
+	}
+
+	return nil
+}
+
+// ExportAll generates facades for every package under internal/, without
+// requiring //go:generate dagnabit export directives. Packages containing a
+// //dagnabit:private directive are skipped. It fails if any
+// //go:generate dagnabit export directives are found — they are incompatible
+// with library mode and should be removed.
+func (exporter *Exporter) ExportAll() error {
+	internalDir := filepath.Join(exporter.Dir, "internal")
+
+	exportDirs, err := scanForExportDirectives(internalDir)
+	if err != nil {
+		return fmt.Errorf("scanning for export directives: %w", err)
+	}
+
+	if len(exportDirs) > 0 {
+		return fmt.Errorf(
+			"--library mode requires no //go:generate dagnabit export directives, but found them in:\n%s\nRemove these directives before using --library",
+			strings.Join(exportDirs, "\n"),
+		)
+	}
+
+	privateDirs, err := scanForPrivateDirectives(internalDir)
+	if err != nil {
+		return fmt.Errorf("scanning for private directives: %w", err)
+	}
+
+	privateSet := make(map[string]struct{}, len(privateDirs))
+	for _, d := range privateDirs {
+		privateSet[d] = struct{}{}
+	}
+
+	cfg := &packages.Config{
+		Mode: packages.NeedName | packages.NeedTypes | packages.NeedFiles,
+		Dir:  exporter.Dir,
+	}
+
+	pkgs, err := packages.Load(cfg, "./internal/...")
+	if err != nil {
+		return fmt.Errorf("loading internal packages: %w", err)
+	}
+
+	for _, pkg := range pkgs {
+		if len(pkg.Errors) > 0 {
+			return fmt.Errorf("package %s has errors: %v", pkg.PkgPath, pkg.Errors[0])
+		}
+
+		if !strings.Contains(pkg.PkgPath, "/internal/") {
+			continue
+		}
+
+		if len(pkg.GoFiles) > 0 {
+			pkgDir := filepath.Dir(pkg.GoFiles[0])
+			if _, private := privateSet[pkgDir]; private {
+				continue
+			}
+		}
+
+		if err := exporter.exportSinglePackage(pkg); err != nil {
+			return fmt.Errorf("exporting %s: %w", pkg.PkgPath, err)
 		}
 	}
 
@@ -654,7 +721,53 @@ func scanForExportDirectives(root string) ([]string, error) {
 	return dirs, err
 }
 
+// scanForPrivateDirectives walks a directory tree and returns paths of
+// directories containing Go files with //dagnabit:private.
+func scanForPrivateDirectives(root string) ([]string, error) {
+	seen := make(map[string]struct{})
+	var dirs []string
+
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() || !strings.HasSuffix(path, ".go") {
+			return nil
+		}
+
+		dir := filepath.Dir(path)
+		if _, ok := seen[dir]; ok {
+			return nil
+		}
+
+		has, err := fileContainsPrivateDirective(path)
+		if err != nil {
+			return fmt.Errorf("reading %s: %w", path, err)
+		}
+
+		if has {
+			seen[dir] = struct{}{}
+			dirs = append(dirs, dir)
+		}
+
+		return nil
+	})
+
+	sort.Strings(dirs)
+
+	return dirs, err
+}
+
+func fileContainsPrivateDirective(path string) (bool, error) {
+	return fileContainsLine(path, privateDirective)
+}
+
 func fileContainsDirective(path string) (bool, error) {
+	return fileContainsLine(path, exportDirective)
+}
+
+func fileContainsLine(path, needle string) (bool, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return false, err
@@ -663,7 +776,7 @@ func fileContainsDirective(path string) (bool, error) {
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		if strings.TrimSpace(scanner.Text()) == exportDirective {
+		if strings.TrimSpace(scanner.Text()) == needle {
 			return true, nil
 		}
 	}

@@ -250,13 +250,22 @@ func runExport() {
 	var outputDir string
 	var modulePath string
 	var noRewriteConsumers bool
+	var library bool
 
 	exportFlags.BoolVar(&dryRun, "n", false, "show what would be generated without writing files")
 	exportFlags.BoolVar(&dryRun, "dry-run", false, "show what would be generated without writing files")
 	exportFlags.StringVar(&outputDir, "output-dir", "pkgs", "output directory for generated facades (relative to module root)")
 	exportFlags.StringVar(&modulePath, "module", "", "Go module path (read from go.mod if empty)")
 	exportFlags.BoolVar(&noRewriteConsumers, "no-rewrite-consumers", false, "skip rewriting external workspace consumers' imports to the new facade path")
+	exportFlags.BoolVar(&library, "library", false, "export facades for every package under internal/ (fails if any //go:generate dagnabit export directives exist)")
 	exportFlags.Parse(os.Args[1:])
+
+	args := exportFlags.Args()
+
+	if library && len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "error: --library does not accept package arguments\n")
+		os.Exit(1)
+	}
 
 	dir, err := os.Getwd()
 	if err != nil {
@@ -278,7 +287,14 @@ func runExport() {
 		SkipConsumerRewrite: noRewriteConsumers,
 	}
 
-	args := exportFlags.Args()
+	if library {
+		if err := exporter.ExportAll(); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+		return
+	}
 
 	if len(args) > 0 {
 		for _, arg := range args {

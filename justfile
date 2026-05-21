@@ -97,6 +97,11 @@ dewey-reposition-apply:
 dewey-export pkg:
     cd {{justfile_directory()}}/libs/dewey && {{justfile_directory()}}/build/dagnabit export ./{{pkg}}
 
+# Generate pkgs/ facades for every package under libs/dewey/internal/ (library mode).
+# Fails if any //go:generate dagnabit export directives are found.
+dewey-export-library *flags:
+    cd {{justfile_directory()}}/libs/dewey && {{justfile_directory()}}/build/dagnabit export --library {{flags}}
+
 # Test rust-mcp library
 test-rust-mcp:
     cd libs/rust-mcp && {{cmd_nix_dev}} cargo test

@@ -128,6 +128,38 @@ func TestScanForExportDirectivesEmpty(t *testing.T) {
 	}
 }
 
+func TestExportAllRejectsExportDirectives(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	pkgDir := filepath.Join(tmpDir, "internal", "alfa", "has_directive")
+	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(
+		filepath.Join(pkgDir, "main.go"),
+		[]byte("package has_directive\n\n//go:generate dagnabit export\n\ntype Foo struct{}\n"),
+		0o644,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	exporter := &Exporter{
+		ModulePath: "example.com/mod",
+		Dir:        tmpDir,
+		OutputDir:  "pkgs",
+	}
+
+	err := exporter.ExportAll()
+	if err == nil {
+		t.Fatal("expected error when export directives are present, got nil")
+	}
+
+	if !strings.Contains(err.Error(), "--library mode") {
+		t.Errorf("expected error to mention --library mode, got: %v", err)
+	}
+}
+
 func assertContains(t *testing.T, got, want string) {
 	t.Helper()
 	if !strings.Contains(got, want) {
