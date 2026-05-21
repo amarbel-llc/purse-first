@@ -6,14 +6,14 @@ import (
 	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 )
 
-type pool[SWIMMER any, SWIMMER_PTR interfaces.Ptr[SWIMMER]] struct {
+type Pool[SWIMMER any, SWIMMER_PTR interfaces.Ptr[SWIMMER]] struct {
 	inner *sync.Pool
 	reset func(SWIMMER_PTR)
 }
 
-var _ interfaces.PoolPtr[string, *string] = pool[string, *string]{}
+var _ interfaces.PoolPtr[string, *string] = Pool[string, *string]{}
 
-func MakeWithResetable[SWIMMER any, SWIMMER_PTR interfaces.ResetablePtr[SWIMMER]]() *pool[SWIMMER, SWIMMER_PTR] {
+func MakeWithResetable[SWIMMER any, SWIMMER_PTR interfaces.ResetablePtr[SWIMMER]]() *Pool[SWIMMER, SWIMMER_PTR] {
 	return Make(nil, func(swimmer SWIMMER_PTR) {
 		swimmer.Reset()
 	})
@@ -22,8 +22,8 @@ func MakeWithResetable[SWIMMER any, SWIMMER_PTR interfaces.ResetablePtr[SWIMMER]
 func Make[SWIMMER any, SWIMMER_PTR interfaces.Ptr[SWIMMER]](
 	New func() SWIMMER_PTR,
 	Reset func(SWIMMER_PTR),
-) *pool[SWIMMER, SWIMMER_PTR] {
-	return &pool[SWIMMER, SWIMMER_PTR]{
+) *Pool[SWIMMER, SWIMMER_PTR] {
+	return &Pool[SWIMMER, SWIMMER_PTR]{
 		reset: Reset,
 		inner: &sync.Pool{
 			New: func() (swimmer any) {
@@ -39,11 +39,11 @@ func Make[SWIMMER any, SWIMMER_PTR interfaces.Ptr[SWIMMER]](
 	}
 }
 
-func (pool pool[SWIMMER, SWIMMER_PTR]) get() SWIMMER_PTR {
+func (pool Pool[SWIMMER, SWIMMER_PTR]) get() SWIMMER_PTR {
 	return pool.inner.Get().(SWIMMER_PTR)
 }
 
-func (pool pool[SWIMMER, SWIMMER_PTR]) GetWithRepool() (SWIMMER_PTR, interfaces.FuncRepool) {
+func (pool Pool[SWIMMER, SWIMMER_PTR]) GetWithRepool() (SWIMMER_PTR, interfaces.FuncRepool) {
 	element := pool.get()
 
 	return element, wrapRepoolDebug(func() {
@@ -51,7 +51,7 @@ func (pool pool[SWIMMER, SWIMMER_PTR]) GetWithRepool() (SWIMMER_PTR, interfaces.
 	})
 }
 
-func (pool pool[SWIMMER, SWIMMER_PTR]) put(swimmer SWIMMER_PTR) {
+func (pool Pool[SWIMMER, SWIMMER_PTR]) put(swimmer SWIMMER_PTR) {
 	if swimmer == nil {
 		return
 	}

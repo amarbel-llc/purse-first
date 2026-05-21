@@ -2,14 +2,19 @@
 
 package pool
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/pool"
+import (
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/pool"
+)
 
 type (
-	Bespoke[T any]         = internal.Bespoke[T]
-	BespokeResetter[T any] = internal.BespokeResetter[T]
+	Bespoke[T any]                                         = internal.Bespoke[T]
+	BespokeResetter[T any]                                 = internal.BespokeResetter[T]
+	Pool[SWIMMER any, SWIMMER_PTR interfaces.Ptr[SWIMMER]] = internal.Pool[SWIMMER, SWIMMER_PTR]
 	Slice[SWIMMER any, SWIMMER_SLICE interface {
 		~[]SWIMMER
 	}] = internal.Slice[SWIMMER, SWIMMER_SLICE]
+	Value[SWIMMER any] = internal.Value[SWIMMER]
 )
 
 var (
@@ -24,8 +29,17 @@ var (
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
 // See https://github.com/golang/go/issues/52654
+func Make[SWIMMER any, SWIMMER_PTR interfaces.Ptr[SWIMMER]](New func() SWIMMER_PTR, Reset func(SWIMMER_PTR)) *internal.Pool[SWIMMER, SWIMMER_PTR] {
+	return internal.Make[SWIMMER, SWIMMER_PTR](New, Reset)
+}
 func MakeSlice[SWIMMER any, SWIMMER_SLICE interface {
 	~[]SWIMMER
 }]() internal.Slice[SWIMMER, SWIMMER_SLICE] {
 	return internal.MakeSlice[SWIMMER, SWIMMER_SLICE]()
+}
+func MakeValue[SWIMMER any](New func() SWIMMER, Reset func(SWIMMER)) *internal.Value[SWIMMER] {
+	return internal.MakeValue[SWIMMER](New, Reset)
+}
+func MakeWithResetable[SWIMMER any, SWIMMER_PTR interfaces.ResetablePtr[SWIMMER]]() *internal.Pool[SWIMMER, SWIMMER_PTR] {
+	return internal.MakeWithResetable[SWIMMER, SWIMMER_PTR]()
 }

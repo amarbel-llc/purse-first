@@ -6,18 +6,18 @@ import (
 	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 )
 
-type value[SWIMMER any] struct {
+type Value[SWIMMER any] struct {
 	inner *sync.Pool
 	reset func(SWIMMER)
 }
 
-var _ interfaces.Pool[string] = value[string]{}
+var _ interfaces.Pool[string] = Value[string]{}
 
 func MakeValue[SWIMMER any](
 	New func() SWIMMER,
 	Reset func(SWIMMER),
-) *value[SWIMMER] {
-	return &value[SWIMMER]{
+) *Value[SWIMMER] {
+	return &Value[SWIMMER]{
 		reset: Reset,
 		inner: &sync.Pool{
 			New: func() (swimmer any) {
@@ -34,11 +34,11 @@ func MakeValue[SWIMMER any](
 	}
 }
 
-func (pool value[SWIMMER]) get() SWIMMER {
+func (pool Value[SWIMMER]) get() SWIMMER {
 	return pool.inner.Get().(SWIMMER)
 }
 
-func (pool value[SWIMMER]) GetWithRepool() (SWIMMER, interfaces.FuncRepool) {
+func (pool Value[SWIMMER]) GetWithRepool() (SWIMMER, interfaces.FuncRepool) {
 	element := pool.get()
 
 	return element, wrapRepoolDebug(func() {
@@ -46,7 +46,7 @@ func (pool value[SWIMMER]) GetWithRepool() (SWIMMER, interfaces.FuncRepool) {
 	})
 }
 
-func (pool value[SWIMMER]) put(swimmer SWIMMER) {
+func (pool Value[SWIMMER]) put(swimmer SWIMMER) {
 	if pool.reset != nil {
 		pool.reset(swimmer)
 	}
