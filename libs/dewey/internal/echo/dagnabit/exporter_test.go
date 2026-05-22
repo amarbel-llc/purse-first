@@ -160,6 +160,35 @@ func TestExportAllRejectsExportDirectives(t *testing.T) {
 	}
 }
 
+func TestCollectBuildTags(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "main.go"),
+		[]byte("package foo\n\ntype Foo struct{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "test.go"),
+		[]byte("//go:build test\n\npackage foo\n\ntype Bar struct{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "test2.go"),
+		[]byte("//go:build test\n\npackage foo\n\ntype Baz struct{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	tags, err := collectBuildTags(tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(tags) != 1 {
+		t.Fatalf("expected 1 unique tag, got %d: %v", len(tags), tags)
+	}
+	if tags[0] != "test" {
+		t.Errorf("expected tag %q, got %q", "test", tags[0])
+	}
+}
+
 func assertContains(t *testing.T, got, want string) {
 	t.Helper()
 	if !strings.Contains(got, want) {

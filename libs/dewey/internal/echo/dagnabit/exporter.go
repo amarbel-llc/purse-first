@@ -251,6 +251,59 @@ func (exporter *Exporter) exportSinglePackage(pkg *packages.Package) error {
 	return nil
 }
 
+// collectBuildTags scans all .go files in dir and returns the unique,
+// sorted, non-empty build-tag expressions found in //go:build lines.
+func collectBuildTags(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	seen := make(map[string]struct{})
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
+			continue
+		}
+
+		tag, err := firstBuildTag(filepath.Join(dir, entry.Name()))
+		if err != nil {
+			return nil, err
+		}
+		if tag != "" {
+			seen[tag] = struct{}{}
+		}
+	}
+
+	tags := make([]string, 0, len(seen))
+	for t := range seen {
+		tags = append(tags, t)
+	}
+	sort.Strings(tags)
+	return tags, nil
+}
+
+// firstBuildTag returns the first //go:build expression from a file header,
+// or "" if none is found. Stops reading at the first non-comment, non-blank line.
+func firstBuildTag(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer files.CloseReadOnly(f)
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(line, "//go:build ") {
+			return strings.TrimPrefix(line, "//go:build "), nil
+		}
+		if line != "" && !strings.HasPrefix(line, "//") {
+			break
+		}
+	}
+	return "", scanner.Err()
+}
+
 // generateFacadeJen produces a facade Go source file using jennifer for
 // proper import management.
 func generateFacadeJen(pkgName, importPath string, typePkg *types.Package) ([]byte, error) {
