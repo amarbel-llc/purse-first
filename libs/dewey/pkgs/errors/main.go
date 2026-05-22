@@ -98,7 +98,6 @@ var (
 	Must                                    = internal.Must
 	PanicIfError                            = internal.PanicIfError
 	PrintHelpful                            = internal.PrintHelpful
-	PrintStackTracerIfNecessary             = internal.PrintStackTracerIfNecessary
 	RunChildContextWithPrintTicker          = internal.RunChildContextWithPrintTicker
 	RunContextWithPrintTicker               = internal.RunContextWithPrintTicker
 	Unwrap                                  = internal.Unwrap

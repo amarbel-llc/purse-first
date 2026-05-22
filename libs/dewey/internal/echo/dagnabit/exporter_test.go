@@ -240,6 +240,76 @@ func TestExportPackageWithBuildTags(t *testing.T) {
 	assertNotContains(t, string(testContent), "\tWidget =") // base Widget should not appear (only TestWidget)
 }
 
+func TestExportPackageWithNegatedBuildTag(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
+		[]byte("module example.com/mod\n\ngo 1.22\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	pkgDir := filepath.Join(tmpDir, "internal", "alfa", "widget")
+	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// Base symbols (always present, including when !debug)
+	if err := os.WriteFile(filepath.Join(pkgDir, "main.go"),
+		[]byte("package widget\n\ntype Widget struct{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// Symbols only present under !debug (absent when debug tag is active)
+	if err := os.WriteFile(filepath.Join(pkgDir, "normal.go"),
+		[]byte("//go:build !debug\n\npackage widget\n\ntype NormalWidget struct{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// Symbols only present when debug is active
+	if err := os.WriteFile(filepath.Join(pkgDir, "debug.go"),
+		[]byte("//go:build debug\n\npackage widget\n\ntype DebugWidget struct{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	exporter := &Exporter{
+		ModulePath:          "example.com/mod",
+		Dir:                 tmpDir,
+		OutputDir:           "pkgs",
+		SkipConsumerRewrite: true,
+		Env:                 append(os.Environ(), "GOWORK=off"),
+	}
+
+	if err := exporter.ExportPackage("./internal/alfa/widget"); err != nil {
+		t.Fatal(err)
+	}
+
+	// main.go: only symbols present across ALL combinations (Widget only;
+	// NormalWidget disappears under debug, DebugWidget disappears without debug)
+	mainContent, err := os.ReadFile(filepath.Join(tmpDir, "pkgs", "widget", "main.go"))
+	if err != nil {
+		t.Fatalf("main.go not generated: %v", err)
+	}
+	assertContains(t, string(mainContent), "Widget")
+	assertNotContains(t, string(mainContent), "NormalWidget")
+	assertNotContains(t, string(mainContent), "DebugWidget")
+	assertNotContains(t, string(mainContent), "//go:build")
+
+	// debug.go: DebugWidget (unique to debug build)
+	debugContent, err := os.ReadFile(filepath.Join(tmpDir, "pkgs", "widget", "debug.go"))
+	if err != nil {
+		t.Fatalf("debug.go not generated: %v", err)
+	}
+	assertContains(t, string(debugContent), "DebugWidget")
+	assertContains(t, string(debugContent), "//go:build debug")
+	assertNotContains(t, string(debugContent), "NormalWidget")
+
+	// not_debug.go: NormalWidget (unique to !debug build)
+	notDebugContent, err := os.ReadFile(filepath.Join(tmpDir, "pkgs", "widget", "not_debug.go"))
+	if err != nil {
+		t.Fatalf("not_debug.go not generated: %v", err)
+	}
+	assertContains(t, string(notDebugContent), "NormalWidget")
+	assertContains(t, string(notDebugContent), "//go:build !debug")
+	assertNotContains(t, string(notDebugContent), "DebugWidget")
+}
+
 func TestBuildFlagsForExpression(t *testing.T) {
 	cases := []struct{ expr, want string }{
 		{"test", "test"},

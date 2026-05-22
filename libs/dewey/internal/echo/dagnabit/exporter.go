@@ -269,9 +269,22 @@ func (exporter *Exporter) exportSinglePackage(pkg *packages.Package) error {
 	return nil
 }
 
-// exportTaggedFacades generates one facade file per unique build tag found
-// in pkgDir. Each file re-exports only the symbols that are new (not already
-// in the untagged base package).
+// exportTaggedFacades generates one facade file per unique build tag
+// expression found in pkgDir, plus rewrites main.go to contain only symbols
+// present across ALL tag combinations (the intersection).
+//
+// Algorithm:
+//  1. Collect all build-tag expressions from the source directory.
+//  2. For each positive expression (e.g. "test", "test && debug"), load the
+//     package with those tags active.
+//  3. Compute the intersection of base names ∩ all positive-tag name sets.
+//     Symbols in the intersection are guaranteed to be present regardless of
+//     build tags → these go in main.go.
+//  4. For each positive expression, diff its symbol set against the
+//     intersection → the extras go in <expr>.go with //go:build <expr>.
+//  5. For each negation-only expression (e.g. "!debug"), diff base names
+//     against the corresponding positive load (base − positive = unique to
+//     the negated build) → these go in not_debug.go with //go:build !debug.
 func (exporter *Exporter) exportTaggedFacades(
 	basePkg *packages.Package,
 	pkgDir, importPath, facadePkgName, outputSubdir string,
@@ -281,31 +294,116 @@ func (exporter *Exporter) exportTaggedFacades(
 		return fmt.Errorf("collecting build tags from %s: %w", pkgDir, err)
 	}
 
+	if len(tags) == 0 {
+		return nil
+	}
+
 	baseNames := exportedNames(basePkg.Types)
 
+	// Load every positive-tag combination and record their symbol sets.
+	// For a negated expression like "!debug", the "positive counterpart" is
+	// "debug" — we load that to discover which symbols disappear under !debug.
+	type tagLoad struct {
+		expr        string // original expression (e.g. "!debug")
+		negated     bool   // true when expr is purely negated
+		positiveKey string // positive atoms used for loading (e.g. "debug")
+		pkg         *packages.Package
+		names       map[string]struct{}
+	}
+
+	loads := make([]tagLoad, 0, len(tags))
 	for _, expr := range tags {
-		// Skip negation-only expressions — they can't be activated via -tags
-		// and by definition don't add new symbols relative to the untagged base.
-		if buildFlagsForExpression(expr) == "" {
+		flags := buildFlagsForExpression(expr)
+		negated := flags == ""
+
+		if negated {
+			// For "!debug", the positive counterpart is the atoms after stripping !
+			// e.g. "!debug" → positiveKey "debug"
+			positiveKey := positiveAtomsForNegatedExpr(expr)
+			if positiveKey == "" {
+				continue
+			}
+			pkg, err := exporter.loadPackageWithTag(importPath, positiveKey)
+			if err != nil {
+				return fmt.Errorf("loading %s with -tags %s (for %s): %w", importPath, positiveKey, expr, err)
+			}
+			loads = append(loads, tagLoad{
+				expr:        expr,
+				negated:     true,
+				positiveKey: positiveKey,
+				pkg:         pkg,
+				names:        exportedNames(pkg.Types),
+			})
+		} else {
+			pkg, err := exporter.loadPackageWithTag(importPath, flags)
+			if err != nil {
+				return fmt.Errorf("loading %s with -tags %s: %w", importPath, flags, err)
+			}
+			loads = append(loads, tagLoad{
+				expr:        expr,
+				negated:     false,
+				positiveKey: flags,
+				pkg:         pkg,
+				names:        exportedNames(pkg.Types),
+			})
+		}
+	}
+
+	// Compute the intersection: symbols present in base AND in every positive load.
+	intersection := copyNameSet(baseNames)
+	for _, load := range loads {
+		if !load.negated {
+			for name := range intersection {
+				if _, ok := load.names[name]; !ok {
+					delete(intersection, name)
+				}
+			}
+		}
+	}
+
+	// Rewrite main.go with only the intersection.
+	mainCode, err := generateFacadeJenFiltered(facadePkgName, importPath, basePkg.Types, intersection)
+	if err != nil {
+		return fmt.Errorf("regenerating main.go for %s: %w", importPath, err)
+	}
+	mainPath := filepath.Join(outputSubdir, "main.go")
+	if err := os.WriteFile(mainPath, mainCode, 0o644); err != nil {
+		return fmt.Errorf("writing %s: %w", mainPath, err)
+	}
+	fmt.Printf("generated: %s\n", mainPath)
+
+	// Generate per-expression tagged facade files.
+	for _, load := range loads {
+		var uniqueNames []string
+		if load.negated {
+			// Symbols unique to the negated build = base − positive-load − intersection
+			uniqueNames = diffSymbols(load.names, baseNames)
+			// Further remove anything already in intersection (already in main.go)
+			uniqueNames = filterOut(uniqueNames, intersection)
+		} else {
+			// Symbols unique to this positive tag combo = load − intersection
+			uniqueNames = diffSymbols(intersection, load.names)
+		}
+
+		if len(uniqueNames) == 0 {
 			continue
 		}
 
-		taggedPkg, err := exporter.loadPackageWithTag(importPath, expr)
+		// Symbols for negated exprs come from basePkg (present without positive tags).
+		// Symbols for positive exprs come from the tagged load (already cached in load.pkg).
+		var scope *types.Scope
+		if load.negated {
+			scope = basePkg.Types.Scope()
+		} else {
+			scope = load.pkg.Types.Scope()
+		}
+
+		code, err := generateTaggedFacadeJen(facadePkgName, importPath, load.expr, scope, uniqueNames)
 		if err != nil {
-			return fmt.Errorf("loading %s with -tags %s: %w", importPath, expr, err)
+			return fmt.Errorf("generating tagged facade for %s expr=%s: %w", importPath, load.expr, err)
 		}
 
-		newNames := diffSymbols(baseNames, exportedNames(taggedPkg.Types))
-		if len(newNames) == 0 {
-			continue
-		}
-
-		code, err := generateTaggedFacadeJen(facadePkgName, importPath, expr, taggedPkg.Types.Scope(), newNames)
-		if err != nil {
-			return fmt.Errorf("generating tagged facade for %s tag=%s: %w", importPath, expr, err)
-		}
-
-		outPath := filepath.Join(outputSubdir, filenameForExpression(expr)+".go")
+		outPath := filepath.Join(outputSubdir, filenameForExpression(load.expr)+".go")
 		if err := os.WriteFile(outPath, code, 0o644); err != nil {
 			return fmt.Errorf("writing %s: %w", outPath, err)
 		}
@@ -313,6 +411,43 @@ func (exporter *Exporter) exportTaggedFacades(
 	}
 
 	return nil
+}
+
+// positiveAtomsForNegatedExpr extracts the positive atoms from a purely-negated
+// expression like "!debug" → "debug", or "!debug && !test" → "" (empty, since
+// both are negated and there's no positive counterpart to load).
+// For mixed expressions the caller uses buildFlagsForExpression instead.
+func positiveAtomsForNegatedExpr(expr string) string {
+	parts := strings.Split(expr, " && ")
+	var atoms []string
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if strings.HasPrefix(p, "!") {
+			atoms = append(atoms, strings.TrimPrefix(p, "!"))
+		}
+	}
+	return strings.Join(atoms, ",")
+}
+
+// copyNameSet returns a shallow copy of a name set.
+func copyNameSet(src map[string]struct{}) map[string]struct{} {
+	dst := make(map[string]struct{}, len(src))
+	for k := range src {
+		dst[k] = struct{}{}
+	}
+	return dst
+}
+
+// filterOut removes from names any entry present in exclude, returning the
+// remaining sorted slice.
+func filterOut(names []string, exclude map[string]struct{}) []string {
+	out := names[:0]
+	for _, n := range names {
+		if _, skip := exclude[n]; !skip {
+			out = append(out, n)
+		}
+	}
+	return out
 }
 
 // buildFlagsForExpression converts a //go:build expression to a -tags argument.
@@ -525,6 +660,101 @@ func firstBuildTag(path string) (string, error) {
 		}
 	}
 	return "", scanner.Err()
+}
+
+// generateFacadeJenFiltered is like generateFacadeJen but only emits symbols
+// whose names are present in the allow set. Used to write main.go with only
+// the intersection of symbols across all build-tag combinations.
+func generateFacadeJenFiltered(pkgName, importPath string, typePkg *types.Package, allow map[string]struct{}) ([]byte, error) {
+	scope := typePkg.Scope()
+	var filtered []string
+	for _, name := range scope.Names() {
+		if _, ok := allow[name]; ok {
+			filtered = append(filtered, name)
+		}
+	}
+	sort.Strings(filtered)
+
+	f := jen.NewFile(pkgName)
+	f.HeaderComment("Code generated by dagnabit; DO NOT EDIT.")
+	f.ImportAlias(importPath, "internal")
+
+	var (
+		typeStmts  []*jen.Statement
+		varStmts   []*jen.Statement
+		constStmts []*jen.Statement
+		funcStmts  []jen.Code
+	)
+
+	for _, name := range filtered {
+		obj := scope.Lookup(name)
+		if obj == nil || !obj.Exported() {
+			continue
+		}
+
+		switch obj := obj.(type) {
+		case *types.TypeName:
+			typeStmts = append(typeStmts, jenTypeAlias(name, importPath, obj))
+
+		case *types.Func:
+			sig := obj.Type().(*types.Signature)
+			if sig.TypeParams() != nil && sig.TypeParams().Len() > 0 {
+				if referencesUnexportedType(sig.Params()) || referencesUnexportedType(sig.Results()) {
+					continue
+				}
+				funcStmts = append(funcStmts, jenFuncWrapper(name, importPath, sig))
+			} else {
+				varStmts = append(varStmts, jen.Id(name).Op("=").Qual(importPath, name))
+			}
+
+		case *types.Var:
+			varStmts = append(varStmts, jen.Id(name).Op("=").Qual(importPath, name))
+
+		case *types.Const:
+			constStmts = append(constStmts, jen.Id(name).Op("=").Qual(importPath, name))
+		}
+	}
+
+	if len(typeStmts) > 0 {
+		f.Type().DefsFunc(func(g *jen.Group) {
+			for _, s := range typeStmts {
+				g.Add(s)
+			}
+		})
+	}
+
+	if len(varStmts) > 0 {
+		f.Var().DefsFunc(func(g *jen.Group) {
+			for _, s := range varStmts {
+				g.Add(s)
+			}
+		})
+	}
+
+	if len(funcStmts) > 0 {
+		f.Comment("Generic function wrappers — Go does not support assigning")
+		f.Comment("generic functions to variables without instantiation.")
+		f.Comment("See https://github.com/golang/go/issues/52654")
+
+		for _, s := range funcStmts {
+			f.Add(s)
+		}
+	}
+
+	if len(constStmts) > 0 {
+		f.Const().DefsFunc(func(g *jen.Group) {
+			for _, s := range constStmts {
+				g.Add(s)
+			}
+		})
+	}
+
+	var buf strings.Builder
+	if err := f.Render(&buf); err != nil {
+		return nil, fmt.Errorf("rendering: %w", err)
+	}
+
+	return []byte(buf.String()), nil
 }
 
 // generateFacadeJen produces a facade Go source file using jennifer for
