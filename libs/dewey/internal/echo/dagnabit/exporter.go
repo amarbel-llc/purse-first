@@ -283,10 +283,16 @@ func (exporter *Exporter) exportTaggedFacades(
 
 	baseNames := exportedNames(basePkg.Types)
 
-	for _, tag := range tags {
-		taggedPkg, err := exporter.loadPackageWithTag(importPath, tag)
+	for _, expr := range tags {
+		// Skip negation-only expressions — they can't be activated via -tags
+		// and by definition don't add new symbols relative to the untagged base.
+		if buildFlagsForExpression(expr) == "" {
+			continue
+		}
+
+		taggedPkg, err := exporter.loadPackageWithTag(importPath, expr)
 		if err != nil {
-			return fmt.Errorf("loading %s with -tags %s: %w", importPath, tag, err)
+			return fmt.Errorf("loading %s with -tags %s: %w", importPath, expr, err)
 		}
 
 		newNames := diffSymbols(baseNames, exportedNames(taggedPkg.Types))
@@ -294,12 +300,12 @@ func (exporter *Exporter) exportTaggedFacades(
 			continue
 		}
 
-		code, err := generateTaggedFacadeJen(facadePkgName, importPath, tag, taggedPkg.Types.Scope(), newNames)
+		code, err := generateTaggedFacadeJen(facadePkgName, importPath, expr, taggedPkg.Types.Scope(), newNames)
 		if err != nil {
-			return fmt.Errorf("generating tagged facade for %s tag=%s: %w", importPath, tag, err)
+			return fmt.Errorf("generating tagged facade for %s tag=%s: %w", importPath, expr, err)
 		}
 
-		outPath := filepath.Join(outputSubdir, tag+".go")
+		outPath := filepath.Join(outputSubdir, filenameForExpression(expr)+".go")
 		if err := os.WriteFile(outPath, code, 0o644); err != nil {
 			return fmt.Errorf("writing %s: %w", outPath, err)
 		}
@@ -309,13 +315,36 @@ func (exporter *Exporter) exportTaggedFacades(
 	return nil
 }
 
-// loadPackageWithTag reloads a package with a specific build tag active.
-func (exporter *Exporter) loadPackageWithTag(importPath, tag string) (*packages.Package, error) {
+// buildFlagsForExpression converts a //go:build expression to a -tags argument.
+// "test && debug" → "test,debug"; "!debug" → "" (caller should skip negation-only).
+// Strips negated atoms — the go tool can't activate a negated tag.
+func buildFlagsForExpression(expr string) string {
+	parts := strings.Split(expr, " && ")
+	var positive []string
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if !strings.HasPrefix(p, "!") && p != "" {
+			positive = append(positive, p)
+		}
+	}
+	return strings.Join(positive, ",")
+}
+
+// filenameForExpression converts a //go:build expression to a safe filename stem.
+// "test" → "test"; "test && debug" → "test_debug"; "!debug" → "not_debug".
+func filenameForExpression(expr string) string {
+	r := strings.NewReplacer(" && ", "_", "!", "not_", " ", "_")
+	return r.Replace(expr)
+}
+
+// loadPackageWithTag reloads a package with a specific build tag expression active.
+func (exporter *Exporter) loadPackageWithTag(importPath, expr string) (*packages.Package, error) {
+	flags := buildFlagsForExpression(expr)
 	cfg := &packages.Config{
 		Mode:       packages.NeedName | packages.NeedTypes | packages.NeedFiles,
 		Dir:        exporter.Dir,
 		Env:        exporter.Env,
-		BuildFlags: []string{"-tags", tag},
+		BuildFlags: []string{"-tags", flags},
 	}
 
 	pkgs, err := packages.Load(cfg, importPath)

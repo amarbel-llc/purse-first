@@ -240,6 +240,38 @@ func TestExportPackageWithBuildTags(t *testing.T) {
 	assertNotContains(t, string(testContent), "\tWidget =") // base Widget should not appear (only TestWidget)
 }
 
+func TestBuildFlagsForExpression(t *testing.T) {
+	cases := []struct{ expr, want string }{
+		{"test", "test"},
+		{"debug", "debug"},
+		{"test && debug", "test,debug"},
+		{"!debug", ""},
+		{"!debug && test", "test"},
+	}
+	for _, c := range cases {
+		got := buildFlagsForExpression(c.expr)
+		if got != c.want {
+			t.Errorf("buildFlagsForExpression(%q) = %q, want %q", c.expr, got, c.want)
+		}
+	}
+}
+
+func TestFilenameForExpression(t *testing.T) {
+	cases := []struct{ expr, want string }{
+		{"test", "test"},
+		{"debug", "debug"},
+		{"test && debug", "test_debug"},
+		{"!debug", "not_debug"},
+		{"!debug && test", "not_debug_test"},
+	}
+	for _, c := range cases {
+		got := filenameForExpression(c.expr)
+		if got != c.want {
+			t.Errorf("filenameForExpression(%q) = %q, want %q", c.expr, got, c.want)
+		}
+	}
+}
+
 func assertContains(t *testing.T, got, want string) {
 	t.Helper()
 	if !strings.Contains(got, want) {
