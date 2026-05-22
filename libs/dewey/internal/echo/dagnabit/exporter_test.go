@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"golang.org/x/tools/go/packages"
 )
 
 func identity(s string) string { return s }
@@ -426,6 +428,123 @@ func Lookup[K interfaces.Value](m map[K]string, key K) string {
 	// package for delegation — that import is expected.)
 	assertContains(t, got, "example.com/mod/pkgs/interfaces")
 	assertNotContains(t, got, "example.com/mod/internal/0/interfaces")
+}
+
+// TestExportPackageSelfReferentialTypes reproduces issue #97: when a package
+// defines named types used in its own generic function signatures, the remap
+// must NOT redirect those types to the pkgs/ facade path (self-import cycle).
+func TestExportPackageSelfReferentialTypes(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
+		[]byte("module example.com/mod\n\ngo 1.23\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	pkgDir := filepath.Join(tmpDir, "internal", "charlie", "hyphence")
+	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(pkgDir, "main.go"), []byte(`package hyphence
+
+type CoderToTypedBlob[BLOB any] func(raw []byte) (BLOB, error)
+
+type TypedBlob[BLOB any] struct {
+	Value BLOB
+}
+
+func Wrap[BLOB any](coder CoderToTypedBlob[BLOB], raw []byte) (TypedBlob[BLOB], error) {
+	v, err := coder(raw)
+	return TypedBlob[BLOB]{Value: v}, err
+}
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	exporter := &Exporter{
+		ModulePath:          "example.com/mod",
+		Dir:                 tmpDir,
+		OutputDir:           "pkgs",
+		SkipConsumerRewrite: true,
+		Env:                 append(os.Environ(), "GOWORK=off"),
+	}
+
+	if err := exporter.ExportPackage("./internal/charlie/hyphence"); err != nil {
+		t.Fatal(err)
+	}
+
+	content, err := os.ReadFile(filepath.Join(tmpDir, "pkgs", "hyphence", "main.go"))
+	if err != nil {
+		t.Fatalf("pkgs/hyphence/main.go not generated: %v", err)
+	}
+
+	got := string(content)
+
+	// Same-package named types must reference the internal alias, not the pkgs/ path.
+	assertNotContains(t, got, `"example.com/mod/pkgs/hyphence"`)
+	assertContains(t, got, "internal.CoderToTypedBlob")
+	assertContains(t, got, "internal.TypedBlob")
+}
+
+// TestExportPackageGeneratedFacadeCompiles verifies that generated facades
+// actually compile. Text matching misses import cycles, missing imports, and
+// other errors that only surface at build time.
+func TestExportPackageGeneratedFacadeCompiles(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
+		[]byte("module example.com/mod\n\ngo 1.23\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	pkgDir := filepath.Join(tmpDir, "internal", "charlie", "hyphence")
+	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(pkgDir, "main.go"), []byte(`package hyphence
+
+type CoderToTypedBlob[BLOB any] func(raw []byte) (BLOB, error)
+
+type TypedBlob[BLOB any] struct {
+	Value BLOB
+}
+
+func Wrap[BLOB any](coder CoderToTypedBlob[BLOB], raw []byte) (TypedBlob[BLOB], error) {
+	v, err := coder(raw)
+	return TypedBlob[BLOB]{Value: v}, err
+}
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	exporter := &Exporter{
+		ModulePath:          "example.com/mod",
+		Dir:                 tmpDir,
+		OutputDir:           "pkgs",
+		SkipConsumerRewrite: true,
+		Env:                 append(os.Environ(), "GOWORK=off"),
+	}
+
+	if err := exporter.ExportPackage("./internal/charlie/hyphence"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Actually compile the generated pkgs/ output to catch import cycles and
+	// other errors that assertContains/assertNotContains cannot detect.
+	cfg := &packages.Config{
+		Mode: packages.NeedName | packages.NeedTypes | packages.NeedFiles,
+		Dir:  tmpDir,
+		Env:  append(os.Environ(), "GOWORK=off"),
+	}
+	loaded, err := packages.Load(cfg, "./pkgs/...")
+	if err != nil {
+		t.Fatalf("loading generated pkgs: %v", err)
+	}
+	for _, pkg := range loaded {
+		for _, e := range pkg.Errors {
+			t.Errorf("package %s: %v", pkg.PkgPath, e)
+		}
+	}
 }
 
 func assertContains(t *testing.T, got, want string) {

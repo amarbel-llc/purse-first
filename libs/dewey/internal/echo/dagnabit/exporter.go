@@ -246,7 +246,13 @@ func (exporter *Exporter) exportSinglePackage(pkg *packages.Package) error {
 		return nil
 	}
 
+	// Do not remap importPath itself — same-package named types must stay on
+	// the "internal" alias, not be redirected to the facade being generated
+	// (which would create an import cycle).
 	remap := func(p string) string {
+		if p == importPath {
+			return p
+		}
 		return internalToFacade(exporter.ModulePath, exporter.outputDir(), p)
 	}
 	facadeCode, err := generateFacadeJen(facadePkgName, importPath, pkg.Types, remap)
