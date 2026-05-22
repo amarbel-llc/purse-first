@@ -189,6 +189,57 @@ func TestCollectBuildTags(t *testing.T) {
 	}
 }
 
+func TestExportPackageWithBuildTags(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
+		[]byte("module example.com/mod\n\ngo 1.22\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	pkgDir := filepath.Join(tmpDir, "internal", "alfa", "widget")
+	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(pkgDir, "main.go"),
+		[]byte("package widget\n\ntype Widget struct{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(pkgDir, "test.go"),
+		[]byte("//go:build test\n\npackage widget\n\ntype TestWidget struct{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	exporter := &Exporter{
+		ModulePath:          "example.com/mod",
+		Dir:                 tmpDir,
+		OutputDir:           "pkgs",
+		SkipConsumerRewrite: true,
+		Env:                 append(os.Environ(), "GOWORK=off"),
+	}
+
+	if err := exporter.ExportPackage("./internal/alfa/widget"); err != nil {
+		t.Fatal(err)
+	}
+
+	mainContent, err := os.ReadFile(filepath.Join(tmpDir, "pkgs", "widget", "main.go"))
+	if err != nil {
+		t.Fatalf("main.go not generated: %v", err)
+	}
+	testContent, err := os.ReadFile(filepath.Join(tmpDir, "pkgs", "widget", "test.go"))
+	if err != nil {
+		t.Fatalf("test.go not generated: %v", err)
+	}
+
+	assertContains(t, string(mainContent), "Widget")
+	assertNotContains(t, string(mainContent), "TestWidget")
+	assertNotContains(t, string(mainContent), "//go:build")
+
+	assertContains(t, string(testContent), "TestWidget")
+	assertContains(t, string(testContent), "//go:build test")
+	assertNotContains(t, string(testContent), "\tWidget =") // base Widget should not appear (only TestWidget)
+}
+
 func assertContains(t *testing.T, got, want string) {
 	t.Helper()
 	if !strings.Contains(got, want) {
