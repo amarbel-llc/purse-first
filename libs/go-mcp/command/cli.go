@@ -168,8 +168,8 @@ func printResult(r *Result) {
 				if block.Resource == nil {
 					continue
 				}
-				if block.Resource.Text != "" {
-					fmt.Println(block.Resource.Text)
+				if block.Resource.Text != nil {
+					fmt.Println(*block.Resource.Text)
 				} else {
 					fmt.Println(block.Resource.URI)
 				}

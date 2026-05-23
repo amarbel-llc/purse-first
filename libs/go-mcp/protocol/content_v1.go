@@ -29,12 +29,14 @@ type BlobResourceContents struct {
 }
 
 // EmbeddedResourceContents is the union of TextResourceContents and BlobResourceContents.
-// Exactly one of Text or Blob should be populated.
+// Exactly one of Text or Blob should be populated. The pointer types distinguish
+// "set to empty string" (emit "text": "") from "not the active variant" (omit
+// entirely), which strict MCP clients (Zod, etc.) require.
 type EmbeddedResourceContents struct {
-	URI      string `json:"uri"`
-	Text     string `json:"text,omitempty"`
-	Blob     string `json:"blob,omitempty"`
-	MimeType string `json:"mimeType,omitempty"`
+	URI      string  `json:"uri"`
+	Text     *string `json:"text,omitempty"`
+	Blob     *string `json:"blob,omitempty"`
+	MimeType string  `json:"mimeType,omitempty"`
 }
 
 // ContentBlockV1 represents a piece of content with optional annotations.
@@ -91,7 +93,7 @@ func EmbeddedTextResourceContent(uri, text, mimeType string) ContentBlockV1 {
 		Type: "resource",
 		Resource: &EmbeddedResourceContents{
 			URI:      uri,
-			Text:     text,
+			Text:     &text,
 			MimeType: mimeType,
 		},
 	}
@@ -103,7 +105,7 @@ func EmbeddedBlobResourceContent(uri, blob, mimeType string) ContentBlockV1 {
 		Type: "resource",
 		Resource: &EmbeddedResourceContents{
 			URI:      uri,
-			Blob:     blob,
+			Blob:     &blob,
 			MimeType: mimeType,
 		},
 	}
