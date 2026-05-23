@@ -17,6 +17,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/buildinfo"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -35,6 +36,10 @@ func Usage() {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "version" {
+		buildinfo.Print(os.Stdout, os.Args[0])
+		return
+	}
 	log.SetFlags(0)
 	log.SetPrefix("reflexive_interface_generator: ")
 	flag.Usage = Usage

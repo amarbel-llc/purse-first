@@ -34,6 +34,28 @@
     let
       mkMarketplace = import ./lib/mkMarketplace.nix;
 
+      # Per eng-versioning(7): single source of truth lives in version.env.
+      # Hybrid layout — repo root for the purse-first CLI + marketplace, and
+      # one version.env per independently-tagged library (currently just
+      # libs/dewey; go-mcp + rust-mcp migration tracked separately).
+      readVersion =
+        path: varName:
+        builtins.head (
+          builtins.match ".*${varName}=([^\n]+).*" (builtins.readFile path)
+        );
+
+      purseFirstVersion = readVersion ./version.env "PURSE_FIRST_VERSION";
+      deweyVersion = readVersion ./libs/dewey/version.env "DEWEY_VERSION";
+
+      commit = self.shortRev or self.dirtyShortRev or "dirty";
+
+      deweyBuildinfo = "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/buildinfo";
+
+      deweyLdflags = [
+        "-X ${deweyBuildinfo}.Version=${deweyVersion}"
+        "-X ${deweyBuildinfo}.Commit=${commit}"
+      ];
+
       goWorkspaceSrc = nixpkgs.lib.cleanSourceWith {
         src = ./.;
         filter =
@@ -101,7 +123,7 @@
         purse-first-build = {
           inherit goWorkspaceSrc;
           goOverlays = [ gomod2nix.overlays.default ];
-          version = "0.1.0";
+          version = purseFirstVersion;
         };
         plugins = system: [ (buildGoMcpDocs system) ];
         skills = ./skills;
@@ -164,20 +186,30 @@
 
             defererr = mkGoModule {
               pname = "defererr";
-              version = "0.1.0";
+              version = deweyVersion;
               subPackages = [ "libs/dewey/cmd/defererr" ];
+              ldflags = deweyLdflags;
             };
 
             repool = mkGoModule {
               pname = "repool";
-              version = "0.1.0";
+              version = deweyVersion;
               subPackages = [ "libs/dewey/cmd/repool" ];
+              ldflags = deweyLdflags;
             };
 
             seqerror = mkGoModule {
               pname = "seqerror";
-              version = "0.1.0";
+              version = deweyVersion;
               subPackages = [ "libs/dewey/cmd/seqerror" ];
+              ldflags = deweyLdflags;
+            };
+
+            reflexive-interface-generator = mkGoModule {
+              pname = "reflexive-interface-generator";
+              version = deweyVersion;
+              subPackages = [ "libs/dewey/cmd/reflexive-interface-generator" ];
+              ldflags = deweyLdflags;
             };
           };
 

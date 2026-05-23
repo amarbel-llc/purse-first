@@ -50,9 +50,18 @@ test-go-mcp:
 test-dewey:
     {{cmd_nix_dev}} go test -tags test ./libs/dewey/...
 
-# Build dewey library (all layers + CLI tools)
+# Build dewey library (all layers + CLI tools). Injects DEWEY_VERSION
+# and the short commit into the buildinfo package via -ldflags, matching
+# what the Nix derivations do for dev parity.
 build-dewey:
-    {{cmd_nix_dev}} go build ./libs/dewey/...
+    #!/usr/bin/env bash
+    set -euo pipefail
+    . libs/dewey/version.env
+    commit=$(git rev-parse --short HEAD 2>/dev/null || echo dirty)
+    bi=github.com/amarbel-llc/purse-first/libs/dewey/internal/0/buildinfo
+    {{cmd_nix_dev}} go build \
+      -ldflags "-X $bi.Version=$DEWEY_VERSION -X $bi.Commit=$commit" \
+      ./libs/dewey/...
 
 # Vet dewey library
 vet-dewey:
@@ -273,3 +282,101 @@ clean:
     rm -f purse-first
     rm -rf build/
     rm -rf result result-cli
+
+# ---------------------------------------------------------------------------
+# maint group — per eng-versioning(7). Each independently-versioned target
+# (purse-first repo, libs/dewey) has its own bump-version / tag / release
+# triple reading from its own version.env.
+# ---------------------------------------------------------------------------
+
+# Rewrite PURSE_FIRST_VERSION in version.env. Pure mutation — release owns
+# the commit and tag steps.
+[group('maint')]
+bump-version-purse-first new_version:
+    sed -E -i 's/^(export PURSE_FIRST_VERSION)=.*/\1={{new_version}}/' version.env
+
+# Read PURSE_FIRST_VERSION from version.env, create a signed annotated
+# tag v<sem>, push, and verify.
+[group('maint')]
+tag-purse-first message:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    . version.env
+    tag="v${PURSE_FIRST_VERSION:?missing PURSE_FIRST_VERSION in version.env}"
+    git tag -s -m "{{message}}" "$tag"
+    gum log --level info "Created tag: $tag"
+    git push origin "$tag"
+    gum log --level info "Pushed $tag"
+    git tag -v "$tag"
+
+# Full purse-first release flow: changelog → bump → commit → tag → gh release.
+[group('maint')]
+release-purse-first new_version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    if [[ "$branch" != "master" ]]; then
+        gum log --level error "release-purse-first only allowed from master (on '$branch')"
+        exit 1
+    fi
+    prev=$(git tag --sort=-v:refname -l "v*" | grep -E '^v[0-9]' | head -1 || true)
+    header="release v{{new_version}}"
+    if [[ -n "$prev" ]]; then
+        summary=$(git log --format='- %s' "$prev"..HEAD)
+        msg="$header"$'\n\n'"$summary"
+    else
+        msg="$header"
+    fi
+    just bump-version-purse-first "{{new_version}}"
+    git add version.env
+    git commit -m "$header"
+    just tag-purse-first "$msg"
+    gh release create "v{{new_version}}" --title "$header" --notes "$msg"
+
+# Rewrite DEWEY_VERSION in libs/dewey/version.env. Pure mutation.
+[group('maint')]
+bump-version-dewey new_version:
+    sed -E -i 's/^(export DEWEY_VERSION)=.*/\1={{new_version}}/' libs/dewey/version.env
+
+# Read DEWEY_VERSION, create signed annotated tag libs/dewey/v<sem>, push,
+# and verify. Tag prefix matches the sub-module path so the Go module proxy
+# resolves it.
+[group('maint')]
+tag-dewey message:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    . libs/dewey/version.env
+    tag="libs/dewey/v${DEWEY_VERSION:?missing DEWEY_VERSION in libs/dewey/version.env}"
+    git tag -s -m "{{message}}" "$tag"
+    gum log --level info "Created tag: $tag"
+    git push origin "$tag"
+    gum log --level info "Pushed $tag"
+    git tag -v "$tag"
+
+# Full dewey release flow. Changelog filters commits touching libs/dewey/.
+[group('maint')]
+release-dewey new_version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    if [[ "$branch" != "master" ]]; then
+        gum log --level error "release-dewey only allowed from master (on '$branch')"
+        exit 1
+    fi
+    prev=$(git tag --sort=-v:refname -l "libs/dewey/v*" | head -1)
+    header="release libs/dewey/v{{new_version}}"
+    if [[ -n "$prev" ]]; then
+        summary=$(git log --format='- %s' "$prev"..HEAD -- libs/dewey/)
+        if [[ -n "$summary" ]]; then
+            msg="$header"$'\n\n'"$summary"
+        else
+            msg="$header"
+        fi
+    else
+        msg="$header"
+    fi
+    just bump-version-dewey "{{new_version}}"
+    git add libs/dewey/version.env
+    git commit -m "$header"
+    just tag-dewey "$msg"
+    gh release create "libs/dewey/v{{new_version}}" --title "$header" --notes "$msg"
