@@ -11,6 +11,7 @@
       # Upstream PR: https://github.com/nix-community/gomod2nix (no go.work tracking issue yet).
       url = "github:amarbel-llc/gomod2nix";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.flake-utils.follows = "utils";
     };
     crane.url = "github:ipetkov/crane";
