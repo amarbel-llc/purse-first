@@ -175,6 +175,14 @@
         in
         {
           packages = (marketplaceOutputs.packages.${system} or { }) // {
+            # RFC 0001 flake-input-go_mod producer half: expose the
+            # filtered Go workspace tree so consumer flakes can wire
+            # `goFlakeInputs` against it. Reuses the existing
+            # `goWorkspaceSrc` filter, which already scopes the tree
+            # to Go-relevant files per the RFC's "scope your go-pkgs"
+            # guidance.
+            go-pkgs = goWorkspaceSrc.outPath;
+
             dagnabit = mkGoModule {
               pname = "dagnabit";
               version = "0.1.0";
