@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/primordial"
 )
@@ -55,13 +56,14 @@ func runStreaming(op Op) error {
 	return nil
 }
 
-// wrapCmdErr is shared between the TTY and non-TTY paths so error text
-// is identical.
+// wrapCmdErr formats the failing command line shell-style ("podman load
+// -i file.tar: exit status 1"), so the error message reads like what a
+// user would have typed.
 func wrapCmdErr(op Op, err error) error {
-	args := op.Cmd.Path
-	if len(op.Cmd.Args) > 1 {
-		args = fmt.Sprintf("%s %v", op.Cmd.Path, op.Cmd.Args[1:])
+	cmdline := op.Cmd.Path
+	if len(op.Cmd.Args) > 0 {
+		cmdline = strings.Join(op.Cmd.Args, " ")
 	}
-	return fmt.Errorf("%s: %w", args, err)
+	return fmt.Errorf("%s: %w", cmdline, err)
 }
 

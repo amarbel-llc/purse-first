@@ -77,12 +77,10 @@ func runProgramWithMessages(t *testing.T, m Model, msgs []tea.Msg, batchErr erro
 		done <- err
 	}()
 
-	// Allow the program to register its first render before sending
-	// updates. Without this, fast Sends can race ahead of the initial
-	// View call and the screen may not reflect early messages on the
-	// first frame.
-	time.Sleep(20 * time.Millisecond)
-
+	// bubbletea's tea.Program serialises sent messages through a FIFO
+	// channel processed after Init. Queue all updates before BatchDone;
+	// the program will drain them in order and the final terminal
+	// state is rendered before Run returns.
 	for _, msg := range msgs {
 		prog.Send(msg)
 	}

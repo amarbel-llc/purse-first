@@ -95,8 +95,14 @@ func scanPTY(r io.Reader, captured *syncBuffer, emit func(string)) {
 	}
 }
 
+// maxCapturedBytes bounds the failure-dump buffer. A long-running child
+// can emit megabytes of output before failing; we keep the tail since
+// that is what diagnoses the failure.
+const maxCapturedBytes = 1 << 20 // 1 MiB
+
 // syncBuffer is a concurrency-safe bytes.Buffer for tee'd capture. The
 // scanner goroutine writes; the main goroutine reads on failure dump.
+// When the buffer exceeds maxCapturedBytes the oldest half is dropped.
 type syncBuffer struct {
 	mu  sync.Mutex
 	buf bytes.Buffer
@@ -107,7 +113,15 @@ func newSyncBuffer() *syncBuffer { return &syncBuffer{} }
 func (s *syncBuffer) Write(p []byte) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.buf.Write(p)
+	n, err := s.buf.Write(p)
+	if s.buf.Len() > maxCapturedBytes {
+		tail := s.buf.Bytes()[s.buf.Len()-maxCapturedBytes/2:]
+		keep := make([]byte, len(tail))
+		copy(keep, tail)
+		s.buf.Reset()
+		s.buf.Write(keep)
+	}
+	return n, err
 }
 
 func (s *syncBuffer) Bytes() []byte {

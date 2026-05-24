@@ -23,11 +23,9 @@ type Model struct {
 
 	lines []string
 
-	opName    string
-	opIndex   int
-	opTotal   int
-	opCurrent int
-	opCurMax  int
+	opName  string
+	opIndex int
+	opTotal int
 
 	batchDone bool
 	batchErr  error
@@ -78,8 +76,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Total > 0 {
 			m.opTotal = msg.Total
 		}
-		m.opCurrent = 0
-		m.opCurMax = 0
 		m.lines = m.lines[:0]
 		return m, nil
 
@@ -90,12 +86,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case OperationProgress:
-		m.opCurrent = msg.Current
-		m.opCurMax = msg.Total
-		return m, nil
-
-	case OperationDone:
+	case OperationProgress, OperationDone:
+		// Part of the v0 message protocol but the layout does not
+		// render them. See FDR 0010 "Out of scope" notes.
 		return m, nil
 
 	case BatchDone:
@@ -106,13 +99,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
-
-	case progress.FrameMsg:
-		next, cmd := m.progress.Update(msg)
-		if pm, ok := next.(progress.Model); ok {
-			m.progress = pm
-		}
 		return m, cmd
 	}
 	return m, nil
