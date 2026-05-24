@@ -267,6 +267,154 @@ func TestNop(t *testing.T) {}
 	}
 }
 
+// TestExportCopyDanglingInternalImport pins the behavior when a
+// --copy-exported package imports another internal/ package that has
+// NOT itself been exported. The import is still rewritten to the
+// pkgs/<leaf> facade path (because keeping the `internal/` path would
+// violate Go's internal-package visibility rule for any out-of-module
+// consumer), so the resulting pkgs/<leaf> file references a facade
+// directory that does not exist on disk.
+//
+// This is the SAME caveat that alias mode has: callers exporting a
+// single package via dagnabit are responsible for also exporting any
+// internal/ dependencies (or for using --library, which exports every
+// package under internal/). The exporter does not auto-cascade.
+//
+// Pinning this behavior in a test keeps the contract explicit so a
+// future change (e.g. auto-warning, auto-cascade, or a hard error)
+// is a deliberate decision rather than an accidental drift.
+func TestExportCopyDanglingInternalImport(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
+		[]byte("module example.com/mod\n\ngo 1.23\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// internal/0/shared exists but is intentionally NOT exported.
+	depDir := filepath.Join(tmpDir, "internal", "0", "shared")
+	if err := os.MkdirAll(depDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(depDir, "shared.go"), []byte(`package shared
+
+type Token struct{ V string }
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	pkgDir := filepath.Join(tmpDir, "internal", "alfa", "widget")
+	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(pkgDir, "widget.go"), []byte(`package widget
+
+import "example.com/mod/internal/0/shared"
+
+func Stringify(t shared.Token) string { return t.V }
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	exporter := &Exporter{
+		ModulePath:          "example.com/mod",
+		Dir:                 tmpDir,
+		OutputDir:           "pkgs",
+		SkipConsumerRewrite: true,
+		Env:                 append(os.Environ(), "GOWORK=off"),
+		Copy:                true,
+	}
+
+	// Export ONLY widget. shared is left dangling.
+	if err := exporter.ExportPackage("./internal/alfa/widget"); err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := os.ReadFile(filepath.Join(tmpDir, "pkgs", "widget", "widget.go"))
+	if err != nil {
+		t.Fatalf("pkgs/widget/widget.go not generated: %v", err)
+	}
+	got := string(out)
+
+	// Internal import is still rewritten to pkgs/<leaf>, regardless of
+	// whether the facade actually exists.
+	assertContains(t, got, `"example.com/mod/pkgs/shared"`)
+	assertNotContains(t, got, `"example.com/mod/internal/0/shared"`)
+
+	// The facade directory for the dangling dep was NOT created — only
+	// widget's directory exists.
+	if _, err := os.Stat(filepath.Join(tmpDir, "pkgs", "shared")); !os.IsNotExist(err) {
+		t.Errorf("pkgs/shared should not exist (dangling dep), err=%v", err)
+	}
+	if _, err := os.Stat(filepath.Join(tmpDir, "pkgs", "widget")); err != nil {
+		t.Errorf("pkgs/widget should exist, err=%v", err)
+	}
+}
+
+// TestExportCopyLibraryNoDanglingImports is the happy-path companion:
+// --copy + --library exports every internal package, so the rewritten
+// imports always resolve. Sanity-checks that running both flags
+// together produces a coherent pkgs/ tree.
+func TestExportCopyLibraryNoDanglingImports(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
+		[]byte("module example.com/mod\n\ngo 1.23\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	depDir := filepath.Join(tmpDir, "internal", "0", "shared")
+	if err := os.MkdirAll(depDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(depDir, "shared.go"), []byte(`package shared
+
+type Token struct{ V string }
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	pkgDir := filepath.Join(tmpDir, "internal", "alfa", "widget")
+	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(pkgDir, "widget.go"), []byte(`package widget
+
+import "example.com/mod/internal/0/shared"
+
+func Stringify(t shared.Token) string { return t.V }
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	exporter := &Exporter{
+		ModulePath:          "example.com/mod",
+		Dir:                 tmpDir,
+		OutputDir:           "pkgs",
+		SkipConsumerRewrite: true,
+		Env:                 append(os.Environ(), "GOWORK=off"),
+		Copy:                true,
+	}
+
+	if err := exporter.ExportAll(); err != nil {
+		t.Fatal(err)
+	}
+
+	// Both facades exist.
+	for _, leaf := range []string{"shared", "widget"} {
+		if _, err := os.Stat(filepath.Join(tmpDir, "pkgs", leaf)); err != nil {
+			t.Errorf("pkgs/%s should exist after --library --copy, err=%v", leaf, err)
+		}
+	}
+
+	// Widget's rewritten import resolves to the (now-present) shared facade.
+	out, err := os.ReadFile(filepath.Join(tmpDir, "pkgs", "widget", "widget.go"))
+	if err != nil {
+		t.Fatalf("pkgs/widget/widget.go not generated: %v", err)
+	}
+	assertContains(t, string(out), `"example.com/mod/pkgs/shared"`)
+}
+
 // TestExportCopyGeneratedCompiles verifies that the copied pkgs/ tree
 // is a real package that compiles. Catches import-rewrite bugs that
 // text-only assertions miss.
