@@ -20,19 +20,16 @@
         "flake-utils": [
           "utils"
         ],
-        "nixpkgs": [
-          "nixpkgs"
-        ],
         "nixpkgs-master": [
           "nixpkgs-master"
         ]
       },
       "locked": {
-        "lastModified": 1779569595,
-        "narHash": "sha256-S0hyOJW//OnOB8R1zOG7X7+62ntVf40r6TFuJkTtQ4g=",
+        "lastModified": 1779583462,
+        "narHash": "sha256-E32c2DtK6w8oJ00RplIgXqY2c4UVobZVTxaLRIbXhEE=",
         "owner": "amarbel-llc",
         "repo": "gomod2nix",
-        "rev": "b2313772128b6a5131f8b6fc5f19cf51479404ae",
+        "rev": "2ae99ee109b3214305f098a4ebccd91b323a86b2",
         "type": "github"
       },
       "original": {
@@ -43,14 +40,14 @@
     },
     "nixpkgs": {
       "inputs": {
-        "nixpkgs": "nixpkgs_2"
+        "nixpkgs-master": "nixpkgs-master"
       },
       "locked": {
-        "lastModified": 1779554513,
-        "narHash": "sha256-NgonIXm93ktil26Ph6D+T1GQtFr2pzve9YKm1MOUEe0=",
+        "lastModified": 1779582857,
+        "narHash": "sha256-1J93f5Q7a6yHFX8vGjFbXfiNF6K119hRJcCm9BcOTUk=",
         "owner": "amarbel-llc",
         "repo": "nixpkgs",
-        "rev": "e5ee0b46769250ff17b756b9fc8f6f081455b717",
+        "rev": "8bbc20adbc893ce14130881fd5564a0964f1d8f9",
         "type": "github"
       },
       "original": {
@@ -75,19 +72,19 @@
         "type": "github"
       }
     },
-    "nixpkgs_2": {
+    "nixpkgs-master_2": {
       "locked": {
-        "lastModified": 1779279859,
-        "narHash": "sha256-qPbDIhrdm1o64QYpWPXYvET2eMrBKQsupzw0ZlTj47s=",
+        "lastModified": 1778869304,
+        "narHash": "sha256-30sZNZoA1cqF5JNO9fVX+wgiQYjB7HJqqJ4ztCDeBZE=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "b34d83610cfd10ef6b2fa97b77f5b0f91143ceb8",
+        "rev": "d233902339c02a9c334e7e593de68855ad26c4cb",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "master",
         "repo": "nixpkgs",
+        "rev": "d233902339c02a9c334e7e593de68855ad26c4cb",
         "type": "github"
       }
     },
@@ -96,7 +93,7 @@
         "crane": "crane",
         "gomod2nix": "gomod2nix",
         "nixpkgs": "nixpkgs",
-        "nixpkgs-master": "nixpkgs-master",
+        "nixpkgs-master": "nixpkgs-master_2",
         "rust-overlay": "rust-overlay",
         "utils": "utils"
       }
