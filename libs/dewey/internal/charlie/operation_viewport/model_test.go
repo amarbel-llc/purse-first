@@ -113,11 +113,13 @@ func TestModel_ProgressShownWhenTotalGTOne(t *testing.T) {
 	}
 }
 
-func TestModel_CtrlCInvokesCancel(t *testing.T) {
-	called := 0
-	m := NewModel(WithCancel(func() { called++ }))
-	_ = drive(m, tea.KeyMsg{Type: tea.KeyCtrlC})
-	if called != 1 {
-		t.Errorf("cancel call count: got %d, want 1", called)
+func TestModel_CtrlCSetsInterrupted(t *testing.T) {
+	m := NewModel()
+	if m.Interrupted() {
+		t.Fatalf("interrupted should default false")
+	}
+	m = drive(m, tea.KeyMsg{Type: tea.KeyCtrlC})
+	if !m.Interrupted() {
+		t.Errorf("expected Interrupted=true after Ctrl-C")
 	}
 }

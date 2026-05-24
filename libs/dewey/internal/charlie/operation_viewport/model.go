@@ -2,7 +2,6 @@ package operation_viewport
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/progress"
@@ -13,6 +12,12 @@ import (
 // Model is the bubbletea model that paints the viewport. Callers
 // implementing custom event sources construct it with [NewModel] and
 // send the message types from messages.go to drive it.
+//
+// On Ctrl-C the model sets [Model.Interrupted] and quits the program
+// without calling Cancel itself — the caller (Run / RunBatch, or a
+// custom event-source driver) inspects the flag after `program.Run`
+// returns and propagates the cancel from a goroutine that lives inside
+// [errors.Context.Run]'s recover scope.
 type Model struct {
 	title    string
 	maxLines int
@@ -30,7 +35,7 @@ type Model struct {
 	batchDone bool
 	batchErr  error
 
-	cancel context.CancelFunc
+	interrupted bool
 }
 
 // NewModel constructs a [Model] applying the given options. The default
@@ -54,6 +59,16 @@ func NewModel(opts ...Option) Model {
 	return m
 }
 
+// Interrupted reports whether the user pressed Ctrl-C in the program.
+// Callers use this after [tea.Program.Run] returns to decide whether
+// to cancel their parent context.
+func (m Model) Interrupted() bool { return m.interrupted }
+
+// BatchErr returns the error reported by the most recent BatchDone, or
+// nil if the run completed successfully or did not yet receive
+// BatchDone.
+func (m Model) BatchErr() error { return m.batchErr }
+
 // Init starts the spinner.
 func (m Model) Init() tea.Cmd { return m.spinner.Tick }
 
@@ -63,10 +78,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.Type == tea.KeyCtrlC {
-			if m.cancel != nil {
-				m.cancel()
-			}
-			return m, nil
+			m.interrupted = true
+			return m, tea.Quit
 		}
 		return m, nil
 

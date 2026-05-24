@@ -1,7 +1,5 @@
 package operation_viewport
 
-import "context"
-
 // defaultMaxLines is how many recent log lines stay visible under the
 // spinner. Five mirrors tent_loader and fits comfortably above a shell
 // prompt without pushing scrollback off screen.
@@ -35,11 +33,4 @@ func WithTotal(total int) Option {
 // WithStyle replaces the default lipgloss styles.
 func WithStyle(s Style) Option {
 	return func(m *Model) { m.style = s }
-}
-
-// WithCancel wires Ctrl-C in the viewport to the given cancel func. The
-// viewport waits for [BatchDone] before quitting so the child has a
-// chance to render its final state.
-func WithCancel(cancel context.CancelFunc) Option {
-	return func(m *Model) { m.cancel = cancel }
 }

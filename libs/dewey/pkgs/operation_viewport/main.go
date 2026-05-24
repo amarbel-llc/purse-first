@@ -2,7 +2,7 @@
 
 package operation_viewport
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/operation_viewport"
+import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/operation_viewport"
 
 type (
 	Batch             = internal.Batch
@@ -23,7 +23,6 @@ var (
 	NewModel     = internal.NewModel
 	Run          = internal.Run
 	RunBatch     = internal.RunBatch
-	WithCancel   = internal.WithCancel
 	WithLines    = internal.WithLines
 	WithStyle    = internal.WithStyle
 	WithTitle    = internal.WithTitle
