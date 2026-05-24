@@ -181,7 +181,13 @@
             # `goWorkspaceSrc` filter, which already scopes the tree
             # to Go-relevant files per the RFC's "scope your go-pkgs"
             # guidance.
-            go-pkgs = goWorkspaceSrc.outPath;
+            #
+            # Wrapped in runCommandLocal so the output is a real
+            # derivation: `nix flake check` requires isDerivation, not
+            # just a path. See amarbel-llc/nixpkgs#44.
+            go-pkgs = goPkgs.runCommandLocal "purse-first-go-pkgs" { } ''
+              cp -r ${goWorkspaceSrc} $out
+            '';
 
             dagnabit = mkGoModule {
               pname = "dagnabit";
