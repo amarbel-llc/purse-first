@@ -18,7 +18,7 @@ func MakePrinterOn(file *os.File, on bool) printer {
 	return printer{
 		writer: file,
 		file:   file,
-		isTty:  primordial.IsTty(file),
+		isTty:  primordial.IsTTY(file),
 		on:     on,
 	}
 }

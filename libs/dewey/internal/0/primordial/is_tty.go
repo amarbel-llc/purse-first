@@ -6,6 +6,9 @@ import (
 	"golang.org/x/term"
 )
 
-func IsTty(f *os.File) bool {
+func IsTTY(f *os.File) bool {
 	return term.IsTerminal(int(f.Fd()))
 }
+
+// Deprecated: use IsTTY.
+var IsTty = IsTTY

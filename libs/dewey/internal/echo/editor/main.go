@@ -123,7 +123,7 @@ func (editor Editor) openWithArgs(fs ...string) (err error) {
 		allArgs...,
 	)
 
-	if primordial.IsTty(os.Stdin) {
+	if primordial.IsTTY(os.Stdin) {
 		cmd.Stdin = os.Stdin
 	}
 
