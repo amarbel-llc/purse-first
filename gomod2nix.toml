@@ -121,6 +121,7 @@ schema = 3
       'github.com/charmbracelet/bubbles/filepicker',
       'github.com/charmbracelet/bubbles/help',
       'github.com/charmbracelet/bubbles/key',
+      'github.com/charmbracelet/bubbles/progress',
       'github.com/charmbracelet/bubbles/runeutil',
       'github.com/charmbracelet/bubbles/spinner',
       'github.com/charmbracelet/bubbles/textarea',
@@ -149,6 +150,9 @@ schema = 3
     version = 'v0.2.0'
     hash = 'sha256-fi5N0IXhSbbYHdSZFngCfpT4kdiEaKedqj8YpnlvX0o='
     goVersion = '1.16'
+    vendorPackages = [
+      'github.com/charmbracelet/harmonica'
+    ]
 
   [mod.'github.com/charmbracelet/huh']
     version = 'v0.8.0'
@@ -186,9 +190,12 @@ schema = 3
     ]
 
   [mod.'github.com/charmbracelet/x/conpty']
-    version = 'v0.1.0'
-    hash = 'sha256-VvqJl1WVm7ozO+Dmgl4e/iM9Z9FVrQLrLuA0Sr50KAM='
-    goVersion = '1.18'
+    version = 'v0.1.1'
+    hash = 'sha256-U+QKCNbER2Yye5xShD2beueccKTbmfnl6F7B/IywJ9I='
+    goVersion = '1.24.0'
+    vendorPackages = [
+      'github.com/charmbracelet/x/conpty'
+    ]
 
   [mod.'github.com/charmbracelet/x/errors']
     version = 'v0.0.0-20240508181413-e8d8b6e2de86'
@@ -220,11 +227,17 @@ schema = 3
     version = 'v0.1.1'
     hash = 'sha256-sri3LpHCBhGvnJldDzBxwbbZpeSGZVCJFOUL45uBFds='
     goVersion = '1.18'
+    vendorPackages = [
+      'github.com/charmbracelet/x/termios'
+    ]
 
   [mod.'github.com/charmbracelet/x/xpty']
-    version = 'v0.1.2'
-    hash = 'sha256-BOCSIw9jbXCeDs28doL0HA00wsdWjbmyDS2+Yc3x0go='
-    goVersion = '1.18'
+    version = 'v0.1.3'
+    hash = 'sha256-lc9DXgXdpkyZb9O8YGjAxaSwGLN9kFUmBCcdjtIbrm0='
+    goVersion = '1.24.0'
+    vendorPackages = [
+      'github.com/charmbracelet/x/xpty'
+    ]
 
   [mod.'github.com/chzyer/logex']
     version = 'v1.1.10'
@@ -271,6 +284,9 @@ schema = 3
     version = 'v1.1.24'
     hash = 'sha256-6oSurN/ZYr/KHxKKU6Qbw9w8CDKmPa8yL00pZ24H0AM='
     goVersion = '1.18'
+    vendorPackages = [
+      'github.com/creack/pty'
+    ]
 
   [mod.'github.com/dave/jennifer']
     version = 'v1.7.1'
@@ -279,6 +295,10 @@ schema = 3
     vendorPackages = [
       'github.com/dave/jennifer/jen'
     ]
+
+  [mod.'github.com/davecgh/go-spew']
+    version = 'v1.1.0'
+    hash = 'sha256-zNSuzjr5n7zhK8VOciSigLMfbnHbmyzsWdTcMlV1kjQ='
 
   [mod.'github.com/dustin/go-humanize']
     version = 'v1.0.1'
@@ -396,6 +416,10 @@ schema = 3
       'github.com/muesli/termenv'
     ]
 
+  [mod.'github.com/pmezard/go-difflib']
+    version = 'v1.0.0'
+    hash = 'sha256-/FtmHnaGjdvEIKAJtrUfEhV7EVo5A/eYrtdnUkuxLDA='
+
   [mod.'github.com/rivo/uniseg']
     version = 'v0.4.7'
     hash = 'sha256-rDcdNYH6ZD8KouyyiZCUEy8JrjOQoAkxHBhugrfHjFo='
@@ -432,6 +456,19 @@ schema = 3
     vendorPackages = [
       'github.com/spf13/pflag'
     ]
+
+  [mod.'github.com/stretchr/objx']
+    version = 'v0.1.0'
+    hash = 'sha256-az0Vd4MG3JXfaYbj0Q6AOmNkrXgmXDeQm8+BBiDXmdA='
+
+  [mod.'github.com/stretchr/testify']
+    version = 'v1.3.0'
+    hash = 'sha256-+mSebBNccNcxbY462iKTNTWmd5ZuUkUqFebccn3EtIA='
+
+  [mod.'github.com/tonistiigi/vt100']
+    version = 'v0.0.0-20240514184818-90bafcd6abab'
+    hash = 'sha256-wKPRNpBKP8AOTrWYMwyqIz+v6RsNDgiAYRMEU5UfU+4='
+    goVersion = '1.12'
 
   [mod.'github.com/xo/terminfo']
     version = 'v0.0.0-20220910002029-abceb7e1c41e'
