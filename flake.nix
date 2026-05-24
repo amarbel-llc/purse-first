@@ -177,17 +177,19 @@
           packages = (marketplaceOutputs.packages.${system} or { }) // {
             # RFC 0001 flake-input-go_mod producer half: expose the
             # filtered Go workspace tree so consumer flakes can wire
-            # `goFlakeInputs` against it. Reuses the existing
-            # `goWorkspaceSrc` filter, which already scopes the tree
-            # to Go-relevant files per the RFC's "scope your go-pkgs"
-            # guidance.
-            #
-            # Wrapped in runCommandLocal so the output is a real
-            # derivation: `nix flake check` requires isDerivation, not
-            # just a path. See amarbel-llc/nixpkgs#44.
-            go-pkgs = goPkgs.runCommandLocal "purse-first-go-pkgs" { } ''
-              cp -r ${goWorkspaceSrc} $out
-            '';
+            # `goFlakeInputs` against it. `pkgs.goSourceFilter` returns
+            # a real derivation (passes both `nix build` and
+            # `nix flake check`) and applies the canonical keep-set
+            # plus our extras (go.work files and manpages).
+            go-pkgs = goPkgs.goSourceFilter {
+              src = self;
+              extras = [
+                "^go\\.work$"
+                "^go\\.work\\.sum$"
+                ".*\\.1$"
+                ".*\\.7$"
+              ];
+            };
 
             dagnabit = mkGoModule {
               pname = "dagnabit";
