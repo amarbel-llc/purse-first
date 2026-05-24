@@ -35,6 +35,16 @@ type Exporter struct {
 	// rewrite — it's the natural follow-on to generating a facade.
 	SkipConsumerRewrite bool
 
+	// Copy switches the exporter from facade generation (per-symbol
+	// `var = internal.X` aliases via jennifer) to source-tree copying
+	// (literal copies of the internal package's .go files into pkgs/,
+	// with intra-module imports rewritten to point at pkgs/ facade
+	// paths). See purse-first#103 for the motivation.
+	//
+	// Test files (`*_test.go`) are skipped. Build-tag constraints
+	// (`//go:build …`) are preserved as-is on each copied file.
+	Copy bool
+
 	// Env, when non-nil, replaces the process environment for go/packages
 	// invocations. Useful in tests to set GOWORK=off.
 	Env []string
@@ -216,71 +226,52 @@ func (exporter *Exporter) exportSinglePackage(pkg *packages.Package) error {
 	)
 
 	if exporter.DryRun {
-		scope := pkg.Types.Scope()
-		var nTypes, nVars, nFuncWrappers, nConsts int
+		return exporter.dryRunSummary(pkg, outputPath)
+	}
 
-		for _, name := range scope.Names() {
-			obj := scope.Lookup(name)
-			if !obj.Exported() {
-				continue
-			}
+	outputSubdir := filepath.Join(exporter.Dir, exporter.outputDir(), facadeSubpath)
 
-			switch obj := obj.(type) {
-			case *types.TypeName:
-				nTypes++
-			case *types.Func:
-				sig := obj.Type().(*types.Signature)
-				if sig.TypeParams() != nil && sig.TypeParams().Len() > 0 {
-					nFuncWrappers++
-				} else {
-					nVars++
-				}
-			case *types.Var:
-				nVars++
-			case *types.Const:
-				nConsts++
+	if exporter.Copy {
+		if err := exporter.exportPackageAsCopy(pkg, outputSubdir); err != nil {
+			return fmt.Errorf("copying %s into %s: %w", importPath, outputSubdir, err)
+		}
+	} else {
+		// Do not remap importPath itself — same-package named types must stay on
+		// the "internal" alias, not be redirected to the facade being generated
+		// (which would create an import cycle).
+		remap := func(p string) string {
+			if p == importPath {
+				return p
 			}
+			return internalToFacade(exporter.ModulePath, exporter.outputDir(), p)
+		}
+		docs := buildDocMap(pkg)
+		facadeCode, err := generateFacadeJen(facadePkgName, importPath, pkg.Types, docs, remap)
+		if err != nil {
+			return fmt.Errorf("generating facade for %s: %w", importPath, err)
 		}
 
-		fmt.Printf("would generate: %s (%d types, %d vars, %d func wrappers, %d consts)\n",
-			outputPath, nTypes, nVars, nFuncWrappers, nConsts)
-		return nil
-	}
-
-	// Do not remap importPath itself — same-package named types must stay on
-	// the "internal" alias, not be redirected to the facade being generated
-	// (which would create an import cycle).
-	remap := func(p string) string {
-		if p == importPath {
-			return p
+		if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil {
+			return fmt.Errorf("creating output directory: %w", err)
 		}
-		return internalToFacade(exporter.ModulePath, exporter.outputDir(), p)
-	}
-	docs := buildDocMap(pkg)
-	facadeCode, err := generateFacadeJen(facadePkgName, importPath, pkg.Types, docs, remap)
-	if err != nil {
-		return fmt.Errorf("generating facade for %s: %w", importPath, err)
-	}
 
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil {
-		return fmt.Errorf("creating output directory: %w", err)
-	}
+		if err := os.WriteFile(outputPath, facadeCode, 0o644); err != nil {
+			return fmt.Errorf("writing %s: %w", outputPath, err)
+		}
 
-	if err := os.WriteFile(outputPath, facadeCode, 0o644); err != nil {
-		return fmt.Errorf("writing %s: %w", outputPath, err)
-	}
+		fmt.Printf("generated: %s\n", outputPath)
 
-	fmt.Printf("generated: %s\n", outputPath)
-
-	// Generate per-build-tag facade files for any tagged symbols.
-	pkgDir := ""
-	if len(pkg.GoFiles) > 0 {
-		pkgDir = filepath.Dir(pkg.GoFiles[0])
-	}
-	if pkgDir != "" {
-		outputSubdir := filepath.Join(exporter.Dir, exporter.outputDir(), facadeSubpath)
-		if err := exporter.exportTaggedFacades(pkg, pkgDir, importPath, facadePkgName, outputSubdir, remap); err != nil {
-			return fmt.Errorf("generating tagged facades for %s: %w", importPath, err)
+		// Generate per-build-tag facade files for any tagged symbols.
+		// Copy mode preserves the original tagged source files naturally,
+		// so this analysis only runs in alias mode.
+		pkgDir := ""
+		if len(pkg.GoFiles) > 0 {
+			pkgDir = filepath.Dir(pkg.GoFiles[0])
+		}
+		if pkgDir != "" {
+			if err := exporter.exportTaggedFacades(pkg, pkgDir, importPath, facadePkgName, outputSubdir, remap); err != nil {
+				return fmt.Errorf("generating tagged facades for %s: %w", importPath, err)
+			}
 		}
 	}
 
@@ -293,6 +284,49 @@ func (exporter *Exporter) exportSinglePackage(pkg *packages.Package) error {
 		return fmt.Errorf("rewriting consumers: %w", err)
 	}
 
+	return nil
+}
+
+// dryRunSummary prints a short report of what exportSinglePackage would
+// emit for pkg. Used by --dry-run.
+func (exporter *Exporter) dryRunSummary(pkg *packages.Package, outputPath string) error {
+	if exporter.Copy {
+		// In copy mode we emit one file per non-test source file in the
+		// internal package's directory, with imports rewritten.
+		var pkgDir string
+		if len(pkg.GoFiles) > 0 {
+			pkgDir = filepath.Dir(pkg.GoFiles[0])
+		}
+		fmt.Printf("would copy: %s/* → %s/* (rewriting internal/ imports)\n",
+			pkgDir, filepath.Dir(outputPath))
+		return nil
+	}
+
+	scope := pkg.Types.Scope()
+	var nTypes, nVars, nFuncWrappers, nConsts int
+	for _, name := range scope.Names() {
+		obj := scope.Lookup(name)
+		if !obj.Exported() {
+			continue
+		}
+		switch obj := obj.(type) {
+		case *types.TypeName:
+			nTypes++
+		case *types.Func:
+			sig := obj.Type().(*types.Signature)
+			if sig.TypeParams() != nil && sig.TypeParams().Len() > 0 {
+				nFuncWrappers++
+			} else {
+				nVars++
+			}
+		case *types.Var:
+			nVars++
+		case *types.Const:
+			nConsts++
+		}
+	}
+	fmt.Printf("would generate: %s (%d types, %d vars, %d func wrappers, %d consts)\n",
+		outputPath, nTypes, nVars, nFuncWrappers, nConsts)
 	return nil
 }
 

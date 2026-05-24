@@ -251,6 +251,7 @@ func runExport() {
 	var modulePath string
 	var noRewriteConsumers bool
 	var library bool
+	var copyMode bool
 
 	exportFlags.BoolVar(&dryRun, "n", false, "show what would be generated without writing files")
 	exportFlags.BoolVar(&dryRun, "dry-run", false, "show what would be generated without writing files")
@@ -258,6 +259,7 @@ func runExport() {
 	exportFlags.StringVar(&modulePath, "module", "", "Go module path (read from go.mod if empty)")
 	exportFlags.BoolVar(&noRewriteConsumers, "no-rewrite-consumers", false, "skip rewriting external workspace consumers' imports to the new facade path")
 	exportFlags.BoolVar(&library, "library", false, "export facades for every package under internal/ (fails if any //go:generate dagnabit export directives exist)")
+	exportFlags.BoolVar(&copyMode, "copy", false, "copy internal source files into pkgs/, rewriting only intra-module imports, instead of emitting thin re-export aliases")
 	exportFlags.Parse(os.Args[1:])
 
 	args := exportFlags.Args()
@@ -285,6 +287,7 @@ func runExport() {
 		OutputDir:           outputDir,
 		DryRun:              dryRun,
 		SkipConsumerRewrite: noRewriteConsumers,
+		Copy:                copyMode,
 	}
 
 	if library {
