@@ -4,25 +4,47 @@ package output
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/output"
 
-type (
-	ArrayLimits         = internal.ArrayLimits
-	Defaults            = internal.Defaults
-	LimitedArray[T any] = internal.LimitedArray[T]
-	LimitedText         = internal.LimitedText
-	PaginationInfo      = internal.PaginationInfo
-	TextLimits          = internal.TextLimits
-	TruncationInfo      = internal.TruncationInfo
-)
+// ArrayLimits controls pagination of array results.
+// Zero values mean unlimited (Limit) or no offset (Offset).
+type ArrayLimits = internal.ArrayLimits
 
-var (
-	LimitStderr      = internal.LimitStderr
-	LimitText        = internal.LimitText
-	StandardDefaults = internal.StandardDefaults
-)
+// Defaults holds standard limits applied when user-supplied limits are zero.
+type Defaults = internal.Defaults
+
+// LimitedArray is the result of applying ArrayLimits to a slice.
+type LimitedArray[T any] = internal.LimitedArray[T]
+
+// LimitedText is the result of applying TextLimits to a string.
+type LimitedText = internal.LimitedText
+
+// PaginationInfo describes the pagination applied to an array result.
+type PaginationInfo = internal.PaginationInfo
+
+// TextLimits controls how text output is truncated.
+// Head and Tail are mutually exclusive; Head takes priority when both are set.
+// Zero values mean unlimited.
+type TextLimits = internal.TextLimits
+
+// TruncationInfo describes what was removed during truncation.
+type TruncationInfo = internal.TruncationInfo
+
+// LimitStderr applies default max_bytes truncation to stderr output.
+// Use this for stderr from external commands before including it in tool results.
+// Stderr is never caller-controllable, so defaults are always applied.
+var LimitStderr = internal.LimitStderr
+
+// LimitText applies the given limits to the input string.
+// Processing order: Head/Tail, then MaxLines, then MaxBytes.
+var LimitText = internal.LimitText
+
+// StandardDefaults returns the standard default values matching chix.
+var StandardDefaults = internal.StandardDefaults
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
 // See https://github.com/golang/go/issues/52654
+// LimitArray applies pagination limits to a slice.
+// The returned Items is a subslice (no copy). Offset is clamped to the slice length.
 func LimitArray[T any](items []T, limits internal.ArrayLimits) internal.LimitedArray[T] {
 	return internal.LimitArray[T](items, limits)
 }

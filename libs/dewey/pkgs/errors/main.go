@@ -7,108 +7,119 @@ import (
 	"io"
 )
 
-type (
-	Context              = internal.Context
-	ErrNotFound          = internal.ErrNotFound
-	ErrorsIs             = internal.ErrorsIs
-	Flusher              = internal.Flusher
-	FuncContext          = internal.FuncContext
-	FuncErr              = internal.FuncErr
-	FuncIs               = internal.FuncIs
-	FuncNil              = internal.FuncNil
-	FuncWithStackInfo    = internal.FuncWithStackInfo
-	Group                = internal.Group
-	GroupBuilder         = internal.GroupBuilder
-	Helpful              = internal.Helpful
-	Signal               = internal.Signal
-	Typed[DISAMB any]    = internal.Typed[DISAMB]
-	UnwrapMany           = internal.UnwrapMany
-	UnwrapOne            = internal.UnwrapOne
-	WaitGroup            = internal.WaitGroup
-	WithStackInfo[T any] = internal.WithStackInfo[T]
-)
+type Context = internal.Context
+type ErrNotFound = internal.ErrNotFound
+type ErrorsIs = internal.ErrorsIs
+type Flusher = internal.Flusher
+type FuncContext = internal.FuncContext
+type FuncErr = internal.FuncErr
+type FuncIs = internal.FuncIs
+type FuncNil = internal.FuncNil
+type FuncWithStackInfo = internal.FuncWithStackInfo
+type Group = internal.Group
+type GroupBuilder = internal.GroupBuilder
+type Helpful = internal.Helpful
+type Signal = internal.Signal
+type Typed[DISAMB any] = internal.Typed[DISAMB]
+type UnwrapMany = internal.UnwrapMany
+type UnwrapOne = internal.UnwrapOne
+type WaitGroup = internal.WaitGroup
+type WithStackInfo[T any] = internal.WithStackInfo[T]
 
-var (
-	As                                      = internal.As
-	BadRequest                              = internal.BadRequest
-	BadRequestWrapf                         = internal.BadRequestWrapf
-	BadRequestf                             = internal.BadRequestf
-	CancelWithNotImplemented                = internal.CancelWithNotImplemented
-	ContextCancelWith499ClientClosedRequest = internal.ContextCancelWith499ClientClosedRequest
-	ContextCancelWithBadRequestError        = internal.ContextCancelWithBadRequestError
-	ContextCancelWithBadRequestf            = internal.ContextCancelWithBadRequestf
-	ContextCancelWithError                  = internal.ContextCancelWithError
-	ContextCancelWithErrorAndFormat         = internal.ContextCancelWithErrorAndFormat
-	ContextCancelWithErrorf                 = internal.ContextCancelWithErrorf
-	ContextCloseAfter                       = internal.ContextCloseAfter
-	ContextContinueOrPanic                  = internal.ContextContinueOrPanic
-	ContextFlushAfter                       = internal.ContextFlushAfter
-	ContextMustClose                        = internal.ContextMustClose
-	ContextMustFlush                        = internal.ContextMustFlush
-	ContextSetCancelOnSIGHUP                = internal.ContextSetCancelOnSIGHUP
-	ContextSetCancelOnSIGINT                = internal.ContextSetCancelOnSIGINT
-	ContextSetCancelOnSIGTERM               = internal.ContextSetCancelOnSIGTERM
-	Deferred                                = internal.Deferred
-	DeferredCloseAndRename                  = internal.DeferredCloseAndRename
-	DeferredCloser                          = internal.DeferredCloser
-	DeferredFlusher                         = internal.DeferredFlusher
-	DeferredRecover                         = internal.DeferredRecover
-	Err400BadRequest                        = internal.Err400BadRequest
-	Err405MethodNotAllowed                  = internal.Err405MethodNotAllowed
-	Err409Conflict                          = internal.Err409Conflict
-	Err422UnprocessableEntity               = internal.Err422UnprocessableEntity
-	Err499ClientClosedRequest               = internal.Err499ClientClosedRequest
-	Err500InternalServerError               = internal.Err500InternalServerError
-	Err501NotImplemented                    = internal.Err501NotImplemented
-	ErrExists                               = internal.ErrExists
-	ErrorWithStackf                         = internal.ErrorWithStackf
-	Errorf                                  = internal.Errorf
-	GetErrNotFound                          = internal.GetErrNotFound
-	Is                                      = internal.Is
-	Is400BadRequest                         = internal.Is400BadRequest
-	Is499ClientClosedRequest                = internal.Is499ClientClosedRequest
-	IsAny                                   = internal.IsAny
-	IsBrokenPipe                            = internal.IsBrokenPipe
-	IsEOF                                   = internal.IsEOF
-	IsErrNotFound                           = internal.IsErrNotFound
-	IsErrno                                 = internal.IsErrno
-	IsExist                                 = internal.IsExist
-	IsHTTPError                             = internal.IsHTTPError
-	IsNetTimeout                            = internal.IsNetTimeout
-	IsNotExist                              = internal.IsNotExist
-	IsNotNilAndNotEOF                       = internal.IsNotNilAndNotEOF
-	IsReadlinkInvalidArgument               = internal.IsReadlinkInvalidArgument
-	IsSentinel                              = internal.IsSentinel
-	IsStopIteration                         = internal.IsStopIteration
-	IsTooManyOpenFiles                      = internal.IsTooManyOpenFiles
-	IsWithTimeout                           = internal.IsWithTimeout
-	Join                                    = internal.Join
-	MakeContext                             = internal.MakeContext
-	MakeContextDefault                      = internal.MakeContextDefault
-	MakeErrNotFound                         = internal.MakeErrNotFound
-	MakeErrNotFoundString                   = internal.MakeErrNotFoundString
-	MakeErrStopIteration                    = internal.MakeErrStopIteration
-	MakeFuncContextFromFuncErr              = internal.MakeFuncContextFromFuncErr
-	MakeFuncContextFromFuncNil              = internal.MakeFuncContextFromFuncNil
-	MakeFuncErrFromFuncNil                  = internal.MakeFuncErrFromFuncNil
-	MakeGroupBuilder                        = internal.MakeGroupBuilder
-	MakeIsErrno                             = internal.MakeIsErrno
-	MakeWaitGroupParallel                   = internal.MakeWaitGroupParallel
-	MakeWaitGroupSerial                     = internal.MakeWaitGroupSerial
-	Must                                    = internal.Must
-	PanicIfError                            = internal.PanicIfError
-	PrintHelpful                            = internal.PrintHelpful
-	RunChildContextWithPrintTicker          = internal.RunChildContextWithPrintTicker
-	RunContextWithPrintTicker               = internal.RunContextWithPrintTicker
-	Unwrap                                  = internal.Unwrap
-	WithHelp                                = internal.WithHelp
-	WithoutStack                            = internal.WithoutStack
-	Wrap                                    = internal.Wrap
-	WrapExceptSentinel                      = internal.WrapExceptSentinel
-	WrapExceptSentinelAsNil                 = internal.WrapExceptSentinelAsNil
-	WrapSkip                                = internal.WrapSkip
-	Wrapf                                   = internal.Wrapf
-)
+var As = internal.As
+var BadRequest = internal.BadRequest
+var BadRequestWrapf = internal.BadRequestWrapf
+var BadRequestf = internal.BadRequestf
+var CancelWithNotImplemented = internal.CancelWithNotImplemented
+var ContextCancelWith499ClientClosedRequest = internal.ContextCancelWith499ClientClosedRequest
+var ContextCancelWithBadRequestError = internal.ContextCancelWithBadRequestError
+var ContextCancelWithBadRequestf = internal.ContextCancelWithBadRequestf
+var ContextCancelWithError = internal.ContextCancelWithError
+var ContextCancelWithErrorAndFormat = internal.ContextCancelWithErrorAndFormat
+var ContextCancelWithErrorf = internal.ContextCancelWithErrorf
+var ContextCloseAfter = internal.ContextCloseAfter
+var ContextContinueOrPanic = internal.ContextContinueOrPanic
+var ContextFlushAfter = internal.ContextFlushAfter
+var ContextMustClose = internal.ContextMustClose
+var ContextMustFlush = internal.ContextMustFlush
+var ContextSetCancelOnSIGHUP = internal.ContextSetCancelOnSIGHUP
+var ContextSetCancelOnSIGINT = internal.ContextSetCancelOnSIGINT
+var ContextSetCancelOnSIGTERM = internal.ContextSetCancelOnSIGTERM
+var Deferred = internal.Deferred
+var DeferredCloseAndRename = internal.DeferredCloseAndRename
+var DeferredCloser = internal.DeferredCloser
+var DeferredFlusher = internal.DeferredFlusher
+var DeferredRecover = internal.DeferredRecover
+var Err400BadRequest = internal.Err400BadRequest
+var Err405MethodNotAllowed = internal.Err405MethodNotAllowed
+var Err409Conflict = internal.Err409Conflict
+var Err422UnprocessableEntity = internal.Err422UnprocessableEntity
+var Err499ClientClosedRequest = internal.Err499ClientClosedRequest
+var Err500InternalServerError = internal.Err500InternalServerError
+var Err501NotImplemented = internal.Err501NotImplemented
+var ErrExists = internal.ErrExists
+var ErrorWithStackf = internal.ErrorWithStackf
+var Errorf = internal.Errorf
+
+// GetErrNotFound extracts the ErrNotFound from an error chain.
+// Returns the typed error and true if found, zero value and false otherwise.
+var GetErrNotFound = internal.GetErrNotFound
+var Is = internal.Is
+var Is400BadRequest = internal.Is400BadRequest
+var Is499ClientClosedRequest = internal.Is499ClientClosedRequest
+var IsAny = internal.IsAny
+var IsBrokenPipe = internal.IsBrokenPipe
+var IsEOF = internal.IsEOF
+var IsErrNotFound = internal.IsErrNotFound
+var IsErrno = internal.IsErrno
+var IsExist = internal.IsExist
+var IsHTTPError = internal.IsHTTPError
+var IsNetTimeout = internal.IsNetTimeout
+var IsNotExist = internal.IsNotExist
+
+// TODO remove
+var IsNotNilAndNotEOF = internal.IsNotNilAndNotEOF
+var IsReadlinkInvalidArgument = internal.IsReadlinkInvalidArgument
+var IsSentinel = internal.IsSentinel
+var IsStopIteration = internal.IsStopIteration
+var IsTooManyOpenFiles = internal.IsTooManyOpenFiles
+var IsWithTimeout = internal.IsWithTimeout
+var Join = internal.Join
+var MakeContext = internal.MakeContext
+var MakeContextDefault = internal.MakeContextDefault
+var MakeErrNotFound = internal.MakeErrNotFound
+var MakeErrNotFoundString = internal.MakeErrNotFoundString
+var MakeErrStopIteration = internal.MakeErrStopIteration
+var MakeFuncContextFromFuncErr = internal.MakeFuncContextFromFuncErr
+var MakeFuncContextFromFuncNil = internal.MakeFuncContextFromFuncNil
+var MakeFuncErrFromFuncNil = internal.MakeFuncErrFromFuncNil
+
+// TODO consider making a pool and return a repool func on construction
+var MakeGroupBuilder = internal.MakeGroupBuilder
+var MakeIsErrno = internal.MakeIsErrno
+var MakeWaitGroupParallel = internal.MakeWaitGroupParallel
+var MakeWaitGroupSerial = internal.MakeWaitGroupSerial
+var Must = internal.Must
+var PanicIfError = internal.PanicIfError
+var PrintHelpful = internal.PrintHelpful
+var RunChildContextWithPrintTicker = internal.RunChildContextWithPrintTicker
+var RunContextWithPrintTicker = internal.RunContextWithPrintTicker
+var Unwrap = internal.Unwrap
+var WithHelp = internal.WithHelp
+var WithoutStack = internal.WithoutStack
+var Wrap = internal.Wrap
+
+// Wrap the error with stack info unless it's one of the provided `except`
+// errors, in which case return that bare error. Direct value comparison is
+// performed (`in == except`) rather than errors.Is.
+var WrapExceptSentinel = internal.WrapExceptSentinel
+
+// Wrap the error with stack info unless it's one of the provided `except`
+// errors, in which case return nil. Direct value comparison is
+// performed (`in == except`) rather than errors.Is.
+var WrapExceptSentinelAsNil = internal.WrapExceptSentinelAsNil
+var WrapSkip = internal.WrapSkip
+var Wrapf = internal.Wrapf
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -119,6 +130,19 @@ func DeferredYieldCloser[T any](yield func(T, error) bool, closer io.Closer) {
 func IsTyped[DISAMB any](err error) bool {
 	return internal.IsTyped[DISAMB](err)
 }
+
+// MakeTypedSentinel creates a typed sentinel error and its checker function.
+// This is a convenience helper to reduce boilerplate when creating package errors.
+//
+// Usage:
+//
+//	type pkgErrDisamb struct{}
+//	var (
+//	    ErrMyError, IsMyError = errors.MakeTypedSentinel[pkgErrDisamb]("my error")
+//	)
+//
+// The returned sentinel implements errors.Typed[DISAMB] and can be checked with
+// either the returned checker function or errors.IsTyped[DISAMB](err).
 func MakeTypedSentinel[DISAMB any](text string) (sentinel internal.Typed[DISAMB], check func(error) bool) {
 	return internal.MakeTypedSentinel[DISAMB](text)
 }

@@ -3,27 +3,23 @@
 package format
 
 import (
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/format"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type (
-	LineWriter = internal.LineWriter
-)
+type LineWriter = internal.LineWriter
 
-var (
-	MakeDelimReaderConsumeEmpty  = internal.MakeDelimReaderConsumeEmpty
-	MakeFormatString             = internal.MakeFormatString
-	MakeFormatStringRightAligned = internal.MakeFormatStringRightAligned
-	MakeLineReaderConsumeEmpty   = internal.MakeLineReaderConsumeEmpty
-	MakeLineReaderPassThruEmpty  = internal.MakeLineReaderPassThruEmpty
-	MakeLineWriter               = internal.MakeLineWriter
-	MakeStringer                 = internal.MakeStringer
-	NewLineWriter                = internal.NewLineWriter
-	ReadLines                    = internal.ReadLines
-	ReadSep                      = internal.ReadSep
-	Write                        = internal.Write
-)
+var MakeDelimReaderConsumeEmpty = internal.MakeDelimReaderConsumeEmpty
+var MakeFormatString = internal.MakeFormatString
+var MakeFormatStringRightAligned = internal.MakeFormatStringRightAligned
+var MakeLineReaderConsumeEmpty = internal.MakeLineReaderConsumeEmpty
+var MakeLineReaderPassThruEmpty = internal.MakeLineReaderPassThruEmpty
+var MakeLineWriter = internal.MakeLineWriter
+var MakeStringer = internal.MakeStringer
+var NewLineWriter = internal.NewLineWriter
+var ReadLines = internal.ReadLines
+var ReadSep = internal.ReadSep
+var Write = internal.Write
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.

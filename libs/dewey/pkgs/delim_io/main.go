@@ -4,11 +4,14 @@ package delim_io
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/delim_io"
 
-type (
-	Reader = internal.Reader
-)
+// Not safe for parallel use
+type Reader = internal.Reader
 
-var (
-	CopyWithPrefixOnDelim = internal.CopyWithPrefixOnDelim
-	Make                  = internal.Make
-)
+// Copies each `delim` suffixed segment from src to dst, and for each segment,
+// adds the passed in prefix string.
+//
+// Useful for taking a Reader and adding a prefix for every line, like how `git`
+// shows `remote: <line>` for all remote stderr output.
+// TODO extract into an io.Writer-like object
+var CopyWithPrefixOnDelim = internal.CopyWithPrefixOnDelim
+var Make = internal.Make

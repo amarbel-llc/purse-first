@@ -4,11 +4,9 @@ package config_cli
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/foxtrot/config_cli"
 
-type (
-	Config = internal.Config
-)
+type Config = internal.Config
 
-var (
-	Default = internal.Default
-	FromAny = internal.FromAny
-)
+var Default = internal.Default
+
+// FromAny extracts a Config from an any value
+var FromAny = internal.FromAny

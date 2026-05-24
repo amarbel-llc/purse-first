@@ -3,6 +3,7 @@ package dagnabit
 import (
 	"bufio"
 	"fmt"
+	"go/ast"
 	"go/types"
 	"os"
 	"path/filepath"
@@ -51,7 +52,7 @@ func (exporter *Exporter) outputDir() string {
 // "./internal/alfa/blob_store_id" or "github.com/.../internal/alfa/blob_store_id").
 func (exporter *Exporter) ExportPackage(pkgPattern string) error {
 	cfg := &packages.Config{
-		Mode: packages.NeedName | packages.NeedTypes | packages.NeedFiles,
+		Mode: packages.NeedName | packages.NeedTypes | packages.NeedFiles | packages.NeedSyntax,
 		Dir:  exporter.Dir,
 		Env:  exporter.Env,
 	}
@@ -139,7 +140,7 @@ func (exporter *Exporter) ExportAll() error {
 	}
 
 	cfg := &packages.Config{
-		Mode: packages.NeedName | packages.NeedTypes | packages.NeedFiles,
+		Mode: packages.NeedName | packages.NeedTypes | packages.NeedFiles | packages.NeedSyntax,
 		Dir:  exporter.Dir,
 		Env:  exporter.Env,
 	}
@@ -255,7 +256,8 @@ func (exporter *Exporter) exportSinglePackage(pkg *packages.Package) error {
 		}
 		return internalToFacade(exporter.ModulePath, exporter.outputDir(), p)
 	}
-	facadeCode, err := generateFacadeJen(facadePkgName, importPath, pkg.Types, remap)
+	docs := buildDocMap(pkg)
+	facadeCode, err := generateFacadeJen(facadePkgName, importPath, pkg.Types, docs, remap)
 	if err != nil {
 		return fmt.Errorf("generating facade for %s: %w", importPath, err)
 	}
@@ -388,7 +390,8 @@ func (exporter *Exporter) exportTaggedFacades(
 	}
 
 	// Rewrite main.go with only the intersection.
-	mainCode, err := generateFacadeJenFiltered(facadePkgName, importPath, basePkg.Types, intersection, remap)
+	baseDocs := buildDocMap(basePkg)
+	mainCode, err := generateFacadeJenFiltered(facadePkgName, importPath, basePkg.Types, intersection, baseDocs, remap)
 	if err != nil {
 		return fmt.Errorf("regenerating main.go for %s: %w", importPath, err)
 	}
@@ -417,14 +420,19 @@ func (exporter *Exporter) exportTaggedFacades(
 
 		// Symbols for negated exprs come from basePkg (present without positive tags).
 		// Symbols for positive exprs come from the tagged load (already cached in load.pkg).
-		var scope *types.Scope
+		var (
+			scope    *types.Scope
+			tagDocs  map[string]*ast.CommentGroup
+		)
 		if load.negated {
 			scope = basePkg.Types.Scope()
+			tagDocs = buildDocMap(basePkg)
 		} else {
 			scope = load.pkg.Types.Scope()
+			tagDocs = buildDocMap(load.pkg)
 		}
 
-		code, err := generateTaggedFacadeJen(facadePkgName, importPath, load.expr, scope, uniqueNames, remap)
+		code, err := generateTaggedFacadeJen(facadePkgName, importPath, load.expr, scope, uniqueNames, tagDocs, remap)
 		if err != nil {
 			return fmt.Errorf("generating tagged facade for %s expr=%s: %w", importPath, load.expr, err)
 		}
@@ -551,6 +559,7 @@ func generateTaggedFacadeJen(
 	pkgName, importPath, tag string,
 	scope *types.Scope,
 	names []string,
+	docs map[string]*ast.CommentGroup,
 	remap func(string) string,
 ) ([]byte, error) {
 	f := jen.NewFile(pkgName)
@@ -558,75 +567,7 @@ func generateTaggedFacadeJen(
 	f.HeaderComment("//go:build " + tag)
 	f.ImportAlias(importPath, "internal")
 
-	var (
-		typeStmts  []*jen.Statement
-		varStmts   []*jen.Statement
-		constStmts []*jen.Statement
-		funcStmts  []jen.Code
-	)
-
-	for _, name := range names {
-		obj := scope.Lookup(name)
-		if obj == nil || !obj.Exported() {
-			continue
-		}
-
-		switch obj := obj.(type) {
-		case *types.TypeName:
-			typeStmts = append(typeStmts, jenTypeAlias(name, importPath, obj, remap))
-
-		case *types.Func:
-			sig := obj.Type().(*types.Signature)
-			if sig.TypeParams() != nil && sig.TypeParams().Len() > 0 {
-				if referencesUnexportedType(sig.Params()) || referencesUnexportedType(sig.Results()) {
-					continue
-				}
-				funcStmts = append(funcStmts, jenFuncWrapper(name, importPath, sig, remap))
-			} else {
-				varStmts = append(varStmts, jen.Id(name).Op("=").Qual(importPath, name))
-			}
-
-		case *types.Var:
-			varStmts = append(varStmts, jen.Id(name).Op("=").Qual(importPath, name))
-
-		case *types.Const:
-			constStmts = append(constStmts, jen.Id(name).Op("=").Qual(importPath, name))
-		}
-	}
-
-	if len(typeStmts) > 0 {
-		f.Type().DefsFunc(func(g *jen.Group) {
-			for _, s := range typeStmts {
-				g.Add(s)
-			}
-		})
-	}
-
-	if len(varStmts) > 0 {
-		f.Var().DefsFunc(func(g *jen.Group) {
-			for _, s := range varStmts {
-				g.Add(s)
-			}
-		})
-	}
-
-	if len(funcStmts) > 0 {
-		f.Comment("Generic function wrappers — Go does not support assigning")
-		f.Comment("generic functions to variables without instantiation.")
-		f.Comment("See https://github.com/golang/go/issues/52654")
-
-		for _, s := range funcStmts {
-			f.Add(s)
-		}
-	}
-
-	if len(constStmts) > 0 {
-		f.Const().DefsFunc(func(g *jen.Group) {
-			for _, s := range constStmts {
-				g.Add(s)
-			}
-		})
-	}
+	emitFacadeDecls(f, scope, names, importPath, docs, remap)
 
 	var buf strings.Builder
 	if err := f.Render(&buf); err != nil {
@@ -692,7 +633,13 @@ func firstBuildTag(path string) (string, error) {
 // generateFacadeJenFiltered is like generateFacadeJen but only emits symbols
 // whose names are present in the allow set. Used to write main.go with only
 // the intersection of symbols across all build-tag combinations.
-func generateFacadeJenFiltered(pkgName, importPath string, typePkg *types.Package, allow map[string]struct{}, remap func(string) string) ([]byte, error) {
+func generateFacadeJenFiltered(
+	pkgName, importPath string,
+	typePkg *types.Package,
+	allow map[string]struct{},
+	docs map[string]*ast.CommentGroup,
+	remap func(string) string,
+) ([]byte, error) {
 	scope := typePkg.Scope()
 	var filtered []string
 	for _, name := range scope.Names() {
@@ -706,75 +653,7 @@ func generateFacadeJenFiltered(pkgName, importPath string, typePkg *types.Packag
 	f.HeaderComment("Code generated by dagnabit; DO NOT EDIT.")
 	f.ImportAlias(importPath, "internal")
 
-	var (
-		typeStmts  []*jen.Statement
-		varStmts   []*jen.Statement
-		constStmts []*jen.Statement
-		funcStmts  []jen.Code
-	)
-
-	for _, name := range filtered {
-		obj := scope.Lookup(name)
-		if obj == nil || !obj.Exported() {
-			continue
-		}
-
-		switch obj := obj.(type) {
-		case *types.TypeName:
-			typeStmts = append(typeStmts, jenTypeAlias(name, importPath, obj, remap))
-
-		case *types.Func:
-			sig := obj.Type().(*types.Signature)
-			if sig.TypeParams() != nil && sig.TypeParams().Len() > 0 {
-				if referencesUnexportedType(sig.Params()) || referencesUnexportedType(sig.Results()) {
-					continue
-				}
-				funcStmts = append(funcStmts, jenFuncWrapper(name, importPath, sig, remap))
-			} else {
-				varStmts = append(varStmts, jen.Id(name).Op("=").Qual(importPath, name))
-			}
-
-		case *types.Var:
-			varStmts = append(varStmts, jen.Id(name).Op("=").Qual(importPath, name))
-
-		case *types.Const:
-			constStmts = append(constStmts, jen.Id(name).Op("=").Qual(importPath, name))
-		}
-	}
-
-	if len(typeStmts) > 0 {
-		f.Type().DefsFunc(func(g *jen.Group) {
-			for _, s := range typeStmts {
-				g.Add(s)
-			}
-		})
-	}
-
-	if len(varStmts) > 0 {
-		f.Var().DefsFunc(func(g *jen.Group) {
-			for _, s := range varStmts {
-				g.Add(s)
-			}
-		})
-	}
-
-	if len(funcStmts) > 0 {
-		f.Comment("Generic function wrappers — Go does not support assigning")
-		f.Comment("generic functions to variables without instantiation.")
-		f.Comment("See https://github.com/golang/go/issues/52654")
-
-		for _, s := range funcStmts {
-			f.Add(s)
-		}
-	}
-
-	if len(constStmts) > 0 {
-		f.Const().DefsFunc(func(g *jen.Group) {
-			for _, s := range constStmts {
-				g.Add(s)
-			}
-		})
-	}
+	emitFacadeDecls(f, scope, filtered, importPath, docs, remap)
 
 	var buf strings.Builder
 	if err := f.Render(&buf); err != nil {
@@ -786,7 +665,12 @@ func generateFacadeJenFiltered(pkgName, importPath string, typePkg *types.Packag
 
 // generateFacadeJen produces a facade Go source file using jennifer for
 // proper import management.
-func generateFacadeJen(pkgName, importPath string, typePkg *types.Package, remap func(string) string) ([]byte, error) {
+func generateFacadeJen(
+	pkgName, importPath string,
+	typePkg *types.Package,
+	docs map[string]*ast.CommentGroup,
+	remap func(string) string,
+) ([]byte, error) {
 	f := jen.NewFile(pkgName)
 	f.HeaderComment("Code generated by dagnabit; DO NOT EDIT.")
 
@@ -796,81 +680,7 @@ func generateFacadeJen(pkgName, importPath string, typePkg *types.Package, remap
 	f.ImportAlias(importPath, "internal")
 
 	scope := typePkg.Scope()
-	names := scope.Names()
-
-	var (
-		typeStmts  []*jen.Statement
-		varStmts   []*jen.Statement
-		constStmts []*jen.Statement
-		funcStmts  []jen.Code
-	)
-
-	for _, name := range names {
-		obj := scope.Lookup(name)
-		if !obj.Exported() {
-			continue
-		}
-
-		switch obj := obj.(type) {
-		case *types.TypeName:
-			typeStmts = append(typeStmts, jenTypeAlias(name, importPath, obj, remap))
-
-		case *types.Func:
-			sig := obj.Type().(*types.Signature)
-			if sig.TypeParams() != nil && sig.TypeParams().Len() > 0 {
-				if referencesUnexportedType(sig.Params()) || referencesUnexportedType(sig.Results()) {
-					// Skip: wrapper would expose unexported types in its signature
-					continue
-				}
-
-				funcStmts = append(funcStmts, jenFuncWrapper(name, importPath, sig, remap))
-			} else {
-				varStmts = append(varStmts, jen.Id(name).Op("=").Qual(importPath, name))
-			}
-
-		case *types.Var:
-			varStmts = append(varStmts, jen.Id(name).Op("=").Qual(importPath, name))
-
-		case *types.Const:
-			constStmts = append(constStmts, jen.Id(name).Op("=").Qual(importPath, name))
-		}
-	}
-
-	if len(typeStmts) > 0 {
-		f.Type().DefsFunc(func(g *jen.Group) {
-			for _, s := range typeStmts {
-				g.Add(s)
-			}
-		})
-	}
-
-	if len(varStmts) > 0 {
-		f.Var().DefsFunc(func(g *jen.Group) {
-			for _, s := range varStmts {
-				g.Add(s)
-			}
-		})
-	}
-
-	if len(funcStmts) > 0 {
-		// Generic functions cannot be assigned to variables in Go.
-		// See https://github.com/golang/go/issues/52654
-		f.Comment("Generic function wrappers — Go does not support assigning")
-		f.Comment("generic functions to variables without instantiation.")
-		f.Comment("See https://github.com/golang/go/issues/52654")
-
-		for _, s := range funcStmts {
-			f.Add(s)
-		}
-	}
-
-	if len(constStmts) > 0 {
-		f.Const().DefsFunc(func(g *jen.Group) {
-			for _, s := range constStmts {
-				g.Add(s)
-			}
-		})
-	}
+	emitFacadeDecls(f, scope, scope.Names(), importPath, docs, remap)
 
 	var buf strings.Builder
 	if err := f.Render(&buf); err != nil {
@@ -878,6 +688,106 @@ func generateFacadeJen(pkgName, importPath string, typePkg *types.Package, remap
 	}
 
 	return []byte(buf.String()), nil
+}
+
+// emitFacadeDecls writes per-symbol top-level declarations to f, in the
+// order: types, then non-generic vars/funcs (alphabetical), then generic
+// function wrappers, then consts. Each declaration is preceded by the
+// symbol's doc comment lines (from docs[name]) when present.
+//
+// Per-symbol (rather than grouped `var (…)` / `type (…)` / `const (…)`)
+// emission is required by issue #102: jennifer does not support per-spec
+// comments inside grouped Defs, and doc-comment propagation needs to
+// attach to each individual declaration.
+func emitFacadeDecls(
+	f *jen.File,
+	scope *types.Scope,
+	names []string,
+	importPath string,
+	docs map[string]*ast.CommentGroup,
+	remap func(string) string,
+) {
+	type emission struct {
+		name string
+		emit func()
+	}
+	var (
+		typeEmissions  []emission
+		varEmissions   []emission
+		funcEmissions  []emission
+		constEmissions []emission
+	)
+
+	for _, name := range names {
+		obj := scope.Lookup(name)
+		if obj == nil || !obj.Exported() {
+			continue
+		}
+
+		switch obj := obj.(type) {
+		case *types.TypeName:
+			typeEmissions = append(typeEmissions, emission{name, func() {
+				emitDoc(f, docs[name])
+				f.Type().Add(jenTypeAlias(name, importPath, obj, remap))
+			}})
+
+		case *types.Func:
+			sig := obj.Type().(*types.Signature)
+			if sig.TypeParams() != nil && sig.TypeParams().Len() > 0 {
+				if referencesUnexportedType(sig.Params()) || referencesUnexportedType(sig.Results()) {
+					continue
+				}
+				funcEmissions = append(funcEmissions, emission{name, func() {
+					emitDoc(f, docs[name])
+					f.Add(jenFuncWrapper(name, importPath, sig, remap))
+				}})
+			} else {
+				varEmissions = append(varEmissions, emission{name, func() {
+					emitDoc(f, docs[name])
+					f.Var().Id(name).Op("=").Qual(importPath, name)
+				}})
+			}
+
+		case *types.Var:
+			varEmissions = append(varEmissions, emission{name, func() {
+				emitDoc(f, docs[name])
+				f.Var().Id(name).Op("=").Qual(importPath, name)
+			}})
+
+		case *types.Const:
+			constEmissions = append(constEmissions, emission{name, func() {
+				emitDoc(f, docs[name])
+				f.Const().Id(name).Op("=").Qual(importPath, name)
+			}})
+		}
+	}
+
+	for _, e := range typeEmissions {
+		e.emit()
+	}
+	for _, e := range varEmissions {
+		e.emit()
+	}
+	if len(funcEmissions) > 0 {
+		f.Comment("Generic function wrappers — Go does not support assigning")
+		f.Comment("generic functions to variables without instantiation.")
+		f.Comment("See https://github.com/golang/go/issues/52654")
+		for _, e := range funcEmissions {
+			e.emit()
+		}
+	}
+	for _, e := range constEmissions {
+		e.emit()
+	}
+}
+
+// emitDoc writes each line of a doc comment to f as a top-level
+// comment, immediately preceding the next declaration. No-op when cg
+// is nil or has no surviving lines after directive-stripping.
+func emitDoc(f *jen.File, cg *ast.CommentGroup) {
+	for _, line := range docCommentLines(cg) {
+		f.Comment(line)
+	}
 }
 
 // jenTypeAlias produces a type alias statement, handling generic types.

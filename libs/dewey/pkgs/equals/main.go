@@ -3,8 +3,8 @@
 package equals
 
 import (
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/equals"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 // Generic function wrappers — Go does not support assigning

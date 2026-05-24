@@ -3,15 +3,13 @@
 package collections_coding
 
 import (
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/collections_coding"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 	"io"
 )
 
-type (
-	EncoderJson[T any] = internal.EncoderJson[T]
-	EncoderLike[T any] = internal.EncoderLike[T]
-)
+type EncoderJson[T any] = internal.EncoderJson[T]
+type EncoderLike[T any] = internal.EncoderLike[T]
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.

@@ -3,15 +3,14 @@
 package quiter_set
 
 import (
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/quiter_set"
-	"iter"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
 // See https://github.com/golang/go/issues/52654
-func AllWithIndex[ELEMENT any](set interfaces.Set[ELEMENT]) iter.Seq2[int, ELEMENT] {
+func AllWithIndex[ELEMENT any](set interfaces.Set[ELEMENT]) interfaces.Seq2[int, ELEMENT] {
 	return internal.AllWithIndex[ELEMENT](set)
 }
 func Any[ELEMENT any](set interfaces.Set[ELEMENT]) (element ELEMENT) {
@@ -26,6 +25,6 @@ func Del[ELEMENT any](set interfaces.SetMutable[ELEMENT], element ELEMENT) {
 func Equals[ELEMENT interfaces.Stringer](left interfaces.Set[ELEMENT], right interfaces.Set[ELEMENT]) bool {
 	return internal.Equals[ELEMENT](left, right)
 }
-func Strings[ELEMENT interfaces.Stringer](collections ...interfaces.Set[ELEMENT]) iter.Seq[string] {
+func Strings[ELEMENT interfaces.Stringer](collections ...interfaces.Set[ELEMENT]) interfaces.Seq[string] {
 	return internal.Strings[ELEMENT](collections...)
 }

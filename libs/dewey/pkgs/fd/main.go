@@ -4,20 +4,16 @@ package fd
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/fd"
 
-type (
-	Std = internal.Std
-)
+type Std = internal.Std
 
-var (
-	Base                     = internal.Base
-	Dir                      = internal.Dir
-	DirBaseOnly              = internal.DirBaseOnly
-	DoesDirectoryContainPath = internal.DoesDirectoryContainPath
-	Ext                      = internal.Ext
-	ExtSansDot               = internal.ExtSansDot
-	FileNameSansExt          = internal.FileNameSansExt
-	FileNameSansExtRelTo     = internal.FileNameSansExtRelTo
-	FsRootDir                = internal.FsRootDir
-	MakeStd                  = internal.MakeStd
-	MakeStdFromWriter        = internal.MakeStdFromWriter
-)
+var Base = internal.Base
+var Dir = internal.Dir
+var DirBaseOnly = internal.DirBaseOnly
+var DoesDirectoryContainPath = internal.DoesDirectoryContainPath
+var Ext = internal.Ext
+var ExtSansDot = internal.ExtSansDot
+var FileNameSansExt = internal.FileNameSansExt
+var FileNameSansExtRelTo = internal.FileNameSansExtRelTo
+var FsRootDir = internal.FsRootDir
+var MakeStd = internal.MakeStd
+var MakeStdFromWriter = internal.MakeStdFromWriter

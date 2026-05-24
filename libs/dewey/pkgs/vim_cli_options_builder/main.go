@@ -4,10 +4,6 @@ package vim_cli_options_builder
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/vim_cli_options_builder"
 
-type (
-	Builder = internal.Builder
-)
+type Builder = internal.Builder
 
-var (
-	New = internal.New
-)
+var New = internal.New

@@ -4,10 +4,6 @@ package trie
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/trie"
 
-type (
-	Trie = internal.Trie
-)
+type Trie = internal.Trie
 
-var (
-	Make = internal.Make
-)
+var Make = internal.Make

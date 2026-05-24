@@ -4,69 +4,69 @@ package files
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/files"
 
-type (
-	ErrNotDirectory        = internal.ErrNotDirectory
-	FileType               = internal.FileType
-	TemporaryFS            = internal.TemporaryFS
-	WalkDirEntry           = internal.WalkDirEntry
-	WalkDirEntryIgnoreFunc = internal.WalkDirEntryIgnoreFunc
-)
+type ErrNotDirectory = internal.ErrNotDirectory
+type FileType = internal.FileType
+type TemporaryFS = internal.TemporaryFS
+type WalkDirEntry = internal.WalkDirEntry
+type WalkDirEntryIgnoreFunc = internal.WalkDirEntryIgnoreFunc
 
-var (
-	AssertDir                                    = internal.AssertDir
-	Close                                        = internal.Close
-	CloseReadOnly                                = internal.CloseReadOnly
-	CombinedOutput                               = internal.CombinedOutput
-	Create                                       = internal.Create
-	CreateExclusiveReadOnly                      = internal.CreateExclusiveReadOnly
-	CreateExclusiveWriteOnly                     = internal.CreateExclusiveWriteOnly
-	DirEntries                                   = internal.DirEntries
-	DirNameWriterIgnoringHidden                  = internal.DirNameWriterIgnoringHidden
-	DirNames                                     = internal.DirNames
-	DirNames2                                    = internal.DirNames2
-	DirNamesLevel2                               = internal.DirNamesLevel2
-	DirectoriesRelativeTo                        = internal.DirectoriesRelativeTo
-	ErrEmptyFileList                             = internal.ErrEmptyFileList
-	Exists                                       = internal.Exists
-	GetFileTypeForPath                           = internal.GetFileTypeForPath
-	IsErrNotDirectory                            = internal.IsErrNotDirectory
-	MakeDirIfNecessary                           = internal.MakeDirIfNecessary
-	MakeDirIfNecessaryForStringerWithHeadAndTail = internal.MakeDirIfNecessaryForStringerWithHeadAndTail
-	MakeDirNameWriterIgnoringHidden              = internal.MakeDirNameWriterIgnoringHidden
-	MakeHashBucketPath                           = internal.MakeHashBucketPath
-	MakeHashBucketPathJoinFunc                   = internal.MakeHashBucketPathJoinFunc
-	Open                                         = internal.Open
-	OpenCreate                                   = internal.OpenCreate
-	OpenCreateWriteOnlyTruncate                  = internal.OpenCreateWriteOnlyTruncate
-	OpenExclusive                                = internal.OpenExclusive
-	OpenExclusiveReadOnly                        = internal.OpenExclusiveReadOnly
-	OpenExclusiveWriteOnly                       = internal.OpenExclusiveWriteOnly
-	OpenExclusiveWriteOnlyAppend                 = internal.OpenExclusiveWriteOnlyAppend
-	OpenExclusiveWriteOnlyTruncate               = internal.OpenExclusiveWriteOnlyTruncate
-	OpenFile                                     = internal.OpenFile
-	OpenFiles                                    = internal.OpenFiles
-	OpenReadOnly                                 = internal.OpenReadOnly
-	OpenReadWrite                                = internal.OpenReadWrite
-	PathElements                                 = internal.PathElements
-	PathFromHeadAndTail                          = internal.PathFromHeadAndTail
-	ReadAllString                                = internal.ReadAllString
-	ReadDir                                      = internal.ReadDir
-	ReadDirNamesLevel2                           = internal.ReadDirNamesLevel2
-	ReadDirNamesTo                               = internal.ReadDirNamesTo
-	Readlink                                     = internal.Readlink
-	Rename                                       = internal.Rename
-	SetAllowUserChanges                          = internal.SetAllowUserChanges
-	SetAllowUserChangesRecursive                 = internal.SetAllowUserChangesRecursive
-	SetDisallowUserChanges                       = internal.SetDisallowUserChanges
-	TryOrMakeDirIfNecessary                      = internal.TryOrMakeDirIfNecessary
-	TryOrTimeout                                 = internal.TryOrTimeout
-	WalkDir                                      = internal.WalkDir
-	WalkDirIgnoreFuncHidden                      = internal.WalkDirIgnoreFuncHidden
-)
+var AssertDir = internal.AssertDir
+var Close = internal.Close
 
-const (
-	FileTypeData       = internal.FileTypeData
-	FileTypeExecutable = internal.FileTypeExecutable
-	FileTypeText       = internal.FileTypeText
-	FileTypeUnknown    = internal.FileTypeUnknown
-)
+// CloseReadOnly closes a read-only file descriptor, intentionally
+// discarding the error. close(2) errors on read-only fds are about
+// flushing writes (EIO, ENOSPC, EDQUOT) which cannot occur when no
+// writes were performed. The fd is always freed on Linux and macOS
+// regardless of the error. Go's own os.ReadFile uses this same pattern.
+var CloseReadOnly = internal.CloseReadOnly
+var CombinedOutput = internal.CombinedOutput
+var Create = internal.Create
+var CreateExclusiveReadOnly = internal.CreateExclusiveReadOnly
+var CreateExclusiveWriteOnly = internal.CreateExclusiveWriteOnly
+var DirEntries = internal.DirEntries
+var DirNameWriterIgnoringHidden = internal.DirNameWriterIgnoringHidden
+var DirNames = internal.DirNames
+var DirNames2 = internal.DirNames2
+var DirNamesLevel2 = internal.DirNamesLevel2
+var DirectoriesRelativeTo = internal.DirectoriesRelativeTo
+var ErrEmptyFileList = internal.ErrEmptyFileList
+var Exists = internal.Exists
+var GetFileTypeForPath = internal.GetFileTypeForPath
+var IsErrNotDirectory = internal.IsErrNotDirectory
+var MakeDirIfNecessary = internal.MakeDirIfNecessary
+var MakeDirIfNecessaryForStringerWithHeadAndTail = internal.MakeDirIfNecessaryForStringerWithHeadAndTail
+var MakeDirNameWriterIgnoringHidden = internal.MakeDirNameWriterIgnoringHidden
+var MakeHashBucketPath = internal.MakeHashBucketPath
+var MakeHashBucketPathJoinFunc = internal.MakeHashBucketPathJoinFunc
+var Open = internal.Open
+var OpenCreate = internal.OpenCreate
+var OpenCreateWriteOnlyTruncate = internal.OpenCreateWriteOnlyTruncate
+var OpenExclusive = internal.OpenExclusive
+var OpenExclusiveReadOnly = internal.OpenExclusiveReadOnly
+var OpenExclusiveWriteOnly = internal.OpenExclusiveWriteOnly
+var OpenExclusiveWriteOnlyAppend = internal.OpenExclusiveWriteOnlyAppend
+var OpenExclusiveWriteOnlyTruncate = internal.OpenExclusiveWriteOnlyTruncate
+var OpenFile = internal.OpenFile
+var OpenFiles = internal.OpenFiles
+var OpenReadOnly = internal.OpenReadOnly
+var OpenReadWrite = internal.OpenReadWrite
+var PathElements = internal.PathElements
+var PathFromHeadAndTail = internal.PathFromHeadAndTail
+var ReadAllString = internal.ReadAllString
+var ReadDir = internal.ReadDir
+var ReadDirNamesLevel2 = internal.ReadDirNamesLevel2
+var ReadDirNamesTo = internal.ReadDirNamesTo
+var Readlink = internal.Readlink
+var Rename = internal.Rename
+var SetAllowUserChanges = internal.SetAllowUserChanges
+var SetAllowUserChangesRecursive = internal.SetAllowUserChangesRecursive
+var SetDisallowUserChanges = internal.SetDisallowUserChanges
+var TryOrMakeDirIfNecessary = internal.TryOrMakeDirIfNecessary
+var TryOrTimeout = internal.TryOrTimeout
+var WalkDir = internal.WalkDir
+var WalkDirIgnoreFuncHidden = internal.WalkDirIgnoreFuncHidden
+
+const FileTypeData = internal.FileTypeData
+const FileTypeExecutable = internal.FileTypeExecutable
+const FileTypeText = internal.FileTypeText
+const FileTypeUnknown = internal.FileTypeUnknown

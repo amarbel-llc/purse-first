@@ -3,64 +3,164 @@
 package command
 
 import (
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/command"
-	"iter"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type (
-	Arg[V interfaces.FlagValue]  = internal.Arg[V]
-	ArrayFlag                    = internal.ArrayFlag
-	BoolFlag                     = internal.BoolFlag
-	CLICompleter                 = internal.CLICompleter
-	Cmd                          = internal.Cmd
-	Command                      = internal.Command
-	CommandComponent             = internal.CommandComponent
-	CommandComponentReader       = internal.CommandComponentReader
-	CommandLineInput             = internal.CommandLineInput
-	CommandWithDescription       = internal.CommandWithDescription
-	CommandWithMCPAnnotations    = internal.CommandWithMCPAnnotations
-	CommandWithParams            = internal.CommandWithParams
-	CommandWithResult            = internal.CommandWithResult
-	Completer                    = internal.Completer
-	Completion                   = internal.Completion
-	Description                  = internal.Description
-	EnvVar                       = internal.EnvVar
-	Example                      = internal.Example
-	FilePath                     = internal.FilePath
-	Flag[V interfaces.FlagValue] = internal.Flag[V]
-	FlagValueCompleter           = internal.FlagValueCompleter
-	FuncCompleter                = internal.FuncCompleter
-	IntArg                       = internal.IntArg
-	IntFlag                      = internal.IntFlag
-	MCPAnnotations               = internal.MCPAnnotations
-	ManpageFile                  = internal.ManpageFile
-	ObjectFlag                   = internal.ObjectFlag
-	OldArg                       = internal.OldArg
-	OldParam                     = internal.OldParam
-	Param                        = internal.Param
-	ParamCompleter               = internal.ParamCompleter
-	ParamType                    = internal.ParamType
-	Prompter                     = internal.Prompter
-	Request                      = internal.Request
-	Result                       = internal.Result
-	StringArg                    = internal.StringArg
-	StringFlag                   = internal.StringFlag
-	StubPrompter                 = internal.StubPrompter
-	SupportsCompletion           = internal.SupportsCompletion
-	ToolMapping                  = internal.ToolMapping
-	Utility                      = internal.Utility
-)
+// Arg is a positional CLI argument, also an MCP schema property.
+type Arg[V interfaces.FlagValue] = internal.Arg[V]
 
-var (
-	FindToolMatch       = internal.FindToolMatch
-	JSONResult          = internal.JSONResult
-	NewUtility          = internal.NewUtility
-	PopRequestArgTo     = internal.PopRequestArgTo
-	PopRequestArgToFunc = internal.PopRequestArgToFunc
-	TextErrorResult     = internal.TextErrorResult
-	TextResult          = internal.TextResult
-)
+// ArrayFlag is a repeated/array flag with nested item schema.
+type ArrayFlag = internal.ArrayFlag
+type BoolFlag = internal.BoolFlag
+type CLICompleter = internal.CLICompleter
+
+// Cmd is the interface for dodder-style commands that use the Request pattern.
+// Commands implement Run(Request) and optionally implement CommandWithDescription,
+// CommandWithParams, CommandWithResult, CommandWithMCPAnnotations, etc.
+type Cmd = internal.Cmd
+
+// Command declares a single subcommand with all metadata needed
+// to generate CLI parsing, MCP tool registration, manpages,
+// completions, and plugin manifests.
+type Command = internal.Command
+type CommandComponent = internal.CommandComponent
+type CommandComponentReader = internal.CommandComponentReader
+
+// TODO complete merging Args, consumed and FlagsOrArgs for use by Run/Complete
+type CommandLineInput = internal.CommandLineInput
+
+// CommandWithDescription is implemented by Cmd types that provide metadata.
+type CommandWithDescription = internal.CommandWithDescription
+
+// CommandWithMCPAnnotations lets commands declare their MCP hints.
+type CommandWithMCPAnnotations = internal.CommandWithMCPAnnotations
+
+// CommandWithParams is the opt-in interface for declaring parameters.
+// Commands returning both flags and positional args (via Positional: true
+// on the Param) get automatic MCP schema generation and CLI dispatch.
+type CommandWithParams = internal.CommandWithParams
+
+// CommandWithResult is implemented by Cmd types that can return a
+// structured Result for MCP tool responses. Commands implementing
+// this interface get registered as MCP tools via Utility.AddCmd.
+// Commands implementing only Cmd (not CommandWithResult) are CLI-only.
+type CommandWithResult = internal.CommandWithResult
+
+// Completer is implemented by commands that provide shell completions.
+// The env parameter is application-specific (e.g., dodder passes env_local.Env).
+type Completer = internal.Completer
+type Completion = internal.Completion
+
+// Description holds short and long descriptions for a command.
+type Description = internal.Description
+
+// EnvVar declares an environment variable that an app or command reads,
+// for inclusion in the manpage ENVIRONMENT section.
+type EnvVar = internal.EnvVar
+
+// Example represents a single usage example for a command or app.
+type Example = internal.Example
+
+// FilePath declares a file or directory path that an app or command reads
+// or writes, for inclusion in the manpage FILES section.
+type FilePath = internal.FilePath
+
+// Flag is a named CLI flag (--name / -n), also an MCP schema property.
+type Flag[V interfaces.FlagValue] = internal.Flag[V]
+type FlagValueCompleter = internal.FlagValueCompleter
+type FuncCompleter = internal.FuncCompleter
+type IntArg = internal.IntArg
+type IntFlag = internal.IntFlag
+
+// MCPAnnotations declares MCP tool hints without importing protocol types
+// directly, keeping the golf layer dependency-free.
+type MCPAnnotations = internal.MCPAnnotations
+
+// ManpageFile declares a hand-written manpage source file (any roff dialect)
+// to be installed alongside the auto-generated pages produced by
+// GenerateManpages. The framework reads bytes from Source and writes them
+// verbatim to {dir}/share/man/man{Section}/{Name}.
+//
+// Source may be any fs.FS — typically an embed.FS for binary-bundled docs,
+// or os.DirFS(".") for paths relative to the package source root (which is
+// the convention for nix postInstall steps).
+type ManpageFile = internal.ManpageFile
+
+// ObjectFlag is a freeform JSON object flag.
+type ObjectFlag = internal.ObjectFlag
+
+// OldArg declares metadata for a single positional argument.
+// Mirrors the flag pattern: flagSet.Var(&cmd.RepoId, "repo", "usage")
+// becomes OldArg{Name: "repo-id", Value: &ids.RepoId{}, ...}
+//
+// Deprecated: use Arg[V] from param.go instead.
+type OldArg = internal.OldArg
+
+// OldParam declares a single command parameter, used for CLI flags,
+// MCP JSON schema properties, manpage OPTIONS, and completions.
+//
+// Deprecated: use Flag[V], Arg[V], ArrayFlag, or ObjectFlag instead.
+type OldParam = internal.OldParam
+
+// Param is the sealed interface for command parameters. Concrete types
+// are Flag[V], Arg[V], ArrayFlag, and ObjectFlag. External packages
+// define new value types (V) freely but cannot add new structural kinds.
+//
+// This sealing is a lever that may need to open later — if it does,
+// generators would also need to become open/extensible.
+type Param = internal.Param
+
+// Completer is an iterator that yields Completion values for shell
+// tab-completion and MCP enum hints. Using an iterator instead of
+// returning a map allows streaming large completion sets without
+// loading everything into memory.
+type ParamCompleter = internal.ParamCompleter
+
+// ParamType identifies the data type of a command parameter.
+type ParamType = internal.ParamType
+
+// Prompter provides interactive prompts. CLI implementations use terminal UI;
+// MCP implementations return errors since mid-call prompting is not supported.
+type Prompter = internal.Prompter
+
+// TODO refactor this to have a generic config field and for the commands_madder
+// and commands_dodder packages to alias a concrete version for their own use
+type Request = internal.Request
+
+// Result holds the output of a command handler, used by both CLI and MCP runners.
+type Result = internal.Result
+type StringArg = internal.StringArg
+type StringFlag = internal.StringFlag
+
+// StubPrompter returns errors for all prompts. Used in MCP mode.
+type StubPrompter = internal.StubPrompter
+type SupportsCompletion = internal.SupportsCompletion
+
+// ToolMapping declares that this command's MCP tool should intercept
+// a specific Claude Code tool under certain conditions.
+type ToolMapping = internal.ToolMapping
+
+// Utility holds the command registry and top-level metadata for a CLI/MCP application.
+type Utility = internal.Utility
+
+// FindToolMatch checks whether a tool invocation matches any of the given
+// ToolMapping declarations. Returns a pointer to the first match, or nil.
+var FindToolMatch = internal.FindToolMatch
+
+// JSONResult creates a Result with structured data.
+var JSONResult = internal.JSONResult
+
+// NewUtility creates a new Utility with the given name and short description.
+var NewUtility = internal.NewUtility
+var PopRequestArgTo = internal.PopRequestArgTo
+var PopRequestArgToFunc = internal.PopRequestArgToFunc
+
+// TextErrorResult creates an error Result with plain text.
+var TextErrorResult = internal.TextErrorResult
+
+// TextResult creates a Result with plain text.
+var TextResult = internal.TextResult
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -68,15 +168,13 @@ var (
 func PopRequestArg[VALUE interfaces.Stringer, VALUE_PTR interfaces.StringerSetterPtr[VALUE]](req internal.Request, name string) VALUE_PTR {
 	return internal.PopRequestArg[VALUE, VALUE_PTR](req, name)
 }
-func PopRequestArgs[VALUE interfaces.Stringer, VALUE_PTR interfaces.StringerSetterPtr[VALUE]](req internal.Request, name string) iter.Seq[VALUE_PTR] {
+func PopRequestArgs[VALUE interfaces.Stringer, VALUE_PTR interfaces.StringerSetterPtr[VALUE]](req internal.Request, name string) interfaces.Seq[VALUE_PTR] {
 	return internal.PopRequestArgs[VALUE, VALUE_PTR](req, name)
 }
 
-const (
-	Array  = internal.Array
-	Bool   = internal.Bool
-	Float  = internal.Float
-	Int    = internal.Int
-	Object = internal.Object
-	String = internal.String
-)
+const Array = internal.Array
+const Bool = internal.Bool
+const Float = internal.Float
+const Int = internal.Int
+const Object = internal.Object
+const String = internal.String

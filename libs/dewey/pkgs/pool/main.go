@@ -3,28 +3,24 @@
 package pool
 
 import (
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/pool"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type (
-	Bespoke[T any]                                         = internal.Bespoke[T]
-	BespokeResetter[T any]                                 = internal.BespokeResetter[T]
-	Pool[SWIMMER any, SWIMMER_PTR interfaces.Ptr[SWIMMER]] = internal.Pool[SWIMMER, SWIMMER_PTR]
-	Slice[SWIMMER any, SWIMMER_SLICE interface {
-		~[]SWIMMER
-	}] = internal.Slice[SWIMMER, SWIMMER_SLICE]
-	Value[SWIMMER any] = internal.Value[SWIMMER]
-)
+type Bespoke[T any] = internal.Bespoke[T]
+type BespokeResetter[T any] = internal.BespokeResetter[T]
+type Pool[SWIMMER any, SWIMMER_PTR interfaces.Ptr[SWIMMER]] = internal.Pool[SWIMMER, SWIMMER_PTR]
+type Slice[SWIMMER any, SWIMMER_SLICE interface {
+	~[]SWIMMER
+}] = internal.Slice[SWIMMER, SWIMMER_SLICE]
+type Value[SWIMMER any] = internal.Value[SWIMMER]
 
-var (
-	GetBufferedReader  = internal.GetBufferedReader
-	GetBufferedWriter  = internal.GetBufferedWriter
-	GetByteReader      = internal.GetByteReader
-	GetSha256Hash      = internal.GetSha256Hash
-	GetStringReader    = internal.GetStringReader
-	OutstandingBorrows = internal.OutstandingBorrows
-)
+var GetBufferedReader = internal.GetBufferedReader
+var GetBufferedWriter = internal.GetBufferedWriter
+var GetByteReader = internal.GetByteReader
+var GetSha256Hash = internal.GetSha256Hash
+var GetStringReader = internal.GetStringReader
+var OutstandingBorrows = internal.OutstandingBorrows
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.

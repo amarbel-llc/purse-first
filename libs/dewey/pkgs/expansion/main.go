@@ -3,22 +3,17 @@
 package expansion
 
 import (
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	collectionsslice "github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/collections_slice"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/expansion"
-	"iter"
+	collectionsslice "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/collections_slice"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type (
-	Expander = internal.Expander
-)
+type Expander = internal.Expander
 
-var (
-	ExpanderAll       = internal.ExpanderAll
-	ExpanderRight     = internal.ExpanderRight
-	MakeExpanderAll   = internal.MakeExpanderAll
-	MakeExpanderRight = internal.MakeExpanderRight
-)
+var ExpanderAll = internal.ExpanderAll
+var ExpanderRight = internal.ExpanderRight
+var MakeExpanderAll = internal.MakeExpanderAll
+var MakeExpanderRight = internal.MakeExpanderRight
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -26,9 +21,9 @@ var (
 func ExpandIntoSlice[ID interfaces.Value, ID_PTR interfaces.ValuePtr[ID]](token string, expander internal.Expander) collectionsslice.Slice[ID] {
 	return internal.ExpandIntoSlice[ID, ID_PTR](token, expander)
 }
-func ExpandMany[ID interfaces.Value, ID_PTR interfaces.ValuePtr[ID]](seq iter.Seq[ID], expander internal.Expander) iter.Seq[ID] {
+func ExpandMany[ID interfaces.Value, ID_PTR interfaces.ValuePtr[ID]](seq interfaces.Seq[ID], expander internal.Expander) interfaces.Seq[ID] {
 	return internal.ExpandMany[ID, ID_PTR](seq, expander)
 }
-func ExpandOneIntoIds[ID interfaces.Value, ID_PTR interfaces.ValuePtr[ID]](identifierString string, expander internal.Expander) iter.Seq2[ID, error] {
+func ExpandOneIntoIds[ID interfaces.Value, ID_PTR interfaces.ValuePtr[ID]](identifierString string, expander internal.Expander) interfaces.SeqError[ID] {
 	return internal.ExpandOneIntoIds[ID, ID_PTR](identifierString, expander)
 }

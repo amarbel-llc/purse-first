@@ -4,10 +4,10 @@ package tridex
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/tridex"
 
-type (
-	Tridex = internal.Tridex
-)
+// TODO-P4 make generic
+// TODO-P4 recycle nodes
+// TODO-P4 confirm JSON structure is correct
+// TODO switch to runes and rune readers as input
+type Tridex = internal.Tridex
 
-var (
-	Make = internal.Make
-)
+var Make = internal.Make

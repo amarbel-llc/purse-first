@@ -3,16 +3,16 @@
 package heap
 
 import (
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	cmp "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/cmp"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/heap"
+	cmp "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/cmp"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type (
-	Element                                                                  = internal.Element
-	ElementPtr[ELEMENT internal.Element]                                     = internal.ElementPtr[ELEMENT]
-	Heap[ELEMENT internal.Element, ELEMENT_PTR internal.ElementPtr[ELEMENT]] = internal.Heap[ELEMENT, ELEMENT_PTR]
-)
+type Element = internal.Element
+type ElementPtr[ELEMENT internal.Element] = internal.ElementPtr[ELEMENT]
+
+// TODO rewrite with cmp.FuncCmp
+type Heap[ELEMENT internal.Element, ELEMENT_PTR internal.ElementPtr[ELEMENT]] = internal.Heap[ELEMENT, ELEMENT_PTR]
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.

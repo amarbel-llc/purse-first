@@ -3,71 +3,257 @@
 package flags
 
 import (
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/flags"
-	"iter"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type (
-	Definitions     = internal.Definitions
-	ErrInvalidValue = internal.ErrInvalidValue
-	ErrorHandling   = internal.ErrorHandling
-	Flag            = internal.Flag
-	FlagSet         = internal.FlagSet
-	FlagWithPolicy  = internal.FlagWithPolicy
-	Getter          = internal.Getter
-)
+type Definitions = internal.Definitions
+type ErrInvalidValue = internal.ErrInvalidValue
 
-var (
-	Arg                = internal.Arg
-	Args               = internal.Args
-	Bool               = internal.Bool
-	BoolFunc           = internal.BoolFunc
-	BoolVar            = internal.BoolVar
-	CommandLine        = internal.CommandLine
-	Duration           = internal.Duration
-	DurationVar        = internal.DurationVar
-	ErrHelp            = internal.ErrHelp
-	Float64            = internal.Float64
-	Float64Var         = internal.Float64Var
-	Func               = internal.Func
-	Int                = internal.Int
-	Int64              = internal.Int64
-	Int64Var           = internal.Int64Var
-	IntVar             = internal.IntVar
-	Lookup             = internal.Lookup
-	MakeWithPolicy     = internal.MakeWithPolicy
-	NArg               = internal.NArg
-	NFlag              = internal.NFlag
-	NewFlagSet         = internal.NewFlagSet
-	Parse              = internal.Parse
-	Parsed             = internal.Parsed
-	PrintDefaults      = internal.PrintDefaults
-	Set                = internal.Set
-	SplitCommasAndTrim = internal.SplitCommasAndTrim
-	String             = internal.String
-	StringVar          = internal.StringVar
-	TextVar            = internal.TextVar
-	Uint               = internal.Uint
-	Uint64             = internal.Uint64
-	Uint64Var          = internal.Uint64Var
-	UintVar            = internal.UintVar
-	UnquoteUsage       = internal.UnquoteUsage
-	Usage              = internal.Usage
-	Var                = internal.Var
-	Visit              = internal.Visit
-	VisitAll           = internal.VisitAll
-)
+// ErrorHandling defines how [FlagSet.Parse] behaves if the parse fails.
+type ErrorHandling = internal.ErrorHandling
+
+// A Flag represents the state of a flag.
+type Flag = internal.Flag
+
+// A FlagSet represents a set of defined flags. The zero value of a FlagSet
+// has no name and has [ContinueOnError] error handling.
+//
+// [Flag] names must be unique within a FlagSet. An attempt to define a flag
+// whose
+// name is already in use will cause a panic.
+type FlagSet = internal.FlagSet
+type FlagWithPolicy = internal.FlagWithPolicy
+
+// Getter is an interface that allows the contents of a [Value] to be retrieved.
+// It wraps the [Value] interface, rather than being part of it, because it
+// appeared after Go 1 and its compatibility rules. All [Value] types provided
+// by this package satisfy the [Getter] interface, except the type used by
+// [Func].
+type Getter = internal.Getter
+
+// Arg returns the i'th command-line argument. Arg(0) is the first remaining
+// argument
+// after flags have been processed. Arg returns an empty string if the
+// requested element does not exist.
+var Arg = internal.Arg
+
+// Args returns the non-flag command-line arguments.
+var Args = internal.Args
+
+// Bool defines a bool flag with specified name, default value, and usage
+// string. The return value is the address of a bool variable that stores the
+// value of the flag.
+var Bool = internal.Bool
+
+// BoolFunc defines a flag with the specified name and usage string without
+// requiring values.
+// Each time the flag is seen, fn is called with the value of the flag.
+// If fn returns a non-nil error, it will be treated as a flag value parsing
+// error.
+var BoolFunc = internal.BoolFunc
+
+// BoolVar defines a bool flag with specified name, default value, and usage
+// string. The argument p points to a bool variable in which to store the value
+// of the flag.
+var BoolVar = internal.BoolVar
+
+// CommandLine is the default set of command-line flags, parsed from [os.Args].
+// The top-level functions such as [BoolVar], [Arg], and so on are wrappers for
+// the
+// methods of CommandLine.
+var CommandLine = internal.CommandLine
+
+// Duration defines a time.Duration flag with specified name, default value, and
+// usage string. The return value is the address of a time.Duration variable
+// that stores the value of the flag.
+// The flag accepts a value acceptable to time.ParseDuration.
+var Duration = internal.Duration
+
+// DurationVar defines a time.Duration flag with specified name, default value,
+// and usage string. The argument p points to a time.Duration variable in which
+// to store the value of the flag.
+// The flag accepts a value acceptable to time.ParseDuration.
+var DurationVar = internal.DurationVar
+
+// ErrHelp is the error returned if the -help or -h flag is invoked
+// but no such flag is defined.
+var ErrHelp = internal.ErrHelp
+
+// Float64 defines a float64 flag with specified name, default value, and usage
+// string. The return value is the address of a float64 variable that stores the
+// value of the flag.
+var Float64 = internal.Float64
+
+// Float64Var defines a float64 flag with specified name, default value, and
+// usage string. The argument p points to a float64 variable in which to store
+// the value of the flag.
+var Float64Var = internal.Float64Var
+
+// Func defines a flag with the specified name and usage string.
+// Each time the flag is seen, fn is called with the value of the flag.
+// If fn returns a non-nil error, it will be treated as a flag value parsing
+// error.
+var Func = internal.Func
+
+// Int defines an int flag with specified name, default value, and usage string.
+// The return value is the address of an int variable that stores the value of
+// the flag.
+var Int = internal.Int
+
+// Int64 defines an int64 flag with specified name, default value, and usage
+// string. The return value is the address of an int64 variable that stores the
+// value of the flag.
+var Int64 = internal.Int64
+
+// Int64Var defines an int64 flag with specified name, default value, and usage
+// string. The argument p points to an int64 variable in which to store the
+// value of the flag.
+var Int64Var = internal.Int64Var
+
+// IntVar defines an int flag with specified name, default value, and usage
+// string. The argument p points to an int variable in which to store the value
+// of the flag.
+var IntVar = internal.IntVar
+
+// Lookup returns the [Flag] structure of the named command-line flag,
+// returning nil if none exists.
+var Lookup = internal.Lookup
+var MakeWithPolicy = internal.MakeWithPolicy
+
+// NArg is the number of arguments remaining after flags have been processed.
+var NArg = internal.NArg
+
+// NFlag returns the number of command-line flags that have been set.
+var NFlag = internal.NFlag
+
+// NewFlagSet returns a new, empty flag set with the specified name and
+// error handling property. If the name is not empty, it will be printed
+// in the default usage message and in error messages.
+var NewFlagSet = internal.NewFlagSet
+
+// Parse parses the command-line flags from [os.Args][1:]. Must be called
+// after all flags are defined and before flags are accessed by the program.
+var Parse = internal.Parse
+
+// Parsed reports whether the command-line flags have been parsed.
+var Parsed = internal.Parsed
+
+// PrintDefaults prints, to standard error unless configured otherwise,
+// a usage message showing the default settings of all defined
+// command-line flags.
+// For an integer valued flag x, the default output has the form
+//
+//	-x int
+//		usage-message-for-x (default 7)
+//
+// The usage message will appear on a separate line for anything but
+// a bool flag with a one-byte name. For bool flags, the type is
+// omitted and if the flag name is one byte the usage message appears
+// on the same line. The parenthetical default is omitted if the
+// default is the zero value for the type. The listed type, here int,
+// can be changed by placing a back-quoted name in the flag's usage
+// string; the first such item in the message is taken to be a parameter
+// name to show in the message and the back quotes are stripped from
+// the message when displayed. For instance, given
+//
+//	flag.String("I", "", "search `directory` for include files")
+//
+// the output will be
+//
+//	-I directory
+//		search directory for include files.
+//
+// To change the destination for flag messages, call [CommandLine].SetOutput.
+var PrintDefaults = internal.PrintDefaults
+
+// Set sets the value of the named command-line flag.
+var Set = internal.Set
+var SplitCommasAndTrim = internal.SplitCommasAndTrim
+
+// String defines a string flag with specified name, default value, and usage
+// string. The return value is the address of a string variable that stores the
+// value of the flag.
+var String = internal.String
+
+// StringVar defines a string flag with specified name, default value, and usage
+// string. The argument p points to a string variable in which to store the
+// value of the flag.
+var StringVar = internal.StringVar
+
+// TextVar defines a flag with a specified name, default value, and usage
+// string.
+// The argument p must be a pointer to a variable that will hold the value
+// of the flag, and p must implement encoding.TextUnmarshaler.
+// If the flag is used, the flag value will be passed to p's UnmarshalText
+// method.
+// The type of the default value must be the same as the type of p.
+var TextVar = internal.TextVar
+
+// Uint defines a uint flag with specified name, default value, and usage
+// string. The return value is the address of a uint variable that stores the
+// value of the flag.
+var Uint = internal.Uint
+
+// Uint64 defines a uint64 flag with specified name, default value, and usage
+// string. The return value is the address of a uint64 variable that stores the
+// value of the flag.
+var Uint64 = internal.Uint64
+
+// Uint64Var defines a uint64 flag with specified name, default value, and usage
+// string. The argument p points to a uint64 variable in which to store the
+// value of the flag.
+var Uint64Var = internal.Uint64Var
+
+// UintVar defines a uint flag with specified name, default value, and usage
+// string. The argument p points to a uint variable in which to store the value
+// of the flag.
+var UintVar = internal.UintVar
+
+// UnquoteUsage extracts a back-quoted name from the usage
+// string for a flag and returns it and the un-quoted usage.
+// Given "a `name` to show" it returns ("name", "a name to show").
+// If there are no back quotes, the name is an educated guess of the
+// type of the flag's value, or the empty string if the flag is boolean.
+var UnquoteUsage = internal.UnquoteUsage
+
+// Usage prints a usage message documenting all defined command-line flags
+// to [CommandLine]'s output, which by default is [os.Stderr].
+// It is called when an error occurs while parsing flags.
+// The function is a variable that may be changed to point to a custom function.
+// By default it prints a simple header and calls [PrintDefaults]; for details
+// about the format of the output and how to control it, see the documentation
+// for [PrintDefaults].
+// Custom usage functions may choose to exit the program; by default exiting
+// happens anyway as the command line's error handling strategy is set to
+// [ExitOnError].
+var Usage = internal.Usage
+
+// Var defines a flag with the specified name and usage string. The type and
+// value of the flag are represented by the first argument, of type [Value],
+// which
+// typically holds a user-defined implementation of [Value]. For instance, the
+// caller could create a flag that turns a comma-separated string into a slice
+// of strings by giving the slice the methods of [Value]; in particular, [Set]
+// would
+// decompose the comma-separated string into the slice.
+var Var = internal.Var
+
+// Visit visits the command-line flags in lexicographical order, calling fn
+// for each. It visits only those flags that have been set.
+var Visit = internal.Visit
+
+// VisitAll visits the command-line flags in lexicographical order, calling
+// fn for each. It visits all flags, even those not set.
+var VisitAll = internal.VisitAll
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
 // See https://github.com/golang/go/issues/52654
-func SplitCommasAndTrimAndMake[ELEMENT interfaces.Value, ELEMENT_PTR interfaces.ValuePtr[ELEMENT]](value string) iter.Seq2[ELEMENT, error] {
+func SplitCommasAndTrimAndMake[ELEMENT interfaces.Value, ELEMENT_PTR interfaces.ValuePtr[ELEMENT]](value string) interfaces.SeqError[ELEMENT] {
 	return internal.SplitCommasAndTrimAndMake[ELEMENT, ELEMENT_PTR](value)
 }
 
-const (
-	ContinueOnError = internal.ContinueOnError
-	ExitOnError     = internal.ExitOnError
-	PanicOnError    = internal.PanicOnError
-)
+const ContinueOnError = internal.ContinueOnError
+const ExitOnError = internal.ExitOnError
+const PanicOnError = internal.PanicOnError

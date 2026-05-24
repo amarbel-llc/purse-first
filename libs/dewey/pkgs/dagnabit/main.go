@@ -4,25 +4,83 @@ package dagnabit
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/dagnabit"
 
-type (
-	DependencyReader = internal.DependencyReader
-	Exporter         = internal.Exporter
-	GitMover         = internal.GitMover
-	LevelMapper      = internal.LevelMapper
-	MoveEvent        = internal.MoveEvent
-	MoveOptions      = internal.MoveOptions
-	PackageMover     = internal.PackageMover
-	Repositioner     = internal.Repositioner
-)
+// DependencyReader produces directed edges from a codebase,
+// grouped by tree prefix (e.g., "lib", "internal").
+type DependencyReader = internal.DependencyReader
 
-var (
-	ValidateTwoLayerLayout = internal.ValidateTwoLayerLayout
-	ValidateUniqueLeaves   = internal.ValidateUniqueLeaves
-)
+// Exporter generates pkgs/ facade files from internal packages.
+type Exporter = internal.Exporter
 
-const (
-	EventMove      = internal.EventMove
-	EventWouldMove = internal.EventWouldMove
-	ModeInitial    = internal.ModeInitial
-	ModeReposition = internal.ModeReposition
-)
+// GitMover moves packages by running git mv and rewriting Go import paths.
+// Dir is the working directory (module root). ModulePath is the Go module
+// path used to construct fully-qualified import paths from src/dst.
+type GitMover = internal.GitMover
+
+// LevelMapper assigns names to topological heights and vice versa.
+// Height 0 is the lowest level (no internal dependencies).
+type LevelMapper = internal.LevelMapper
+
+// MoveEvent is the kind tag emitted as the "event" field of dagnabit's
+// NDJSON output. Two values exist: EventMove for a real move that just
+// completed, EventWouldMove for a dry-run that would do this move.
+type MoveEvent = internal.MoveEvent
+
+// MoveOptions controls MovePackageRename behavior.
+type MoveOptions = internal.MoveOptions
+
+// PackageMover executes the move of a package from one path to another.
+type PackageMover = internal.PackageMover
+
+// Repositioner orchestrates dependency reading, topological sorting,
+// level mapping, and package moving.
+//
+// Mode selects the path-arithmetic strategy:
+//   - ModeReposition / "" (default): rebalance a tiered layout.
+//   - ModeInitial: insert a level segment into a flat layout (requires
+//     ComponentDepth == 2).
+//
+// ComponentDepth controls node path interpretation in ModeReposition:
+//   - 3 (default): prefix/level/package — move rebuilds as prefix/newLevel/package
+//   - 2: level/package — move rebuilds as newLevel/package
+//
+// In ModeInitial, ComponentDepth MUST be 2 and nodes are interpreted as
+// <prefix>/<pkg>, producing <prefix>/<newLevel>/<pkg>.
+type Repositioner = internal.Repositioner
+
+// ValidateTwoLayerLayout loads every package in the module and reports an
+// error if any package's path within the module has more than two
+// components (e.g., `<branch>/<leaf>/<sub>` instead of `<branch>/<leaf>`).
+//
+// dagnabit's reposition machinery assumes a strict <branch>/<leaf> layout.
+// Sub-packages break that assumption: the level-mapping math treats every
+// path under `<branch>/<leaf>/` as the same node, so a sub-package's deps
+// silently get attributed to its parent leaf and the level computation
+// drifts. Forcing flatness keeps the model honest.
+//
+// Packages with fewer than two components (e.g., at the module root) are
+// ignored — Go's `testdata/` directories never appear here because
+// `packages.Load("./...")` skips them by convention.
+var ValidateTwoLayerLayout = internal.ValidateTwoLayerLayout
+
+// ValidateUniqueLeaves loads every package in the module and reports an
+// error if two `<branch>/<leaf>` packages share a leaf name. Packages with
+// fewer than two path components (e.g., a package directly at module root)
+// are ignored.
+//
+// dewey's convention is that leaf names are unique across the entire tree
+// so docs and tooling can refer to packages as `*/<leaf>` without pinning
+// a level that may change as dependencies evolve.
+var ValidateUniqueLeaves = internal.ValidateUniqueLeaves
+
+const EventMove = internal.EventMove
+const EventWouldMove = internal.EventWouldMove
+
+// ModeInitial inserts a NATO level segment into a flat <prefix>/<pkg> layout,
+// producing <prefix>/<newLevel>/<pkg>. Every package is moved; there is no
+// "already at the right level" short-circuit. Requires ComponentDepth == 2.
+const ModeInitial = internal.ModeInitial
+
+// ModeReposition (default) rebalances packages that already sit in a tiered
+// layout — <prefix>/<oldLevel>/<pkg> or <oldLevel>/<pkg> — into the NATO
+// level dictated by their dependency height.
+const ModeReposition = internal.ModeReposition

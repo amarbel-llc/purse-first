@@ -4,8 +4,6 @@ package tommy_util
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/tommy_util"
 
-var (
-	BytesToMap    = internal.BytesToMap
-	DocumentToMap = internal.DocumentToMap
-	ReaderToMap   = internal.ReaderToMap
-)
+var BytesToMap = internal.BytesToMap
+var DocumentToMap = internal.DocumentToMap
+var ReaderToMap = internal.ReaderToMap

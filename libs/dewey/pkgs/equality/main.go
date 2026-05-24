@@ -3,16 +3,16 @@
 package equality
 
 import (
-	"cmp"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/equality"
+	constraints "golang.org/x/exp/constraints"
 )
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
 // See https://github.com/golang/go/issues/52654
-func MapsOrdered[K cmp.Ordered, V cmp.Ordered](a map[K]V, b map[K]V) bool {
+func MapsOrdered[K constraints.Ordered, V constraints.Ordered](a map[K]V, b map[K]V) bool {
 	return internal.MapsOrdered[K, V](a, b)
 }
-func SliceOrdered[V cmp.Ordered](a []V, b []V) bool {
+func SliceOrdered[V constraints.Ordered](a []V, b []V) bool {
 	return internal.SliceOrdered[V](a, b)
 }

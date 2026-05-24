@@ -4,24 +4,36 @@ package pivy
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/pivy"
 
-type (
-	ECDHFunc  = internal.ECDHFunc
-	IOWrapper = internal.IOWrapper
-	Identity  = internal.Identity
-	Recipient = internal.Recipient
-)
+// ECDHFunc performs ECDH given an ephemeral public key and returns the shared
+// secret. For software keys this is a local operation. For agent-backed keys
+// this calls the pivy-agent extension.
+type ECDHFunc = internal.ECDHFunc
+type IOWrapper = internal.IOWrapper
+type Identity = internal.Identity
+type Recipient = internal.Recipient
 
-var (
-	AgentECDHFunc          = internal.AgentECDHFunc
-	CompressP256Point      = internal.CompressP256Point
-	DecompressP256Point    = internal.DecompressP256Point
-	ErrAgent               = internal.ErrAgent
-	IsErrAgent             = internal.IsErrAgent
-	NewAgentIdentity       = internal.NewAgentIdentity
-	ResolveAgentSocketPath = internal.ResolveAgentSocketPath
-	SoftwareECDHForTesting = internal.SoftwareECDHForTesting
-)
+// AgentECDHFunc returns an ECDHFunc that calls pivy-agent at the given socket.
+var AgentECDHFunc = internal.AgentECDHFunc
+var CompressP256Point = internal.CompressP256Point
+var DecompressP256Point = internal.DecompressP256Point
 
-const (
-	StanzaTypePivyEcdhP256 = internal.StanzaTypePivyEcdhP256
-)
+// ErrAgent is returned when the pivy-agent communication fails (socket error,
+// extension failure, card not found, PIN needed). Callers can use IsErrAgent
+// to distinguish agent failures from AEAD trial-decryption failures.
+var ErrAgent = internal.ErrAgent
+
+// ErrAgent is returned when the pivy-agent communication fails (socket error,
+// extension failure, card not found, PIN needed). Callers can use IsErrAgent
+// to distinguish agent failures from AEAD trial-decryption failures.
+var IsErrAgent = internal.IsErrAgent
+
+// NewAgentIdentity creates an Identity that performs ECDH via pivy-agent's
+// ecdh@joyent.com extension.
+var NewAgentIdentity = internal.NewAgentIdentity
+var ResolveAgentSocketPath = internal.ResolveAgentSocketPath
+
+// SoftwareECDHForTesting returns an ECDHFunc using a software private key.
+// Intended for tests that need an IOWrapper without a running pivy-agent.
+var SoftwareECDHForTesting = internal.SoftwareECDHForTesting
+
+const StanzaTypePivyEcdhP256 = internal.StanzaTypePivyEcdhP256

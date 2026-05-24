@@ -4,47 +4,109 @@ package catgut
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/catgut"
 
-type (
-	MultiRuneReader               = internal.MultiRuneReader
-	RingBuffer                    = internal.RingBuffer
-	RingBufferRuneScanner         = internal.RingBufferRuneScanner
-	RingBufferScanner             = internal.RingBufferScanner
-	Scanner                       = internal.Scanner
-	Slice                         = internal.Slice
-	SliceBytes                    = internal.SliceBytes
-	SliceReader                   = internal.SliceReader
-	SliceRuneScanner              = internal.SliceRuneScanner
-	SplitFunc                     = internal.SplitFunc
-	SplitFuncExperimental         = internal.SplitFuncExperimental
-	String                        = internal.String
-	StringFormatReadWriter[T any] = internal.StringFormatReadWriter[T]
-	StringFormatReader[T any]     = internal.StringFormatReader[T]
-	StringFormatWriter[T any]     = internal.StringFormatWriter[T]
-)
+type MultiRuneReader = internal.MultiRuneReader
+type RingBuffer = internal.RingBuffer
+type RingBufferRuneScanner = internal.RingBufferRuneScanner
+type RingBufferScanner = internal.RingBufferScanner
 
-var (
-	ErrBufferEmpty            = internal.ErrBufferEmpty
-	ErrNoMatch                = internal.ErrNoMatch
-	GetPool                   = internal.GetPool
-	Make                      = internal.Make
-	MakeErrLength             = internal.MakeErrLength
-	MakeFromBytes             = internal.MakeFromBytes
-	MakeFromReader            = internal.MakeFromReader
-	MakeFromString            = internal.MakeFromString
-	MakeMultiRuneReader       = internal.MakeMultiRuneReader
-	MakeRingBuffer            = internal.MakeRingBuffer
-	MakeRingBufferRuneScanner = internal.MakeRingBufferRuneScanner
-	MakeRingBufferScanner     = internal.MakeRingBufferScanner
-	MakeSliceReader           = internal.MakeSliceReader
-	MakeSliceRuneScanner      = internal.MakeSliceRuneScanner
-	MapTo                     = internal.MapTo
-	NewScanner                = internal.NewScanner
-	NewScannerExperimental    = internal.NewScannerExperimental
-	StringFormatWriterString  = internal.StringFormatWriterString
-	WriteKeySpaceValueNewline = internal.WriteKeySpaceValueNewline
-	WriteLower                = internal.WriteLower
-)
+// Scanner provides a convenient interface for reading data such as
+// a file of newline-delimited lines of text. Successive calls to
+// the Scan method will step through the 'tokens' of a file, skipping
+// the bytes between the tokens. The specification of a token is
+// defined by a split function of type SplitFunc; the default split
+// function breaks the input into lines with line termination stripped. Split
+// functions are defined in this package for scanning a file into
+// lines, bytes, UTF-8-encoded runes, and space-delimited words. The
+// client may instead provide a custom split function.
+//
+// Scanning stops unrecoverably at EOF, the first I/O error, or a token too
+// large to fit in the buffer. When a scan stops, the reader may have
+// advanced arbitrarily far past the last token. Programs that need more
+// control over error handling or large tokens, or must run sequential scans
+// on a reader, should use bufio.Reader instead.
+type Scanner = internal.Scanner
+type Slice = internal.Slice
+type SliceBytes = internal.SliceBytes
+type SliceReader = internal.SliceReader
+type SliceRuneScanner = internal.SliceRuneScanner
 
-const (
-	RingBufferDefaultSize = internal.RingBufferDefaultSize
-)
+// SplitFunc is the signature of the split function used to tokenize the
+// input. The arguments are an initial substring of the remaining unprocessed
+// data and a flag, atEOF, that reports whether the Reader has no more data
+// to give. The return values are the number of bytes to advance the input
+// and the next token to return to the user, if any, plus an error, if any.
+//
+// Scanning stops if the function returns an error, in which case some of
+// the input may be discarded. If that error is ErrFinalToken, scanning
+// stops with no error.
+//
+// Otherwise, the Scanner advances the input. If the token is not nil,
+// the Scanner returns it to the user. If the token is nil, the
+// Scanner reads more data and continues scanning; if there is no more
+// data--if atEOF was true--the Scanner returns. If the data does not
+// yet hold a complete token, for instance if it has no newline while
+// scanning lines, a SplitFunc can return (0, nil, nil) to signal the
+// Scanner to read more data into the slice and try again with a
+// longer slice starting at the same point in the input.
+//
+// The function is never called with an empty data slice unless atEOF
+// is true. If atEOF is true, however, data may be non-empty and,
+// as always, holds unprocessed text.
+type SplitFunc = internal.SplitFunc
+
+// SplitFunc is the signature of the split function used to tokenize the
+// input. The arguments are an initial substring of the remaining unprocessed
+// data and a flag, atEOF, that reports whether the Reader has no more data
+// to give. The return values are the number of bytes to advance the input
+// and the next token to return to the user, if any, plus an error, if any.
+//
+// Scanning stops if the function returns an error, in which case some of
+// the input may be discarded. If that error is ErrFinalToken, scanning
+// stops with no error.
+//
+// Otherwise, the scannerExperimental advances the input. If the token is not nil,
+// the scannerExperimental returns it to the user. If the token is nil, the
+// scannerExperimental reads more data and continues scanning; if there is no more
+// data--if atEOF was true--the scannerExperimental returns. If the data does not
+// yet hold a complete token, for instance if it has no newline while
+// scanning lines, a SplitFunc can return (0, nil, nil) to signal the
+// scannerExperimental to read more data into the slice and try again with a
+// longer slice starting at the same point in the input.
+//
+// The function is never called with an empty data slice unless atEOF
+// is true. If atEOF is true, however, data may be non-empty and,
+// as always, holds unprocessed text.
+type SplitFuncExperimental = internal.SplitFuncExperimental
+type String = internal.String
+type StringFormatReadWriter[T any] = internal.StringFormatReadWriter[T]
+type StringFormatReader[T any] = internal.StringFormatReader[T]
+type StringFormatWriter[T any] = internal.StringFormatWriter[T]
+
+var ErrBufferEmpty = internal.ErrBufferEmpty
+var ErrNoMatch = internal.ErrNoMatch
+var GetPool = internal.GetPool
+var Make = internal.Make
+var MakeErrLength = internal.MakeErrLength
+var MakeFromBytes = internal.MakeFromBytes
+var MakeFromReader = internal.MakeFromReader
+var MakeFromString = internal.MakeFromString
+var MakeMultiRuneReader = internal.MakeMultiRuneReader
+var MakeRingBuffer = internal.MakeRingBuffer
+var MakeRingBufferRuneScanner = internal.MakeRingBufferRuneScanner
+var MakeRingBufferScanner = internal.MakeRingBufferScanner
+var MakeSliceReader = internal.MakeSliceReader
+var MakeSliceRuneScanner = internal.MakeSliceRuneScanner
+var MapTo = internal.MapTo
+
+// NewScanner returns a new Scanner to read from r.
+// The split function defaults to ScanLines.
+var NewScanner = internal.NewScanner
+
+// NewScanner returns a new scannerExperimental to read from r.
+// The split function defaults to ScanLines.
+var NewScannerExperimental = internal.NewScannerExperimental
+var StringFormatWriterString = internal.StringFormatWriterString
+var WriteKeySpaceValueNewline = internal.WriteKeySpaceValueNewline
+var WriteLower = internal.WriteLower
+
+const RingBufferDefaultSize = internal.RingBufferDefaultSize

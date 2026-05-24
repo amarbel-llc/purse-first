@@ -4,12 +4,18 @@ package transport
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/transport"
 
-type (
-	Stdio     = internal.Stdio
-	Transport = internal.Transport
-)
+// Stdio implements MCP stdio transport using newline-delimited JSON.
+// This differs from LSP which uses Content-Length headers.
+// Each JSON-RPC message is written on a single line, terminated by a newline.
+type Stdio = internal.Stdio
 
-var (
-	NewStdio           = internal.NewStdio
-	NewStdioWithCloser = internal.NewStdioWithCloser
-)
+// Transport defines the interface for sending and receiving JSON-RPC messages.
+// Implementations handle the wire protocol details (framing, encoding, etc.).
+type Transport = internal.Transport
+
+// NewStdio creates a new stdio transport.
+var NewStdio = internal.NewStdio
+
+// NewStdioWithCloser creates a new stdio transport with a closer.
+// The closer will be called when Close() is invoked.
+var NewStdioWithCloser = internal.NewStdioWithCloser

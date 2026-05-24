@@ -3,19 +3,17 @@
 package reset
 
 import (
-	"cmp"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/reset"
+	constraints "golang.org/x/exp/constraints"
 )
 
-type (
-	FuncReset[ELEMENT any]     = internal.FuncReset[ELEMENT]
-	FuncResetWith[ELEMENT any] = internal.FuncResetWith[ELEMENT]
-)
+type FuncReset[ELEMENT any] = internal.FuncReset[ELEMENT]
+type FuncResetWith[ELEMENT any] = internal.FuncResetWith[ELEMENT]
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
 // See https://github.com/golang/go/issues/52654
-func Map[KEY cmp.Ordered, VALUE any](mapp map[KEY]VALUE) (out map[KEY]VALUE) {
+func Map[KEY constraints.Ordered, VALUE any](mapp map[KEY]VALUE) (out map[KEY]VALUE) {
 	return internal.Map[KEY, VALUE](mapp)
 }
 func Slice[ELEMENT any](in []ELEMENT) (out []ELEMENT) {

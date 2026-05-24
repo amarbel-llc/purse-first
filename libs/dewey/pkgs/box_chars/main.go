@@ -4,12 +4,16 @@ package box_chars
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/box_chars"
 
-const (
-	ElbowBottomRight = internal.ElbowBottomRight
-	ElbowLeftBottom  = internal.ElbowLeftBottom
-	ElbowTopRight    = internal.ElbowTopRight
-	PipeHorizontal   = internal.PipeHorizontal
-	PipeVertical     = internal.PipeVertical
-	TeeBottom        = internal.TeeBottom
-	TeeRight         = internal.TeeRight
-)
+const ElbowBottomRight = internal.ElbowBottomRight
+const ElbowLeftBottom = internal.ElbowLeftBottom
+
+// elbows
+const ElbowTopRight = internal.ElbowTopRight
+const PipeHorizontal = internal.PipeHorizontal
+
+// pipes
+const PipeVertical = internal.PipeVertical
+const TeeBottom = internal.TeeBottom
+
+// tees
+const TeeRight = internal.TeeRight

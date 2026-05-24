@@ -4,15 +4,11 @@ package age
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/age"
 
-type (
-	Identity             = internal.Identity
-	MultiIdentity        = internal.MultiIdentity
-	NoIdentityMatchError = internal.NoIdentityMatchError
-	Recipient            = internal.Recipient
-	Recipients           = internal.Recipients
-)
+type Identity = internal.Identity
+type MultiIdentity = internal.MultiIdentity
+type NoIdentityMatchError = internal.NoIdentityMatchError
+type Recipient = internal.Recipient
+type Recipients = internal.Recipients
 
-var (
-	IsNoIdentityMatchError = internal.IsNoIdentityMatchError
-	MakeMultiIdentity      = internal.MakeMultiIdentity
-)
+var IsNoIdentityMatchError = internal.IsNoIdentityMatchError
+var MakeMultiIdentity = internal.MakeMultiIdentity

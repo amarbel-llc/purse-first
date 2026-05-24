@@ -4,6 +4,12 @@ package hecks
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/hecks"
 
-var (
-	Decode = internal.Decode
-)
+// Decode decodes src into DecodedLen(len(src)) bytes,
+// returning the actual number of bytes written to dst.
+//
+// Decode expects that src contains only hexadecimal
+// characters and that src has even length.
+// If the input is malformed, Decode returns the number
+// of bytes decoded before the error.
+// TODO duplicate and make string version
+var Decode = internal.Decode

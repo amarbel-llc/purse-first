@@ -4,32 +4,59 @@ package purse
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/purse"
 
-type (
-	HTTPPostAction      = internal.HTTPPostAction
-	Mapping             = internal.Mapping
-	MappingBuilder      = internal.MappingBuilder
-	MappingEntryBuilder = internal.MappingEntryBuilder
-	MappingFile         = internal.MappingFile
-	Notification        = internal.Notification
-	NotifyCondition     = internal.NotifyCondition
-	Plugin              = internal.Plugin
-	PluginBuilder       = internal.PluginBuilder
-	ToolSuggestion      = internal.ToolSuggestion
-)
+// HTTPPostAction describes the HTTP POST to send.
+type HTTPPostAction = internal.HTTPPostAction
 
-var (
-	NewMappingBuilder = internal.NewMappingBuilder
-	NewPluginBuilder  = internal.NewPluginBuilder
-	WriteGlobal       = internal.WriteGlobal
-	WritePlugin       = internal.WritePlugin
-	WriteProject      = internal.WriteProject
-)
+// Mapping is a single replacement rule declaring that an MCP server's tools
+// should be used instead of a built-in tool.
+type Mapping = internal.Mapping
 
-const (
-	BuiltinBash  = internal.BuiltinBash
-	BuiltinEdit  = internal.BuiltinEdit
-	BuiltinGlob  = internal.BuiltinGlob
-	BuiltinGrep  = internal.BuiltinGrep
-	BuiltinRead  = internal.BuiltinRead
-	BuiltinWrite = internal.BuiltinWrite
-)
+// MappingBuilder provides an ergonomic API for constructing a MappingFile.
+type MappingBuilder = internal.MappingBuilder
+
+// MappingEntryBuilder builds a single mapping within a MappingBuilder.
+type MappingEntryBuilder = internal.MappingEntryBuilder
+
+// MappingFile is the top-level structure written to disk and read by purse-first.
+type MappingFile = internal.MappingFile
+
+// Notification describes an HTTP POST to fire in response to a hook event.
+type Notification = internal.Notification
+
+// NotifyCondition gates whether a notification fires.
+type NotifyCondition = internal.NotifyCondition
+
+// Plugin is a purse-first plugin manifest (plugin.json) that declares an MCP
+// server, its transport, optional hook notifications, and tool mappings.
+type Plugin = internal.Plugin
+
+// PluginBuilder provides a fluent API for constructing a Plugin manifest.
+type PluginBuilder = internal.PluginBuilder
+
+// ToolSuggestion is an MCP tool that can replace a built-in tool.
+type ToolSuggestion = internal.ToolSuggestion
+
+// NewMappingBuilder creates a builder for the given MCP server name.
+var NewMappingBuilder = internal.NewMappingBuilder
+
+// NewPluginBuilder creates a builder for the given plugin name.
+var NewPluginBuilder = internal.NewPluginBuilder
+
+// WriteGlobal writes the mapping file to the global purse-first directory
+// at $XDG_STATE_HOME/purse-first/{server}.json.
+var WriteGlobal = internal.WriteGlobal
+
+// WritePlugin writes a plugin manifest to {dir}/{p.Name}/.claude-plugin/plugin.json.
+// This is used during nix postInstall to generate share/purse-first/<name>/.claude-plugin/plugin.json.
+var WritePlugin = internal.WritePlugin
+
+// WriteProject writes the mapping file to a project-local purse-first directory
+// at {projectDir}/.purse-first/{server}.json.
+var WriteProject = internal.WriteProject
+
+const BuiltinBash = internal.BuiltinBash
+const BuiltinEdit = internal.BuiltinEdit
+const BuiltinGlob = internal.BuiltinGlob
+const BuiltinGrep = internal.BuiltinGrep
+const BuiltinRead = internal.BuiltinRead
+const BuiltinWrite = internal.BuiltinWrite

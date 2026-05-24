@@ -4,10 +4,7 @@ package delim_reader
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/delim_reader"
 
-type (
-	DelimReader = internal.DelimReader
-)
+// Not safe for parallel use
+type DelimReader = internal.DelimReader
 
-var (
-	MakeDelimReader = internal.MakeDelimReader
-)
+var MakeDelimReader = internal.MakeDelimReader

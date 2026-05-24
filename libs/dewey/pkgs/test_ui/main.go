@@ -4,16 +4,12 @@ package test_ui
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 
-type (
-	TestCase[BLOB any] = internal.TestCase[BLOB]
-	TestCaseInfo       = internal.TestCaseInfo
-)
+type TestCase[BLOB any] = internal.TestCase[BLOB]
+type TestCaseInfo = internal.TestCaseInfo
 
-var (
-	GetTestCaseDescription = internal.GetTestCaseDescription
-	MakeTestCaseInfo       = internal.MakeTestCaseInfo
-	PrintTestCaseInfo      = internal.PrintTestCaseInfo
-)
+var GetTestCaseDescription = internal.GetTestCaseDescription
+var MakeTestCaseInfo = internal.MakeTestCaseInfo
+var PrintTestCaseInfo = internal.PrintTestCaseInfo
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -21,6 +17,8 @@ var (
 func MakeTestCase[BLOB any](name string, blob BLOB) internal.TestCase[BLOB] {
 	return internal.MakeTestCase[BLOB](name, blob)
 }
+
+// MakeTestCaseCallerSkip is for re-export wrappers that add call frames.
 func MakeTestCaseCallerSkip[BLOB any](name string, blob BLOB, callerSkip int) internal.TestCase[BLOB] {
 	return internal.MakeTestCaseCallerSkip[BLOB](name, blob, callerSkip)
 }

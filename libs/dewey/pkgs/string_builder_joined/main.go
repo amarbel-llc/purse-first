@@ -4,6 +4,4 @@ package string_builder_joined
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/string_builder_joined"
 
-var (
-	Make = internal.Make
-)
+var Make = internal.Make

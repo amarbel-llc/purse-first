@@ -4,6 +4,4 @@ package collections_map
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/collections_map"
 
-type (
-	Map[KEY comparable, VALUE any] = internal.Map[KEY, VALUE]
-)
+type Map[KEY comparable, VALUE any] = internal.Map[KEY, VALUE]

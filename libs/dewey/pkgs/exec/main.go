@@ -4,6 +4,4 @@ package exec
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/exec"
 
-var (
-	ExecCommand = internal.ExecCommand
-)
+var ExecCommand = internal.ExecCommand

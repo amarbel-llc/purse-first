@@ -4,189 +4,519 @@ package protocol
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
 
-type (
-	BlobResourceContents                  = internal.BlobResourceContents
-	CancelledNotificationParams           = internal.CancelledNotificationParams
-	ClientCapabilities                    = internal.ClientCapabilities
-	ClientCapabilitiesV0                  = internal.ClientCapabilitiesV0
-	ClientCapabilitiesV1                  = internal.ClientCapabilitiesV1
-	CompletionArgument                    = internal.CompletionArgument
-	CompletionCompleteParams              = internal.CompletionCompleteParams
-	CompletionReference                   = internal.CompletionReference
-	CompletionResult                      = internal.CompletionResult
-	CompletionValues                      = internal.CompletionValues
-	CompletionsCapability                 = internal.CompletionsCapability
-	ContentAnnotations                    = internal.ContentAnnotations
-	ContentBlock                          = internal.ContentBlock
-	ContentBlockV0                        = internal.ContentBlockV0
-	ContentBlockV1                        = internal.ContentBlockV1
-	CreateTaskResult                      = internal.CreateTaskResult
-	ElicitRequestParams                   = internal.ElicitRequestParams
-	ElicitResult                          = internal.ElicitResult
-	ElicitationCapability                 = internal.ElicitationCapability
-	ElicitationCompleteNotificationParams = internal.ElicitationCompleteNotificationParams
-	ElicitationFormCapability             = internal.ElicitationFormCapability
-	ElicitationURLCapability              = internal.ElicitationURLCapability
-	EmbeddedResourceContents              = internal.EmbeddedResourceContents
-	Icon                                  = internal.Icon
-	Implementation                        = internal.Implementation
-	ImplementationV1                      = internal.ImplementationV1
-	InitializeParams                      = internal.InitializeParams
-	InitializeParamsV0                    = internal.InitializeParamsV0
-	InitializeParamsV1                    = internal.InitializeParamsV1
-	InitializeResult                      = internal.InitializeResult
-	InitializeResultV0                    = internal.InitializeResultV0
-	InitializeResultV1                    = internal.InitializeResultV1
-	ListRootsResult                       = internal.ListRootsResult
-	LoggingCapability                     = internal.LoggingCapability
-	LoggingLevel                          = internal.LoggingLevel
-	LoggingMessageParams                  = internal.LoggingMessageParams
-	PaginatedResult                       = internal.PaginatedResult
-	PaginationParams                      = internal.PaginationParams
-	PingResult                            = internal.PingResult
-	ProgressNotificationParams            = internal.ProgressNotificationParams
-	ProgressToken                         = internal.ProgressToken
-	Prompt                                = internal.Prompt
-	PromptArgument                        = internal.PromptArgument
-	PromptArgumentV0                      = internal.PromptArgumentV0
-	PromptGetParams                       = internal.PromptGetParams
-	PromptGetParamsV0                     = internal.PromptGetParamsV0
-	PromptGetResult                       = internal.PromptGetResult
-	PromptGetResultV0                     = internal.PromptGetResultV0
-	PromptGetResultV1                     = internal.PromptGetResultV1
-	PromptMessage                         = internal.PromptMessage
-	PromptMessageV0                       = internal.PromptMessageV0
-	PromptMessageV1                       = internal.PromptMessageV1
-	PromptV0                              = internal.PromptV0
-	PromptV1                              = internal.PromptV1
-	PromptsCapability                     = internal.PromptsCapability
-	PromptsListResult                     = internal.PromptsListResult
-	PromptsListResultV0                   = internal.PromptsListResultV0
-	PromptsListResultV1                   = internal.PromptsListResultV1
-	Resource                              = internal.Resource
-	ResourceContent                       = internal.ResourceContent
-	ResourceContentV0                     = internal.ResourceContentV0
-	ResourceReadParams                    = internal.ResourceReadParams
-	ResourceReadParamsV0                  = internal.ResourceReadParamsV0
-	ResourceReadResult                    = internal.ResourceReadResult
-	ResourceReadResultV0                  = internal.ResourceReadResultV0
-	ResourceTemplate                      = internal.ResourceTemplate
-	ResourceTemplateV0                    = internal.ResourceTemplateV0
-	ResourceTemplateV1                    = internal.ResourceTemplateV1
-	ResourceTemplatesListResult           = internal.ResourceTemplatesListResult
-	ResourceTemplatesListResultV0         = internal.ResourceTemplatesListResultV0
-	ResourceTemplatesListResultV1         = internal.ResourceTemplatesListResultV1
-	ResourceV0                            = internal.ResourceV0
-	ResourceV1                            = internal.ResourceV1
-	ResourcesCapability                   = internal.ResourcesCapability
-	ResourcesListResult                   = internal.ResourcesListResult
-	ResourcesListResultV0                 = internal.ResourcesListResultV0
-	ResourcesListResultV1                 = internal.ResourcesListResultV1
-	Root                                  = internal.Root
-	RootsCapability                       = internal.RootsCapability
-	SamplingCapability                    = internal.SamplingCapability
-	ServerCapabilities                    = internal.ServerCapabilities
-	ServerCapabilitiesV0                  = internal.ServerCapabilitiesV0
-	ServerCapabilitiesV1                  = internal.ServerCapabilitiesV1
-	SetLevelParams                        = internal.SetLevelParams
-	Task                                  = internal.Task
-	TaskCancelParams                      = internal.TaskCancelParams
-	TaskGetParams                         = internal.TaskGetParams
-	TaskListParams                        = internal.TaskListParams
-	TaskListResult                        = internal.TaskListResult
-	TaskParams                            = internal.TaskParams
-	TaskResultParams                      = internal.TaskResultParams
-	TaskStatusNotificationParams          = internal.TaskStatusNotificationParams
-	TasksCallCapability                   = internal.TasksCallCapability
-	TasksCancelCapability                 = internal.TasksCancelCapability
-	TasksCapability                       = internal.TasksCapability
-	TasksCreateCapability                 = internal.TasksCreateCapability
-	TasksCreateMessageCapability          = internal.TasksCreateMessageCapability
-	TasksElicitationCapability            = internal.TasksElicitationCapability
-	TasksListCapability                   = internal.TasksListCapability
-	TasksRequestsCapability               = internal.TasksRequestsCapability
-	TasksSamplingCapability               = internal.TasksSamplingCapability
-	TasksToolsCapability                  = internal.TasksToolsCapability
-	TextResourceContents                  = internal.TextResourceContents
-	Tool                                  = internal.Tool
-	ToolAnnotations                       = internal.ToolAnnotations
-	ToolCallParams                        = internal.ToolCallParams
-	ToolCallParamsV0                      = internal.ToolCallParamsV0
-	ToolCallResult                        = internal.ToolCallResult
-	ToolCallResultV0                      = internal.ToolCallResultV0
-	ToolCallResultV1                      = internal.ToolCallResultV1
-	ToolExecution                         = internal.ToolExecution
-	ToolV0                                = internal.ToolV0
-	ToolV1                                = internal.ToolV1
-	ToolsCapability                       = internal.ToolsCapability
-	ToolsListResult                       = internal.ToolsListResult
-	ToolsListResultV0                     = internal.ToolsListResultV0
-	ToolsListResultV1                     = internal.ToolsListResultV1
-)
+// BlobResourceContents holds base64-encoded binary content for an EmbeddedResource content block.
+// Per MCP spec: required uri + blob, optional mimeType.
+type BlobResourceContents = internal.BlobResourceContents
 
-var (
-	AudioContent                = internal.AudioContent
-	BoolPtr                     = internal.BoolPtr
-	EmbeddedBlobResourceContent = internal.EmbeddedBlobResourceContent
-	EmbeddedTextResourceContent = internal.EmbeddedTextResourceContent
-	ErrorResult                 = internal.ErrorResult
-	ErrorResultV1               = internal.ErrorResultV1
-	ImageContentV1              = internal.ImageContentV1
-	ResourceLinkContent         = internal.ResourceLinkContent
-	TextContent                 = internal.TextContent
-	TextContentV1               = internal.TextContentV1
-)
+// CancelledNotificationParams indicates a request was cancelled.
+type CancelledNotificationParams = internal.CancelledNotificationParams
 
-const (
-	ElicitationActionAccept                 = internal.ElicitationActionAccept
-	ElicitationActionCancel                 = internal.ElicitationActionCancel
-	ElicitationActionDecline                = internal.ElicitationActionDecline
-	LoggingLevelAlert                       = internal.LoggingLevelAlert
-	LoggingLevelCritical                    = internal.LoggingLevelCritical
-	LoggingLevelDebug                       = internal.LoggingLevelDebug
-	LoggingLevelEmergency                   = internal.LoggingLevelEmergency
-	LoggingLevelError                       = internal.LoggingLevelError
-	LoggingLevelInfo                        = internal.LoggingLevelInfo
-	LoggingLevelNotice                      = internal.LoggingLevelNotice
-	LoggingLevelWarning                     = internal.LoggingLevelWarning
-	MethodCompletionComplete                = internal.MethodCompletionComplete
-	MethodElicitationCreate                 = internal.MethodElicitationCreate
-	MethodInitialize                        = internal.MethodInitialize
-	MethodInitialized                       = internal.MethodInitialized
-	MethodLoggingSetLevel                   = internal.MethodLoggingSetLevel
-	MethodNotificationsCancelled            = internal.MethodNotificationsCancelled
-	MethodNotificationsElicitationComplete  = internal.MethodNotificationsElicitationComplete
-	MethodNotificationsMessage              = internal.MethodNotificationsMessage
-	MethodNotificationsProgress             = internal.MethodNotificationsProgress
-	MethodNotificationsPromptsListChanged   = internal.MethodNotificationsPromptsListChanged
-	MethodNotificationsResourceUpdated      = internal.MethodNotificationsResourceUpdated
-	MethodNotificationsResourcesListChanged = internal.MethodNotificationsResourcesListChanged
-	MethodNotificationsRootsListChanged     = internal.MethodNotificationsRootsListChanged
-	MethodNotificationsTaskStatus           = internal.MethodNotificationsTaskStatus
-	MethodNotificationsToolsListChanged     = internal.MethodNotificationsToolsListChanged
-	MethodPing                              = internal.MethodPing
-	MethodPromptsGet                        = internal.MethodPromptsGet
-	MethodPromptsList                       = internal.MethodPromptsList
-	MethodResourcesList                     = internal.MethodResourcesList
-	MethodResourcesRead                     = internal.MethodResourcesRead
-	MethodResourcesTemplates                = internal.MethodResourcesTemplates
-	MethodRootsList                         = internal.MethodRootsList
-	MethodSamplingCreateMessage             = internal.MethodSamplingCreateMessage
-	MethodTasksCancel                       = internal.MethodTasksCancel
-	MethodTasksGet                          = internal.MethodTasksGet
-	MethodTasksList                         = internal.MethodTasksList
-	MethodTasksResult                       = internal.MethodTasksResult
-	MethodToolsCall                         = internal.MethodToolsCall
-	MethodToolsList                         = internal.MethodToolsList
-	ProtocolVersion                         = internal.ProtocolVersion
-	ProtocolVersionV0                       = internal.ProtocolVersionV0
-	ProtocolVersionV1                       = internal.ProtocolVersionV1
-	TaskStatusCancelled                     = internal.TaskStatusCancelled
-	TaskStatusCompleted                     = internal.TaskStatusCompleted
-	TaskStatusFailed                        = internal.TaskStatusFailed
-	TaskStatusInputRequired                 = internal.TaskStatusInputRequired
-	TaskStatusWorking                       = internal.TaskStatusWorking
-	TaskSupportForbidden                    = internal.TaskSupportForbidden
-	TaskSupportOptional                     = internal.TaskSupportOptional
-	TaskSupportRequired                     = internal.TaskSupportRequired
-)
+// ClientCapabilities is a type alias for backward compatibility.
+type ClientCapabilities = internal.ClientCapabilities
+
+// ClientCapabilitiesV0 describes what the client supports.
+type ClientCapabilitiesV0 = internal.ClientCapabilitiesV0
+
+// ClientCapabilitiesV1 describes what the client supports in V1.
+type ClientCapabilitiesV1 = internal.ClientCapabilitiesV1
+
+// CompletionArgument identifies the argument being completed.
+type CompletionArgument = internal.CompletionArgument
+
+// CompletionCompleteParams contains the parameters for a completion request.
+type CompletionCompleteParams = internal.CompletionCompleteParams
+
+// CompletionReference identifies what is being completed.
+type CompletionReference = internal.CompletionReference
+
+// CompletionResult contains completion suggestions.
+type CompletionResult = internal.CompletionResult
+
+// CompletionValues contains the actual completion suggestions.
+type CompletionValues = internal.CompletionValues
+
+// CompletionsCapability indicates the server supports completions.
+type CompletionsCapability = internal.CompletionsCapability
+
+// ContentAnnotations provides metadata about content blocks.
+type ContentAnnotations = internal.ContentAnnotations
+
+// ContentBlock is a type alias for backward compatibility.
+type ContentBlock = internal.ContentBlock
+
+// ContentBlockV0 represents a piece of content in a tool response or prompt message.
+// This is the V0 (2024-11-05) content block type.
+type ContentBlockV0 = internal.ContentBlockV0
+
+// ContentBlockV1 represents a piece of content with optional annotations.
+// This is the V1 (2025-11-25) content block type.
+type ContentBlockV1 = internal.ContentBlockV1
+
+// CreateTaskResult is returned when a task-augmented request is accepted.
+type CreateTaskResult = internal.CreateTaskResult
+
+// ElicitRequestParams contains the parameters for an elicitation request.
+// The Mode field determines whether this is a form or URL elicitation.
+type ElicitRequestParams = internal.ElicitRequestParams
+
+// ElicitResult is the result of an elicitation request.
+type ElicitResult = internal.ElicitResult
+
+// ElicitationCapability indicates client support for elicitation.
+// An empty object is equivalent to form-only support for backwards compatibility.
+type ElicitationCapability = internal.ElicitationCapability
+
+// ElicitationCompleteNotificationParams contains the params for an
+// elicitation completion notification (URL mode).
+type ElicitationCompleteNotificationParams = internal.ElicitationCompleteNotificationParams
+
+// ElicitationFormCapability indicates support for form-based elicitation.
+type ElicitationFormCapability = internal.ElicitationFormCapability
+
+// ElicitationURLCapability indicates support for URL-based elicitation.
+type ElicitationURLCapability = internal.ElicitationURLCapability
+
+// EmbeddedResourceContents is the union of TextResourceContents and BlobResourceContents.
+// Exactly one of Text or Blob should be populated. The pointer types distinguish
+// "set to empty string" (emit "text": "") from "not the active variant" (omit
+// entirely), which strict MCP clients (Zod, etc.) require.
+type EmbeddedResourceContents = internal.EmbeddedResourceContents
+
+// Icon represents a visual icon for display in user interfaces.
+type Icon = internal.Icon
+
+// Implementation describes the server or client implementation.
+type Implementation = internal.Implementation
+
+// ImplementationV1 describes the server or client with V1 (2025-11-25) extensions.
+type ImplementationV1 = internal.ImplementationV1
+
+// InitializeParams is a type alias for backward compatibility.
+type InitializeParams = internal.InitializeParams
+
+// InitializeParamsV0 are sent by the client during initialization.
+type InitializeParamsV0 = internal.InitializeParamsV0
+
+// InitializeParamsV1 are sent by the client during V1 initialization.
+type InitializeParamsV1 = internal.InitializeParamsV1
+
+// InitializeResult is a type alias for backward compatibility.
+type InitializeResult = internal.InitializeResult
+
+// InitializeResultV0 is returned by the server in response to initialization.
+type InitializeResultV0 = internal.InitializeResultV0
+
+// InitializeResultV1 is the V1 server response to initialization.
+type InitializeResultV1 = internal.InitializeResultV1
+
+// ListRootsResult is the response to roots/list.
+type ListRootsResult = internal.ListRootsResult
+
+// LoggingCapability indicates the server supports logging.
+type LoggingCapability = internal.LoggingCapability
+
+// LoggingLevel represents a log severity level.
+type LoggingLevel = internal.LoggingLevel
+
+// LoggingMessageParams contains a logging notification.
+type LoggingMessageParams = internal.LoggingMessageParams
+
+// PaginatedResult provides the next cursor for pagination.
+type PaginatedResult = internal.PaginatedResult
+
+// PaginationParams contains cursor-based pagination parameters.
+type PaginationParams = internal.PaginationParams
+
+// PingResult is the response to a ping request.
+type PingResult = internal.PingResult
+
+// ProgressNotificationParams contains progress information.
+type ProgressNotificationParams = internal.ProgressNotificationParams
+
+// ProgressToken identifies a request for progress tracking.
+// It can be either a string or an integer.
+type ProgressToken = internal.ProgressToken
+
+// Prompt is a type alias for backward compatibility.
+type Prompt = internal.Prompt
+
+// PromptArgument is a type alias for backward compatibility.
+type PromptArgument = internal.PromptArgument
+
+// PromptArgumentV0 describes a parameter that can be passed to a prompt.
+type PromptArgumentV0 = internal.PromptArgumentV0
+
+// PromptGetParams is a type alias for backward compatibility.
+type PromptGetParams = internal.PromptGetParams
+
+// PromptGetParamsV0 specifies which prompt to retrieve and its arguments.
+type PromptGetParamsV0 = internal.PromptGetParamsV0
+
+// PromptGetResult is a type alias for backward compatibility.
+type PromptGetResult = internal.PromptGetResult
+
+// PromptGetResultV0 contains the rendered prompt.
+type PromptGetResultV0 = internal.PromptGetResultV0
+
+// PromptGetResultV1 contains the V1 rendered prompt.
+type PromptGetResultV1 = internal.PromptGetResultV1
+
+// PromptMessage is a type alias for backward compatibility.
+type PromptMessage = internal.PromptMessage
+
+// PromptMessageV0 is a message in a prompt template.
+type PromptMessageV0 = internal.PromptMessageV0
+
+// PromptMessageV1 is a V1 message in a prompt template using V1 content blocks.
+type PromptMessageV1 = internal.PromptMessageV1
+
+// PromptV0 describes a prompt template available from the server.
+// This is the V0 (2024-11-05) prompt type.
+type PromptV0 = internal.PromptV0
+
+// PromptV1 describes a prompt template with V1 (2025-11-25) extensions.
+type PromptV1 = internal.PromptV1
+
+// PromptsCapability indicates the server supports prompts.
+type PromptsCapability = internal.PromptsCapability
+
+// PromptsListResult is a type alias for backward compatibility.
+type PromptsListResult = internal.PromptsListResult
+
+// PromptsListResultV0 is the response to prompts/list.
+type PromptsListResultV0 = internal.PromptsListResultV0
+
+// PromptsListResultV1 is the V1 response to prompts/list with pagination.
+type PromptsListResultV1 = internal.PromptsListResultV1
+
+// Resource is a type alias for backward compatibility.
+type Resource = internal.Resource
+
+// ResourceContent is a type alias for backward compatibility.
+type ResourceContent = internal.ResourceContent
+
+// ResourceContentV0 holds the actual resource data.
+type ResourceContentV0 = internal.ResourceContentV0
+
+// ResourceReadParams is a type alias for backward compatibility.
+type ResourceReadParams = internal.ResourceReadParams
+
+// ResourceReadParamsV0 specifies which resource to read.
+type ResourceReadParamsV0 = internal.ResourceReadParamsV0
+
+// ResourceReadResult is a type alias for backward compatibility.
+type ResourceReadResult = internal.ResourceReadResult
+
+// ResourceReadResultV0 contains the resource contents.
+type ResourceReadResultV0 = internal.ResourceReadResultV0
+
+// ResourceTemplate is a type alias for backward compatibility.
+type ResourceTemplate = internal.ResourceTemplate
+
+// ResourceTemplateV0 describes a parameterized resource URI pattern.
+type ResourceTemplateV0 = internal.ResourceTemplateV0
+
+// ResourceTemplateV1 describes a parameterized resource URI pattern with V1 extensions.
+type ResourceTemplateV1 = internal.ResourceTemplateV1
+
+// ResourceTemplatesListResult is a type alias for backward compatibility.
+type ResourceTemplatesListResult = internal.ResourceTemplatesListResult
+
+// ResourceTemplatesListResultV0 is the response to resources/templates/list.
+type ResourceTemplatesListResultV0 = internal.ResourceTemplatesListResultV0
+
+// ResourceTemplatesListResultV1 is the V1 response to resources/templates/list with pagination.
+type ResourceTemplatesListResultV1 = internal.ResourceTemplatesListResultV1
+
+// ResourceV0 describes a resource available from the server.
+// This is the V0 (2024-11-05) resource type.
+type ResourceV0 = internal.ResourceV0
+
+// ResourceV1 describes a resource with V1 (2025-11-25) extensions.
+type ResourceV1 = internal.ResourceV1
+
+// ResourcesCapability indicates the server supports resources.
+type ResourcesCapability = internal.ResourcesCapability
+
+// ResourcesListResult is a type alias for backward compatibility.
+type ResourcesListResult = internal.ResourcesListResult
+
+// ResourcesListResultV0 is the response to resources/list.
+type ResourcesListResultV0 = internal.ResourcesListResultV0
+
+// ResourcesListResultV1 is the V1 response to resources/list with pagination.
+type ResourcesListResultV1 = internal.ResourcesListResultV1
+
+// Root represents a root directory or file that the server can operate on.
+type Root = internal.Root
+
+// RootsCapability indicates client support for workspace roots.
+type RootsCapability = internal.RootsCapability
+
+// SamplingCapability indicates client support for LLM sampling.
+type SamplingCapability = internal.SamplingCapability
+
+// ServerCapabilities is a type alias for backward compatibility.
+type ServerCapabilities = internal.ServerCapabilities
+
+// ServerCapabilitiesV0 describes what the server supports.
+type ServerCapabilitiesV0 = internal.ServerCapabilitiesV0
+
+// ServerCapabilitiesV1 describes what the server supports in V1.
+type ServerCapabilitiesV1 = internal.ServerCapabilitiesV1
+
+// SetLevelParams contains the parameters for setting the logging level.
+type SetLevelParams = internal.SetLevelParams
+
+// Task represents an async task tracked by the server.
+type Task = internal.Task
+
+// TaskCancelParams specifies which task to cancel.
+type TaskCancelParams = internal.TaskCancelParams
+
+// TaskGetParams specifies which task to retrieve.
+type TaskGetParams = internal.TaskGetParams
+
+// TaskListParams contains optional pagination for task listing.
+type TaskListParams = internal.TaskListParams
+
+// TaskListResult contains a paginated list of tasks.
+type TaskListResult = internal.TaskListResult
+
+// TaskParams is included in request params to create a task.
+type TaskParams = internal.TaskParams
+
+// TaskResultParams specifies which task's result to retrieve.
+type TaskResultParams = internal.TaskResultParams
+
+// TaskStatusNotificationParams contains a task status update.
+type TaskStatusNotificationParams = internal.TaskStatusNotificationParams
+
+// TasksCallCapability marker for tools/call task support.
+type TasksCallCapability = internal.TasksCallCapability
+
+// TasksCancelCapability indicates support for tasks/cancel.
+type TasksCancelCapability = internal.TasksCancelCapability
+
+// TasksCapability indicates support for task-augmented requests.
+type TasksCapability = internal.TasksCapability
+
+// TasksCreateCapability marker for elicitation/create task support.
+type TasksCreateCapability = internal.TasksCreateCapability
+
+// TasksCreateMessageCapability marker for sampling/createMessage task support.
+type TasksCreateMessageCapability = internal.TasksCreateMessageCapability
+
+// TasksElicitationCapability indicates which elicitation operations support tasks.
+type TasksElicitationCapability = internal.TasksElicitationCapability
+
+// TasksListCapability indicates support for tasks/list.
+type TasksListCapability = internal.TasksListCapability
+
+// TasksRequestsCapability indicates which request types support task augmentation.
+type TasksRequestsCapability = internal.TasksRequestsCapability
+
+// TasksSamplingCapability indicates which sampling operations support tasks.
+type TasksSamplingCapability = internal.TasksSamplingCapability
+
+// TasksToolsCapability indicates which tool operations support tasks.
+type TasksToolsCapability = internal.TasksToolsCapability
+
+// TextResourceContents holds text content for an EmbeddedResource content block.
+// Per MCP spec: required uri + text, optional mimeType.
+type TextResourceContents = internal.TextResourceContents
+
+// Tool is a type alias for backward compatibility.
+type Tool = internal.Tool
+
+// ToolAnnotations provides hints about tool behavior for clients.
+type ToolAnnotations = internal.ToolAnnotations
+
+// ToolCallParams is a type alias for backward compatibility.
+type ToolCallParams = internal.ToolCallParams
+
+// ToolCallParamsV0 contains the parameters for invoking a tool.
+type ToolCallParamsV0 = internal.ToolCallParamsV0
+
+// ToolCallResult is a type alias for backward compatibility.
+type ToolCallResult = internal.ToolCallResult
+
+// ToolCallResultV0 is the result of invoking a tool.
+type ToolCallResultV0 = internal.ToolCallResultV0
+
+// ToolCallResultV1 is the V1 result of invoking a tool.
+type ToolCallResultV1 = internal.ToolCallResultV1
+
+// ToolExecution describes task execution support for a tool.
+type ToolExecution = internal.ToolExecution
+
+// ToolV0 describes a tool that can be invoked by the client.
+// This is the V0 (2024-11-05) tool type.
+type ToolV0 = internal.ToolV0
+
+// ToolV1 describes a tool with V1 (2025-11-25) extensions.
+type ToolV1 = internal.ToolV1
+
+// ToolsCapability indicates the server supports tools.
+type ToolsCapability = internal.ToolsCapability
+
+// ToolsListResult is a type alias for backward compatibility.
+type ToolsListResult = internal.ToolsListResult
+
+// ToolsListResultV0 is the response to tools/list.
+type ToolsListResultV0 = internal.ToolsListResultV0
+
+// ToolsListResultV1 is the V1 response to tools/list with pagination.
+type ToolsListResultV1 = internal.ToolsListResultV1
+
+// AudioContent creates a ContentBlockV1 containing audio data.
+var AudioContent = internal.AudioContent
+
+// BoolPtr returns a pointer to b, for use with ToolAnnotations hint fields.
+var BoolPtr = internal.BoolPtr
+
+// EmbeddedBlobResourceContent creates a ContentBlockV1 containing an embedded blob resource.
+var EmbeddedBlobResourceContent = internal.EmbeddedBlobResourceContent
+
+// EmbeddedTextResourceContent creates a ContentBlockV1 containing an embedded text resource.
+var EmbeddedTextResourceContent = internal.EmbeddedTextResourceContent
+
+// ErrorResult creates a ToolCallResult representing an error.
+var ErrorResult = internal.ErrorResult
+
+// ErrorResultV1 creates a ToolCallResultV1 representing an error.
+var ErrorResultV1 = internal.ErrorResultV1
+
+// ImageContentV1 creates a ContentBlockV1 containing image data.
+var ImageContentV1 = internal.ImageContentV1
+
+// ResourceLinkContent creates a ContentBlockV1 containing a resource link.
+var ResourceLinkContent = internal.ResourceLinkContent
+
+// TextContent creates a ContentBlock containing plain text.
+var TextContent = internal.TextContent
+
+// TextContentV1 creates a ContentBlockV1 containing plain text.
+var TextContentV1 = internal.TextContentV1
+
+const ElicitationActionAccept = internal.ElicitationActionAccept
+const ElicitationActionCancel = internal.ElicitationActionCancel
+const ElicitationActionDecline = internal.ElicitationActionDecline
+const LoggingLevelAlert = internal.LoggingLevelAlert
+const LoggingLevelCritical = internal.LoggingLevelCritical
+const LoggingLevelDebug = internal.LoggingLevelDebug
+const LoggingLevelEmergency = internal.LoggingLevelEmergency
+const LoggingLevelError = internal.LoggingLevelError
+const LoggingLevelInfo = internal.LoggingLevelInfo
+const LoggingLevelNotice = internal.LoggingLevelNotice
+const LoggingLevelWarning = internal.LoggingLevelWarning
+
+// MethodCompletionComplete requests argument completions.
+const MethodCompletionComplete = internal.MethodCompletionComplete
+
+// MethodElicitationCreate requests information from the user.
+const MethodElicitationCreate = internal.MethodElicitationCreate
+
+// MethodInitialize is sent by the client to initialize the connection.
+const MethodInitialize = internal.MethodInitialize
+
+// MethodInitialized is a notification from client confirming initialization.
+const MethodInitialized = internal.MethodInitialized
+
+// MethodLoggingSetLevel sets the server's logging level.
+const MethodLoggingSetLevel = internal.MethodLoggingSetLevel
+
+// MethodNotificationsCancelled is sent when a request is cancelled.
+const MethodNotificationsCancelled = internal.MethodNotificationsCancelled
+
+// MethodNotificationsElicitationComplete is sent when a URL elicitation completes.
+const MethodNotificationsElicitationComplete = internal.MethodNotificationsElicitationComplete
+
+// MethodNotificationsMessage is a logging notification.
+const MethodNotificationsMessage = internal.MethodNotificationsMessage
+
+// MethodNotificationsProgress is sent to report progress.
+const MethodNotificationsProgress = internal.MethodNotificationsProgress
+
+// MethodNotificationsPromptsListChanged is sent when prompts change.
+const MethodNotificationsPromptsListChanged = internal.MethodNotificationsPromptsListChanged
+
+// MethodNotificationsResourceUpdated is sent when a resource is updated.
+const MethodNotificationsResourceUpdated = internal.MethodNotificationsResourceUpdated
+
+// MethodNotificationsResourcesListChanged is sent when resources change.
+const MethodNotificationsResourcesListChanged = internal.MethodNotificationsResourcesListChanged
+
+// MethodNotificationsRootsListChanged is sent when roots change.
+const MethodNotificationsRootsListChanged = internal.MethodNotificationsRootsListChanged
+
+// MethodNotificationsTaskStatus is sent when a task's status changes.
+const MethodNotificationsTaskStatus = internal.MethodNotificationsTaskStatus
+
+// MethodNotificationsToolsListChanged is sent when tools change.
+const MethodNotificationsToolsListChanged = internal.MethodNotificationsToolsListChanged
+
+// MethodPing is used to check if the server is alive.
+const MethodPing = internal.MethodPing
+
+// MethodPromptsGet retrieves a prompt with arguments.
+const MethodPromptsGet = internal.MethodPromptsGet
+
+// MethodPromptsList requests the list of available prompts.
+const MethodPromptsList = internal.MethodPromptsList
+
+// MethodResourcesList requests the list of available resources.
+const MethodResourcesList = internal.MethodResourcesList
+
+// MethodResourcesRead reads the content of a resource.
+const MethodResourcesRead = internal.MethodResourcesRead
+
+// MethodResourcesTemplates lists resource URI templates.
+const MethodResourcesTemplates = internal.MethodResourcesTemplates
+
+// MethodRootsList requests the client's root URIs.
+const MethodRootsList = internal.MethodRootsList
+
+// MethodSamplingCreateMessage requests the client to sample an LLM.
+const MethodSamplingCreateMessage = internal.MethodSamplingCreateMessage
+
+// MethodTasksCancel cancels a running task.
+const MethodTasksCancel = internal.MethodTasksCancel
+
+// MethodTasksGet retrieves a task by ID.
+const MethodTasksGet = internal.MethodTasksGet
+
+// MethodTasksList lists all tasks.
+const MethodTasksList = internal.MethodTasksList
+
+// MethodTasksResult retrieves a task's result.
+const MethodTasksResult = internal.MethodTasksResult
+
+// MethodToolsCall invokes a tool with arguments.
+const MethodToolsCall = internal.MethodToolsCall
+
+// MethodToolsList requests the list of available tools.
+const MethodToolsList = internal.MethodToolsList
+
+// ProtocolVersion is the current default protocol version.
+const ProtocolVersion = internal.ProtocolVersion
+
+// ProtocolVersionV0 is the original MCP protocol version (2024-11-05).
+const ProtocolVersionV0 = internal.ProtocolVersionV0
+
+// ProtocolVersionV1 is the updated MCP protocol version (2025-11-25).
+const ProtocolVersionV1 = internal.ProtocolVersionV1
+const TaskStatusCancelled = internal.TaskStatusCancelled
+const TaskStatusCompleted = internal.TaskStatusCompleted
+const TaskStatusFailed = internal.TaskStatusFailed
+const TaskStatusInputRequired = internal.TaskStatusInputRequired
+const TaskStatusWorking = internal.TaskStatusWorking
+
+// TaskSupportForbidden means clients must not invoke the tool as a task.
+const TaskSupportForbidden = internal.TaskSupportForbidden
+
+// TaskSupportOptional means clients may invoke the tool as a task or normally.
+const TaskSupportOptional = internal.TaskSupportOptional
+
+// TaskSupportRequired means clients must invoke the tool as a task.
+const TaskSupportRequired = internal.TaskSupportRequired

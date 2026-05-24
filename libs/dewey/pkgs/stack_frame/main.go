@@ -4,22 +4,18 @@ package stack_frame
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/stack_frame"
 
-type (
-	ErrorAndFrame         = internal.ErrorAndFrame
-	ErrorStackTracer      = internal.ErrorStackTracer
-	ErrorTree             = internal.ErrorTree
-	ErrorsAndFramesGetter = internal.ErrorsAndFramesGetter
-	Frame                 = internal.Frame
-)
+type ErrorAndFrame = internal.ErrorAndFrame
+type ErrorStackTracer = internal.ErrorStackTracer
+type ErrorTree = internal.ErrorTree
+type ErrorsAndFramesGetter = internal.ErrorsAndFramesGetter
+type Frame = internal.Frame
 
-var (
-	Errorf                    = internal.Errorf
-	MakeErrorTreeOrErr        = internal.MakeErrorTreeOrErr
-	MakeFrame                 = internal.MakeFrame
-	MakeFrameFromRuntimeFrame = internal.MakeFrameFromRuntimeFrame
-	MakeFrames                = internal.MakeFrames
-	MustFrame                 = internal.MustFrame
-	Wrap                      = internal.Wrap
-	WrapSkip                  = internal.WrapSkip
-	Wrapf                     = internal.Wrapf
-)
+var Errorf = internal.Errorf
+var MakeErrorTreeOrErr = internal.MakeErrorTreeOrErr
+var MakeFrame = internal.MakeFrame
+var MakeFrameFromRuntimeFrame = internal.MakeFrameFromRuntimeFrame
+var MakeFrames = internal.MakeFrames
+var MustFrame = internal.MustFrame
+var Wrap = internal.Wrap
+var WrapSkip = internal.WrapSkip
+var Wrapf = internal.Wrapf

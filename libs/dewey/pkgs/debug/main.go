@@ -4,11 +4,7 @@ package debug
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/debug"
 
-type (
-	Context = internal.Context
-	Options = internal.Options
-)
+type Context = internal.Context
+type Options = internal.Options
 
-var (
-	MakeContext = internal.MakeContext
-)
+var MakeContext = internal.MakeContext

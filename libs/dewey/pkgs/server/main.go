@@ -4,35 +4,89 @@ package server
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/server"
 
-type (
-	CompletionProvider  = internal.CompletionProvider
-	ElicitationProvider = internal.ElicitationProvider
-	Handler             = internal.Handler
-	LoggingHandler      = internal.LoggingHandler
-	Options             = internal.Options
-	PromptProvider      = internal.PromptProvider
-	PromptProviderV1    = internal.PromptProviderV1
-	PromptRegistry      = internal.PromptRegistry
-	PromptRenderer      = internal.PromptRenderer
-	ResourceProvider    = internal.ResourceProvider
-	ResourceProviderV1  = internal.ResourceProviderV1
-	ResourceReader      = internal.ResourceReader
-	ResourceRegistry    = internal.ResourceRegistry
-	Server              = internal.Server
-	TaskProvider        = internal.TaskProvider
-	ToolHandler         = internal.ToolHandler
-	ToolHandlerV1       = internal.ToolHandlerV1
-	ToolProvider        = internal.ToolProvider
-	ToolProviderV1      = internal.ToolProviderV1
-	ToolRegistry        = internal.ToolRegistry
-	ToolRegistryV1      = internal.ToolRegistryV1
-)
+// CompletionProvider provides argument completion suggestions.
+type CompletionProvider = internal.CompletionProvider
 
-var (
-	New                 = internal.New
-	NewHandler          = internal.NewHandler
-	NewPromptRegistry   = internal.NewPromptRegistry
-	NewResourceRegistry = internal.NewResourceRegistry
-	NewToolRegistry     = internal.NewToolRegistry
-	NewToolRegistryV1   = internal.NewToolRegistryV1
-)
+// ElicitationProvider handles user information requests.
+type ElicitationProvider = internal.ElicitationProvider
+
+// Handler handles MCP protocol method calls.
+type Handler = internal.Handler
+
+// LoggingHandler handles logging level changes.
+type LoggingHandler = internal.LoggingHandler
+
+// Options configures an MCP server.
+type Options = internal.Options
+
+// PromptProvider is implemented by servers that provide prompt templates.
+// Prompts are pre-defined message templates that can be instantiated with arguments.
+type PromptProvider = internal.PromptProvider
+
+// PromptProviderV1 extends PromptProvider with V1 capabilities.
+type PromptProviderV1 = internal.PromptProviderV1
+
+// PromptRegistry is a helper for building prompt providers.
+type PromptRegistry = internal.PromptRegistry
+
+// PromptRenderer is a function that renders a prompt with arguments.
+type PromptRenderer = internal.PromptRenderer
+
+// ResourceProvider is implemented by servers that provide resources.
+// Resources are data sources (files, APIs, databases, etc.) that can be read by the client.
+type ResourceProvider = internal.ResourceProvider
+
+// ResourceProviderV1 extends ResourceProvider with V1 capabilities.
+type ResourceProviderV1 = internal.ResourceProviderV1
+
+// ResourceReader is a function that reads resource content.
+type ResourceReader = internal.ResourceReader
+
+// ResourceRegistry is a helper for building resource providers.
+type ResourceRegistry = internal.ResourceRegistry
+
+// Server is an MCP server that handles protocol messages.
+type Server = internal.Server
+
+// TaskProvider manages async task lifecycle.
+type TaskProvider = internal.TaskProvider
+
+// ToolHandler is a function that handles tool invocations.
+type ToolHandler = internal.ToolHandler
+
+// ToolHandlerV1 is a function that handles V1 tool invocations.
+type ToolHandlerV1 = internal.ToolHandlerV1
+
+// ToolProvider is implemented by servers that provide tools.
+// Tools are functions that can be invoked by the client with JSON arguments.
+type ToolProvider = internal.ToolProvider
+
+// ToolProviderV1 extends ToolProvider with V1 capabilities.
+// Implementations that satisfy this interface will be used for V1 clients.
+type ToolProviderV1 = internal.ToolProviderV1
+
+// ToolRegistry is a helper for building tool providers.
+// It maintains a map of tool names to handlers and implements the ToolProvider interface.
+type ToolRegistry = internal.ToolRegistry
+
+// ToolRegistryV1 implements both ToolProvider and ToolProviderV1.
+// It stores V1 tools with annotations, icons, and output schemas.
+type ToolRegistryV1 = internal.ToolRegistryV1
+
+// New creates a new MCP server with the given transport and options.
+var New = internal.New
+
+// NewHandler creates a new handler for the given server.
+var NewHandler = internal.NewHandler
+
+// NewPromptRegistry creates a new empty prompt registry.
+var NewPromptRegistry = internal.NewPromptRegistry
+
+// NewResourceRegistry creates a new empty resource registry.
+var NewResourceRegistry = internal.NewResourceRegistry
+
+// NewToolRegistry creates a new empty tool registry.
+var NewToolRegistry = internal.NewToolRegistry
+
+// NewToolRegistryV1 creates a new empty V1 tool registry.
+var NewToolRegistryV1 = internal.NewToolRegistryV1

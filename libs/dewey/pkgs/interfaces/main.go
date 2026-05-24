@@ -4,108 +4,130 @@ package interfaces
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 
-type (
-	ActiveContext                                               = internal.ActiveContext
-	ActiveContextGetter                                         = internal.ActiveContextGetter
-	Adder[ELEMENT any]                                          = internal.Adder[ELEMENT]
-	CLIFlagDefinitions                                          = internal.CLIFlagDefinitions
-	CLIFlagIOWrapper                                            = internal.CLIFlagIOWrapper
-	Coder[OBJECT any, READER any, WRITER any]                   = internal.Coder[OBJECT, READER, WRITER]
-	CoderBufferedReadWriter[OBJECT any]                         = internal.CoderBufferedReadWriter[OBJECT]
-	CoderReadWriter[OBJECT any]                                 = internal.CoderReadWriter[OBJECT]
-	Collection[ELEMENT any]                                     = internal.Collection[ELEMENT]
-	CollectionMutable[ELEMENT any]                              = internal.CollectionMutable[ELEMENT]
-	CommandComponentWriter                                      = internal.CommandComponentWriter
-	Comparable[SELF any]                                        = internal.Comparable[SELF]
-	CompoundKeyer[T any]                                        = internal.CompoundKeyer[T]
-	ContainsKeyer                                               = internal.ContainsKeyer
-	ContextState                                                = internal.ContextState
-	DecoderFrom[OBJECT any, READER any]                         = internal.DecoderFrom[OBJECT, READER]
-	DecoderFromBufferedReader[OBJECT any]                       = internal.DecoderFromBufferedReader[OBJECT]
-	DecoderFromReader[OBJECT any]                               = internal.DecoderFromReader[OBJECT]
-	Delta[ELEMENT any]                                          = internal.Delta[ELEMENT]
-	DirectoryLayoutBaseEnvVar                                   = internal.DirectoryLayoutBaseEnvVar
-	DirectoryLayoutPath                                         = internal.DirectoryLayoutPath
-	DirectoryLayoutXDG                                          = internal.DirectoryLayoutXDG
-	EncoderTo[OBJECT any, READER any]                           = internal.EncoderTo[OBJECT, READER]
-	EncoderToBufferedWriter[OBJECT any]                         = internal.EncoderToBufferedWriter[OBJECT]
-	EncoderToWriter[OBJECT any]                                 = internal.EncoderToWriter[OBJECT]
-	EnvVars                                                     = internal.EnvVars
-	EnvVarsAdder                                                = internal.EnvVarsAdder
-	Equaler[ELEMENT any]                                        = internal.Equaler[ELEMENT]
-	Equatable[ELEMENT any]                                      = internal.Equatable[ELEMENT]
-	ErrorHiddenWrapper                                          = internal.ErrorHiddenWrapper
-	ErrorManyUnwrapper                                          = internal.ErrorManyUnwrapper
-	ErrorOneUnwrapper                                           = internal.ErrorOneUnwrapper
-	ErrorRetryable                                              = internal.ErrorRetryable
-	FlagValue                                                   = internal.FlagValue
-	FuncActiveContext                                           = internal.FuncActiveContext
-	FuncIter[ELEMENT any]                                       = internal.FuncIter[ELEMENT]
-	FuncIterIO[ELEMENT any]                                     = internal.FuncIterIO[ELEMENT]
-	FuncIterKey                                                 = internal.FuncIterKey
-	FuncIterWithKey[ELEMENT any]                                = internal.FuncIterWithKey[ELEMENT]
-	FuncMakePrinter[OUT any]                                    = internal.FuncMakePrinter[OUT]
-	FuncRepool                                                  = internal.FuncRepool
-	FuncRetry                                                   = internal.FuncRetry
-	FuncRetryAborted                                            = internal.FuncRetryAborted
-	FuncSetString                                               = internal.FuncSetString
-	FuncString[T any]                                           = internal.FuncString[T]
-	FuncStringWriterFormat[T any]                               = internal.FuncStringWriterFormat[T]
-	FuncTransform[ELEMENT any, T1 any]                          = internal.FuncTransform[ELEMENT, T1]
-	FuncWriter                                                  = internal.FuncWriter
-	FuncWriterElementInterface[ELEMENT any]                     = internal.FuncWriterElementInterface[ELEMENT]
-	FuncWriterFormat[T any]                                     = internal.FuncWriterFormat[T]
-	IOWrapper                                                   = internal.IOWrapper
-	Iterable[ELEMENT any]                                       = internal.Iterable[ELEMENT]
-	Keyer[ELEMENT any]                                          = internal.Keyer[ELEMENT]
-	Lenner                                                      = internal.Lenner
-	Lessor[ELEMENT any]                                         = internal.Lessor[ELEMENT]
-	LockSmith                                                   = internal.LockSmith
-	LockSmithGetter                                             = internal.LockSmithGetter
-	Pool[T any]                                                 = internal.Pool[T]
-	PoolPtr[T any, TPtr internal.Ptr[T]]                        = internal.PoolPtr[T, TPtr]
-	Printer                                                     = internal.Printer
-	Ptr[T any]                                                  = internal.Ptr[T]
-	Pull[ELEMENT any]                                           = internal.Pull[ELEMENT]
-	Pull2[ELEMENT any, ELEMENT_TWO any]                         = internal.Pull2[ELEMENT, ELEMENT_TWO]
-	ReadWrapper                                                 = internal.ReadWrapper
-	Resetable                                                   = internal.Resetable
-	ResetablePtr[ELEMENT any]                                   = internal.ResetablePtr[ELEMENT]
-	ResetableWithError                                          = internal.ResetableWithError
-	Resetter[ELEMENT any]                                       = internal.Resetter[ELEMENT]
-	ResetterPtr[ELEMENT any, ELEMENT_PTR internal.Ptr[ELEMENT]] = internal.ResetterPtr[ELEMENT, ELEMENT_PTR]
-	RuneDecoder                                                 = internal.RuneDecoder
-	Seq[ELEMENT any]                                            = internal.Seq[ELEMENT]
-	Seq2[ELEMENT any, ELEMENT_TWO any]                          = internal.Seq2[ELEMENT, ELEMENT_TWO]
-	SeqError[ELEMENT any]                                       = internal.SeqError[ELEMENT]
-	Set[ELEMENT any]                                            = internal.Set[ELEMENT]
-	SetGetter[ELEMENT any]                                      = internal.SetGetter[ELEMENT]
-	SetMutable[ELEMENT any]                                     = internal.SetMutable[ELEMENT]
-	Setter                                                      = internal.Setter
-	SetterPtr[T any]                                            = internal.SetterPtr[T]
-	StringCoder[T any]                                          = internal.StringCoder[T]
-	StringEncoderTo[T any]                                      = internal.StringEncoderTo[T]
-	StringKeyer[T any]                                          = internal.StringKeyer[T]
-	StringKeyerPtr[T any, TPtr internal.Ptr[T]]                 = internal.StringKeyerPtr[T, TPtr]
-	StringSetterPtr[T any]                                      = internal.StringSetterPtr[T]
-	Stringer                                                    = internal.Stringer
-	StringerPtr[T any]                                          = internal.StringerPtr[T]
-	StringerSetter                                              = internal.StringerSetter
-	StringerSetterPtr[T any]                                    = internal.StringerSetterPtr[T]
-	StringerWithHeadAndTail                                     = internal.StringerWithHeadAndTail
-	Tridex                                                      = internal.Tridex
-	TridexMutable                                               = internal.TridexMutable
-	Value                                                       = internal.Value
-	ValuePtr[SELF internal.Value]                               = internal.ValuePtr[SELF]
-	WriteWrapper                                                = internal.WriteWrapper
-	WriterAndStringWriter                                       = internal.WriterAndStringWriter
-)
+type ActiveContext = internal.ActiveContext
+type ActiveContextGetter = internal.ActiveContextGetter
+type Adder[ELEMENT any] = internal.Adder[ELEMENT]
 
-const (
-	ContextStateAborted   = internal.ContextStateAborted
-	ContextStateFailed    = internal.ContextStateFailed
-	ContextStateStarted   = internal.ContextStateStarted
-	ContextStateSucceeded = internal.ContextStateSucceeded
-	ContextStateUnknown   = internal.ContextStateUnknown
-	ContextStateUnstarted = internal.ContextStateUnstarted
-)
+// TODO add completion options
+type CLIFlagDefinitions = internal.CLIFlagDefinitions
+type CLIFlagIOWrapper = internal.CLIFlagIOWrapper
+type Coder[OBJECT any, READER any, WRITER any] = internal.Coder[OBJECT, READER, WRITER]
+type CoderBufferedReadWriter[OBJECT any] = internal.CoderBufferedReadWriter[OBJECT]
+type CoderReadWriter[OBJECT any] = internal.CoderReadWriter[OBJECT]
+type Collection[ELEMENT any] = internal.Collection[ELEMENT]
+type CollectionMutable[ELEMENT any] = internal.CollectionMutable[ELEMENT]
+type CommandComponentWriter = internal.CommandComponentWriter
+type Comparable[SELF any] = internal.Comparable[SELF]
+type CompoundKeyer[T any] = internal.CompoundKeyer[T]
+type ContainsKeyer = internal.ContainsKeyer
+type ContextState = internal.ContextState
+type DecoderFrom[OBJECT any, READER any] = internal.DecoderFrom[OBJECT, READER]
+type DecoderFromBufferedReader[OBJECT any] = internal.DecoderFromBufferedReader[OBJECT]
+type DecoderFromReader[OBJECT any] = internal.DecoderFromReader[OBJECT]
+type Delta[ELEMENT any] = internal.Delta[ELEMENT]
+type DirectoryLayoutBaseEnvVar = internal.DirectoryLayoutBaseEnvVar
+type DirectoryLayoutPath = internal.DirectoryLayoutPath
+type DirectoryLayoutXDG = internal.DirectoryLayoutXDG
+type EncoderTo[OBJECT any, READER any] = internal.EncoderTo[OBJECT, READER]
+type EncoderToBufferedWriter[OBJECT any] = internal.EncoderToBufferedWriter[OBJECT]
+type EncoderToWriter[OBJECT any] = internal.EncoderToWriter[OBJECT]
+type EnvVars = internal.EnvVars
+type EnvVarsAdder = internal.EnvVarsAdder
+
+// TODO-P2 rename
+type Equaler[ELEMENT any] = internal.Equaler[ELEMENT]
+type Equatable[ELEMENT any] = internal.Equatable[ELEMENT]
+
+// When printing error trees, `error_coders` uses the presence of
+// `ShouldHideUnwrap()` and its return value to determine if the parent
+// error should be printed.
+type ErrorHiddenWrapper = internal.ErrorHiddenWrapper
+type ErrorManyUnwrapper = internal.ErrorManyUnwrapper
+type ErrorOneUnwrapper = internal.ErrorOneUnwrapper
+type ErrorRetryable = internal.ErrorRetryable
+
+// Value is the interface to the dynamic value stored in a flag.
+// (The default value is represented as a string.)
+//
+// If a Value has an IsBoolFlag() bool method returning true,
+// the command-line parser makes -name equivalent to -name=true
+// rather than using the next command-line argument.
+//
+// Set is called once, in command line order, for each flag present.
+// The flag package may call the [String] method with a zero-valued receiver,
+// such as a nil pointer.
+type FlagValue = internal.FlagValue
+type FuncActiveContext = internal.FuncActiveContext
+type FuncIter[ELEMENT any] = internal.FuncIter[ELEMENT]
+type FuncIterIO[ELEMENT any] = internal.FuncIterIO[ELEMENT]
+type FuncIterKey = internal.FuncIterKey
+type FuncIterWithKey[ELEMENT any] = internal.FuncIterWithKey[ELEMENT]
+type FuncMakePrinter[OUT any] = internal.FuncMakePrinter[OUT]
+type FuncRepool = internal.FuncRepool
+type FuncRetry = internal.FuncRetry
+type FuncRetryAborted = internal.FuncRetryAborted
+type FuncSetString = internal.FuncSetString
+type FuncString[T any] = internal.FuncString[T]
+type FuncStringWriterFormat[T any] = internal.FuncStringWriterFormat[T]
+type FuncTransform[ELEMENT any, T1 any] = internal.FuncTransform[ELEMENT, T1]
+type FuncWriter = internal.FuncWriter
+type FuncWriterElementInterface[ELEMENT any] = internal.FuncWriterElementInterface[ELEMENT]
+type FuncWriterFormat[T any] = internal.FuncWriterFormat[T]
+type IOWrapper = internal.IOWrapper
+type Iterable[ELEMENT any] = internal.Iterable[ELEMENT]
+type Keyer[ELEMENT any] = internal.Keyer[ELEMENT]
+type Lenner = internal.Lenner
+type Lessor[ELEMENT any] = internal.Lessor[ELEMENT]
+
+// LockSmith provides repo-wide filesystem mutex locking to prevent concurrent
+// store mutations across processes. Not related to content locks (type/tag
+// version pinning in markl.Lock).
+type LockSmith = internal.LockSmith
+type LockSmithGetter = internal.LockSmithGetter
+type Pool[T any] = internal.Pool[T]
+type PoolPtr[T any, TPtr internal.Ptr[T]] = internal.PoolPtr[T, TPtr]
+type Printer = internal.Printer
+type Ptr[T any] = internal.Ptr[T]
+type Pull[ELEMENT any] = internal.Pull[ELEMENT]
+type Pull2[ELEMENT any, ELEMENT_TWO any] = internal.Pull2[ELEMENT, ELEMENT_TWO]
+type ReadWrapper = internal.ReadWrapper
+type Resetable = internal.Resetable
+type ResetablePtr[ELEMENT any] = internal.ResetablePtr[ELEMENT]
+type ResetableWithError = internal.ResetableWithError
+type Resetter[ELEMENT any] = internal.Resetter[ELEMENT]
+type ResetterPtr[ELEMENT any, ELEMENT_PTR internal.Ptr[ELEMENT]] = internal.ResetterPtr[ELEMENT, ELEMENT_PTR]
+type RuneDecoder = internal.RuneDecoder
+type Seq[ELEMENT any] = internal.Seq[ELEMENT]
+type Seq2[ELEMENT any, ELEMENT_TWO any] = internal.Seq2[ELEMENT, ELEMENT_TWO]
+type SeqError[ELEMENT any] = internal.SeqError[ELEMENT]
+type Set[ELEMENT any] = internal.Set[ELEMENT]
+type SetGetter[ELEMENT any] = internal.SetGetter[ELEMENT]
+type SetMutable[ELEMENT any] = internal.SetMutable[ELEMENT]
+type Setter = internal.Setter
+type SetterPtr[T any] = internal.SetterPtr[T]
+type StringCoder[T any] = internal.StringCoder[T]
+type StringEncoderTo[T any] = internal.StringEncoderTo[T]
+type StringKeyer[T any] = internal.StringKeyer[T]
+type StringKeyerPtr[T any, TPtr internal.Ptr[T]] = internal.StringKeyerPtr[T, TPtr]
+type StringSetterPtr[T any] = internal.StringSetterPtr[T]
+type Stringer = internal.Stringer
+type StringerPtr[T any] = internal.StringerPtr[T]
+type StringerSetter = internal.StringerSetter
+type StringerSetterPtr[T any] = internal.StringerSetterPtr[T]
+type StringerWithHeadAndTail = internal.StringerWithHeadAndTail
+type Tridex = internal.Tridex
+type TridexMutable = internal.TridexMutable
+type Value = internal.Value
+type ValuePtr[SELF internal.Value] = internal.ValuePtr[SELF]
+type WriteWrapper = internal.WriteWrapper
+type WriterAndStringWriter = internal.WriterAndStringWriter
+
+const ContextStateAborted = internal.ContextStateAborted
+const ContextStateFailed = internal.ContextStateFailed
+
+// all states that are > than `ContextStateStarted` are considered terminal,
+// so the order here is important
+const ContextStateStarted = internal.ContextStateStarted
+const ContextStateSucceeded = internal.ContextStateSucceeded
+const ContextStateUnknown = internal.ContextStateUnknown
+const ContextStateUnstarted = internal.ContextStateUnstarted

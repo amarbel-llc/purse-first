@@ -5,13 +5,9 @@ package test_ui
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 
-type (
-	T = internal.T
-)
+type T = internal.T
 
-var (
-	PrintDiffString = internal.PrintDiffString
-)
+var PrintDiffString = internal.PrintDiffString
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.

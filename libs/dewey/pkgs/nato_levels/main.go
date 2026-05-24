@@ -4,10 +4,6 @@ package nato_levels
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/nato_levels"
 
-type (
-	NATOLevelMapper = internal.NATOLevelMapper
-)
+type NATOLevelMapper = internal.NATOLevelMapper
 
-var (
-	MakeNATOLevelMapper = internal.MakeNATOLevelMapper
-)
+var MakeNATOLevelMapper = internal.MakeNATOLevelMapper

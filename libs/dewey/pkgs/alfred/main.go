@@ -4,20 +4,16 @@ package alfred
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/alfred"
 
-type (
-	Item         = internal.Item
-	ItemIcon     = internal.ItemIcon
-	ItemPool     = internal.ItemPool
-	ItemText     = internal.ItemText
-	MatchBuilder = internal.MatchBuilder
-	Mod          = internal.Mod
-	Writer       = internal.Writer
-)
+type Item = internal.Item
+type ItemIcon = internal.ItemIcon
+type ItemPool = internal.ItemPool
+type ItemText = internal.ItemText
+type MatchBuilder = internal.MatchBuilder
+type Mod = internal.Mod
+type Writer = internal.Writer
 
-var (
-	GetPoolMatchBuilder = internal.GetPoolMatchBuilder
-	MakeItemPool        = internal.MakeItemPool
-	NewDebouncingWriter = internal.NewDebouncingWriter
-	NewMatchBuilder     = internal.NewMatchBuilder
-	NewWriter           = internal.NewWriter
-)
+var GetPoolMatchBuilder = internal.GetPoolMatchBuilder
+var MakeItemPool = internal.MakeItemPool
+var NewDebouncingWriter = internal.NewDebouncingWriter
+var NewMatchBuilder = internal.NewMatchBuilder
+var NewWriter = internal.NewWriter

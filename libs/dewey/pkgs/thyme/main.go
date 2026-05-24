@@ -4,19 +4,13 @@ package thyme
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/thyme"
 
-type (
-	Time = internal.Time
-)
+type Time = internal.Time
 
-var (
-	Date          = internal.Date
-	Now           = internal.Now
-	Parse         = internal.Parse
-	TimeWithIndex = internal.TimeWithIndex
-	Tyme          = internal.Tyme
-)
+var Date = internal.Date
+var Now = internal.Now
+var Parse = internal.Parse
+var TimeWithIndex = internal.TimeWithIndex
+var Tyme = internal.Tyme
 
-const (
-	Epoch   = internal.Epoch
-	RFC3339 = internal.RFC3339
-)
+const Epoch = internal.Epoch
+const RFC3339 = internal.RFC3339

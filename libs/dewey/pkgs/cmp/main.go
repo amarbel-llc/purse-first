@@ -4,29 +4,25 @@ package cmp
 
 import (
 	"cmp"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/cmp"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type (
-	ComparableBytes            = internal.ComparableBytes
-	ComparableString           = internal.ComparableString
-	Equaler[ELEMENT any]       = internal.Equaler[ELEMENT]
-	EqualerVerify[ELEMENT any] = internal.EqualerVerify[ELEMENT]
-	Func[ELEMENT any]          = internal.Func[ELEMENT]
-	Lesser[ELEMENT any]        = internal.Lesser[ELEMENT]
-	LesserVerify[ELEMENT any]  = internal.LesserVerify[ELEMENT]
-	Result                     = internal.Result
-)
+type ComparableBytes = internal.ComparableBytes
+type ComparableString = internal.ComparableString
+type Equaler[ELEMENT any] = internal.Equaler[ELEMENT]
+type EqualerVerify[ELEMENT any] = internal.EqualerVerify[ELEMENT]
+type Func[ELEMENT any] = internal.Func[ELEMENT]
+type Lesser[ELEMENT any] = internal.Lesser[ELEMENT]
+type LesserVerify[ELEMENT any] = internal.LesserVerify[ELEMENT]
+type Result = internal.Result
 
-var (
-	Bytes                     = internal.Bytes
-	CompareUTF8Bytes          = internal.CompareUTF8Bytes
-	CompareUTF8BytesAndString = internal.CompareUTF8BytesAndString
-	CompareUTF8String         = internal.CompareUTF8String
-	CompareUTF8StringAndBytes = internal.CompareUTF8StringAndBytes
-	String                    = internal.String
-)
+var Bytes = internal.Bytes
+var CompareUTF8Bytes = internal.CompareUTF8Bytes
+var CompareUTF8BytesAndString = internal.CompareUTF8BytesAndString
+var CompareUTF8String = internal.CompareUTF8String
+var CompareUTF8StringAndBytes = internal.CompareUTF8StringAndBytes
+var String = internal.String
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -44,9 +40,13 @@ func BinarySearchFuncIndex[SLICE interface {
 func CompareUTF8[LEFT interfaces.Comparable[LEFT], RIGHT interfaces.Comparable[RIGHT]](left LEFT, right RIGHT, partial bool) internal.Result {
 	return internal.CompareUTF8[LEFT, RIGHT](left, right, partial)
 }
+
+// TODO remove
 func MakeFuncFromEqualerAndLessor3EqualFirst[ELEMENT any](equaler interfaces.Equaler[ELEMENT], lessor interfaces.Lessor[ELEMENT]) func(ELEMENT, ELEMENT) internal.Result {
 	return internal.MakeFuncFromEqualerAndLessor3EqualFirst[ELEMENT](equaler, lessor)
 }
+
+// TODO remove
 func MakeFuncFromEqualerAndLessor3LessFirst[ELEMENT any](equaler interfaces.Equaler[ELEMENT], lessor interfaces.Lessor[ELEMENT]) func(ELEMENT, ELEMENT) internal.Result {
 	return internal.MakeFuncFromEqualerAndLessor3LessFirst[ELEMENT](equaler, lessor)
 }
@@ -54,8 +54,6 @@ func Ordered[ELEMENT cmp.Ordered](left ELEMENT, right ELEMENT) internal.Result {
 	return internal.Ordered[ELEMENT](left, right)
 }
 
-const (
-	Equal   = internal.Equal
-	Greater = internal.Greater
-	Less    = internal.Less
-)
+const Equal = internal.Equal
+const Greater = internal.Greater
+const Less = internal.Less

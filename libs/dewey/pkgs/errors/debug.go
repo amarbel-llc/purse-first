@@ -5,6 +5,4 @@ package errors
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
 
-var (
-	PrintWithStackFramesIfNecessary = internal.PrintWithStackFramesIfNecessary
-)
+var PrintWithStackFramesIfNecessary = internal.PrintWithStackFramesIfNecessary

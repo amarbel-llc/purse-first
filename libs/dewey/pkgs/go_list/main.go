@@ -4,6 +4,18 @@ package go_list
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/go_list"
 
-type (
-	Reader = internal.Reader
-)
+// Reader reads Go package dependencies by shelling out to `go list`.
+// ModulePath is the Go module path (e.g., "code.linenisgreat.com/dodder/go").
+// Dir is the working directory to run `go list` from.
+// PackagePrefixes are directory prefixes containing packages (e.g., ["lib", "internal"]).
+// Node names in returned edges include the prefix (e.g., "lib/_/ohio_buffer").
+//
+// ComponentDepth controls how many path components identify a package node:
+//   - 3 (default): prefix/level/package (e.g., "lib/alfa/errors")
+//   - 2: level/package (e.g., "alfa/errors") — for repos where NATO levels are top-level dirs
+//
+// When Verbose is true, sources dropped because their path has fewer than
+// ComponentDepth components are logged to stderr. Independent of Verbose,
+// a prefix that matched sources in `go list` output but produced zero edges
+// (because every source was too short) returns an error.
+type Reader = internal.Reader

@@ -4,27 +4,101 @@ package operation_viewport
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/operation_viewport"
 
-type (
-	Batch             = internal.Batch
-	BatchDone         = internal.BatchDone
-	Emitter           = internal.Emitter
-	LogLine           = internal.LogLine
-	Model             = internal.Model
-	Op                = internal.Op
-	OperationDone     = internal.OperationDone
-	OperationProgress = internal.OperationProgress
-	OperationStarted  = internal.OperationStarted
-	Option            = internal.Option
-	Style             = internal.Style
-)
+// Batch describes a many-op run. The Run callback is the work loop;
+// it receives the inner [interfaces.ActiveContext] plus an [Emitter]
+// for posting events to the viewport.
+type Batch = internal.Batch
 
-var (
-	DefaultStyle = internal.DefaultStyle
-	NewModel     = internal.NewModel
-	Run          = internal.Run
-	RunBatch     = internal.RunBatch
-	WithLines    = internal.WithLines
-	WithStyle    = internal.WithStyle
-	WithTitle    = internal.WithTitle
-	WithTotal    = internal.WithTotal
-)
+// BatchDone signals that the viewport should render its terminal state
+// and exit. A non-nil Err causes the captured transcript to be dumped to
+// stderr after the program returns.
+type BatchDone = internal.BatchDone
+
+// Emitter is the caller-facing handle for posting events to the
+// viewport from inside a [Batch.Run] callback.
+type Emitter = internal.Emitter
+
+// LogLine carries a single line of child output into the viewport.
+type LogLine = internal.LogLine
+
+// Model is the bubbletea model that paints the viewport. Callers
+// implementing custom event sources construct it with [NewModel] and
+// send the message types from messages.go to drive it.
+//
+// On Ctrl-C the model sets [Model.Interrupted] and quits the program
+// without calling Cancel itself — the caller (Run / RunBatch, or a
+// custom event-source driver) inspects the flag after `program.Run`
+// returns and propagates the cancel from a goroutine that lives inside
+// [errors.Context.Run]'s recover scope.
+type Model = internal.Model
+
+// Op describes a single subprocess to run under the viewport.
+type Op = internal.Op
+
+// OperationDone signals that the current operation finished. A non-nil
+// Err on an individual operation does not by itself terminate the
+// viewport — that is the caller's choice via the [Emitter] return value
+// or [BatchDone].
+type OperationDone = internal.OperationDone
+
+// OperationProgress reports within-op progress. The v0 layout does not
+// render a secondary bar for this; it is part of the message protocol so
+// callers can begin emitting it without a breaking change later.
+type OperationProgress = internal.OperationProgress
+
+// OperationStarted signals the start of an operation within a batch. For
+// single-op callers, send once with Index=1 Total=1 — the progress bar
+// hides itself when Total <= 1.
+type OperationStarted = internal.OperationStarted
+
+// Option configures a [Model] at construction.
+type Option = internal.Option
+
+// Style controls the rendered appearance of the viewport. Defaults match
+// clown's original tent_loader (cyan spinner, dim adaptive tail, green
+// success, red failure) so the visual language stays consistent across
+// tools that adopt this primitive.
+type Style = internal.Style
+
+// DefaultStyle returns the opinionated palette.
+var DefaultStyle = internal.DefaultStyle
+
+// NewModel constructs a [Model] applying the given options. The default
+// tail size is 5 lines.
+var NewModel = internal.NewModel
+
+// Run executes op.Cmd under the viewport, returning the subprocess's
+// exit error. On a non-TTY stdout, falls back to streaming the
+// subprocess's combined output to stderr unchanged.
+//
+// Run signals OperationStarted (Index=1, Total=1) on the model itself,
+// so callers do not need to feed any messages.
+//
+// On Ctrl-C the underlying [errors.Context] is cancelled with an
+// [errors.Signal], the child is killed, and the captured transcript is
+// dumped to stderr.
+var Run = internal.Run
+
+// RunBatch drives a many-op work loop through the viewport. On a non-
+// TTY stdout, the work loop still runs; log lines and operation
+// transitions are written as plain text to stderr.
+//
+// On Ctrl-C the inner [errors.Context] is cancelled with an
+// [errors.Signal]; the caller's Run loop sees the cancellation via
+// ctx.Done() and is expected to terminate.
+var RunBatch = internal.RunBatch
+
+// WithLines overrides the size of the rolling log tail.
+var WithLines = internal.WithLines
+
+// WithStyle replaces the default lipgloss styles.
+var WithStyle = internal.WithStyle
+
+// WithTitle sets the title rendered next to the spinner before any
+// [OperationStarted] arrives, and used in [BatchDone] success/failure
+// lines.
+var WithTitle = internal.WithTitle
+
+// WithTotal sets the expected operation count up front. The progress bar
+// is hidden when Total <= 1.
+var WithTotal = internal.WithTotal

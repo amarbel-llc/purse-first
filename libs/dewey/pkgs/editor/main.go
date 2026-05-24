@@ -4,17 +4,11 @@ package editor
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/editor"
 
-type (
-	Editor = internal.Editor
-	Type   = internal.Type
-)
+type Editor = internal.Editor
+type Type = internal.Type
 
-var (
-	MakeEditor               = internal.MakeEditor
-	MakeEditorWithVimOptions = internal.MakeEditorWithVimOptions
-)
+var MakeEditor = internal.MakeEditor
+var MakeEditorWithVimOptions = internal.MakeEditorWithVimOptions
 
-const (
-	TypeUnknown = internal.TypeUnknown
-	TypeVim     = internal.TypeVim
-)
+const TypeUnknown = internal.TypeUnknown
+const TypeVim = internal.TypeVim

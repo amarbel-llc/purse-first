@@ -4,34 +4,28 @@ package jsonrpc
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/jsonrpc"
 
-type (
-	Conn    = internal.Conn
-	Error   = internal.Error
-	Handler = internal.Handler
-	ID      = internal.ID
-	Message = internal.Message
-	Stream  = internal.Stream
-)
+type Conn = internal.Conn
+type Error = internal.Error
+type Handler = internal.Handler
+type ID = internal.ID
+type Message = internal.Message
+type Stream = internal.Stream
 
-var (
-	NewConn          = internal.NewConn
-	NewErrorResponse = internal.NewErrorResponse
-	NewNotification  = internal.NewNotification
-	NewNumberID      = internal.NewNumberID
-	NewRequest       = internal.NewRequest
-	NewResponse      = internal.NewResponse
-	NewStream        = internal.NewStream
-	NewStringID      = internal.NewStringID
-)
+var NewConn = internal.NewConn
+var NewErrorResponse = internal.NewErrorResponse
+var NewNotification = internal.NewNotification
+var NewNumberID = internal.NewNumberID
+var NewRequest = internal.NewRequest
+var NewResponse = internal.NewResponse
+var NewStream = internal.NewStream
+var NewStringID = internal.NewStringID
 
-const (
-	ContentModified      = internal.ContentModified
-	InternalError        = internal.InternalError
-	InvalidParams        = internal.InvalidParams
-	InvalidRequest       = internal.InvalidRequest
-	MethodNotFound       = internal.MethodNotFound
-	ParseError           = internal.ParseError
-	RequestCancelled     = internal.RequestCancelled
-	ServerNotInitialized = internal.ServerNotInitialized
-	Version              = internal.Version
-)
+const ContentModified = internal.ContentModified
+const InternalError = internal.InternalError
+const InvalidParams = internal.InvalidParams
+const InvalidRequest = internal.InvalidRequest
+const MethodNotFound = internal.MethodNotFound
+const ParseError = internal.ParseError
+const RequestCancelled = internal.RequestCancelled
+const ServerNotInitialized = internal.ServerNotInitialized
+const Version = internal.Version

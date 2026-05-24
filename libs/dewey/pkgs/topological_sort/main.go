@@ -4,10 +4,10 @@ package topological_sort
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/topological_sort"
 
-type (
-	Edge = internal.Edge
-)
+// Edge is a directed dependency: Source depends on Target.
+type Edge = internal.Edge
 
-var (
-	Sort = internal.Sort
-)
+// Sort runs Kahn's algorithm on edges and returns a map from node name
+// to its height in the dependency DAG. Returns an error if a cycle is
+// detected.
+var Sort = internal.Sort

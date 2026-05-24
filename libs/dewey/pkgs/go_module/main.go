@@ -4,7 +4,11 @@ package go_module
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/go_module"
 
-var (
-	ReadModulePath    = internal.ReadModulePath
-	ResolveModulePath = internal.ResolveModulePath
-)
+// ReadModulePath parses the `module <path>` directive from the file at
+// goModPath and returns the path value.
+var ReadModulePath = internal.ReadModulePath
+
+// ResolveModulePath returns explicit when non-empty, otherwise reads the
+// module path from go.mod in dir. Errors when dir contains no go.mod and
+// no explicit override was provided.
+var ResolveModulePath = internal.ResolveModulePath

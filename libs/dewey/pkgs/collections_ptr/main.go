@@ -3,17 +3,15 @@
 package collections_ptr
 
 import (
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/collections_ptr"
-	"iter"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type (
-	Flag[VALUE interfaces.Value, VALUE_PTR interfaces.ValuePtr[VALUE]] = internal.Flag[VALUE, VALUE_PTR]
-	MutableSet[T any, TPtr interfaces.Ptr[T]]                          = internal.MutableSet[T, TPtr]
-	Set[T any, TPtr interfaces.Ptr[T]]                                 = internal.Set[T, TPtr]
-	SetterPolicy                                                       = internal.SetterPolicy
-)
+// TODO-P2 add Resetter2 and Pool
+type Flag[VALUE interfaces.Value, VALUE_PTR interfaces.ValuePtr[VALUE]] = internal.Flag[VALUE, VALUE_PTR]
+type MutableSet[T any, TPtr interfaces.Ptr[T]] = internal.MutableSet[T, TPtr]
+type Set[T any, TPtr interfaces.Ptr[T]] = internal.Set[T, TPtr]
+type SetterPolicy = internal.SetterPolicy
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -24,9 +22,13 @@ func MakeFlagCommas[VALUE interfaces.Value, VALUE_PTR interfaces.ValuePtr[VALUE]
 func MakeMutableSet[ELEMENT any, ELEMENT_PTR interfaces.Ptr[ELEMENT]](keyer interfaces.StringKeyerPtr[ELEMENT, ELEMENT_PTR], es ...ELEMENT_PTR) (s internal.MutableSet[ELEMENT, ELEMENT_PTR]) {
 	return internal.MakeMutableSet[ELEMENT, ELEMENT_PTR](keyer, es...)
 }
+
+// constructs a mutable set of values using the given pointers
 func MakeMutableValueSet[ELEMENT interfaces.Stringer, ELEMENT_PTR interfaces.StringerPtr[ELEMENT]](keyer interfaces.StringKeyerPtr[ELEMENT, ELEMENT_PTR], es ...ELEMENT_PTR) (s internal.MutableSet[ELEMENT, ELEMENT_PTR]) {
 	return internal.MakeMutableValueSet[ELEMENT, ELEMENT_PTR](keyer, es...)
 }
+
+// constructs a mutable set of values using the given pointers
 func MakeMutableValueSetValue[ELEMENT interfaces.Stringer, ELEMENT_PTR interfaces.StringerPtr[ELEMENT]](keyer interfaces.StringKeyerPtr[ELEMENT, ELEMENT_PTR], es ...ELEMENT) (s internal.MutableSet[ELEMENT, ELEMENT_PTR]) {
 	return internal.MakeMutableValueSetValue[ELEMENT, ELEMENT_PTR](keyer, es...)
 }
@@ -39,7 +41,7 @@ func MakeSetValue[ELEMENT any, ELEMENT_PTR interfaces.Ptr[ELEMENT]](keyer interf
 func MakeValueSet[ELEMENT interfaces.Stringer, ELEMENT_PTR interfaces.StringerPtr[ELEMENT]](keyer interfaces.StringKeyerPtr[ELEMENT, ELEMENT_PTR], es ...ELEMENT_PTR) (s internal.Set[ELEMENT, ELEMENT_PTR]) {
 	return internal.MakeValueSet[ELEMENT, ELEMENT_PTR](keyer, es...)
 }
-func MakeValueSetSeq[ELEMENT interfaces.Stringer, ELEMENT_PTR interfaces.StringerPtr[ELEMENT]](keyer interfaces.StringKeyerPtr[ELEMENT, ELEMENT_PTR], seq iter.Seq[ELEMENT_PTR], count int) (set internal.Set[ELEMENT, ELEMENT_PTR]) {
+func MakeValueSetSeq[ELEMENT interfaces.Stringer, ELEMENT_PTR interfaces.StringerPtr[ELEMENT]](keyer interfaces.StringKeyerPtr[ELEMENT, ELEMENT_PTR], seq interfaces.Seq[ELEMENT_PTR], count int) (set internal.Set[ELEMENT, ELEMENT_PTR]) {
 	return internal.MakeValueSetSeq[ELEMENT, ELEMENT_PTR](keyer, seq, count)
 }
 func MakeValueSetString[ELEMENT interfaces.Stringer, ELEMENT_PTR interfaces.StringSetterPtr[ELEMENT]](keyer interfaces.StringKeyerPtr[ELEMENT, ELEMENT_PTR], es ...string) (s internal.Set[ELEMENT, ELEMENT_PTR], err error) {
@@ -49,7 +51,5 @@ func MakeValueSetValue[ELEMENT interfaces.Stringer, ELEMENT_PTR interfaces.Strin
 	return internal.MakeValueSetValue[ELEMENT, ELEMENT_PTR](keyer, es...)
 }
 
-const (
-	SetterPolicyAppend = internal.SetterPolicyAppend
-	SetterPolicyReset  = internal.SetterPolicyReset
-)
+const SetterPolicyAppend = internal.SetterPolicyAppend
+const SetterPolicyReset = internal.SetterPolicyReset

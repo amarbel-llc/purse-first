@@ -3,26 +3,25 @@
 package quiter_seq
 
 import (
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/quiter_seq"
-	"iter"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
 // See https://github.com/golang/go/issues/52654
-func Any[ELEMENT any](seq iter.Seq[ELEMENT]) (element ELEMENT) {
+func Any[ELEMENT any](seq interfaces.Seq[ELEMENT]) (element ELEMENT) {
 	return internal.Any[ELEMENT](seq)
 }
-func Seq[ELEMENT any](elements ...ELEMENT) iter.Seq[ELEMENT] {
+func Seq[ELEMENT any](elements ...ELEMENT) interfaces.Seq[ELEMENT] {
 	return internal.Seq[ELEMENT](elements...)
 }
-func SeqErrorToSeqAndPanic[ELEMENT any](seq iter.Seq2[ELEMENT, error]) iter.Seq[ELEMENT] {
+func SeqErrorToSeqAndPanic[ELEMENT any](seq interfaces.SeqError[ELEMENT]) interfaces.Seq[ELEMENT] {
 	return internal.SeqErrorToSeqAndPanic[ELEMENT](seq)
 }
-func SeqWithIndex[ELEMENT any](seq iter.Seq[ELEMENT]) iter.Seq2[int, ELEMENT] {
+func SeqWithIndex[ELEMENT any](seq interfaces.Seq[ELEMENT]) interfaces.Seq2[int, ELEMENT] {
 	return internal.SeqWithIndex[ELEMENT](seq)
 }
-func Strings[ELEMENT interfaces.Stringer](seq iter.Seq[ELEMENT]) iter.Seq[string] {
+func Strings[ELEMENT interfaces.Stringer](seq interfaces.Seq[ELEMENT]) interfaces.Seq[string] {
 	return internal.Strings[ELEMENT](seq)
 }

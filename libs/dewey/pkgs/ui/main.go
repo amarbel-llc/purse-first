@@ -2,62 +2,58 @@
 
 package ui
 
-import (
-	testui "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
-)
+import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
 
-type (
-	DevPrinter         = internal.DevPrinter
-	HumanReadableBytes = internal.HumanReadableBytes
-	Printer            = internal.Printer
-	Priority           = internal.Priority
-	TestCase[BLOB any] = internal.TestCase[BLOB]
-	TestCaseInfo       = internal.TestCaseInfo
-)
+// TODO make utility functions
+type DevPrinter = internal.DevPrinter
+type HumanReadableBytes = internal.HumanReadableBytes
+type Printer = internal.Printer
+type Priority = internal.Priority
+type TestCase[BLOB any] = internal.TestCase[BLOB]
+type TestCaseInfo = internal.TestCaseInfo
 
-var (
-	CLIErrorTreeEncoder        = internal.CLIErrorTreeEncoder
-	Debug                      = internal.Debug
-	DebugAllowCommit           = internal.DebugAllowCommit
-	DebugBatsTestBody          = internal.DebugBatsTestBody
-	Err                        = internal.Err
-	GetHumanBytesString        = internal.GetHumanBytesString
-	GetHumanBytesStringOrError = internal.GetHumanBytesStringOrError
-	IsVerbose                  = internal.IsVerbose
-	Log                        = internal.Log
-	MakePrefixPrinter          = internal.MakePrefixPrinter
-	MakePrinter                = internal.MakePrinter
-	MakePrinterFromWriter      = internal.MakePrinterFromWriter
-	MakePrinterOn              = internal.MakePrinterOn
-	MakeTestCaseInfo           = internal.MakeTestCaseInfo
-	Null                       = internal.Null
-	Out                        = internal.Out
-	SetOutput                  = internal.SetOutput
-	SetTesting                 = internal.SetTesting
-	SetTodoOn                  = internal.SetTodoOn
-	SetVerbose                 = internal.SetVerbose
-	Todo                       = internal.Todo
-	TodoP0                     = internal.TodoP0
-	TodoP1                     = internal.TodoP1
-	TodoP2                     = internal.TodoP2
-	TodoP3                     = internal.TodoP3
-	TodoP4                     = internal.TodoP4
-	TodoP5                     = internal.TodoP5
-)
+var CLIErrorTreeEncoder = internal.CLIErrorTreeEncoder
+var Debug = internal.Debug
+var DebugAllowCommit = internal.DebugAllowCommit
+
+// TODO replace with a dynamic `DebugOnEnv("BATS_TEST_BODY")`
+var DebugBatsTestBody = internal.DebugBatsTestBody
+var Err = internal.Err
+var GetHumanBytesString = internal.GetHumanBytesString
+var GetHumanBytesStringOrError = internal.GetHumanBytesStringOrError
+var IsVerbose = internal.IsVerbose
+var Log = internal.Log
+var MakePrefixPrinter = internal.MakePrefixPrinter
+var MakePrinter = internal.MakePrinter
+var MakePrinterFromWriter = internal.MakePrinterFromWriter
+var MakePrinterOn = internal.MakePrinterOn
+var MakeTestCaseInfo = internal.MakeTestCaseInfo
+var Null = internal.Null
+var Out = internal.Out
+var SetOutput = internal.SetOutput
+var SetTesting = internal.SetTesting
+var SetTodoOn = internal.SetTodoOn
+
+// TODO add compile-time determined verbosity for testing / debugging
+var SetVerbose = internal.SetVerbose
+var Todo = internal.Todo
+var TodoP0 = internal.TodoP0
+var TodoP1 = internal.TodoP1
+var TodoP2 = internal.TodoP2
+var TodoP3 = internal.TodoP3
+var TodoP4 = internal.TodoP4
+var TodoP5 = internal.TodoP5
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
 // See https://github.com/golang/go/issues/52654
-func MakeTestCase[BLOB any](name string, blob BLOB) testui.TestCase[BLOB] {
+func MakeTestCase[BLOB any](name string, blob BLOB) internal.TestCase[BLOB] {
 	return internal.MakeTestCase[BLOB](name, blob)
 }
 
-const (
-	P0 = internal.P0
-	P1 = internal.P1
-	P2 = internal.P2
-	P3 = internal.P3
-	P4 = internal.P4
-	P5 = internal.P5
-)
+const P0 = internal.P0
+const P1 = internal.P1
+const P2 = internal.P2
+const P3 = internal.P3
+const P4 = internal.P4
+const P5 = internal.P5

@@ -3,28 +3,23 @@
 package quiter
 
 import (
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	cmp "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/cmp"
-	errors "github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/quiter"
-	"iter"
+	cmp "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/cmp"
+	errors "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/errors"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type (
-	AsyncSerializer[T any]               = internal.AsyncSerializer[T]
-	AtLeastOnce[T any]                   = internal.AtLeastOnce[T]
-	StringerKeyer[T interfaces.Stringer] = internal.StringerKeyer[T]
-	StringerKeyerPtr[T interfaces.Stringer, TPtr interface {
-		interfaces.Ptr[T]
-		interfaces.Stringer
-	}] = internal.StringerKeyerPtr[T, TPtr]
-)
+type AsyncSerializer[T any] = internal.AsyncSerializer[T]
+type AtLeastOnce[T any] = internal.AtLeastOnce[T]
+type StringerKeyer[T interfaces.Stringer] = internal.StringerKeyer[T]
+type StringerKeyerPtr[T interfaces.Stringer, TPtr interface {
+	interfaces.Ptr[T]
+	interfaces.Stringer
+}] = internal.StringerKeyerPtr[T, TPtr]
 
-var (
-	Len             = internal.Len
-	ReverseSortable = internal.ReverseSortable
-	StringKeyer     = internal.StringKeyer
-)
+var Len = internal.Len
+var ReverseSortable = internal.ReverseSortable
+var StringKeyer = internal.StringKeyer
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -34,23 +29,26 @@ func AddOrReplaceIfGreater[ELEMENT interface {
 }](set interfaces.SetMutable[ELEMENT], newElement ELEMENT, cmp cmp.Func[ELEMENT]) (shouldAdd bool, err error) {
 	return internal.AddOrReplaceIfGreater[ELEMENT](set, newElement, cmp)
 }
+
+// Constructs an object of type `ELEMENT` by using its `Set` method and adds it to
+// the given `adder`
 func AddString[ELEMENT any, ELEMENT_PTR interfaces.SetterPtr[ELEMENT]](adder interfaces.Adder[ELEMENT], value string) (err error) {
 	return internal.AddString[ELEMENT, ELEMENT_PTR](adder, value)
 }
 func AppendSeq[ELEMENT any, APPENDER interface {
 	Append(...ELEMENT)
-}](collection APPENDER, seq iter.Seq[ELEMENT]) {
+}](collection APPENDER, seq interfaces.Seq[ELEMENT]) {
 	internal.AppendSeq[ELEMENT, APPENDER](collection, seq)
 }
 func AppendSeq2[INDEX any, ELEMENT any, APPENDER interface {
 	Append(...ELEMENT)
-}](collection APPENDER, seq iter.Seq2[INDEX, ELEMENT]) {
+}](collection APPENDER, seq interfaces.Seq2[INDEX, ELEMENT]) {
 	internal.AppendSeq2[INDEX, ELEMENT, APPENDER](collection, seq)
 }
 func Chain[T any](e T, wfs ...interfaces.FuncIter[T]) (err error) {
 	return internal.Chain[T](e, wfs...)
 }
-func CollectError[ELEMENT any](seq iter.Seq2[ELEMENT, error]) ([]ELEMENT, error) {
+func CollectError[ELEMENT any](seq interfaces.SeqError[ELEMENT]) ([]ELEMENT, error) {
 	return internal.CollectError[ELEMENT](seq)
 }
 func CollectSlice[ELEMENT any](collection interfaces.Collection[ELEMENT]) (slice []ELEMENT) {
@@ -74,28 +72,34 @@ func MakeChain[T any](wfs ...interfaces.FuncIter[T]) interfaces.FuncIter[T] {
 func MakeChainDebug[T any](wfs ...interfaces.FuncIter[T]) interfaces.FuncIter[T] {
 	return internal.MakeChainDebug[T](wfs...)
 }
+
+// returns a function that executes `AddString` for the given `adder`
 func MakeFuncAddString[ELEMENT any, ELEMENT_PTR interfaces.SetterPtr[ELEMENT]](adder interfaces.Adder[ELEMENT]) interfaces.FuncSetString {
 	return internal.MakeFuncAddString[ELEMENT, ELEMENT_PTR](adder)
 }
 func MakeIterDebug[T any](f interfaces.FuncIter[T]) interfaces.FuncIter[T] {
 	return internal.MakeIterDebug[T](f)
 }
-func MakeSeqErrorEmpty[ELEMENT any]() iter.Seq2[ELEMENT, error] {
+func MakeSeqErrorEmpty[ELEMENT any]() interfaces.SeqError[ELEMENT] {
 	return internal.MakeSeqErrorEmpty[ELEMENT]()
 }
-func MakeSeqErrorFromSeq[ELEMENT any](iter iter.Seq[ELEMENT]) iter.Seq2[ELEMENT, error] {
+func MakeSeqErrorFromSeq[ELEMENT any](iter interfaces.Seq[ELEMENT]) interfaces.SeqError[ELEMENT] {
 	return internal.MakeSeqErrorFromSeq[ELEMENT](iter)
 }
-func MakeSeqErrorWithError[ELEMENT any](err error) iter.Seq2[ELEMENT, error] {
+func MakeSeqErrorWithError[ELEMENT any](err error) interfaces.SeqError[ELEMENT] {
 	return internal.MakeSeqErrorWithError[ELEMENT](err)
 }
 func MakeSyncSerializer[ELEMENT any](funk interfaces.FuncIter[ELEMENT]) interfaces.FuncIter[ELEMENT] {
 	return internal.MakeSyncSerializer[ELEMENT](funk)
 }
-func MergeSeqErrorLeft[ELEMENT any, ELEMENT_PTR interfaces.Ptr[ELEMENT]](seqLeft iter.Seq2[ELEMENT_PTR, error], seqRight iter.Seq2[ELEMENT_PTR, error], funcCmp func(ELEMENT_PTR, ELEMENT_PTR) cmp.Result) iter.Seq2[ELEMENT_PTR, error] {
+
+// merges the two sorted sequences into a single output sequence. when `funcCmp`
+// yields cmp.Equal for two elements, the left element is yielded to the output
+// sequence.
+func MergeSeqErrorLeft[ELEMENT any, ELEMENT_PTR interfaces.Ptr[ELEMENT]](seqLeft interfaces.SeqError[ELEMENT_PTR], seqRight interfaces.SeqError[ELEMENT_PTR], funcCmp func(ELEMENT_PTR, ELEMENT_PTR) cmp.Result) interfaces.SeqError[ELEMENT_PTR] {
 	return internal.MergeSeqErrorLeft[ELEMENT, ELEMENT_PTR](seqLeft, seqRight, funcCmp)
 }
-func MergeStreamPreferringLeft[ELEMENT any, ELEMENT_PTR interfaces.Ptr[ELEMENT]](pullLeft func() (ELEMENT_PTR, error, bool), pullRight func() (ELEMENT_PTR, error, bool), funcCmp func(ELEMENT_PTR, ELEMENT_PTR) cmp.Result) iter.Seq2[ELEMENT_PTR, error] {
+func MergeStreamPreferringLeft[ELEMENT any, ELEMENT_PTR interfaces.Ptr[ELEMENT]](pullLeft interfaces.Pull2[ELEMENT_PTR, error], pullRight interfaces.Pull2[ELEMENT_PTR, error], funcCmp func(ELEMENT_PTR, ELEMENT_PTR) cmp.Result) interfaces.SeqError[ELEMENT_PTR] {
 	return internal.MergeStreamPreferringLeft[ELEMENT, ELEMENT_PTR](pullLeft, pullRight, funcCmp)
 }
 func Multiplex[T any](e interfaces.FuncIter[T], producers ...func(interfaces.FuncIter[T]) error) (err error) {
@@ -104,24 +108,28 @@ func Multiplex[T any](e interfaces.FuncIter[T], producers ...func(interfaces.Fun
 func PrintPointer[T any, TPtr interfaces.Ptr[T]](e TPtr) (err error) {
 	return internal.PrintPointer[T, TPtr](e)
 }
-func Pull[ELEMENT any](seq iter.Seq[ELEMENT]) (func() (ELEMENT, bool), func()) {
+func Pull[ELEMENT any](seq interfaces.Seq[ELEMENT]) (func() (ELEMENT, bool), func()) {
 	return internal.Pull[ELEMENT](seq)
 }
-func Pull2[ELEMENT_ONE any, ELEMENT_TWO any](seq iter.Seq2[ELEMENT_ONE, ELEMENT_TWO]) (func() (ELEMENT_ONE, ELEMENT_TWO, bool), func()) {
+func Pull2[ELEMENT_ONE any, ELEMENT_TWO any](seq interfaces.Seq2[ELEMENT_ONE, ELEMENT_TWO]) (func() (ELEMENT_ONE, ELEMENT_TWO, bool), func()) {
 	return internal.Pull2[ELEMENT_ONE, ELEMENT_TWO](seq)
 }
-func PullError[ELEMENT any](seq iter.Seq2[ELEMENT, error]) (func() (ELEMENT, error, bool), func()) {
+func PullError[ELEMENT any](seq interfaces.SeqError[ELEMENT]) (func() (ELEMENT, error, bool), func()) {
 	return internal.PullError[ELEMENT](seq)
 }
-func PullErrorWithoutOk[ELEMENT any, ELEMENT_PTR interfaces.Ptr[ELEMENT]](seq iter.Seq2[ELEMENT_PTR, error]) (func() (ELEMENT_PTR, error), func()) {
+func PullErrorWithoutOk[ELEMENT any, ELEMENT_PTR interfaces.Ptr[ELEMENT]](seq interfaces.SeqError[ELEMENT_PTR]) (func() (ELEMENT_PTR, error), func()) {
 	return internal.PullErrorWithoutOk[ELEMENT, ELEMENT_PTR](seq)
 }
 func SortedStrings[ELEMENT interfaces.Stringer](collections ...interfaces.Collection[ELEMENT]) (out []string) {
 	return internal.SortedStrings[ELEMENT](collections...)
 }
-func SortedValues[ELEMENT interfaces.Value](seq iter.Seq[ELEMENT]) []ELEMENT {
+
+// Deprecated: use collections_slice.SortedValues
+func SortedValues[ELEMENT interfaces.Value](seq interfaces.Seq[ELEMENT]) []ELEMENT {
 	return internal.SortedValues[ELEMENT](seq)
 }
+
+// Deprecated: use collections_slice.SortedValuesBy
 func SortedValuesBy[ELEMENT any](set interfaces.Collection[ELEMENT], cmp cmp.Func[ELEMENT]) []ELEMENT {
 	return internal.SortedValuesBy[ELEMENT](set, cmp)
 }
@@ -131,6 +139,6 @@ func StringCommaSeparated[ELEMENT interfaces.Stringer](collections ...interfaces
 func StringDelimiterSeparated[ELEMENT interfaces.Stringer](delimiter string, collections ...interfaces.Collection[ELEMENT]) string {
 	return internal.StringDelimiterSeparated[ELEMENT](delimiter, collections...)
 }
-func Strings[ELEMENT interfaces.Stringer](collections iter.Seq[interfaces.Collection[ELEMENT]]) iter.Seq[string] {
+func Strings[ELEMENT interfaces.Stringer](collections interfaces.Seq[interfaces.Collection[ELEMENT]]) interfaces.Seq[string] {
 	return internal.Strings[ELEMENT](collections)
 }

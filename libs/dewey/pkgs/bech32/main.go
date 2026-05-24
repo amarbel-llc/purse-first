@@ -4,7 +4,9 @@ package bech32
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/bech32"
 
-var (
-	Decode = internal.Decode
-	Encode = internal.Encode
-)
+// Decode decodes a Bech32 string. If the string is uppercase, the HRP will be uppercase.
+var Decode = internal.Decode
+
+// Encode encodes the HRP and a bytes slice to Bech32. If the HRP is uppercase,
+// the output will be uppercase.
+var Encode = internal.Encode

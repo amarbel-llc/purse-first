@@ -3,29 +3,26 @@
 package collections_slice
 
 import (
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	cmp "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/cmp"
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/collections_slice"
-	"iter"
+	cmp "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/cmp"
+	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type (
-	Byte               = internal.Byte
-	Rune               = internal.Rune
-	Slice[ELEMENT any] = internal.Slice[ELEMENT]
-	String             = internal.String
-)
+type Byte = internal.Byte
+type Rune = internal.Rune
+type Slice[ELEMENT any] = internal.Slice[ELEMENT]
+type String = internal.String
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
 // See https://github.com/golang/go/issues/52654
-func Collect[ELEMENT any](seq iter.Seq[ELEMENT]) internal.Slice[ELEMENT] {
+func Collect[ELEMENT any](seq interfaces.Seq[ELEMENT]) internal.Slice[ELEMENT] {
 	return internal.Collect[ELEMENT](seq)
 }
 func Make[ELEMENT any](elements ...ELEMENT) internal.Slice[ELEMENT] {
 	return internal.Make[ELEMENT](elements...)
 }
-func MakeFromSeq[ELEMENT any](count int, seq iter.Seq[ELEMENT]) internal.Slice[ELEMENT] {
+func MakeFromSeq[ELEMENT any](count int, seq interfaces.Seq[ELEMENT]) internal.Slice[ELEMENT] {
 	return internal.MakeFromSeq[ELEMENT](count, seq)
 }
 func MakeFromSlice[ELEMENT any](elements ...ELEMENT) internal.Slice[ELEMENT] {
@@ -37,7 +34,7 @@ func MakeWithCap[ELEMENT any](capacity int) internal.Slice[ELEMENT] {
 func MakeWithLen[ELEMENT any](length int) internal.Slice[ELEMENT] {
 	return internal.MakeWithLen[ELEMENT](length)
 }
-func SortedValues[ELEMENT interfaces.Value](seq iter.Seq[ELEMENT]) []ELEMENT {
+func SortedValues[ELEMENT interfaces.Value](seq interfaces.Seq[ELEMENT]) []ELEMENT {
 	return internal.SortedValues[ELEMENT](seq)
 }
 func SortedValuesBy[ELEMENT any](collection interfaces.Collection[ELEMENT], cmpFunc cmp.Func[ELEMENT]) []ELEMENT {
