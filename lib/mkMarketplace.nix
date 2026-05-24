@@ -18,11 +18,11 @@
   # function: system → list of plugin derivations
   plugins,
 
-  # Optional — how to obtain the purse-first CLI.
-  # When purse-first builds itself, it passes its own source + build config.
-  # Downstream consumers pass the purse-first package from the flake input.
-  purse-first-cli ? null,
-  purse-first-build ? null,
+  # Required — how to obtain the purse-first CLI. Pass a flake-shaped value
+  # (typically `inputs.purse-first` for downstream consumers, or `self` for
+  # purse-first's own marketplace). The CLI is read from
+  # `purse-first-cli.packages.${system}.purse-first`.
+  purse-first-cli,
 
   # Optional — metadata
   description ? "${name} — Claude plugin marketplace",
@@ -51,40 +51,8 @@ utils.lib.eachDefaultSystem (
       config.allowUnfree = true;
     };
 
-    # Resolve the purse-first CLI package.
-    # Self-build: purse-first-build is an attrset with goWorkspaceSrc, goOverlays, version.
-    # Downstream: purse-first-cli is a package from the flake input.
-    cli =
-      if purse-first-cli != null then
-        purse-first-cli.packages.${system}.purse-first
-      else if purse-first-build != null then
-        let
-          # Apply caller-provided overlays (e.g. gomod2nix) when building Go pkgs.
-          goPkgs = import nixpkgs {
-            inherit system;
-            overlays = purse-first-build.goOverlays or [ ];
-          };
-          mkGoModule = import ./mkGoWorkspaceModule.nix {
-            pkgs = goPkgs;
-            go = pkgs-master.go_1_26;
-            inherit (purse-first-build) goWorkspaceSrc;
-          };
-        in
-        mkGoModule {
-          pname = "purse-first";
-          version = purse-first-build.version or "0.0.0";
-          subPackages = [ "cmd/purse-first" ];
-          ldflags = [
-            "-s"
-            "-w"
-          ];
-          meta = with pkgs.lib; {
-            description = "MCP-first tool routing for Claude Code";
-            license = licenses.mit;
-          };
-        }
-      else
-        throw "mkMarketplace: must provide either purse-first-cli or purse-first-build";
+    # Resolve the purse-first CLI from the caller-supplied flake-shaped value.
+    cli = purse-first-cli.packages.${system}.purse-first;
 
     # Resolve plugin packages for this system.
     pluginPkgs = plugins system;
@@ -184,11 +152,7 @@ utils.lib.eachDefaultSystem (
   {
     packages = {
       default = marketplace;
-      inherit marketplace-no-hooks;
-    }
-    // {
-      purse-first = cli;
-      marketplace = marketplace;
+      inherit marketplace marketplace-no-hooks;
     };
 
     apps.default = {
