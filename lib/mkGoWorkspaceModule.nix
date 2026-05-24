@@ -5,11 +5,16 @@
 # checked-in `gomod2nix.toml` lockfile at the workspace root.
 #
 # `pkgs` MUST have the gomod2nix overlay applied so that `pkgs.buildGoApplication`
-# is available. mkMarketplace handles this for the self-build path.
+# is available. `gomod.nix` handles this for the self-build path.
+#
+# `goWorkspaceSrc` is the workspace source derivation — by convention the
+# RFC 0001 `go-pkgs-test` output from `pkgs.mkGoPkgs`, so each binary's
+# `checkPhase` exercises the same artifact downstream consumers receive.
 #
 # Usage:
 #   mkGoModule = import ./lib/mkGoWorkspaceModule.nix {
-#     inherit pkgs goWorkspaceSrc;
+#     inherit pkgs;
+#     goWorkspaceSrc = (pkgs.mkGoPkgs { src = self; }).go-pkgs-test;
 #   };
 #   purseFirstPkg = mkGoModule {
 #     pname = "purse-first";

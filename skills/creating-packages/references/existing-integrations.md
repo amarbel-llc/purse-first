@@ -1,8 +1,10 @@
-# Existing Purse-First Packages
+# Reference Package Patterns
 
 > **Self-contained examples.** All code and configuration below is complete and illustrative. Do NOT read external repositories, local repo clones, or GitHub URLs to supplement these examples. Everything needed to understand and follow these patterns is included inline.
 
-Side-by-side comparison of all MCP packages currently in purse-first. Use them as pattern references when building your own package.
+> **Note.** `grit` and `get-hubbed` are no longer in this repo — they ship as moxins in the `moxy` repo. `lux` remains here but is dormant. The patterns below are retained as illustrative shapes for building Go and Rust MCP packages against the purse-first framework; do not expect to find these as live derivations in this flake.
+
+Side-by-side patterns for MCP packages. Use them as references when building your own.
 
 ## Summary Table
 
@@ -54,32 +56,26 @@ Key design: `GenerateAll` writes plugin.json, mappings.json, hooks/hooks.json, a
 
 ### flake.nix (workspace build)
 
-```nix
-# Workspace build: uses the full Go monorepo source with `go work vendor`.
-{ pkgs, goWorkspaceSrc, goVendorHash }:
+Each Go binary becomes an attribute of `gomod.nix`'s `packages` set, built via
+the `mkGoModule` factory (a thin wrapper over `pkgs.buildGoApplication` from
+the gomod2nix overlay):
 
-pkgs.buildGoModule {
+```nix
+# in gomod.nix's packages attrset
+grit = mkGoModule {
   pname = "grit";
   version = "0.1.0";
-  src = goWorkspaceSrc;
-  vendorHash = goVendorHash;
-  GOWORK = "";
-  overrideModAttrs = _: _: {
-    GOWORK = "";
-    buildPhase = ''
-      runHook preBuild
-      go work vendor -e
-      runHook postBuild
-    '';
-  };
   subPackages = [ "packages/grit/cmd/grit" ];
   postInstall = ''
     $out/bin/grit generate-plugin $out
   '';
-}
+};
 ```
 
-All Go packages share the same `goWorkspaceSrc` and `goVendorHash`. The vendor hash only covers external dependencies — local code changes never invalidate it.
+`mkGoModule` pins `src`, `pwd`, and `modules` to the workspace's RFC 0001
+`go-pkgs-test` source and the shared `gomod2nix.toml` lockfile at the workspace
+root. The lockfile pins external module versions — local code changes never
+invalidate it; only `go.mod` / `go.sum` / `go.work` changes do.
 
 ---
 
@@ -98,30 +94,17 @@ All Go packages share the same `goWorkspaceSrc` and `goVendorHash`. The vendor h
 
 ### flake.nix (workspace build)
 
-Same workspace pattern as grit:
+Same `mkGoModule` pattern as grit:
 
 ```nix
-{ pkgs, goWorkspaceSrc, goVendorHash }:
-
-pkgs.buildGoModule {
+get-hubbed-unwrapped = mkGoModule {
   pname = "get-hubbed";
   version = "0.1.0";
-  src = goWorkspaceSrc;
-  vendorHash = goVendorHash;
-  GOWORK = "";
-  overrideModAttrs = _: _: {
-    GOWORK = "";
-    buildPhase = ''
-      runHook preBuild
-      go work vendor -e
-      runHook postBuild
-    '';
-  };
   subPackages = [ "packages/get-hubbed/cmd/get-hubbed" ];
   postInstall = ''
     $out/bin/get-hubbed generate-plugin $out
   '';
-}
+};
 ```
 
 ### flake.nix (in purse-first -- wrapping)
@@ -180,33 +163,22 @@ app.AddCommand(&command.Command{
 ### flake.nix (workspace build)
 
 ```nix
-{ pkgs, goWorkspaceSrc, goVendorHash }:
-
-pkgs.buildGoModule {
+lux = mkGoModule {
   pname = "lux";
   version = "0.1.0";
-  src = goWorkspaceSrc;
-  vendorHash = goVendorHash;
-  GOWORK = "";
-  overrideModAttrs = _: _: {
-    GOWORK = "";
-    buildPhase = ''
-      runHook preBuild
-      go work vendor -e
-      runHook postBuild
-    '';
-  };
   subPackages = [ "packages/lux/cmd/lux" ];
   nativeBuildInputs = [ pkgs.scdoc ];
   postInstall = ''
     $out/bin/lux _generate $out
     mkdir -p $out/share/man/man5
-    scdoc < ${goWorkspaceSrc}/packages/lux/doc/lux-config.5.scd > $out/share/man/man5/lux-config.5
+    scdoc < $src/packages/lux/doc/lux-config.5.scd > $out/share/man/man5/lux-config.5
   '';
-}
+};
 ```
 
 Shows coexistence with other postInstall tasks (man page generation via scdoc).
+`$src` resolves to the workspace source `mkGoModule` already passed to
+`buildGoApplication` — no need to re-reference the source binding by name.
 
 ---
 
@@ -322,7 +294,7 @@ The `symlinkJoin` merges all `share/purse-first/<name>/` directories (including 
 
 ## Common Gotchas
 
-1. **Workspace vendor hash**: All Go packages in the monorepo share a single `goVendorHash`. It only covers external dependencies — local code changes never invalidate it. Only update when adding/changing external Go dependencies.
+1. **Workspace lockfile**: All Go packages in the monorepo share a single `gomod2nix.toml` lockfile at the workspace root. It pins external module versions — local code changes never invalidate it. Run `just deps` (alias for `just build-nix-gomod2nix`) after adding/changing external Go dependencies; CI fails on lockfile drift.
 
 2. **Share directory propagation**: When wrapping a binary with `makeWrapper`, the original `share/` directory is NOT automatically included. Copy or symlink it explicitly — this includes hooks/ and skills/, not just plugin.json.
 
