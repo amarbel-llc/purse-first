@@ -10,7 +10,6 @@
       # Fork: adds go.work support and a build cache fix for large projects.
       # Upstream PR: https://github.com/nix-community/gomod2nix (no go.work tracking issue yet).
       url = "github:amarbel-llc/gomod2nix";
-      inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.flake-utils.follows = "utils";
     };
