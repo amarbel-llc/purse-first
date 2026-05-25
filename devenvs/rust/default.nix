@@ -12,7 +12,7 @@
 }:
 let
   pkgs-rust = import pkgs-master.path {
-    inherit (pkgs) system;
+    inherit (pkgs.stdenv.hostPlatform) system;
     overlays = [
       rust-overlay.overlays.default
       (final: prev: {
