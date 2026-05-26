@@ -37,11 +37,11 @@ type pluginHookMatcher struct {
 
 // pluginManifest is the full plugin.json structure.
 type pluginManifest struct {
-	Name        string                        `json:"name"`
-	Description string                        `json:"description,omitempty"`
-	Author      *pluginAuthor                 `json:"author,omitempty"`
-	McpServers  map[string]pluginMcpServer    `json:"mcpServers,omitempty"`
-	Skills      []string                      `json:"skills,omitempty"`
+	Name        string                         `json:"name"`
+	Description string                         `json:"description,omitempty"`
+	Author      *pluginAuthor                  `json:"author,omitempty"`
+	McpServers  map[string]pluginMcpServer     `json:"mcpServers,omitempty"`
+	Skills      []string                       `json:"skills,omitempty"`
 	Hooks       map[string][]pluginHookMatcher `json:"hooks,omitempty"`
 }
 

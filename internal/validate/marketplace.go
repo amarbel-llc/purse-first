@@ -13,12 +13,12 @@ var knownSources = map[string]bool{
 }
 
 type marketplaceDoc struct {
-	Name    string `json:"name"`
-	Owner   struct {
+	Name  string `json:"name"`
+	Owner struct {
 		Name string `json:"name"`
 	} `json:"owner"`
 	Plugins []struct {
-		Name   string `json:"name"`
+		Name   string          `json:"name"`
 		Source json.RawMessage `json:"source"`
 	} `json:"plugins"`
 }

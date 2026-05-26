@@ -97,7 +97,8 @@ func (exporter *Exporter) FormatOutput() error {
 		}
 	}
 
-	fmt.Fprintf(os.Stderr,
+	fmt.Fprintf(
+		os.Stderr,
 		"warning: treefmt config %s found at %s, but neither `treefmt` nor `nix fmt` is available; skipping format pass\n",
 		configName, configDir,
 	)

@@ -154,4 +154,3 @@ func prependGeneratedHeader(src []byte) []byte {
 	out.Write(src)
 	return out.Bytes()
 }
-

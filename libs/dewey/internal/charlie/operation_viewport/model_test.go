@@ -21,7 +21,8 @@ func drive(m Model, msgs ...tea.Msg) Model {
 
 func TestModel_TailRingTruncates(t *testing.T) {
 	m := NewModel(WithTitle("t"), WithLines(3))
-	m = drive(m,
+	m = drive(
+		m,
 		LogLine{Text: "a"},
 		LogLine{Text: "b"},
 		LogLine{Text: "c"},
@@ -41,7 +42,8 @@ func TestModel_TailRingTruncates(t *testing.T) {
 
 func TestModel_OperationStartedResetsTail(t *testing.T) {
 	m := NewModel()
-	m = drive(m,
+	m = drive(
+		m,
 		LogLine{Text: "prev1"},
 		LogLine{Text: "prev2"},
 		OperationStarted{Name: "next", Index: 2, Total: 5},

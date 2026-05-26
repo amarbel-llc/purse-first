@@ -168,4 +168,3 @@ func (m *GitMover) computeRequiredLevel(
 
 	return mapper.LevelName(height)
 }
-

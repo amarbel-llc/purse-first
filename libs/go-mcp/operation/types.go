@@ -12,7 +12,7 @@ const (
 type Annotation int
 
 const (
-	Idempotent  Annotation = 1 << iota
+	Idempotent Annotation = 1 << iota
 	Destructive
 	Recoverable
 	ReadOnly

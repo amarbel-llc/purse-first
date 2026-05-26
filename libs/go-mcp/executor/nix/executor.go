@@ -86,7 +86,7 @@ func findExecutable(storePath string) (string, error) {
 		if os.IsNotExist(err) {
 			// No bin/ directory - check if the store path itself is executable
 			info, statErr := os.Stat(storePath)
-			if statErr == nil && info.Mode()&0111 != 0 {
+			if statErr == nil && info.Mode()&0o111 != 0 {
 				return storePath, nil
 			}
 			return "", fmt.Errorf("no bin directory and store path not executable: %s", storePath)
@@ -104,7 +104,7 @@ func findExecutable(storePath string) (string, error) {
 		if err != nil {
 			continue
 		}
-		if info.Mode()&0111 != 0 {
+		if info.Mode()&0o111 != 0 {
 			return binPath, nil
 		}
 	}

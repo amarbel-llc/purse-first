@@ -394,7 +394,7 @@ func (exporter *Exporter) exportTaggedFacades(
 				negated:     true,
 				positiveKey: positiveKey,
 				pkg:         pkg,
-				names:        exportedNames(pkg.Types),
+				names:       exportedNames(pkg.Types),
 			})
 		} else {
 			pkg, err := exporter.loadPackageWithTag(importPath, flags)
@@ -406,7 +406,7 @@ func (exporter *Exporter) exportTaggedFacades(
 				negated:     false,
 				positiveKey: flags,
 				pkg:         pkg,
-				names:        exportedNames(pkg.Types),
+				names:       exportedNames(pkg.Types),
 			})
 		}
 	}
@@ -455,8 +455,8 @@ func (exporter *Exporter) exportTaggedFacades(
 		// Symbols for negated exprs come from basePkg (present without positive tags).
 		// Symbols for positive exprs come from the tagged load (already cached in load.pkg).
 		var (
-			scope    *types.Scope
-			tagDocs  map[string]*ast.CommentGroup
+			scope   *types.Scope
+			tagDocs map[string]*ast.CommentGroup
 		)
 		if load.negated {
 			scope = basePkg.Types.Scope()

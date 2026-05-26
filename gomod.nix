@@ -29,10 +29,7 @@ let
   # one version.env per independently-tagged library (currently just
   # libs/dewey; go-mcp + rust-mcp migration tracked separately).
   readVersion =
-    path: varName:
-    builtins.head (
-      builtins.match ".*${varName}=([^\n]+).*" (builtins.readFile path)
-    );
+    path: varName: builtins.head (builtins.match ".*${varName}=([^\n]+).*" (builtins.readFile path));
 
   purseFirstVersion = readVersion ./version.env "PURSE_FIRST_VERSION";
   deweyVersion = readVersion ./libs/dewey/version.env "DEWEY_VERSION";

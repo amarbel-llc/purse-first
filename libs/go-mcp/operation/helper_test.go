@@ -40,7 +40,8 @@ func TestDiagHelperReportsCallSiteLine(t *testing.T) {
 
 	var expectedLine int
 	root.Run("step", func(ctx Context) error {
-		_, _, expectedLine, _ = runtime.Caller(0); helperThatFails(ctx)
+		_, _, expectedLine, _ = runtime.Caller(0)
+		helperThatFails(ctx)
 		return nil
 	})
 
@@ -70,7 +71,8 @@ func TestDiagHelperWithoutMarkerReportsInsideFunction(t *testing.T) {
 
 	var controlFailLine int
 	root.Run("step", func(ctx Context) error {
-		_, _, controlFailLine, _ = runtime.Caller(0); ctx.ControlFail("direct call")
+		_, _, controlFailLine, _ = runtime.Caller(0)
+		ctx.ControlFail("direct call")
 		return nil
 	})
 
@@ -107,7 +109,8 @@ func TestDiagHelperSkipsNestedHelpers(t *testing.T) {
 
 	var expectedLine int
 	root.Run("step", func(ctx Context) error {
-		_, _, expectedLine, _ = runtime.Caller(0); nestedOuterHelper(ctx)
+		_, _, expectedLine, _ = runtime.Caller(0)
+		nestedOuterHelper(ctx)
 		return nil
 	})
 
@@ -162,7 +165,8 @@ func TestDiagHelperRegisteredInChildWorksInChild(t *testing.T) {
 	var expectedLine int
 	root.Run("parent", func(pctx Context) error {
 		pctx.Run("child", func(cctx Context) error {
-			_, _, expectedLine, _ = runtime.Caller(0); helperFunc(cctx)
+			_, _, expectedLine, _ = runtime.Caller(0)
+			helperFunc(cctx)
 			return nil
 		})
 		return nil

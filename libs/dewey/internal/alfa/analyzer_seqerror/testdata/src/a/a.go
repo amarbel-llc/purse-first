@@ -9,13 +9,13 @@ func makeSeq() iter.Seq2[string, error] {
 // --- Rule 1: blank error variable ---
 
 func blankError() {
-	for x, _ := range makeSeq() { // want "error from iter.Seq2 range is discarded"
+	for x := range makeSeq() { // want "error from iter.Seq2 range is discarded"
 		_ = x
 	}
 }
 
 func blankErrorSuppressed() {
-	for x, _ := range makeSeq() { //seq:err-checked
+	for x := range makeSeq() { //seq:err-checked
 		_ = x
 	}
 }

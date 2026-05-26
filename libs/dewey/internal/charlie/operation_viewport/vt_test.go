@@ -101,7 +101,8 @@ func runProgramWithMessages(t *testing.T, m Model, msgs []tea.Msg, batchErr erro
 
 func TestVT_SuccessTerminalState(t *testing.T) {
 	m := NewModel(WithTitle("loading tent"))
-	raw := runProgramWithMessages(t, m,
+	raw := runProgramWithMessages(
+		t, m,
 		[]tea.Msg{
 			OperationStarted{Name: "loading tent", Index: 1, Total: 1},
 			LogLine{Text: "blob 1"},
@@ -118,7 +119,8 @@ func TestVT_SuccessTerminalState(t *testing.T) {
 
 func TestVT_FailureTerminalState(t *testing.T) {
 	m := NewModel(WithTitle("loading tent"))
-	raw := runProgramWithMessages(t, m,
+	raw := runProgramWithMessages(
+		t, m,
 		[]tea.Msg{
 			OperationStarted{Name: "loading tent", Index: 1, Total: 1},
 			LogLine{Text: "bad data"},

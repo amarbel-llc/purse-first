@@ -42,10 +42,10 @@ func main() {
 	}
 
 	var (
-		pluginsDir    string
-		configPath    string
-		outputPath    string
-		genNoHooks    bool
+		pluginsDir string
+		configPath string
+		outputPath string
+		genNoHooks bool
 	)
 
 	genMarketplaceCmd := &cobra.Command{

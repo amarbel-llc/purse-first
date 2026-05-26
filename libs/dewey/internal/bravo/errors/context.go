@@ -203,7 +203,8 @@ func (ctx *context) cancel(err error) {
 			ctx.retry,
 			func(err error) {
 				ctx.Cancel(errContextRetryAborted{underlying: err})
-			})
+			},
+		)
 	} else {
 		ctx.funcCancel(err)
 	}

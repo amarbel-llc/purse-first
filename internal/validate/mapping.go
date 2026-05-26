@@ -20,7 +20,7 @@ var knownTools = map[string]bool{
 type mappingDoc struct {
 	Server   string `json:"server"`
 	Mappings []struct {
-		Replaces        string `json:"replaces"`
+		Replaces        string   `json:"replaces"`
 		Extensions      []string `json:"extensions,omitempty"`
 		CommandPrefixes []string `json:"command_prefixes,omitempty"`
 		Tools           []struct {

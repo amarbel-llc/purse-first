@@ -5,9 +5,11 @@ import (
 	"runtime"
 )
 
-type failSentinel struct{ diag Diagnostic }
-type skipSentinel struct{ diag Diagnostic }
-type abortSentinel struct{ err error }
+type (
+	failSentinel  struct{ diag Diagnostic }
+	skipSentinel  struct{ diag Diagnostic }
+	abortSentinel struct{ err error }
+)
 
 func (c *ctx) callerInfo(skip int) (string, int) {
 	skip++ // account for callerInfo frame

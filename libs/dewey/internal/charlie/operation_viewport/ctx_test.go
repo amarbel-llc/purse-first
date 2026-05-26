@@ -59,7 +59,6 @@ func TestPropagateCancel_SuccessReturnsNil(t *testing.T) {
 	err := ctx.Run(func(c errors.Context) {
 		propagateCancel(c, Model{}, nil, nil)
 	})
-
 	if err != nil {
 		t.Errorf("expected nil, got %v", err)
 	}

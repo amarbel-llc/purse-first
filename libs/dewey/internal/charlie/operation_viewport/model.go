@@ -131,7 +131,8 @@ func (m Model) View() string {
 	var b bytes.Buffer
 	fmt.Fprintf(&b, "%s %s", m.spinner.View(), m.headerLabel())
 	if m.opTotal > 1 {
-		fmt.Fprintf(&b, "  %s %d/%d",
+		fmt.Fprintf(
+			&b, "  %s %d/%d",
 			m.progress.ViewAs(float64(m.opIndex)/float64(m.opTotal)),
 			m.opIndex, m.opTotal,
 		)

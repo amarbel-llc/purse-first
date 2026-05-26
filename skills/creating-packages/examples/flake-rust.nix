@@ -41,22 +41,21 @@
 
         cargoArtifacts = craneLib.buildDepsOnly commonArgs;
 
-        my-mcp-unwrapped = craneLib.buildPackage (
-          commonArgs // { inherit cargoArtifacts; }
-        );
+        my-mcp-unwrapped = craneLib.buildPackage (commonArgs // { inherit cargoArtifacts; });
 
         # Wrap with runtime dependencies and add plugin manifest
-        my-mcp =
-          pkgs.runCommand "my-mcp"
-            { nativeBuildInputs = [ pkgs.makeWrapper ]; }
-            ''
-              mkdir -p $out/bin
-              makeWrapper ${my-mcp-unwrapped}/bin/my-mcp $out/bin/my-mcp \
-                --prefix PATH : ${pkgs.lib.makeBinPath [ /* runtime deps */ ]}
+        my-mcp = pkgs.runCommand "my-mcp" { nativeBuildInputs = [ pkgs.makeWrapper ]; } ''
+          mkdir -p $out/bin
+          makeWrapper ${my-mcp-unwrapped}/bin/my-mcp $out/bin/my-mcp \
+            --prefix PATH : ${
+              pkgs.lib.makeBinPath [
+                # runtime deps
+              ]
+            }
 
-              mkdir -p $out/share/purse-first/my-mcp
-              cp ${./plugin.json} $out/share/purse-first/my-mcp/plugin.json
-            '';
+          mkdir -p $out/share/purse-first/my-mcp
+          cp ${./plugin.json} $out/share/purse-first/my-mcp/plugin.json
+        '';
       in
       {
         packages = {
