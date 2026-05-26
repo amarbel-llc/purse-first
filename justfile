@@ -124,6 +124,7 @@ build-dewey:
 [group('build')]
 build-nix-gomod2nix:
     {{ cmd_nix_dev }} go work sync
+    {{ cmd_nix_dev }} go work vendor
     {{ cmd_nix_dev }} gomod2nix \
         --target linux/amd64 \
         --target linux/arm64 \
