@@ -10,15 +10,21 @@ Most concrete MCP-server packages (grit, get-hubbed, lux, chix, etc.) have moved
 
 ## Build & Test Commands
 
+The justfile follows eng-design_patterns-justfile(7): bare-verb recipes
+are aggregates (no body, only deps); leaves are verb-noun. `just`
+(default) is the CI gate.
+
 ```sh
-just build              # nix build (marketplace bundle with all packages)
+just                    # default = validate lint build test (CI gate; also runs in merge-this-session)
+just validate           # nix flake check + plugin manifest validation
+just lint               # go vet + lint-dewey-pkgs-drift (drift of dagnabit-generated facades)
+just build              # build-nix-gomod2nix + nix build (marketplace bundle)
 just test               # Run ALL tests (Go + Rust + BATS integration)
-just fmt                # Format code (Go, shell, Nix)
-nix flake check         # Nix-level validation
-just validate           # Validate own .claude-plugin/plugin.json
-just lint               # go vet ./...
+nix fmt                 # Repo-wide treefmt (Go via gofumpt, Nix via nixfmt, shell via shfmt)
+just fmt                # `go fmt ./...` only — for Go-only quick reformat
 just build-nix-gomod2nix # Sync go.work and regenerate gomod2nix.toml
 just deps                # alias for build-nix-gomod2nix
+just lint-dewey-pkgs-drift # rebuild dagnabit, re-export, fail on libs/dewey/pkgs/ drift
 ```
 
 ### Running Individual Tests
