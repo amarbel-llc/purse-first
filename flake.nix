@@ -18,6 +18,12 @@
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # `nix fmt` driver. Config lives in ./treefmt.nix.
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -29,6 +35,7 @@
       gomod2nix,
       crane,
       rust-overlay,
+      treefmt-nix,
     }:
     let
       mkMarketplace = import ./lib/mkMarketplace.nix;
@@ -60,6 +67,14 @@
           rust = import ./devenvs/rust { inherit pkgs pkgs-master rust-overlay; };
         };
 
+      # treefmtEval per system. The formatter wrapper is added to the
+      # default devshell so `treefmt` is on PATH for tools that integrate
+      # with it (notably `dagnabit export`, which invokes treefmt on its
+      # output directory if a config is present).
+      treefmtEvalBySystem = nixpkgs.lib.genAttrs utils.lib.defaultSystems (
+        system: treefmt-nix.lib.evalModule (import nixpkgs { inherit system; }) ./treefmt.nix
+      );
+
       marketplaceOutputs = mkMarketplace {
         inherit nixpkgs nixpkgs-master utils;
         name = "purse-first";
@@ -76,10 +91,13 @@
         skills = ./skills;
         packageToml = ./package.toml;
         pluginConfig = builtins.fromJSON (builtins.readFile ./marketplace-config.json);
-        devShellPackages = _system: pkgs: pkgs-master: [
+        devShellPackages = system: pkgs: pkgs-master: [
           pkgs.gum
           pkgs.openssh
           pkgs-master.claude-code
+          # Treefmt wrapper carrying the configured formatter chain from
+          # ./treefmt.nix. `dagnabit export` looks this binary up on PATH.
+          treefmtEvalBySystem.${system}.config.build.wrapper
         ];
         devShellInputsFrom =
           system:
@@ -109,6 +127,7 @@
         system:
         let
           devenvs = buildDevenvs system;
+          treefmtEval = treefmtEvalBySystem.${system};
         in
         {
           packages = (marketplaceOutputs.packages.${system} or { }) // gomodBySystem.${system}.packages;
@@ -120,6 +139,13 @@
             bats = devenvs.bats.devShells.default;
             rust = devenvs.rust.devShells.default;
           };
+
+          # `nix fmt` entry point.
+          formatter = treefmtEval.config.build.wrapper;
+
+          # Sandboxed treefmt check for `nix flake check`. Runs formatters
+          # over the source tree and exits non-zero on drift.
+          checks.treefmt = treefmtEval.config.build.check self;
         }
       ))
     );
