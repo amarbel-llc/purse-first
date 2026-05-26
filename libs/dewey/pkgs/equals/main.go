@@ -13,9 +13,11 @@ import (
 func Iterable[T any](a interfaces.Iterable[T], b interfaces.Iterable[T]) bool {
 	return internal.Iterable[T](a, b)
 }
+
 func SetIfNotNil[TYPE any](ptr *TYPE, value TYPE) *TYPE {
 	return internal.SetIfNotNil[TYPE](ptr, value)
 }
+
 func SetIfValueNotNil[TYPE any](ptr *TYPE, value *TYPE) *TYPE {
 	return internal.SetIfValueNotNil[TYPE](ptr, value)
 }

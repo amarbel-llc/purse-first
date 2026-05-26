@@ -5,8 +5,12 @@ package ui
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
 
-type T = internal.T
-type TestContext = internal.TestContext
+type (
+	T           = internal.T
+	TestContext = internal.TestContext
+)
 
-var MakeT = internal.MakeT
-var RunTestContext = internal.RunTestContext
+var (
+	MakeT          = internal.MakeT
+	RunTestContext = internal.RunTestContext
+)

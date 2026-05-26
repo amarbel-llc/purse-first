@@ -7,8 +7,10 @@ import (
 	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type Definitions = internal.Definitions
-type ErrInvalidValue = internal.ErrInvalidValue
+type (
+	Definitions     = internal.Definitions
+	ErrInvalidValue = internal.ErrInvalidValue
+)
 
 // ErrorHandling defines how [FlagSet.Parse] behaves if the parse fails.
 type ErrorHandling = internal.ErrorHandling
@@ -22,8 +24,10 @@ type Flag = internal.Flag
 // [Flag] names must be unique within a FlagSet. An attempt to define a flag
 // whose
 // name is already in use will cause a panic.
-type FlagSet = internal.FlagSet
-type FlagWithPolicy = internal.FlagWithPolicy
+type (
+	FlagSet        = internal.FlagSet
+	FlagWithPolicy = internal.FlagWithPolicy
+)
 
 // Getter is an interface that allows the contents of a [Value] to be retrieved.
 // It wraps the [Value] interface, rather than being part of it, because it
@@ -118,8 +122,10 @@ var IntVar = internal.IntVar
 
 // Lookup returns the [Flag] structure of the named command-line flag,
 // returning nil if none exists.
-var Lookup = internal.Lookup
-var MakeWithPolicy = internal.MakeWithPolicy
+var (
+	Lookup         = internal.Lookup
+	MakeWithPolicy = internal.MakeWithPolicy
+)
 
 // NArg is the number of arguments remaining after flags have been processed.
 var NArg = internal.NArg
@@ -168,8 +174,10 @@ var Parsed = internal.Parsed
 var PrintDefaults = internal.PrintDefaults
 
 // Set sets the value of the named command-line flag.
-var Set = internal.Set
-var SplitCommasAndTrim = internal.SplitCommasAndTrim
+var (
+	Set                = internal.Set
+	SplitCommasAndTrim = internal.SplitCommasAndTrim
+)
 
 // String defines a string flag with specified name, default value, and usage
 // string. The return value is the address of a string variable that stores the
@@ -254,6 +262,8 @@ func SplitCommasAndTrimAndMake[ELEMENT interfaces.Value, ELEMENT_PTR interfaces.
 	return internal.SplitCommasAndTrimAndMake[ELEMENT, ELEMENT_PTR](value)
 }
 
-const ContinueOnError = internal.ContinueOnError
-const ExitOnError = internal.ExitOnError
-const PanicOnError = internal.PanicOnError
+const (
+	ContinueOnError = internal.ContinueOnError
+	ExitOnError     = internal.ExitOnError
+	PanicOnError    = internal.PanicOnError
+)

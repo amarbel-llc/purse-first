@@ -4,11 +4,15 @@ package collections
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/collections"
 
-type Bitset = internal.Bitset
-type KeyFunc[T any] = internal.KeyFunc[T]
+type (
+	Bitset         = internal.Bitset
+	KeyFunc[T any] = internal.KeyFunc[T]
+)
 
-var MakeBitset = internal.MakeBitset
-var MakeBitsetOn = internal.MakeBitsetOn
-var MakeKey = internal.MakeKey
+var (
+	MakeBitset   = internal.MakeBitset
+	MakeBitsetOn = internal.MakeBitsetOn
+	MakeKey      = internal.MakeKey
+)
 
 const MaxBitsetIdx = internal.MaxBitsetIdx

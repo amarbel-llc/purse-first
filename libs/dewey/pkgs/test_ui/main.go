@@ -4,12 +4,16 @@ package test_ui
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 
-type TestCase[BLOB any] = internal.TestCase[BLOB]
-type TestCaseInfo = internal.TestCaseInfo
+type (
+	TestCase[BLOB any] = internal.TestCase[BLOB]
+	TestCaseInfo       = internal.TestCaseInfo
+)
 
-var GetTestCaseDescription = internal.GetTestCaseDescription
-var MakeTestCaseInfo = internal.MakeTestCaseInfo
-var PrintTestCaseInfo = internal.PrintTestCaseInfo
+var (
+	GetTestCaseDescription = internal.GetTestCaseDescription
+	MakeTestCaseInfo       = internal.MakeTestCaseInfo
+	PrintTestCaseInfo      = internal.PrintTestCaseInfo
+)
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.

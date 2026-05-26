@@ -4,13 +4,15 @@ package comments
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/comments"
 
-var Change = internal.Change
-var Comment = internal.Comment
-var Decide = internal.Decide
-var GoRefactor = internal.GoRefactor
-var Implement = internal.Implement
-var Optimize = internal.Optimize
-var Parallelize = internal.Parallelize
-var Performance = internal.Performance
-var Refactor = internal.Refactor
-var Remove = internal.Remove
+var (
+	Change      = internal.Change
+	Comment     = internal.Comment
+	Decide      = internal.Decide
+	GoRefactor  = internal.GoRefactor
+	Implement   = internal.Implement
+	Optimize    = internal.Optimize
+	Parallelize = internal.Parallelize
+	Performance = internal.Performance
+	Refactor    = internal.Refactor
+	Remove      = internal.Remove
+)

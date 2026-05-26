@@ -13,5 +13,7 @@ type Reader = internal.Reader
 // Useful for taking a Reader and adding a prefix for every line, like how `git`
 // shows `remote: <line>` for all remote stderr output.
 // TODO extract into an io.Writer-like object
-var CopyWithPrefixOnDelim = internal.CopyWithPrefixOnDelim
-var Make = internal.Make
+var (
+	CopyWithPrefixOnDelim = internal.CopyWithPrefixOnDelim
+	Make                  = internal.Make
+)

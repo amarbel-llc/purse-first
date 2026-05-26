@@ -8,10 +8,12 @@ import (
 	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type Byte = internal.Byte
-type Rune = internal.Rune
-type Slice[ELEMENT any] = internal.Slice[ELEMENT]
-type String = internal.String
+type (
+	Byte               = internal.Byte
+	Rune               = internal.Rune
+	Slice[ELEMENT any] = internal.Slice[ELEMENT]
+	String             = internal.String
+)
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -19,24 +21,31 @@ type String = internal.String
 func Collect[ELEMENT any](seq interfaces.Seq[ELEMENT]) internal.Slice[ELEMENT] {
 	return internal.Collect[ELEMENT](seq)
 }
+
 func Make[ELEMENT any](elements ...ELEMENT) internal.Slice[ELEMENT] {
 	return internal.Make[ELEMENT](elements...)
 }
+
 func MakeFromSeq[ELEMENT any](count int, seq interfaces.Seq[ELEMENT]) internal.Slice[ELEMENT] {
 	return internal.MakeFromSeq[ELEMENT](count, seq)
 }
+
 func MakeFromSlice[ELEMENT any](elements ...ELEMENT) internal.Slice[ELEMENT] {
 	return internal.MakeFromSlice[ELEMENT](elements...)
 }
+
 func MakeWithCap[ELEMENT any](capacity int) internal.Slice[ELEMENT] {
 	return internal.MakeWithCap[ELEMENT](capacity)
 }
+
 func MakeWithLen[ELEMENT any](length int) internal.Slice[ELEMENT] {
 	return internal.MakeWithLen[ELEMENT](length)
 }
+
 func SortedValues[ELEMENT interfaces.Value](seq interfaces.Seq[ELEMENT]) []ELEMENT {
 	return internal.SortedValues[ELEMENT](seq)
 }
+
 func SortedValuesBy[ELEMENT any](collection interfaces.Collection[ELEMENT], cmpFunc cmp.Func[ELEMENT]) []ELEMENT {
 	return internal.SortedValuesBy[ELEMENT](collection, cmpFunc)
 }

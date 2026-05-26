@@ -9,5 +9,7 @@ var Commit = internal.Commit
 // Print writes the eng-versioning(7) version-subcommand output:
 // a self-identification line, a blank line, then the component table
 // header. Dewey binaries pin no downstreams, so the table is empty.
-var Print = internal.Print
-var Version = internal.Version
+var (
+	Print   = internal.Print
+	Version = internal.Version
+)

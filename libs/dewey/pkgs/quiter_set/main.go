@@ -13,18 +13,23 @@ import (
 func AllWithIndex[ELEMENT any](set interfaces.Set[ELEMENT]) interfaces.Seq2[int, ELEMENT] {
 	return internal.AllWithIndex[ELEMENT](set)
 }
+
 func Any[ELEMENT any](set interfaces.Set[ELEMENT]) (element ELEMENT) {
 	return internal.Any[ELEMENT](set)
 }
+
 func Contains[ELEMENT any](set interfaces.Set[ELEMENT], element ELEMENT) bool {
 	return internal.Contains[ELEMENT](set, element)
 }
+
 func Del[ELEMENT any](set interfaces.SetMutable[ELEMENT], element ELEMENT) {
 	internal.Del[ELEMENT](set, element)
 }
+
 func Equals[ELEMENT interfaces.Stringer](left interfaces.Set[ELEMENT], right interfaces.Set[ELEMENT]) bool {
 	return internal.Equals[ELEMENT](left, right)
 }
+
 func Strings[ELEMENT interfaces.Stringer](collections ...interfaces.Set[ELEMENT]) interfaces.Seq[string] {
 	return internal.Strings[ELEMENT](collections...)
 }

@@ -8,8 +8,10 @@ import (
 	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type Element = internal.Element
-type ElementPtr[ELEMENT internal.Element] = internal.ElementPtr[ELEMENT]
+type (
+	Element                              = internal.Element
+	ElementPtr[ELEMENT internal.Element] = internal.ElementPtr[ELEMENT]
+)
 
 // TODO rewrite with cmp.FuncCmp
 type Heap[ELEMENT internal.Element, ELEMENT_PTR internal.ElementPtr[ELEMENT]] = internal.Heap[ELEMENT, ELEMENT_PTR]
@@ -20,21 +22,27 @@ type Heap[ELEMENT internal.Element, ELEMENT_PTR internal.ElementPtr[ELEMENT]] = 
 func Make[ELEMENT internal.Element, ELEMENT_PTR internal.ElementPtr[ELEMENT]](equaler interfaces.Equaler[ELEMENT_PTR], lessor interfaces.Lessor[ELEMENT_PTR], resetter interfaces.ResetterPtr[ELEMENT, ELEMENT_PTR]) *internal.Heap[ELEMENT, ELEMENT_PTR] {
 	return internal.Make[ELEMENT, ELEMENT_PTR](equaler, lessor, resetter)
 }
+
 func MakeHeapFromSlice[ELEMENT internal.Element, ELEMENT_PTR internal.ElementPtr[ELEMENT]](equaler interfaces.Equaler[ELEMENT_PTR], lessor interfaces.Lessor[ELEMENT_PTR], resetter interfaces.ResetterPtr[ELEMENT, ELEMENT_PTR], slice []ELEMENT_PTR) *internal.Heap[ELEMENT, ELEMENT_PTR] {
 	return internal.MakeHeapFromSlice[ELEMENT, ELEMENT_PTR](equaler, lessor, resetter, slice)
 }
+
 func MakeHeapFromSliceUnsorted[ELEMENT internal.Element, ELEMENT_PTR internal.ElementPtr[ELEMENT]](equaler interfaces.Equaler[ELEMENT_PTR], lessor interfaces.Lessor[ELEMENT_PTR], resetter interfaces.ResetterPtr[ELEMENT, ELEMENT_PTR], slice []ELEMENT_PTR) *internal.Heap[ELEMENT, ELEMENT_PTR] {
 	return internal.MakeHeapFromSliceUnsorted[ELEMENT, ELEMENT_PTR](equaler, lessor, resetter, slice)
 }
+
 func MakeNew[ELEMENT internal.Element, ELEMENT_PTR internal.ElementPtr[ELEMENT]](funcCmp cmp.Func[ELEMENT_PTR], resetter interfaces.ResetterPtr[ELEMENT, ELEMENT_PTR]) *internal.Heap[ELEMENT, ELEMENT_PTR] {
 	return internal.MakeNew[ELEMENT, ELEMENT_PTR](funcCmp, resetter)
 }
+
 func MakeNewHeapFromSlice[ELEMENT internal.Element, ELEMENT_PTR internal.ElementPtr[ELEMENT]](funcCmp cmp.Func[ELEMENT_PTR], resetter interfaces.ResetterPtr[ELEMENT, ELEMENT_PTR], slice []ELEMENT_PTR) *internal.Heap[ELEMENT, ELEMENT_PTR] {
 	return internal.MakeNewHeapFromSlice[ELEMENT, ELEMENT_PTR](funcCmp, resetter, slice)
 }
+
 func MakeNewHeapFromSliceUnsorted[ELEMENT internal.Element, ELEMENT_PTR internal.ElementPtr[ELEMENT]](funcCmp cmp.Func[ELEMENT_PTR], resetter interfaces.ResetterPtr[ELEMENT, ELEMENT_PTR], slice []ELEMENT_PTR) *internal.Heap[ELEMENT, ELEMENT_PTR] {
 	return internal.MakeNewHeapFromSliceUnsorted[ELEMENT, ELEMENT_PTR](funcCmp, resetter, slice)
 }
+
 func MergeHeapAndRestore[ELEMENT internal.Element, ELEMENT_PTR internal.ElementPtr[ELEMENT]](heap *internal.Heap[ELEMENT, ELEMENT_PTR], read func() (ELEMENT_PTR, error), write interfaces.FuncIter[ELEMENT_PTR]) (err error) {
 	return internal.MergeHeapAndRestore[ELEMENT, ELEMENT_PTR](heap, read, write)
 }

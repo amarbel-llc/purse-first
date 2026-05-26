@@ -7,23 +7,29 @@ import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/xdg
 type DefaultEnvVar = internal.DefaultEnvVar
 
 // TODO replace with env_vars.BufferedCoderDotenv
-type Dotenv = internal.Dotenv
-type InitArgs = internal.InitArgs
-type XDG = internal.XDG
+type (
+	Dotenv   = internal.Dotenv
+	InitArgs = internal.InitArgs
+	XDG      = internal.XDG
+)
 
-var CeilingEnvVarName = internal.CeilingEnvVarName
-var DefaultCache = internal.DefaultCache
-var DefaultConfig = internal.DefaultConfig
-var DefaultData = internal.DefaultData
-var DefaultHome = internal.DefaultHome
-var DefaultRuntime = internal.DefaultRuntime
-var DefaultState = internal.DefaultState
+var (
+	CeilingEnvVarName = internal.CeilingEnvVarName
+	DefaultCache      = internal.DefaultCache
+	DefaultConfig     = internal.DefaultConfig
+	DefaultData       = internal.DefaultData
+	DefaultHome       = internal.DefaultHome
+	DefaultRuntime    = internal.DefaultRuntime
+	DefaultState      = internal.DefaultState
+)
 
 // IsAboveCeiling reports whether dir is strictly an ancestor of any
 // ceiling entry. Both dir and each ceiling are symlink-resolved before
 // comparison, matching git's documented GIT_CEILING_DIRECTORIES contract.
 // Entries that fail to resolve (e.g. don't exist on disk) fall back to
 // filepath.Clean so the ceiling still bounds the walk by name.
-var IsAboveCeiling = internal.IsAboveCeiling
-var IsAtOrAboveCeiling = internal.IsAtOrAboveCeiling
-var ParseCeilingDirectories = internal.ParseCeilingDirectories
+var (
+	IsAboveCeiling          = internal.IsAboveCeiling
+	IsAtOrAboveCeiling      = internal.IsAtOrAboveCeiling
+	ParseCeilingDirectories = internal.ParseCeilingDirectories
+)

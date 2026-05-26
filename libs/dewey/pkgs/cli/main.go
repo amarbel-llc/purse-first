@@ -5,8 +5,10 @@ package cli
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/cli"
 
 // TODO add support for comma-separated values
-type CLICompleter = internal.CLICompleter
-type FlagSet = internal.FlagSet
-type FlagValueWithCompetion = internal.FlagValueWithCompetion
+type (
+	CLICompleter           = internal.CLICompleter
+	FlagSet                = internal.FlagSet
+	FlagValueWithCompetion = internal.FlagValueWithCompetion
+)
 
 var FlagSetVarWithCompletion = internal.FlagSetVarWithCompletion

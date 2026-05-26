@@ -4,5 +4,7 @@ package ohio_files
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/ohio_files"
 
-var CopyFileLines = internal.CopyFileLines
-var CopyFileWithTransform = internal.CopyFileWithTransform
+var (
+	CopyFileLines         = internal.CopyFileLines
+	CopyFileWithTransform = internal.CopyFileWithTransform
+)

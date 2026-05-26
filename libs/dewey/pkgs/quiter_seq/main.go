@@ -13,15 +13,19 @@ import (
 func Any[ELEMENT any](seq interfaces.Seq[ELEMENT]) (element ELEMENT) {
 	return internal.Any[ELEMENT](seq)
 }
+
 func Seq[ELEMENT any](elements ...ELEMENT) interfaces.Seq[ELEMENT] {
 	return internal.Seq[ELEMENT](elements...)
 }
+
 func SeqErrorToSeqAndPanic[ELEMENT any](seq interfaces.SeqError[ELEMENT]) interfaces.Seq[ELEMENT] {
 	return internal.SeqErrorToSeqAndPanic[ELEMENT](seq)
 }
+
 func SeqWithIndex[ELEMENT any](seq interfaces.Seq[ELEMENT]) interfaces.Seq2[int, ELEMENT] {
 	return internal.SeqWithIndex[ELEMENT](seq)
 }
+
 func Strings[ELEMENT interfaces.Stringer](seq interfaces.Seq[ELEMENT]) interfaces.Seq[string] {
 	return internal.Strings[ELEMENT](seq)
 }

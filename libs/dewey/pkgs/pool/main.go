@@ -7,20 +7,24 @@ import (
 	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type Bespoke[T any] = internal.Bespoke[T]
-type BespokeResetter[T any] = internal.BespokeResetter[T]
-type Pool[SWIMMER any, SWIMMER_PTR interfaces.Ptr[SWIMMER]] = internal.Pool[SWIMMER, SWIMMER_PTR]
-type Slice[SWIMMER any, SWIMMER_SLICE interface {
-	~[]SWIMMER
-}] = internal.Slice[SWIMMER, SWIMMER_SLICE]
+type (
+	Bespoke[T any]                                         = internal.Bespoke[T]
+	BespokeResetter[T any]                                 = internal.BespokeResetter[T]
+	Pool[SWIMMER any, SWIMMER_PTR interfaces.Ptr[SWIMMER]] = internal.Pool[SWIMMER, SWIMMER_PTR]
+	Slice[SWIMMER any, SWIMMER_SLICE interface {
+		~[]SWIMMER
+	}] = internal.Slice[SWIMMER, SWIMMER_SLICE]
+)
 type Value[SWIMMER any] = internal.Value[SWIMMER]
 
-var GetBufferedReader = internal.GetBufferedReader
-var GetBufferedWriter = internal.GetBufferedWriter
-var GetByteReader = internal.GetByteReader
-var GetSha256Hash = internal.GetSha256Hash
-var GetStringReader = internal.GetStringReader
-var OutstandingBorrows = internal.OutstandingBorrows
+var (
+	GetBufferedReader  = internal.GetBufferedReader
+	GetBufferedWriter  = internal.GetBufferedWriter
+	GetByteReader      = internal.GetByteReader
+	GetSha256Hash      = internal.GetSha256Hash
+	GetStringReader    = internal.GetStringReader
+	OutstandingBorrows = internal.OutstandingBorrows
+)
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -28,14 +32,17 @@ var OutstandingBorrows = internal.OutstandingBorrows
 func Make[SWIMMER any, SWIMMER_PTR interfaces.Ptr[SWIMMER]](New func() SWIMMER_PTR, Reset func(SWIMMER_PTR)) *internal.Pool[SWIMMER, SWIMMER_PTR] {
 	return internal.Make[SWIMMER, SWIMMER_PTR](New, Reset)
 }
+
 func MakeSlice[SWIMMER any, SWIMMER_SLICE interface {
 	~[]SWIMMER
 }]() internal.Slice[SWIMMER, SWIMMER_SLICE] {
 	return internal.MakeSlice[SWIMMER, SWIMMER_SLICE]()
 }
+
 func MakeValue[SWIMMER any](New func() SWIMMER, Reset func(SWIMMER)) *internal.Value[SWIMMER] {
 	return internal.MakeValue[SWIMMER](New, Reset)
 }
+
 func MakeWithResetable[SWIMMER any, SWIMMER_PTR interfaces.ResetablePtr[SWIMMER]]() *internal.Pool[SWIMMER, SWIMMER_PTR] {
 	return internal.MakeWithResetable[SWIMMER, SWIMMER_PTR]()
 }

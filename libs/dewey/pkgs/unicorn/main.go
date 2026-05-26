@@ -4,14 +4,16 @@ package unicorn
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/unicorn"
 
-var AllRunes = internal.AllRunes
-var AllRunesWithIndex = internal.AllRunesWithIndex
-var CountCase = internal.CountCase
-var CountRune = internal.CountRune
-var CutNCharacters = internal.CutNCharacters
-var ExtractUniqueComponents = internal.ExtractUniqueComponents
-var IsSpace = internal.IsSpace
-var Not = internal.Not
-var StripDiacritics = internal.StripDiacritics
-var ToLower = internal.ToLower
-var ToUpper = internal.ToUpper
+var (
+	AllRunes                = internal.AllRunes
+	AllRunesWithIndex       = internal.AllRunesWithIndex
+	CountCase               = internal.CountCase
+	CountRune               = internal.CountRune
+	CutNCharacters          = internal.CutNCharacters
+	ExtractUniqueComponents = internal.ExtractUniqueComponents
+	IsSpace                 = internal.IsSpace
+	Not                     = internal.Not
+	StripDiacritics         = internal.StripDiacritics
+	ToLower                 = internal.ToLower
+	ToUpper                 = internal.ToUpper
+)

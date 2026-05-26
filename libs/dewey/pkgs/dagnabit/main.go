@@ -72,8 +72,10 @@ var ValidateTwoLayerLayout = internal.ValidateTwoLayerLayout
 // a level that may change as dependencies evolve.
 var ValidateUniqueLeaves = internal.ValidateUniqueLeaves
 
-const EventMove = internal.EventMove
-const EventWouldMove = internal.EventWouldMove
+const (
+	EventMove      = internal.EventMove
+	EventWouldMove = internal.EventWouldMove
+)
 
 // ModeInitial inserts a NATO level segment into a flat <prefix>/<pkg> layout,
 // producing <prefix>/<newLevel>/<pkg>. Every package is moved; there is no

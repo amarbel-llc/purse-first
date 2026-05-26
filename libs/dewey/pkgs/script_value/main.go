@@ -4,5 +4,7 @@ package script_value
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/script_value"
 
-type ScriptValue = internal.ScriptValue
-type Utility = internal.Utility
+type (
+	ScriptValue = internal.ScriptValue
+	Utility     = internal.Utility
+)

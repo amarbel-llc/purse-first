@@ -4,12 +4,16 @@ package compression_type
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/compression_type"
 
-type CompressionType = internal.CompressionType
-type ErrUnsupportedCompression = internal.ErrUnsupportedCompression
+type (
+	CompressionType           = internal.CompressionType
+	ErrUnsupportedCompression = internal.ErrUnsupportedCompression
+)
 
-const CompressionTypeDefault = internal.CompressionTypeDefault
-const CompressionTypeEmpty = internal.CompressionTypeEmpty
-const CompressionTypeGzip = internal.CompressionTypeGzip
-const CompressionTypeNone = internal.CompressionTypeNone
-const CompressionTypeZlib = internal.CompressionTypeZlib
-const CompressionTypeZstd = internal.CompressionTypeZstd
+const (
+	CompressionTypeDefault = internal.CompressionTypeDefault
+	CompressionTypeEmpty   = internal.CompressionTypeEmpty
+	CompressionTypeGzip    = internal.CompressionTypeGzip
+	CompressionTypeNone    = internal.CompressionTypeNone
+	CompressionTypeZlib    = internal.CompressionTypeZlib
+	CompressionTypeZstd    = internal.CompressionTypeZstd
+)

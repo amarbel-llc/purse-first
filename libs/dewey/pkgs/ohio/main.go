@@ -3,16 +3,19 @@
 package ohio
 
 import (
+	"io"
+
 	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ohio"
 	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
-	"io"
 )
 
-type BinaryField = internal.BinaryField
-type Cursor = internal.Cursor
-type ErrExhaustedFuncSetStringersLine = internal.ErrExhaustedFuncSetStringersLine
-type NopeIOWrapper = internal.NopeIOWrapper
-type PipedReader = internal.PipedReader
+type (
+	BinaryField                      = internal.BinaryField
+	Cursor                           = internal.Cursor
+	ErrExhaustedFuncSetStringersLine = internal.ErrExhaustedFuncSetStringersLine
+	NopeIOWrapper                    = internal.NopeIOWrapper
+	PipedReader                      = internal.PipedReader
+)
 
 // PipedWriter is the symmetric mirror of PipedReader. Producers write to
 // the pipe via Write; consumers drain it once via WriteTo(out). Close on
@@ -22,69 +25,77 @@ type PipedReader = internal.PipedReader
 // the WriteTo call is the consumer. WriteTo must therefore be called for
 // the pipe to drain. If no consumer ever calls WriteTo, every Write will
 // block: io.Pipe is synchronous and has no internal buffer.
-type PipedWriter = internal.PipedWriter
-type RuneReaderScannerAdapter = internal.RuneReaderScannerAdapter
+type (
+	PipedWriter              = internal.PipedWriter
+	RuneReaderScannerAdapter = internal.RuneReaderScannerAdapter
+)
 
-var ByteArrayToInt16 = internal.ByteArrayToInt16
-var ByteArrayToInt32 = internal.ByteArrayToInt32
-var ByteArrayToInt64 = internal.ByteArrayToInt64
-var ByteArrayToInt8 = internal.ByteArrayToInt8
-var ByteArrayToUInt16 = internal.ByteArrayToUInt16
-var ByteArrayToUInt8 = internal.ByteArrayToUInt8
-var CopyBuffered = internal.CopyBuffered
-var CopyReaderAtToWriter = internal.CopyReaderAtToWriter
+var (
+	ByteArrayToInt16     = internal.ByteArrayToInt16
+	ByteArrayToInt32     = internal.ByteArrayToInt32
+	ByteArrayToInt64     = internal.ByteArrayToInt64
+	ByteArrayToInt8      = internal.ByteArrayToInt8
+	ByteArrayToUInt16    = internal.ByteArrayToUInt16
+	ByteArrayToUInt8     = internal.ByteArrayToUInt8
+	CopyBuffered         = internal.CopyBuffered
+	CopyReaderAtToWriter = internal.CopyReaderAtToWriter
+)
 
 // TODO add tests
-var DebugRuneScanner = internal.DebugRuneScanner
-var ErrBoundaryNotFound = internal.ErrBoundaryNotFound
-var ErrExhaustedFuncSetStringersGetString = internal.ErrExhaustedFuncSetStringersGetString
-var ErrExhaustedFuncSetStringersWithDelim = internal.ErrExhaustedFuncSetStringersWithDelim
-var ErrExpectedBoundaryRead = internal.ErrExpectedBoundaryRead
-var ErrExpectedContentRead = internal.ErrExpectedContentRead
-var ErrInvalidBoundaryReaderState = internal.ErrInvalidBoundaryReaderState
-var ErrReadFromSmallOverflow = internal.ErrReadFromSmallOverflow
-var Int16ToByteArray = internal.Int16ToByteArray
-var Int32ToByteArray = internal.Int32ToByteArray
-var Int64ToByteArray = internal.Int64ToByteArray
-var Int8ToByteArray = internal.Int8ToByteArray
-var IsErrExhaustedFuncSetStringers = internal.IsErrExhaustedFuncSetStringers
-var MakeLineReaderIgnoreErrors = internal.MakeLineReaderIgnoreErrors
-var MakeLineReaderIterate = internal.MakeLineReaderIterate
-var MakeLineReaderIterateStrict = internal.MakeLineReaderIterateStrict
-var MakeLineReaderKeyValues = internal.MakeLineReaderKeyValues
-var MakeLineReaderRepeat = internal.MakeLineReaderRepeat
-var MakeLineSeqFromReader = internal.MakeLineSeqFromReader
-var MakePipedReaderFrom = internal.MakePipedReaderFrom
-var MakePipedWriterTo = internal.MakePipedWriterTo
-var NopCloser = internal.NopCloser
-var NopWriteCloser = internal.NopWriteCloser
-var ReadAllOrDieTrying = internal.ReadAllOrDieTrying
-var ReadFixedInt32 = internal.ReadFixedInt32
-var ReadFixedInt64 = internal.ReadFixedInt64
-var ReadFixedUInt16 = internal.ReadFixedUInt16
-var ReadFixedUint8 = internal.ReadFixedUint8
-var ReadInt64 = internal.ReadInt64
-var ReadInt8 = internal.ReadInt8
-var ReadUint16 = internal.ReadUint16
-var ReadUint8 = internal.ReadUint8
-var TeeRuneReader = internal.TeeRuneReader
-var UInt16ToByteArray = internal.UInt16ToByteArray
-var UInt8ToByteArray = internal.UInt8ToByteArray
-var WriteAllOrDieTrying = internal.WriteAllOrDieTrying
-var WriteFixedInt32 = internal.WriteFixedInt32
-var WriteFixedInt64 = internal.WriteFixedInt64
-var WriteFixedUInt16 = internal.WriteFixedUInt16
-var WriteInt64 = internal.WriteInt64
-var WriteInt8 = internal.WriteInt8
-var WriteKeySpaceValueNewline = internal.WriteKeySpaceValueNewline
-var WriteKeySpaceValueNewlineString = internal.WriteKeySpaceValueNewlineString
+var (
+	DebugRuneScanner                      = internal.DebugRuneScanner
+	ErrBoundaryNotFound                   = internal.ErrBoundaryNotFound
+	ErrExhaustedFuncSetStringersGetString = internal.ErrExhaustedFuncSetStringersGetString
+	ErrExhaustedFuncSetStringersWithDelim = internal.ErrExhaustedFuncSetStringersWithDelim
+	ErrExpectedBoundaryRead               = internal.ErrExpectedBoundaryRead
+	ErrExpectedContentRead                = internal.ErrExpectedContentRead
+	ErrInvalidBoundaryReaderState         = internal.ErrInvalidBoundaryReaderState
+	ErrReadFromSmallOverflow              = internal.ErrReadFromSmallOverflow
+	Int16ToByteArray                      = internal.Int16ToByteArray
+	Int32ToByteArray                      = internal.Int32ToByteArray
+	Int64ToByteArray                      = internal.Int64ToByteArray
+	Int8ToByteArray                       = internal.Int8ToByteArray
+	IsErrExhaustedFuncSetStringers        = internal.IsErrExhaustedFuncSetStringers
+	MakeLineReaderIgnoreErrors            = internal.MakeLineReaderIgnoreErrors
+	MakeLineReaderIterate                 = internal.MakeLineReaderIterate
+	MakeLineReaderIterateStrict           = internal.MakeLineReaderIterateStrict
+	MakeLineReaderKeyValues               = internal.MakeLineReaderKeyValues
+	MakeLineReaderRepeat                  = internal.MakeLineReaderRepeat
+	MakeLineSeqFromReader                 = internal.MakeLineSeqFromReader
+	MakePipedReaderFrom                   = internal.MakePipedReaderFrom
+	MakePipedWriterTo                     = internal.MakePipedWriterTo
+	NopCloser                             = internal.NopCloser
+	NopWriteCloser                        = internal.NopWriteCloser
+	ReadAllOrDieTrying                    = internal.ReadAllOrDieTrying
+	ReadFixedInt32                        = internal.ReadFixedInt32
+	ReadFixedInt64                        = internal.ReadFixedInt64
+	ReadFixedUInt16                       = internal.ReadFixedUInt16
+	ReadFixedUint8                        = internal.ReadFixedUint8
+	ReadInt64                             = internal.ReadInt64
+	ReadInt8                              = internal.ReadInt8
+	ReadUint16                            = internal.ReadUint16
+	ReadUint8                             = internal.ReadUint8
+	TeeRuneReader                         = internal.TeeRuneReader
+	UInt16ToByteArray                     = internal.UInt16ToByteArray
+	UInt8ToByteArray                      = internal.UInt8ToByteArray
+	WriteAllOrDieTrying                   = internal.WriteAllOrDieTrying
+	WriteFixedInt32                       = internal.WriteFixedInt32
+	WriteFixedInt64                       = internal.WriteFixedInt64
+	WriteFixedUInt16                      = internal.WriteFixedUInt16
+	WriteInt64                            = internal.WriteInt64
+	WriteInt8                             = internal.WriteInt8
+	WriteKeySpaceValueNewline             = internal.WriteKeySpaceValueNewline
+	WriteKeySpaceValueNewlineString       = internal.WriteKeySpaceValueNewlineString
+)
 
 // TODO-P4 check performance of this
-var WriteLine = internal.WriteLine
-var WriteStrings = internal.WriteStrings
-var WriteUint16 = internal.WriteUint16
-var WriteUint32 = internal.WriteUint32
-var WriteUint8 = internal.WriteUint8
+var (
+	WriteLine    = internal.WriteLine
+	WriteStrings = internal.WriteStrings
+	WriteUint16  = internal.WriteUint16
+	WriteUint32  = internal.WriteUint32
+	WriteUint8   = internal.WriteUint8
+)
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -92,6 +103,7 @@ var WriteUint8 = internal.WriteUint8
 func MakePipedDecoder[O any](object O, decoder interfaces.DecoderFromBufferedReader[O]) internal.PipedReader {
 	return internal.MakePipedDecoder[O](object, decoder)
 }
+
 func WriteSeq[ELEMENT any](writer io.Writer, element ELEMENT, seq ...interfaces.FuncWriterElementInterface[ELEMENT]) (n int64, err error) {
 	return internal.WriteSeq[ELEMENT](writer, element, seq...)
 }

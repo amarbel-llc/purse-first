@@ -6,14 +6,18 @@ import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/xd
 
 type DefaultEnvVar = internal.DefaultEnvVar
 
-var Cache = internal.Cache
-var Config = internal.Config
-var Cwd = internal.Cwd
-var Data = internal.Data
-var Home = internal.Home
-var MakeGetenv = internal.MakeGetenv
-var Runtime = internal.Runtime
-var State = internal.State
+var (
+	Cache      = internal.Cache
+	Config     = internal.Config
+	Cwd        = internal.Cwd
+	Data       = internal.Data
+	Home       = internal.Home
+	MakeGetenv = internal.MakeGetenv
+	Runtime    = internal.Runtime
+	State      = internal.State
+)
 
-const VarUtilityName = internal.VarUtilityName
-const VarXDGOverride = internal.VarXDGOverride
+const (
+	VarUtilityName = internal.VarUtilityName
+	VarXDGOverride = internal.VarXDGOverride
+)

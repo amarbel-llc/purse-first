@@ -7,19 +7,23 @@ import (
 	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type Bool = internal.Bool
-type Int = internal.Int
-type IntEqualer = internal.IntEqualer
-type IntLessor = internal.IntLessor
-type IntResetter = internal.IntResetter
-type IntSlice = internal.IntSlice
-type String = internal.String
-type Uri = internal.Uri
+type (
+	Bool        = internal.Bool
+	Int         = internal.Int
+	IntEqualer  = internal.IntEqualer
+	IntLessor   = internal.IntLessor
+	IntResetter = internal.IntResetter
+	IntSlice    = internal.IntSlice
+	String      = internal.String
+	Uri         = internal.Uri
+)
 
-var MakeBool = internal.MakeBool
-var MakeInt = internal.MakeInt
-var MakeString = internal.MakeString
-var MakeStringDefault = internal.MakeStringDefault
+var (
+	MakeBool          = internal.MakeBool
+	MakeInt           = internal.MakeInt
+	MakeString        = internal.MakeString
+	MakeStringDefault = internal.MakeStringDefault
+)
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.

@@ -4,26 +4,32 @@ package lua
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/lua"
 
-type FunctionProto = internal.FunctionProto
-type LBool = internal.LBool
-type LFunction = internal.LFunction
-type LGFunction = internal.LGFunction
-type LState = internal.LState
-type LString = internal.LString
-type LTable = internal.LTable
-type LValue = internal.LValue
-type VM = internal.VM
-type VMPool = internal.VMPool
-type VMPoolBuilder = internal.VMPoolBuilder
+type (
+	FunctionProto = internal.FunctionProto
+	LBool         = internal.LBool
+	LFunction     = internal.LFunction
+	LGFunction    = internal.LGFunction
+	LState        = internal.LState
+	LString       = internal.LString
+	LTable        = internal.LTable
+	LValue        = internal.LValue
+	VM            = internal.VM
+	VMPool        = internal.VMPool
+	VMPoolBuilder = internal.VMPoolBuilder
+)
 
-var ClearTable = internal.ClearTable
-var CompileReader = internal.CompileReader
-var LNil = internal.LNil
-var MakeVMPoolWithRequire = internal.MakeVMPoolWithRequire
-var MakeVMPoolWithSearcher = internal.MakeVMPoolWithSearcher
+var (
+	ClearTable             = internal.ClearTable
+	CompileReader          = internal.CompileReader
+	LNil                   = internal.LNil
+	MakeVMPoolWithRequire  = internal.MakeVMPoolWithRequire
+	MakeVMPoolWithSearcher = internal.MakeVMPoolWithSearcher
+)
 
-const LTBool = internal.LTBool
-const LTFunction = internal.LTFunction
-const LTNil = internal.LTNil
-const LTTable = internal.LTTable
-const MultRet = internal.MultRet
+const (
+	LTBool     = internal.LTBool
+	LTFunction = internal.LTFunction
+	LTNil      = internal.LTNil
+	LTTable    = internal.LTTable
+	MultRet    = internal.MultRet
+)

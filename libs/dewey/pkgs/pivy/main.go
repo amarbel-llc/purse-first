@@ -7,15 +7,19 @@ import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/pi
 // ECDHFunc performs ECDH given an ephemeral public key and returns the shared
 // secret. For software keys this is a local operation. For agent-backed keys
 // this calls the pivy-agent extension.
-type ECDHFunc = internal.ECDHFunc
-type IOWrapper = internal.IOWrapper
-type Identity = internal.Identity
-type Recipient = internal.Recipient
+type (
+	ECDHFunc  = internal.ECDHFunc
+	IOWrapper = internal.IOWrapper
+	Identity  = internal.Identity
+	Recipient = internal.Recipient
+)
 
 // AgentECDHFunc returns an ECDHFunc that calls pivy-agent at the given socket.
-var AgentECDHFunc = internal.AgentECDHFunc
-var CompressP256Point = internal.CompressP256Point
-var DecompressP256Point = internal.DecompressP256Point
+var (
+	AgentECDHFunc       = internal.AgentECDHFunc
+	CompressP256Point   = internal.CompressP256Point
+	DecompressP256Point = internal.DecompressP256Point
+)
 
 // ErrAgent is returned when the pivy-agent communication fails (socket error,
 // extension failure, card not found, PIN needed). Callers can use IsErrAgent
@@ -29,8 +33,10 @@ var IsErrAgent = internal.IsErrAgent
 
 // NewAgentIdentity creates an Identity that performs ECDH via pivy-agent's
 // ecdh@joyent.com extension.
-var NewAgentIdentity = internal.NewAgentIdentity
-var ResolveAgentSocketPath = internal.ResolveAgentSocketPath
+var (
+	NewAgentIdentity       = internal.NewAgentIdentity
+	ResolveAgentSocketPath = internal.ResolveAgentSocketPath
+)
 
 // SoftwareECDHForTesting returns an ECDHFunc using a software private key.
 // Intended for tests that need an IOWrapper without a running pivy-agent.

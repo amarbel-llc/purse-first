@@ -10,10 +10,12 @@ import (
 
 type Expander = internal.Expander
 
-var ExpanderAll = internal.ExpanderAll
-var ExpanderRight = internal.ExpanderRight
-var MakeExpanderAll = internal.MakeExpanderAll
-var MakeExpanderRight = internal.MakeExpanderRight
+var (
+	ExpanderAll       = internal.ExpanderAll
+	ExpanderRight     = internal.ExpanderRight
+	MakeExpanderAll   = internal.MakeExpanderAll
+	MakeExpanderRight = internal.MakeExpanderRight
+)
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -21,9 +23,11 @@ var MakeExpanderRight = internal.MakeExpanderRight
 func ExpandIntoSlice[ID interfaces.Value, ID_PTR interfaces.ValuePtr[ID]](token string, expander internal.Expander) collectionsslice.Slice[ID] {
 	return internal.ExpandIntoSlice[ID, ID_PTR](token, expander)
 }
+
 func ExpandMany[ID interfaces.Value, ID_PTR interfaces.ValuePtr[ID]](seq interfaces.Seq[ID], expander internal.Expander) interfaces.Seq[ID] {
 	return internal.ExpandMany[ID, ID_PTR](seq, expander)
 }
+
 func ExpandOneIntoIds[ID interfaces.Value, ID_PTR interfaces.ValuePtr[ID]](identifierString string, expander internal.Expander) interfaces.SeqError[ID] {
 	return internal.ExpandOneIntoIds[ID, ID_PTR](identifierString, expander)
 }

@@ -6,5 +6,7 @@ import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/flag_p
 
 type FlagPolicy = internal.FlagPolicy
 
-const FlagPolicyAppend = internal.FlagPolicyAppend
-const FlagPolicyReset = internal.FlagPolicyReset
+const (
+	FlagPolicyAppend = internal.FlagPolicyAppend
+	FlagPolicyReset  = internal.FlagPolicyReset
+)

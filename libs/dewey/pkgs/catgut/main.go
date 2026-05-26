@@ -4,10 +4,12 @@ package catgut
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/catgut"
 
-type MultiRuneReader = internal.MultiRuneReader
-type RingBuffer = internal.RingBuffer
-type RingBufferRuneScanner = internal.RingBufferRuneScanner
-type RingBufferScanner = internal.RingBufferScanner
+type (
+	MultiRuneReader       = internal.MultiRuneReader
+	RingBuffer            = internal.RingBuffer
+	RingBufferRuneScanner = internal.RingBufferRuneScanner
+	RingBufferScanner     = internal.RingBufferScanner
+)
 
 // Scanner provides a convenient interface for reading data such as
 // a file of newline-delimited lines of text. Successive calls to
@@ -24,11 +26,13 @@ type RingBufferScanner = internal.RingBufferScanner
 // advanced arbitrarily far past the last token. Programs that need more
 // control over error handling or large tokens, or must run sequential scans
 // on a reader, should use bufio.Reader instead.
-type Scanner = internal.Scanner
-type Slice = internal.Slice
-type SliceBytes = internal.SliceBytes
-type SliceReader = internal.SliceReader
-type SliceRuneScanner = internal.SliceRuneScanner
+type (
+	Scanner          = internal.Scanner
+	Slice            = internal.Slice
+	SliceBytes       = internal.SliceBytes
+	SliceReader      = internal.SliceReader
+	SliceRuneScanner = internal.SliceRuneScanner
+)
 
 // SplitFunc is the signature of the split function used to tokenize the
 // input. The arguments are an initial substring of the remaining unprocessed
@@ -76,27 +80,31 @@ type SplitFunc = internal.SplitFunc
 // The function is never called with an empty data slice unless atEOF
 // is true. If atEOF is true, however, data may be non-empty and,
 // as always, holds unprocessed text.
-type SplitFuncExperimental = internal.SplitFuncExperimental
-type String = internal.String
-type StringFormatReadWriter[T any] = internal.StringFormatReadWriter[T]
-type StringFormatReader[T any] = internal.StringFormatReader[T]
-type StringFormatWriter[T any] = internal.StringFormatWriter[T]
+type (
+	SplitFuncExperimental         = internal.SplitFuncExperimental
+	String                        = internal.String
+	StringFormatReadWriter[T any] = internal.StringFormatReadWriter[T]
+	StringFormatReader[T any]     = internal.StringFormatReader[T]
+	StringFormatWriter[T any]     = internal.StringFormatWriter[T]
+)
 
-var ErrBufferEmpty = internal.ErrBufferEmpty
-var ErrNoMatch = internal.ErrNoMatch
-var GetPool = internal.GetPool
-var Make = internal.Make
-var MakeErrLength = internal.MakeErrLength
-var MakeFromBytes = internal.MakeFromBytes
-var MakeFromReader = internal.MakeFromReader
-var MakeFromString = internal.MakeFromString
-var MakeMultiRuneReader = internal.MakeMultiRuneReader
-var MakeRingBuffer = internal.MakeRingBuffer
-var MakeRingBufferRuneScanner = internal.MakeRingBufferRuneScanner
-var MakeRingBufferScanner = internal.MakeRingBufferScanner
-var MakeSliceReader = internal.MakeSliceReader
-var MakeSliceRuneScanner = internal.MakeSliceRuneScanner
-var MapTo = internal.MapTo
+var (
+	ErrBufferEmpty            = internal.ErrBufferEmpty
+	ErrNoMatch                = internal.ErrNoMatch
+	GetPool                   = internal.GetPool
+	Make                      = internal.Make
+	MakeErrLength             = internal.MakeErrLength
+	MakeFromBytes             = internal.MakeFromBytes
+	MakeFromReader            = internal.MakeFromReader
+	MakeFromString            = internal.MakeFromString
+	MakeMultiRuneReader       = internal.MakeMultiRuneReader
+	MakeRingBuffer            = internal.MakeRingBuffer
+	MakeRingBufferRuneScanner = internal.MakeRingBufferRuneScanner
+	MakeRingBufferScanner     = internal.MakeRingBufferScanner
+	MakeSliceReader           = internal.MakeSliceReader
+	MakeSliceRuneScanner      = internal.MakeSliceRuneScanner
+	MapTo                     = internal.MapTo
+)
 
 // NewScanner returns a new Scanner to read from r.
 // The split function defaults to ScanLines.
@@ -104,9 +112,11 @@ var NewScanner = internal.NewScanner
 
 // NewScanner returns a new scannerExperimental to read from r.
 // The split function defaults to ScanLines.
-var NewScannerExperimental = internal.NewScannerExperimental
-var StringFormatWriterString = internal.StringFormatWriterString
-var WriteKeySpaceValueNewline = internal.WriteKeySpaceValueNewline
-var WriteLower = internal.WriteLower
+var (
+	NewScannerExperimental    = internal.NewScannerExperimental
+	StringFormatWriterString  = internal.StringFormatWriterString
+	WriteKeySpaceValueNewline = internal.WriteKeySpaceValueNewline
+	WriteLower                = internal.WriteLower
+)
 
 const RingBufferDefaultSize = internal.RingBufferDefaultSize

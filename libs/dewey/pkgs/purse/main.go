@@ -54,9 +54,11 @@ var WritePlugin = internal.WritePlugin
 // at {projectDir}/.purse-first/{server}.json.
 var WriteProject = internal.WriteProject
 
-const BuiltinBash = internal.BuiltinBash
-const BuiltinEdit = internal.BuiltinEdit
-const BuiltinGlob = internal.BuiltinGlob
-const BuiltinGrep = internal.BuiltinGrep
-const BuiltinRead = internal.BuiltinRead
-const BuiltinWrite = internal.BuiltinWrite
+const (
+	BuiltinBash  = internal.BuiltinBash
+	BuiltinEdit  = internal.BuiltinEdit
+	BuiltinGlob  = internal.BuiltinGlob
+	BuiltinGrep  = internal.BuiltinGrep
+	BuiltinRead  = internal.BuiltinRead
+	BuiltinWrite = internal.BuiltinWrite
+)

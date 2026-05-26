@@ -7,8 +7,10 @@ import (
 	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
 )
 
-type MutableSet[T any] = internal.MutableSet[T]
-type Set[T any] = internal.Set[T]
+type (
+	MutableSet[T any] = internal.MutableSet[T]
+	Set[T any]        = internal.Set[T]
+)
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -21,6 +23,7 @@ func MakeMutableSet[ELEMENT any](keyer interfaces.StringKeyer[ELEMENT], count in
 func MakeMutableValueSet[ELEMENT interfaces.Stringer](keyer interfaces.StringKeyer[ELEMENT], elements ...ELEMENT) (set internal.MutableSet[ELEMENT]) {
 	return internal.MakeMutableValueSet[ELEMENT](keyer, elements...)
 }
+
 func MakeSet[ELEMENT any](keyer interfaces.StringKeyer[ELEMENT], elements ...ELEMENT) (set internal.Set[ELEMENT]) {
 	return internal.MakeSet[ELEMENT](keyer, elements...)
 }
@@ -29,6 +32,7 @@ func MakeSet[ELEMENT any](keyer interfaces.StringKeyer[ELEMENT], elements ...ELE
 func MakeValueSet[ELEMENT interfaces.Stringer](keyer interfaces.StringKeyer[ELEMENT], seq interfaces.Seq[ELEMENT]) (set internal.Set[ELEMENT]) {
 	return internal.MakeValueSet[ELEMENT](keyer, seq)
 }
+
 func MakeValueSetFromSlice[ELEMENT interfaces.Stringer](keyer interfaces.StringKeyer[ELEMENT], elements ...ELEMENT) (set internal.Set[ELEMENT]) {
 	return internal.MakeValueSetFromSlice[ELEMENT](keyer, elements...)
 }

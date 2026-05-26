@@ -6,10 +6,12 @@ import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/http_s
 
 type Code = internal.Code
 
-const Code400BadRequest = internal.Code400BadRequest
-const Code405MethodNotAllowed = internal.Code405MethodNotAllowed
-const Code409Conflict = internal.Code409Conflict
-const Code422UnprocessableEntity = internal.Code422UnprocessableEntity
-const Code499ClientClosedRequest = internal.Code499ClientClosedRequest
-const Code500InternalServerError = internal.Code500InternalServerError
-const Code501NotImplemented = internal.Code501NotImplemented
+const (
+	Code400BadRequest          = internal.Code400BadRequest
+	Code405MethodNotAllowed    = internal.Code405MethodNotAllowed
+	Code409Conflict            = internal.Code409Conflict
+	Code422UnprocessableEntity = internal.Code422UnprocessableEntity
+	Code499ClientClosedRequest = internal.Code499ClientClosedRequest
+	Code500InternalServerError = internal.Code500InternalServerError
+	Code501NotImplemented      = internal.Code501NotImplemented
+)

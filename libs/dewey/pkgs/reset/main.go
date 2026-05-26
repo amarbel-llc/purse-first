@@ -7,8 +7,10 @@ import (
 	constraints "golang.org/x/exp/constraints"
 )
 
-type FuncReset[ELEMENT any] = internal.FuncReset[ELEMENT]
-type FuncResetWith[ELEMENT any] = internal.FuncResetWith[ELEMENT]
+type (
+	FuncReset[ELEMENT any]     = internal.FuncReset[ELEMENT]
+	FuncResetWith[ELEMENT any] = internal.FuncResetWith[ELEMENT]
+)
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -16,6 +18,7 @@ type FuncResetWith[ELEMENT any] = internal.FuncResetWith[ELEMENT]
 func Map[KEY constraints.Ordered, VALUE any](mapp map[KEY]VALUE) (out map[KEY]VALUE) {
 	return internal.Map[KEY, VALUE](mapp)
 }
+
 func Slice[ELEMENT any](in []ELEMENT) (out []ELEMENT) {
 	return internal.Slice[ELEMENT](in)
 }

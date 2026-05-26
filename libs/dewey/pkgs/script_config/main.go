@@ -4,18 +4,22 @@ package script_config
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/script_config"
 
-type RemoteScript = internal.RemoteScript
-type RemoteScriptWithEnv = internal.RemoteScriptWithEnv
-type ScriptConfig = internal.ScriptConfig
-type ScriptConfigDocument = internal.ScriptConfigDocument
-type WithOutputFormat = internal.WithOutputFormat
-type WithOutputFormatDocument = internal.WithOutputFormatDocument
+type (
+	RemoteScript             = internal.RemoteScript
+	RemoteScriptWithEnv      = internal.RemoteScriptWithEnv
+	ScriptConfig             = internal.ScriptConfig
+	ScriptConfigDocument     = internal.ScriptConfigDocument
+	WithOutputFormat         = internal.WithOutputFormat
+	WithOutputFormatDocument = internal.WithOutputFormatDocument
+)
 
-var DecodeScriptConfig = internal.DecodeScriptConfig
-var DecodeScriptConfigInto = internal.DecodeScriptConfigInto
-var DecodeWithOutputFormat = internal.DecodeWithOutputFormat
-var DecodeWithOutputFormatInto = internal.DecodeWithOutputFormatInto
-var EncodeScriptConfigFrom = internal.EncodeScriptConfigFrom
-var EncodeWithOutputFormatFrom = internal.EncodeWithOutputFormatFrom
-var MakeWriterTo = internal.MakeWriterTo
-var MakeWriterToWithStdin = internal.MakeWriterToWithStdin
+var (
+	DecodeScriptConfig         = internal.DecodeScriptConfig
+	DecodeScriptConfigInto     = internal.DecodeScriptConfigInto
+	DecodeWithOutputFormat     = internal.DecodeWithOutputFormat
+	DecodeWithOutputFormatInto = internal.DecodeWithOutputFormatInto
+	EncodeScriptConfigFrom     = internal.EncodeScriptConfigFrom
+	EncodeWithOutputFormatFrom = internal.EncodeWithOutputFormatFrom
+	MakeWriterTo               = internal.MakeWriterTo
+	MakeWriterToWithStdin      = internal.MakeWriterToWithStdin
+)

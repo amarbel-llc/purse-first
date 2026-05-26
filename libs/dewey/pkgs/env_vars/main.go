@@ -4,14 +4,20 @@ package env_vars
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/env_vars"
 
-type BufferedCoderDotenv = internal.BufferedCoderDotenv
-type DirectoryLayoutBaseEnvVar = internal.DirectoryLayoutBaseEnvVar
-type DirectoryLayoutPath = internal.DirectoryLayoutPath
+type (
+	BufferedCoderDotenv       = internal.BufferedCoderDotenv
+	DirectoryLayoutBaseEnvVar = internal.DirectoryLayoutBaseEnvVar
+	DirectoryLayoutPath       = internal.DirectoryLayoutPath
+)
 
 // TODO add support for comments
-type EnvVars = internal.EnvVars
-type Getenv = internal.Getenv
+type (
+	EnvVars = internal.EnvVars
+	Getenv  = internal.Getenv
+)
 
-var GetOrPanic = internal.GetOrPanic
-var Make = internal.Make
-var MakeAbsolutePath = internal.MakeAbsolutePath
+var (
+	GetOrPanic       = internal.GetOrPanic
+	Make             = internal.Make
+	MakeAbsolutePath = internal.MakeAbsolutePath
+)

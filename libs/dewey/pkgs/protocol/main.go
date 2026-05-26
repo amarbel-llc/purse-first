@@ -399,17 +399,19 @@ var TextContent = internal.TextContent
 // TextContentV1 creates a ContentBlockV1 containing plain text.
 var TextContentV1 = internal.TextContentV1
 
-const ElicitationActionAccept = internal.ElicitationActionAccept
-const ElicitationActionCancel = internal.ElicitationActionCancel
-const ElicitationActionDecline = internal.ElicitationActionDecline
-const LoggingLevelAlert = internal.LoggingLevelAlert
-const LoggingLevelCritical = internal.LoggingLevelCritical
-const LoggingLevelDebug = internal.LoggingLevelDebug
-const LoggingLevelEmergency = internal.LoggingLevelEmergency
-const LoggingLevelError = internal.LoggingLevelError
-const LoggingLevelInfo = internal.LoggingLevelInfo
-const LoggingLevelNotice = internal.LoggingLevelNotice
-const LoggingLevelWarning = internal.LoggingLevelWarning
+const (
+	ElicitationActionAccept  = internal.ElicitationActionAccept
+	ElicitationActionCancel  = internal.ElicitationActionCancel
+	ElicitationActionDecline = internal.ElicitationActionDecline
+	LoggingLevelAlert        = internal.LoggingLevelAlert
+	LoggingLevelCritical     = internal.LoggingLevelCritical
+	LoggingLevelDebug        = internal.LoggingLevelDebug
+	LoggingLevelEmergency    = internal.LoggingLevelEmergency
+	LoggingLevelError        = internal.LoggingLevelError
+	LoggingLevelInfo         = internal.LoggingLevelInfo
+	LoggingLevelNotice       = internal.LoggingLevelNotice
+	LoggingLevelWarning      = internal.LoggingLevelWarning
+)
 
 // MethodCompletionComplete requests argument completions.
 const MethodCompletionComplete = internal.MethodCompletionComplete
@@ -505,12 +507,14 @@ const ProtocolVersion = internal.ProtocolVersion
 const ProtocolVersionV0 = internal.ProtocolVersionV0
 
 // ProtocolVersionV1 is the updated MCP protocol version (2025-11-25).
-const ProtocolVersionV1 = internal.ProtocolVersionV1
-const TaskStatusCancelled = internal.TaskStatusCancelled
-const TaskStatusCompleted = internal.TaskStatusCompleted
-const TaskStatusFailed = internal.TaskStatusFailed
-const TaskStatusInputRequired = internal.TaskStatusInputRequired
-const TaskStatusWorking = internal.TaskStatusWorking
+const (
+	ProtocolVersionV1       = internal.ProtocolVersionV1
+	TaskStatusCancelled     = internal.TaskStatusCancelled
+	TaskStatusCompleted     = internal.TaskStatusCompleted
+	TaskStatusFailed        = internal.TaskStatusFailed
+	TaskStatusInputRequired = internal.TaskStatusInputRequired
+	TaskStatusWorking       = internal.TaskStatusWorking
+)
 
 // TaskSupportForbidden means clients must not invoke the tool as a task.
 const TaskSupportForbidden = internal.TaskSupportForbidden

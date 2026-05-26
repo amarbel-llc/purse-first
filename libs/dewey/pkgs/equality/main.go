@@ -13,6 +13,7 @@ import (
 func MapsOrdered[K constraints.Ordered, V constraints.Ordered](a map[K]V, b map[K]V) bool {
 	return internal.MapsOrdered[K, V](a, b)
 }
+
 func SliceOrdered[V constraints.Ordered](a []V, b []V) bool {
 	return internal.SliceOrdered[V](a, b)
 }

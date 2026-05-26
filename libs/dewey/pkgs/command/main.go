@@ -11,9 +11,11 @@ import (
 type Arg[V interfaces.FlagValue] = internal.Arg[V]
 
 // ArrayFlag is a repeated/array flag with nested item schema.
-type ArrayFlag = internal.ArrayFlag
-type BoolFlag = internal.BoolFlag
-type CLICompleter = internal.CLICompleter
+type (
+	ArrayFlag    = internal.ArrayFlag
+	BoolFlag     = internal.BoolFlag
+	CLICompleter = internal.CLICompleter
+)
 
 // Cmd is the interface for dodder-style commands that use the Request pattern.
 // Commands implement Run(Request) and optionally implement CommandWithDescription,
@@ -23,9 +25,11 @@ type Cmd = internal.Cmd
 // Command declares a single subcommand with all metadata needed
 // to generate CLI parsing, MCP tool registration, manpages,
 // completions, and plugin manifests.
-type Command = internal.Command
-type CommandComponent = internal.CommandComponent
-type CommandComponentReader = internal.CommandComponentReader
+type (
+	Command                = internal.Command
+	CommandComponent       = internal.CommandComponent
+	CommandComponentReader = internal.CommandComponentReader
+)
 
 // TODO complete merging Args, consumed and FlagsOrArgs for use by Run/Complete
 type CommandLineInput = internal.CommandLineInput
@@ -49,8 +53,10 @@ type CommandWithResult = internal.CommandWithResult
 
 // Completer is implemented by commands that provide shell completions.
 // The env parameter is application-specific (e.g., dodder passes env_local.Env).
-type Completer = internal.Completer
-type Completion = internal.Completion
+type (
+	Completer  = internal.Completer
+	Completion = internal.Completion
+)
 
 // Description holds short and long descriptions for a command.
 type Description = internal.Description
@@ -67,11 +73,13 @@ type Example = internal.Example
 type FilePath = internal.FilePath
 
 // Flag is a named CLI flag (--name / -n), also an MCP schema property.
-type Flag[V interfaces.FlagValue] = internal.Flag[V]
-type FlagValueCompleter = internal.FlagValueCompleter
-type FuncCompleter = internal.FuncCompleter
-type IntArg = internal.IntArg
-type IntFlag = internal.IntFlag
+type (
+	Flag[V interfaces.FlagValue] = internal.Flag[V]
+	FlagValueCompleter           = internal.FlagValueCompleter
+	FuncCompleter                = internal.FuncCompleter
+	IntArg                       = internal.IntArg
+	IntFlag                      = internal.IntFlag
+)
 
 // MCPAnnotations declares MCP tool hints without importing protocol types
 // directly, keeping the golf layer dependency-free.
@@ -129,13 +137,17 @@ type Prompter = internal.Prompter
 type Request = internal.Request
 
 // Result holds the output of a command handler, used by both CLI and MCP runners.
-type Result = internal.Result
-type StringArg = internal.StringArg
-type StringFlag = internal.StringFlag
+type (
+	Result     = internal.Result
+	StringArg  = internal.StringArg
+	StringFlag = internal.StringFlag
+)
 
 // StubPrompter returns errors for all prompts. Used in MCP mode.
-type StubPrompter = internal.StubPrompter
-type SupportsCompletion = internal.SupportsCompletion
+type (
+	StubPrompter       = internal.StubPrompter
+	SupportsCompletion = internal.SupportsCompletion
+)
 
 // ToolMapping declares that this command's MCP tool should intercept
 // a specific Claude Code tool under certain conditions.
@@ -152,9 +164,11 @@ var FindToolMatch = internal.FindToolMatch
 var JSONResult = internal.JSONResult
 
 // NewUtility creates a new Utility with the given name and short description.
-var NewUtility = internal.NewUtility
-var PopRequestArgTo = internal.PopRequestArgTo
-var PopRequestArgToFunc = internal.PopRequestArgToFunc
+var (
+	NewUtility          = internal.NewUtility
+	PopRequestArgTo     = internal.PopRequestArgTo
+	PopRequestArgToFunc = internal.PopRequestArgToFunc
+)
 
 // TextErrorResult creates an error Result with plain text.
 var TextErrorResult = internal.TextErrorResult
@@ -168,13 +182,16 @@ var TextResult = internal.TextResult
 func PopRequestArg[VALUE interfaces.Stringer, VALUE_PTR interfaces.StringerSetterPtr[VALUE]](req internal.Request, name string) VALUE_PTR {
 	return internal.PopRequestArg[VALUE, VALUE_PTR](req, name)
 }
+
 func PopRequestArgs[VALUE interfaces.Stringer, VALUE_PTR interfaces.StringerSetterPtr[VALUE]](req internal.Request, name string) interfaces.Seq[VALUE_PTR] {
 	return internal.PopRequestArgs[VALUE, VALUE_PTR](req, name)
 }
 
-const Array = internal.Array
-const Bool = internal.Bool
-const Float = internal.Float
-const Int = internal.Int
-const Object = internal.Object
-const String = internal.String
+const (
+	Array  = internal.Array
+	Bool   = internal.Bool
+	Float  = internal.Float
+	Int    = internal.Int
+	Object = internal.Object
+	String = internal.String
+)

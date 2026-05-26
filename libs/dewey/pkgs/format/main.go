@@ -9,17 +9,19 @@ import (
 
 type LineWriter = internal.LineWriter
 
-var MakeDelimReaderConsumeEmpty = internal.MakeDelimReaderConsumeEmpty
-var MakeFormatString = internal.MakeFormatString
-var MakeFormatStringRightAligned = internal.MakeFormatStringRightAligned
-var MakeLineReaderConsumeEmpty = internal.MakeLineReaderConsumeEmpty
-var MakeLineReaderPassThruEmpty = internal.MakeLineReaderPassThruEmpty
-var MakeLineWriter = internal.MakeLineWriter
-var MakeStringer = internal.MakeStringer
-var NewLineWriter = internal.NewLineWriter
-var ReadLines = internal.ReadLines
-var ReadSep = internal.ReadSep
-var Write = internal.Write
+var (
+	MakeDelimReaderConsumeEmpty  = internal.MakeDelimReaderConsumeEmpty
+	MakeFormatString             = internal.MakeFormatString
+	MakeFormatStringRightAligned = internal.MakeFormatStringRightAligned
+	MakeLineReaderConsumeEmpty   = internal.MakeLineReaderConsumeEmpty
+	MakeLineReaderPassThruEmpty  = internal.MakeLineReaderPassThruEmpty
+	MakeLineWriter               = internal.MakeLineWriter
+	MakeStringer                 = internal.MakeStringer
+	NewLineWriter                = internal.NewLineWriter
+	ReadLines                    = internal.ReadLines
+	ReadSep                      = internal.ReadSep
+	Write                        = internal.Write
+)
 
 // Generic function wrappers — Go does not support assigning
 // generic functions to variables without instantiation.
@@ -27,12 +29,15 @@ var Write = internal.Write
 func MakeFormatStringer[ELEMENT interfaces.Stringer](sf interfaces.FuncString[interfaces.Set[ELEMENT]]) interfaces.FuncWriterFormat[interfaces.Set[ELEMENT]] {
 	return internal.MakeFormatStringer[ELEMENT](sf)
 }
+
 func MakeWriter[ELEMENT any](wff interfaces.FuncWriterFormat[ELEMENT], e ELEMENT) interfaces.FuncWriter {
 	return internal.MakeWriter[ELEMENT](wff, e)
 }
+
 func MakeWriterOr[A interfaces.Stringer, B interfaces.Stringer](wffA interfaces.FuncWriterFormat[A], eA A, wffB interfaces.FuncWriterFormat[B], eB B) interfaces.FuncWriter {
 	return internal.MakeWriterOr[A, B](wffA, eA, wffB, eB)
 }
+
 func MakeWriterPtr[ELEMENT any](wff interfaces.FuncWriterFormat[*ELEMENT], e *ELEMENT) interfaces.FuncWriter {
 	return internal.MakeWriterPtr[ELEMENT](wff, e)
 }
