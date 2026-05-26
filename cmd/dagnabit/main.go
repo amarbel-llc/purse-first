@@ -295,11 +295,7 @@ func runExport() {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
-
-		return
-	}
-
-	if len(args) > 0 {
+	} else if len(args) > 0 {
 		for _, arg := range args {
 			if err := exporter.ExportPackage(arg); err != nil {
 				fmt.Fprintf(os.Stderr, "error: %v\n", err)
@@ -311,5 +307,10 @@ func runExport() {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
+	}
+
+	if err := exporter.FormatOutput(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
 	}
 }

@@ -99,6 +99,27 @@ facade files from
 .I internal/
 packages.
 .PP
+After generation, if a
+.BR treefmt (1)
+configuration
+.RB ( treefmt.toml ,
+.BR .treefmt.toml ,
+or
+.BR treefmt.nix )
+is found by walking up from the module root,
+.B dagnabit
+runs the formatter on the output directory. Resolution prefers the
+.B treefmt
+binary on
+.BR PATH ;
+if absent and the config is
+.BR treefmt.nix ,
+falls back to
+.B nix fmt
+with the output dir as a positional argument. This is skipped under
+.B \-\-dry\-run
+and when neither tool is available.
+.PP
 Three invocation modes:
 .TP
 .B "dagnabit export"
@@ -317,7 +338,8 @@ Success.
 Error (dependency cycle, missing go.mod, generation failure, etc.).
 .SH SEE ALSO
 .BR go-generate (1),
-.BR go-list (1)
+.BR go-list (1),
+.BR treefmt (1)
 .SH BUGS
 Report bugs at
 .UR https://github.com/amarbel-llc/purse-first/issues
