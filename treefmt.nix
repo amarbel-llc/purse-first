@@ -12,6 +12,15 @@
   programs.gofumpt.enable = true;
   settings.formatter.gofumpt.priority = 2;
 
+  # helper_test.go uses a deliberate `stmt; stmt` one-liner so that
+  # `runtime.Caller(0)` and the failing call share a source line — the
+  # test asserts byte-equal line numbers between expectedLine and the
+  # diagnostic's reported line. gofumpt and goimports both normalise
+  # semicolons to newlines, which breaks the invariant. Excluding the
+  # one file from both passes keeps the rest of libs/go-mcp formatted.
+  settings.formatter.gofumpt.excludes = [ "libs/go-mcp/operation/helper_test.go" ];
+  settings.formatter.goimports.excludes = [ "libs/go-mcp/operation/helper_test.go" ];
+
   programs.nixfmt.enable = true;
 
   programs.shfmt.enable = true;
