@@ -76,12 +76,11 @@ func TestExportCopyComposesWithDirectiveScan(t *testing.T) {
 	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(pkgDir, "widget.go"), []byte(`package widget
-
-//go:generate dagnabit export
-
-func Greet() string { return "hi" }
-`), 0o644); err != nil {
+	// Construct the directive at runtime so this source file does not itself
+	// contain a literal `//go:generate dagnabit export` line — which would
+	// otherwise be picked up by scanForExportDirectives walking internal/.
+	content := "package widget\n\n" + exportDirective + "\n\nfunc Greet() string { return \"hi\" }\n"
+	if err := os.WriteFile(filepath.Join(pkgDir, "widget.go"), []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
