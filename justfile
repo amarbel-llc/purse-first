@@ -111,6 +111,14 @@ dewey-export pkg:
 dewey-export-library *flags:
     cd {{justfile_directory()}}/libs/dewey && {{justfile_directory()}}/build/dagnabit export --library {{flags}}
 
+# Drift lint: ensure libs/dewey/pkgs/ matches what `dagnabit export --library`
+# (plus the integrated treefmt pass) produces from the current internal/ tree.
+# Run from CI to catch stale facades before they merge. Depends on
+# `dagnabit-build` so the binary under test is the one in the current
+# working tree, and on `dewey-export-library` so the export actually runs.
+lint-dewey-pkgs-drift: dagnabit-build dewey-export-library
+    git diff --exit-code -- libs/dewey/pkgs/
+
 # Test rust-mcp library
 test-rust-mcp:
     cd libs/rust-mcp && {{cmd_nix_dev}} cargo test

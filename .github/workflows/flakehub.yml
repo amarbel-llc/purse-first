@@ -80,4 +80,6 @@ jobs:
         run: |
           nix develop --command just build-nix-gomod2nix
           git diff --exit-code -- gomod2nix.toml
+      - name: Validate libs/dewey/pkgs/ is in sync with dagnabit export --library
+        run: nix develop --command just lint-dewey-pkgs-drift
       - run: nix build
