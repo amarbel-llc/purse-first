@@ -9,17 +9,36 @@ import (
 )
 
 type (
-	Context              = internal.Context
-	ErrNotFound          = internal.ErrNotFound
-	ErrorsIs             = internal.ErrorsIs
-	Flusher              = internal.Flusher
-	FuncContext          = internal.FuncContext
-	FuncErr              = internal.FuncErr
-	FuncIs               = internal.FuncIs
-	FuncNil              = internal.FuncNil
-	FuncWithStackInfo    = internal.FuncWithStackInfo
-	Group                = internal.Group
-	GroupBuilder         = internal.GroupBuilder
+	Context           = internal.Context
+	ErrNotFound       = internal.ErrNotFound
+	ErrorsIs          = internal.ErrorsIs
+	Flusher           = internal.Flusher
+	FuncContext       = internal.FuncContext
+	FuncErr           = internal.FuncErr
+	FuncIs            = internal.FuncIs
+	FuncNil           = internal.FuncNil
+	FuncWithStackInfo = internal.FuncWithStackInfo
+	Group             = internal.Group
+	GroupBuilder      = internal.GroupBuilder
+)
+
+// HTTPRenderer is the explicit transformer used at HTTP wire/UX boundaries
+// to convert a domain error into its on-the-wire HTTP form. Domain code
+// returns errors satisfying HTTPStatusCarrier; HTTP handlers/middleware
+// call AsHTTPError(err) to obtain the rendered form.
+type HTTPRenderer = internal.HTTPRenderer
+
+// HTTPStatusCarrier is the semantic tag attached to errors that carry an
+// HTTP status code. Detected via errors.As through wrapped chains.
+type HTTPStatusCarrier = internal.HTTPStatusCarrier
+
+// HTTPStatusError carries an HTTP status code as semantics, not identity.
+// Error() returns the wrapped message, leaving the HTTP rendering to
+// HTTPRender() / AsHTTPError() at the wire boundary. This means CLI tools,
+// log lines, and other non-HTTP consumers get useful output without
+// needing to walk past hidden-wrapper layers.
+type (
+	HTTPStatusError      = internal.HTTPStatusError
 	Helpful              = internal.Helpful
 	Signal               = internal.Signal
 	Typed[DISAMB any]    = internal.Typed[DISAMB]
@@ -29,12 +48,32 @@ type (
 	WithStackInfo[T any] = internal.WithStackInfo[T]
 )
 
+var As = internal.As
+
+// AsHTTPError walks err's chain for an HTTPRenderer and returns the
+// wire-shaped error. HTTP handlers call this to convert a domain error
+// into the response shape. Returns (nil, false) if no HTTP-tagged
+// error is in the chain.
+var AsHTTPError = internal.AsHTTPError
+
+// BadRequest tags an existing error with HTTP 400. No-op if the chain
+// already carries 400.
+var BadRequest = internal.BadRequest
+
+// BadRequestWrapf is an alias for BadRequestf retained for backwards
+// compatibility; both behave identically (pre-#107 they were already
+// the same).
+var BadRequestWrapf = internal.BadRequestWrapf
+
+// BadRequestf formats and tags with HTTP 400.
 var (
-	As                                      = internal.As
-	BadRequest                              = internal.BadRequest
-	BadRequestWrapf                         = internal.BadRequestWrapf
-	BadRequestf                             = internal.BadRequestf
-	CancelWithNotImplemented                = internal.CancelWithNotImplemented
+	BadRequestf              = internal.BadRequestf
+	CancelWithNotImplemented = internal.CancelWithNotImplemented
+)
+
+// Conflictf formats and tags with HTTP 409.
+var (
+	Conflictf                               = internal.Conflictf
 	ContextCancelWith499ClientClosedRequest = internal.ContextCancelWith499ClientClosedRequest
 	ContextCancelWithBadRequestError        = internal.ContextCancelWithBadRequestError
 	ContextCancelWithBadRequestf            = internal.ContextCancelWithBadRequestf
@@ -69,9 +108,15 @@ var (
 // GetErrNotFound extracts the ErrNotFound from an error chain.
 // Returns the typed error and true if found, zero value and false otherwise.
 var (
-	GetErrNotFound           = internal.GetErrNotFound
-	Is                       = internal.Is
-	Is400BadRequest          = internal.Is400BadRequest
+	GetErrNotFound = internal.GetErrNotFound
+	Is             = internal.Is
+)
+
+// Is400BadRequest reports whether err's chain carries HTTP 400.
+var Is400BadRequest = internal.Is400BadRequest
+
+// Is499ClientClosedRequest reports whether err's chain carries HTTP 499.
+var (
 	Is499ClientClosedRequest = internal.Is499ClientClosedRequest
 	IsAny                    = internal.IsAny
 	IsBrokenPipe             = internal.IsBrokenPipe
@@ -79,9 +124,15 @@ var (
 	IsErrNotFound            = internal.IsErrNotFound
 	IsErrno                  = internal.IsErrno
 	IsExist                  = internal.IsExist
-	IsHTTPError              = internal.IsHTTPError
-	IsNetTimeout             = internal.IsNetTimeout
-	IsNotExist               = internal.IsNotExist
+)
+
+// IsHTTPError reports whether err's chain carries the given status code.
+// Uses errors.As against the HTTPStatusCarrier interface so it works
+// across both HTTPStatusError (domain) and httpRendering (wire).
+var (
+	IsHTTPError  = internal.IsHTTPError
+	IsNetTimeout = internal.IsNetTimeout
+	IsNotExist   = internal.IsNotExist
 )
 
 // TODO remove
@@ -104,20 +155,35 @@ var (
 )
 
 // TODO consider making a pool and return a repool func on construction
+var MakeGroupBuilder = internal.MakeGroupBuilder
+
+// MakeHTTPStatusError constructs an HTTPStatusError directly. Prefer the
+// status-specific constructors (BadRequestf, Conflictf, …) where
+// possible.
 var (
-	MakeGroupBuilder               = internal.MakeGroupBuilder
-	MakeIsErrno                    = internal.MakeIsErrno
-	MakeWaitGroupParallel          = internal.MakeWaitGroupParallel
-	MakeWaitGroupSerial            = internal.MakeWaitGroupSerial
-	Must                           = internal.Must
+	MakeHTTPStatusError   = internal.MakeHTTPStatusError
+	MakeIsErrno           = internal.MakeIsErrno
+	MakeWaitGroupParallel = internal.MakeWaitGroupParallel
+	MakeWaitGroupSerial   = internal.MakeWaitGroupSerial
+	Must                  = internal.Must
+)
+
+// NotImplementedf formats and tags with HTTP 501.
+var (
+	NotImplementedf                = internal.NotImplementedf
 	PanicIfError                   = internal.PanicIfError
 	PrintHelpful                   = internal.PrintHelpful
 	RunChildContextWithPrintTicker = internal.RunChildContextWithPrintTicker
 	RunContextWithPrintTicker      = internal.RunContextWithPrintTicker
-	Unwrap                         = internal.Unwrap
-	WithHelp                       = internal.WithHelp
-	WithoutStack                   = internal.WithoutStack
-	Wrap                           = internal.Wrap
+)
+
+// UnprocessableEntityf formats and tags with HTTP 422.
+var (
+	UnprocessableEntityf = internal.UnprocessableEntityf
+	Unwrap               = internal.Unwrap
+	WithHelp             = internal.WithHelp
+	WithoutStack         = internal.WithoutStack
+	Wrap                 = internal.Wrap
 )
 
 // Wrap the error with stack info unless it's one of the provided `except`

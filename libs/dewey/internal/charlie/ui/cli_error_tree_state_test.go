@@ -60,15 +60,15 @@ func testCLITreeForwards(t *TestContext) {
 				newPkgError("one"),
 				newPkgError("two"),
 				errors.Group{
-					errors.Err501NotImplemented.WrapIncludingHTTP(
+					errors.Err501NotImplemented.Wrap(
 						newPkgError("inner"),
-					),
+					).HTTPRender(),
 				},
 			},
 			expected: `error group: 3 errors
 ├── one
 ├── two
-└── errors.HTTP: 501 Not Implemented
+└── HTTP: 501 Not Implemented
     └── inner
 `,
 		},
@@ -133,14 +133,14 @@ func testCLITreeForwards(t *TestContext) {
 				"wrapper in middle of group",
 			),
 			input: errors.Group{
-				errors.Err501NotImplemented.WrapIncludingHTTP(
+				errors.Err501NotImplemented.Wrap(
 					newPkgError("inner"),
-				),
+				).HTTPRender(),
 				newPkgError("two"),
 				newPkgError("three"),
 			},
 			expected: `error group: 3 errors
-├── errors.HTTP: 501 Not Implemented
+├── HTTP: 501 Not Implemented
 │   └── inner
 ├── two
 └── three
@@ -158,6 +158,15 @@ func testCLITreeForwards(t *TestContext) {
 				},
 			},
 			expected: "only\n",
+		},
+		{
+			TestCaseInfo: MakeTestCaseInfo(
+				"BadRequestf renders only the user message",
+			),
+			input: errors.Group{
+				errors.BadRequestf("invalid -color value %q", "rainbow"),
+			},
+			expected: "invalid -color value \"rainbow\"\n",
 		},
 		// TODO figure out how to include stack info stabley
 		// {

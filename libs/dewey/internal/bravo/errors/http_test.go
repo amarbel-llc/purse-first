@@ -9,7 +9,7 @@ import (
 type testErrDisamb struct{}
 
 func TestBadRequestf(t *testing.T) {
-	badRequest := BadRequestf("testing")
+	var badRequest error = BadRequestf("testing")
 	badRequest = Wrap(badRequest)
 
 	if !Is400BadRequest(badRequest) {
@@ -18,7 +18,7 @@ func TestBadRequestf(t *testing.T) {
 }
 
 func TestBadRequest(t *testing.T) {
-	badRequest := BadRequest(NewWithType[testErrDisamb]("testing"))
+	var badRequest error = BadRequest(NewWithType[testErrDisamb]("testing"))
 	badRequest = Wrap(badRequest)
 
 	if !Is400BadRequest(badRequest) {

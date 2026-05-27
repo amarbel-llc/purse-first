@@ -217,6 +217,16 @@ func (state *cliTreeState) encodeStack() {
 		state.stack.pop()
 
 	case errors.UnwrapOne:
+		// Transparent-passthrough collapse: when a wrapper's Error()
+		// is identical to its child's Error(), it contributes no new
+		// information to the rendered tree. Skip the wrapper and
+		// render the child directly. Covers HTTPStatusError and any
+		// future wrapper that delegates Error() to its underlying.
+		if child := inputTyped.Unwrap(); child != nil && input.Error() == child.Error() {
+			stackItem.child = child
+			state.encodeStack()
+			return
+		}
 		state.printErrorOneUnwrapper(inputTyped)
 
 	case errors.UnwrapMany:
