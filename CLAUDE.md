@@ -268,9 +268,12 @@ Per eng-versioning(7), each independently-tagged target owns its own
   / `release-purse-first` and read by `gomod.nix` at build time.
 - `libs/dewey/version.env` — `DEWEY_VERSION` for the dewey library and its
   binaries; managed by the `*-dewey` recipe triple.
-
-`marketplace-config.json` carries the per-plugin version map (mutated by
-`just bump-version <package> <version>`); it is unrelated to the
-purse-first / dewey version sources above.
+- `libs/go-mcp/version.env` — `GO_MCP_VERSION` for the go-mcp library;
+  managed by the `*-go-mcp` recipe triple. No binaries are shipped, so
+  there is no ldflag injection.
+- `libs/rust-mcp/version.env` — `RUST_MCP_VERSION` for the rust-mcp library;
+  managed by the `*-rust-mcp` recipe triple, which also bumps the
+  `[package].version` in `libs/rust-mcp/Cargo.toml` so the two stay in
+  lock-step.
 
 Pre-1.0: MINOR bumps may include breaking changes. Post-1.0: semver is strict.

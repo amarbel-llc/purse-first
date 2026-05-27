@@ -295,38 +295,9 @@ clean:
     rm -rf build/
     rm -rf result result-cli
 
-# Bump version for a package. Usage: just bump-version grit 0.2.0
-[group('maintenance')]
-bump-version package version:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    # Update marketplace-config.json (source of truth)
-    jq --arg pkg "{{ package }}" --arg ver "{{ version }}" \
-      '.plugins[$pkg].version = $ver' marketplace-config.json > marketplace-config.json.tmp
-    mv marketplace-config.json.tmp marketplace-config.json
-    gum log --level info "{{ package }}: version bumped to {{ version }}"
-    gum log --level warn "Remember to update Cargo.toml and SKILL.md frontmatter if applicable"
-
-# Tag a library release. Usage: just tag-lib go-mcp 0.0.11 "feat: add EmbeddedResource types"
-[group('maintenance')]
-tag-lib lib version message:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    tag="libs/{{ lib }}/v{{ version }}"
-    prev=$(git tag --sort=-v:refname -l "libs/{{ lib }}/v*" | head -1)
-    if [[ -n "$prev" ]]; then
-      gum log --level info "Previous: $prev"
-      git log --oneline "$prev"..HEAD -- "libs/{{ lib }}/"
-    fi
-    git tag -s -m "{{ message }}" "$tag"
-    gum log --level info "Created tag: $tag"
-    git push origin "$tag"
-    gum log --level info "Pushed $tag"
-    git tag -v "$tag"
-
 # Per eng-versioning(7): each independently-versioned target (purse-first
-# repo, libs/dewey) has its own bump-version / tag / release triple
-# reading from its own version.env.
+# repo, libs/dewey, libs/go-mcp, libs/rust-mcp) has its own bump-version /
+# tag / release triple reading from its own version.env.
 
 # Rewrite PURSE_FIRST_VERSION in version.env. Pure mutation — release owns
 # the commit and tag steps.
@@ -419,6 +390,107 @@ release-dewey new_version:
     git commit -m "$header"
     just tag-dewey "$msg"
     gh release create "libs/dewey/v{{ new_version }}" --title "$header" --notes "$msg"
+
+# Rewrite GO_MCP_VERSION in libs/go-mcp/version.env. Pure mutation.
+[group('maintenance')]
+bump-version-go-mcp new_version:
+    sed -E -i 's/^(export GO_MCP_VERSION)=.*/\1={{ new_version }}/' libs/go-mcp/version.env
+
+# Read GO_MCP_VERSION, create signed annotated tag libs/go-mcp/v<sem>, push,
+# and verify. Tag prefix matches the sub-module path so the Go module proxy
+# resolves it.
+[group('maintenance')]
+tag-go-mcp message:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    . libs/go-mcp/version.env
+    tag="libs/go-mcp/v${GO_MCP_VERSION:?missing GO_MCP_VERSION in libs/go-mcp/version.env}"
+    git tag -s -m "{{ message }}" "$tag"
+    gum log --level info "Created tag: $tag"
+    git push origin "$tag"
+    gum log --level info "Pushed $tag"
+    git tag -v "$tag"
+
+# Full go-mcp release flow. Changelog filters commits touching libs/go-mcp/.
+[group('maintenance')]
+release-go-mcp new_version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    if [[ "$branch" != "master" ]]; then
+        gum log --level error "release-go-mcp only allowed from master (on '$branch')"
+        exit 1
+    fi
+    prev=$(git tag --sort=-v:refname -l "libs/go-mcp/v*" | head -1)
+    header="release libs/go-mcp/v{{ new_version }}"
+    if [[ -n "$prev" ]]; then
+        summary=$(git log --format='- %s' "$prev"..HEAD -- libs/go-mcp/)
+        if [[ -n "$summary" ]]; then
+            msg="$header"$'\n\n'"$summary"
+        else
+            msg="$header"
+        fi
+    else
+        msg="$header"
+    fi
+    just bump-version-go-mcp "{{ new_version }}"
+    git add libs/go-mcp/version.env
+    git commit -m "$header"
+    just tag-go-mcp "$msg"
+    gh release create "libs/go-mcp/v{{ new_version }}" --title "$header" --notes "$msg"
+
+# Rewrite RUST_MCP_VERSION in libs/rust-mcp/version.env AND the [package]
+# version in libs/rust-mcp/Cargo.toml in lock-step. The Cargo.toml sed
+# anchors on the package-table version (first `version = "..."` after
+# `[package]`) so dependency version pins are untouched.
+[group('maintenance')]
+bump-version-rust-mcp new_version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    sed -E -i 's/^(export RUST_MCP_VERSION)=.*/\1={{ new_version }}/' libs/rust-mcp/version.env
+    sed -E -i '/^\[package\]/,/^\[/{ s/^version = "[^"]*"$/version = "{{ new_version }}"/ }' libs/rust-mcp/Cargo.toml
+
+# Read RUST_MCP_VERSION, create signed annotated tag libs/rust-mcp/v<sem>,
+# push, and verify.
+[group('maintenance')]
+tag-rust-mcp message:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    . libs/rust-mcp/version.env
+    tag="libs/rust-mcp/v${RUST_MCP_VERSION:?missing RUST_MCP_VERSION in libs/rust-mcp/version.env}"
+    git tag -s -m "{{ message }}" "$tag"
+    gum log --level info "Created tag: $tag"
+    git push origin "$tag"
+    gum log --level info "Pushed $tag"
+    git tag -v "$tag"
+
+# Full rust-mcp release flow. Changelog filters commits touching libs/rust-mcp/.
+[group('maintenance')]
+release-rust-mcp new_version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    if [[ "$branch" != "master" ]]; then
+        gum log --level error "release-rust-mcp only allowed from master (on '$branch')"
+        exit 1
+    fi
+    prev=$(git tag --sort=-v:refname -l "libs/rust-mcp/v*" | head -1)
+    header="release libs/rust-mcp/v{{ new_version }}"
+    if [[ -n "$prev" ]]; then
+        summary=$(git log --format='- %s' "$prev"..HEAD -- libs/rust-mcp/)
+        if [[ -n "$summary" ]]; then
+            msg="$header"$'\n\n'"$summary"
+        else
+            msg="$header"
+        fi
+    else
+        msg="$header"
+    fi
+    just bump-version-rust-mcp "{{ new_version }}"
+    git add libs/rust-mcp/version.env libs/rust-mcp/Cargo.toml
+    git commit -m "$header"
+    just tag-rust-mcp "$msg"
+    gh release create "libs/rust-mcp/v{{ new_version }}" --title "$header" --notes "$msg"
 
 # ──── explore ───────────────────────────────────────────────────────
 # Discovery / one-off experiments. Promoted to debug-* if they outlive
