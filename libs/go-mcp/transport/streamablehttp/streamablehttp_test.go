@@ -55,17 +55,11 @@ func startTestServer(t *testing.T, opts ...streamablehttp.Option) (*streamableht
 		_ = srv.Run(ctx)
 	}()
 
-	// Wait until Addr() reflects the listening socket (Start happens inside Run).
-	deadline := time.Now().Add(2 * time.Second)
-	for time.Now().Before(deadline) {
-		if a := tr.Addr(); a != "" && !strings.HasSuffix(a, ":0") {
-			break
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
-	if a := tr.Addr(); a == "" || strings.HasSuffix(a, ":0") {
+	select {
+	case <-tr.Ready():
+	case <-time.After(2 * time.Second):
 		cancel()
-		t.Fatalf("transport never started listening (addr=%q)", a)
+		t.Fatalf("transport never reported ready")
 	}
 
 	stop := func() {

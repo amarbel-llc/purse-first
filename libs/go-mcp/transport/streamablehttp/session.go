@@ -37,22 +37,22 @@ func (sm *sessionManager) create(protocolVersion string) (string, error) {
 	return id, nil
 }
 
-// protocolVersion returns the negotiated protocol version for a session.
-func (sm *sessionManager) protocolVersion(id string) string {
-	sm.mu.RLock()
-	defer sm.mu.RUnlock()
-	if s, ok := sm.sessions[id]; ok {
-		return s.protocolVersion
-	}
-	return ""
-}
-
 // valid returns true if the session ID exists.
 func (sm *sessionManager) valid(id string) bool {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 	_, ok := sm.sessions[id]
 	return ok
+}
+
+// lookup returns the session for id under a single lock acquisition.
+// Use instead of separate valid+protocolVersion calls to avoid TOCTOU where
+// the session is removed between the two checks.
+func (sm *sessionManager) lookup(id string) (*session, bool) {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+	s, ok := sm.sessions[id]
+	return s, ok
 }
 
 // remove deletes a session.

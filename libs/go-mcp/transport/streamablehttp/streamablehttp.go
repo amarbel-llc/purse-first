@@ -47,6 +47,10 @@ type StreamableHTTP struct {
 	// closed signals transport shutdown.
 	closed chan struct{}
 
+	// ready is closed by Start once the listener is bound, so callers (notably
+	// tests) can wait deterministically rather than polling Addr().
+	ready chan struct{}
+
 	// allowedOrigins restricts which Origin headers are accepted.
 	// Empty means all origins are allowed.
 	allowedOrigins map[string]bool
@@ -73,6 +77,7 @@ func New(addr string, opts ...Option) *StreamableHTTP {
 		incoming:       make(chan *jsonrpc.Message, 64),
 		pending:        make(map[string]chan *jsonrpc.Message),
 		closed:         make(chan struct{}),
+		ready:          make(chan struct{}),
 		allowedOrigins: make(map[string]bool),
 	}
 
@@ -98,6 +103,7 @@ func (t *StreamableHTTP) Start(ctx context.Context) error {
 	t.listener = ln
 	t.server = srv
 	t.lifecycleMu.Unlock()
+	close(t.ready)
 
 	go func() {
 		<-ctx.Done()
@@ -107,6 +113,13 @@ func (t *StreamableHTTP) Start(ctx context.Context) error {
 	go srv.Serve(ln)
 
 	return nil
+}
+
+// Ready returns a channel that is closed when Start has finished binding the
+// listener. Callers that need to interact with the transport's address (e.g.,
+// tests, or in-process clients) should select on this rather than polling Addr.
+func (t *StreamableHTTP) Ready() <-chan struct{} {
+	return t.ready
 }
 
 // Addr returns the listen address. Implements transport.LifecycleTransport.
@@ -206,15 +219,15 @@ func (t *StreamableHTTP) handlePost(w http.ResponseWriter, r *http.Request) {
 	if msg.Method != "initialize" {
 		sessionID := r.Header.Get(transport.HeaderMCPSessionID)
 		if sessionID != "" {
-			if !t.sessions.valid(sessionID) {
+			sess, ok := t.sessions.lookup(sessionID)
+			if !ok {
 				http.Error(w, "Invalid session", http.StatusBadRequest)
 				return
 			}
 
 			// Validate MCP-Protocol-Version header matches negotiated version.
 			clientPV := r.Header.Get(transport.HeaderMCPProtocolVersion)
-			sessionPV := t.sessions.protocolVersion(sessionID)
-			if clientPV != "" && sessionPV != "" && clientPV != sessionPV {
+			if clientPV != "" && sess.protocolVersion != "" && clientPV != sess.protocolVersion {
 				http.Error(w, "Protocol version mismatch", http.StatusBadRequest)
 				return
 			}
@@ -266,9 +279,7 @@ func (t *StreamableHTTP) handlePost(w http.ResponseWriter, r *http.Request) {
 	if useSSE {
 		sse := newSSEWriter(w)
 		if sse != nil {
-			w.Header().Set("Content-Type", "text/event-stream")
-			w.Header().Set("Cache-Control", "no-cache")
-			w.Header().Set("Connection", "keep-alive")
+			setSSEHeaders(w)
 			w.WriteHeader(http.StatusOK)
 			sse.writeMessage(resp)
 			return
@@ -300,13 +311,18 @@ func (t *StreamableHTTP) handleGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
+	setSSEHeaders(w)
 	w.WriteHeader(http.StatusOK)
 
 	// Keep connection open until client disconnects.
 	<-r.Context().Done()
+}
+
+// setSSEHeaders writes the standard Server-Sent Events response headers.
+func setSSEHeaders(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
 }
 
 // handleDelete terminates a session.
