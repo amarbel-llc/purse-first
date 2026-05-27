@@ -5,9 +5,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -32,9 +34,43 @@ func (s *stubToolProvider) CallTool(ctx context.Context, name string, args json.
 	}, nil
 }
 
-// startTestServer brings up a StreamableHTTP transport + server.Server, runs
-// the server in a goroutine, and returns the transport plus a stop function.
+// blockingToolProvider supports a single "slow" tool whose CallTool blocks
+// on a release channel after signaling via started. Used to test cleanup
+// while a request is in-flight on the server side.
+type blockingToolProvider struct {
+	started chan struct{}
+	release chan struct{}
+}
+
+func (s *blockingToolProvider) ListTools(ctx context.Context) ([]protocol.Tool, error) {
+	return []protocol.Tool{
+		{Name: "slow", Description: "Blocks", InputSchema: json.RawMessage(`{"type":"object"}`)},
+	}, nil
+}
+
+func (s *blockingToolProvider) CallTool(ctx context.Context, name string, args json.RawMessage) (*protocol.ToolCallResult, error) {
+	close(s.started)
+	select {
+	case <-s.release:
+		return &protocol.ToolCallResult{
+			Content: []protocol.ContentBlock{protocol.TextContent("done")},
+		}, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+// startTestServer brings up a StreamableHTTP transport + server.Server with
+// the default echo tool provider, runs the server in a goroutine, and
+// returns the transport plus a stop function.
 func startTestServer(t *testing.T, opts ...streamablehttp.Option) (*streamablehttp.StreamableHTTP, func()) {
+	t.Helper()
+	return startTestServerWithProvider(t, &stubToolProvider{}, opts...)
+}
+
+// startTestServerWithProvider is the parameterizable variant — pass an
+// explicit ToolProvider when a test needs to control tool-call behavior.
+func startTestServerWithProvider(t *testing.T, tools server.ToolProvider, opts ...streamablehttp.Option) (*streamablehttp.StreamableHTTP, func()) {
 	t.Helper()
 
 	tr := streamablehttp.New("127.0.0.1:0", opts...)
@@ -42,7 +78,7 @@ func startTestServer(t *testing.T, opts ...streamablehttp.Option) (*streamableht
 	srv, err := server.New(tr, server.Options{
 		ServerName:    "test",
 		ServerVersion: "1.0",
-		Tools:         &stubToolProvider{},
+		Tools:         tools,
 	})
 	if err != nil {
 		t.Fatalf("server.New: %v", err)
@@ -333,4 +369,190 @@ func TestSSEResponseFormat(t *testing.T) {
 	if !sawData {
 		t.Fatal("never observed a `data: ` line in SSE response")
 	}
+}
+
+func TestProtocolVersionMismatchRejected(t *testing.T) {
+	tr, stop := startTestServer(t)
+	defer stop()
+
+	url := "http://" + tr.Addr() + "/"
+
+	// Initialize to bind a session with a negotiated protocol version.
+	initResp, err := http.Post(url, "application/json", bytes.NewReader(newInitializeBody(t, 1)))
+	if err != nil {
+		t.Fatalf("initialize: %v", err)
+	}
+	initResp.Body.Close()
+	sessionID := initResp.Header.Get(transport.HeaderMCPSessionID)
+	if sessionID == "" {
+		t.Fatal("no session ID")
+	}
+
+	// tools/list with a Mcp-Protocol-Version header that doesn't match the
+	// version the session negotiated → 400.
+	req, _ := http.NewRequest(http.MethodPost, url, bytes.NewReader(newToolsListBody(t, 2)))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(transport.HeaderMCPSessionID, sessionID)
+	req.Header.Set(transport.HeaderMCPProtocolVersion, "not-a-real-version")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("POST: %v", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("status = %d, want 400 for protocol version mismatch", resp.StatusCode)
+	}
+}
+
+func TestListenFailureReturnsError(t *testing.T) {
+	// Bind one transport so a specific port is in use.
+	tr1, stop := startTestServer(t)
+	defer stop()
+
+	// Try to start a second transport on the exact same address. net.Listen
+	// should fail; Start should surface a wrapped error rather than panic
+	// or silently succeed.
+	tr2 := streamablehttp.New(tr1.Addr())
+	err := tr2.Start(context.Background())
+	if err == nil {
+		_ = tr2.Close()
+		t.Fatal("expected error binding to occupied port, got nil")
+	}
+	if !strings.Contains(err.Error(), "listening on") {
+		t.Errorf("error does not mention listening: %v", err)
+	}
+}
+
+func TestTransportCloseWithInflightRequest(t *testing.T) {
+	provider := &blockingToolProvider{
+		started: make(chan struct{}),
+		release: make(chan struct{}),
+	}
+	// Release the blocked tool on the way out so srv.Run's gracefulShutdown
+	// can drain the in-flight handler goroutine.
+	var releaseOnce sync.Once
+	release := func() { releaseOnce.Do(func() { close(provider.release) }) }
+	defer release()
+
+	tr, stop := startTestServerWithProvider(t, provider)
+	defer stop()
+
+	url := "http://" + tr.Addr() + "/"
+	initResp, err := http.Post(url, "application/json", bytes.NewReader(newInitializeBody(t, 1)))
+	if err != nil {
+		t.Fatalf("initialize: %v", err)
+	}
+	initResp.Body.Close()
+	sessionID := initResp.Header.Get(transport.HeaderMCPSessionID)
+	if sessionID == "" {
+		t.Fatal("no session ID")
+	}
+
+	// Issue tools/call from a client goroutine; it will park inside the
+	// blocking tool provider on the server side.
+	callBody := mustMarshal(t, jsonrpc.Message{
+		JSONRPC: "2.0",
+		ID:      idPtr(jsonrpc.NewNumberID(2)),
+		Method:  "tools/call",
+		Params:  mustMarshal(t, protocol.ToolCallParams{Name: "slow"}),
+	})
+
+	done := make(chan error, 1)
+	go func() {
+		req, _ := http.NewRequest(http.MethodPost, url, bytes.NewReader(callBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set(transport.HeaderMCPSessionID, sessionID)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			done <- err
+			return
+		}
+		resp.Body.Close()
+		// Reaching here means the server actually responded. For this test,
+		// any concrete status counts as "request finished without error";
+		// the goroutine pushes nil and the test interprets that as "got a
+		// real response," which the assertion below also accepts.
+		done <- nil
+	}()
+
+	// Wait for the call to enter the blocking tool. Avoids a race where
+	// Close fires before the request lands on the server side.
+	select {
+	case <-provider.started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("tool call never started")
+	}
+
+	// Close the transport mid-flight. The client connection should tear
+	// down; the in-flight handler returns early via r.Context().Done().
+	if err := tr.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+
+	// Either the client errors out (connection closed) OR the server
+	// happened to write a response before the close took effect. The
+	// failure mode we're guarding against is the client hanging forever.
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("client request never completed after transport close")
+	}
+
+	// Let the blocked tool exit so gracefulShutdown can finish.
+	release()
+}
+
+func TestConcurrentRequestsOnSameSession(t *testing.T) {
+	tr, stop := startTestServer(t)
+	defer stop()
+
+	url := "http://" + tr.Addr() + "/"
+
+	initResp, err := http.Post(url, "application/json", bytes.NewReader(newInitializeBody(t, 1)))
+	if err != nil {
+		t.Fatalf("initialize: %v", err)
+	}
+	initResp.Body.Close()
+	sessionID := initResp.Header.Get(transport.HeaderMCPSessionID)
+	if sessionID == "" {
+		t.Fatal("no session ID")
+	}
+
+	const N = 20
+	var wg sync.WaitGroup
+	errs := make(chan error, N)
+
+	for i := 0; i < N; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			// Each request needs a unique JSON-RPC ID so the pending-map
+			// keys don't collide.
+			body := newToolsListBody(t, int64(100+id))
+			req, _ := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set(transport.HeaderMCPSessionID, sessionID)
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				errs <- fmt.Errorf("request %d: %w", id, err)
+				return
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				errs <- fmt.Errorf("request %d: status %d", id, resp.StatusCode)
+				return
+			}
+		}(i)
+	}
+
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		t.Error(err)
+	}
+}
+
+func idPtr(id jsonrpc.ID) *jsonrpc.ID {
+	return &id
 }

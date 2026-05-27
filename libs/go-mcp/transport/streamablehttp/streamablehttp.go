@@ -7,12 +7,14 @@ package streamablehttp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
 	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
@@ -20,6 +22,18 @@ import (
 
 // Compile-time assertion that *StreamableHTTP satisfies transport.LifecycleTransport.
 var _ transport.LifecycleTransport = (*StreamableHTTP)(nil)
+
+// Server timeouts and body-size limit. Values mitigate slow-loris and
+// OOM-via-large-POST without being so tight that typical MCP traffic
+// breaks. Tune via WithReadTimeout/WithWriteTimeout/etc. if the defaults
+// don't fit your deployment (no overrides exposed yet — file an issue).
+const (
+	defaultReadHeaderTimeout = 10 * time.Second
+	defaultReadTimeout       = 30 * time.Second
+	defaultWriteTimeout      = 30 * time.Second
+	defaultIdleTimeout       = 120 * time.Second
+	defaultMaxBodyBytes      = 10 << 20 // 10 MiB
+)
 
 // StreamableHTTP implements the MCP Streamable HTTP transport.
 //
@@ -97,7 +111,13 @@ func (t *StreamableHTTP) Start(ctx context.Context) error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", t.handleMCP)
-	srv := &http.Server{Handler: mux}
+	srv := &http.Server{
+		Handler:           mux,
+		ReadHeaderTimeout: defaultReadHeaderTimeout,
+		ReadTimeout:       defaultReadTimeout,
+		WriteTimeout:      defaultWriteTimeout,
+		IdleTimeout:       defaultIdleTimeout,
+	}
 
 	t.lifecycleMu.Lock()
 	t.listener = ln
@@ -105,8 +125,14 @@ func (t *StreamableHTTP) Start(ctx context.Context) error {
 	t.lifecycleMu.Unlock()
 	close(t.ready)
 
+	// Tear down the HTTP server when either the caller-supplied context is
+	// canceled OR Transport.Close() is invoked. Selecting on both avoids the
+	// goroutine getting stuck on ctx.Done() if Close runs first.
 	go func() {
-		<-ctx.Done()
+		select {
+		case <-ctx.Done():
+		case <-t.closed:
+		}
 		srv.Close()
 	}()
 
@@ -203,8 +229,14 @@ func (t *StreamableHTTP) handleMCP(w http.ResponseWriter, r *http.Request) {
 
 // handlePost processes incoming JSON-RPC messages via POST.
 func (t *StreamableHTTP) handlePost(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, defaultMaxBodyBytes)
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			http.Error(w, "Request body too large", http.StatusRequestEntityTooLarge)
+			return
+		}
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
@@ -249,10 +281,31 @@ func (t *StreamableHTTP) handlePost(w http.ResponseWriter, r *http.Request) {
 	t.pending[key] = respCh
 	t.pendingMu.Unlock()
 
-	t.incoming <- &msg
+	// Forward to server. If the client disconnects before the server picks
+	// up the message, drop our pending entry so the map can't accumulate.
+	select {
+	case t.incoming <- &msg:
+	case <-r.Context().Done():
+		t.pendingMu.Lock()
+		delete(t.pending, key)
+		t.pendingMu.Unlock()
+		return
+	}
 
-	// Wait for the response from the server loop.
-	resp := <-respCh
+	// Wait for the response from the server loop or client disconnect.
+	// Cleanup deletes the pending entry; Write may have already deleted it
+	// (in which case the delete here is a no-op). If the server's Write
+	// happens after we delete, the channel send into the 1-buffered
+	// respCh succeeds anyway and the channel is GC'd.
+	var resp *jsonrpc.Message
+	select {
+	case resp = <-respCh:
+	case <-r.Context().Done():
+		t.pendingMu.Lock()
+		delete(t.pending, key)
+		t.pendingMu.Unlock()
+		return
+	}
 
 	// For initialize responses, assign a session ID and extract protocol version.
 	if msg.Method == "initialize" {
