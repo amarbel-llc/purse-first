@@ -27,7 +27,7 @@ let
   # Per eng-versioning(7): single source of truth lives in version.env.
   # Hybrid layout — repo root for the purse-first CLI + marketplace, and
   # one version.env per independently-tagged library (currently just
-  # libs/dewey; go-mcp + rust-mcp migration tracked separately).
+  # libs/dewey; go-mcp migration tracked separately).
   readVersion =
     path: varName: builtins.head (builtins.match ".*${varName}=([^\n]+).*" (builtins.readFile path));
 

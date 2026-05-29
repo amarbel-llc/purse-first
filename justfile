@@ -147,7 +147,6 @@ test: \
     test-go \
     test-go-mcp \
     test-dewey \
-    test-rust-mcp \
     test-integration \
     test-lifecycle \
     test-package-brew \
@@ -177,11 +176,6 @@ test-go-mcp:
 [group('post-build')]
 test-dewey:
     {{ cmd_nix_dev }} go test -tags test ./libs/dewey/...
-
-# Test rust-mcp library.
-[group('post-build')]
-test-rust-mcp:
-    cd libs/rust-mcp && {{ cmd_nix_dev }} cargo test
 
 # Run BATS integration tests.
 [group('post-build')]
@@ -296,7 +290,7 @@ clean:
     rm -rf result result-cli
 
 # Per eng-versioning(7): each independently-versioned target (purse-first
-# repo, libs/dewey, libs/go-mcp, libs/rust-mcp) has its own bump-version /
+# repo, libs/dewey, libs/go-mcp) has its own bump-version /
 # tag / release triple reading from its own version.env.
 
 # Rewrite PURSE_FIRST_VERSION in version.env. Pure mutation — release owns
@@ -438,59 +432,6 @@ release-go-mcp new_version:
     git commit -m "$header"
     just tag-go-mcp "$msg"
     gh release create "libs/go-mcp/v{{ new_version }}" --title "$header" --notes "$msg"
-
-# Rewrite RUST_MCP_VERSION in libs/rust-mcp/version.env AND the [package]
-# version in libs/rust-mcp/Cargo.toml in lock-step. The Cargo.toml sed
-# anchors on the package-table version (first `version = "..."` after
-# `[package]`) so dependency version pins are untouched.
-[group('maintenance')]
-bump-version-rust-mcp new_version:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    sed -E -i 's/^(export RUST_MCP_VERSION)=.*/\1={{ new_version }}/' libs/rust-mcp/version.env
-    sed -E -i '/^\[package\]/,/^\[/{ s/^version = "[^"]*"$/version = "{{ new_version }}"/ }' libs/rust-mcp/Cargo.toml
-
-# Read RUST_MCP_VERSION, create signed annotated tag libs/rust-mcp/v<sem>,
-# push, and verify.
-[group('maintenance')]
-tag-rust-mcp message:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    . libs/rust-mcp/version.env
-    tag="libs/rust-mcp/v${RUST_MCP_VERSION:?missing RUST_MCP_VERSION in libs/rust-mcp/version.env}"
-    git tag -s -m "{{ message }}" "$tag"
-    gum log --level info "Created tag: $tag"
-    git push origin "$tag"
-    gum log --level info "Pushed $tag"
-    git tag -v "$tag"
-
-# Full rust-mcp release flow. Changelog filters commits touching libs/rust-mcp/.
-[group('maintenance')]
-release-rust-mcp new_version:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    branch=$(git rev-parse --abbrev-ref HEAD)
-    if [[ "$branch" != "master" ]]; then
-        gum log --level error "release-rust-mcp only allowed from master (on '$branch')"
-        exit 1
-    fi
-    prev=$(git tag --sort=-v:refname -l "libs/rust-mcp/v*" | head -1)
-    header="release libs/rust-mcp/v{{ new_version }}"
-    if [[ -n "$prev" ]]; then
-        summary=$(git log --format='- %s' "$prev"..HEAD -- libs/rust-mcp/)
-        if [[ -n "$summary" ]]; then
-            msg="$header"$'\n\n'"$summary"
-        else
-            msg="$header"
-        fi
-    else
-        msg="$header"
-    fi
-    just bump-version-rust-mcp "{{ new_version }}"
-    git add libs/rust-mcp/version.env libs/rust-mcp/Cargo.toml
-    git commit -m "$header"
-    just tag-rust-mcp "$msg"
-    gh release create "libs/rust-mcp/v{{ new_version }}" --title "$header" --notes "$msg"
 
 # ──── explore ───────────────────────────────────────────────────────
 # Discovery / one-off experiments. Promoted to debug-* if they outlive

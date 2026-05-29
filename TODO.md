@@ -16,7 +16,7 @@
 - [x] P0: Hook execution error after discovery fix --- root cause:
   `hookSpecificOutput` was missing required `hookEventName: "PreToolUse"` field.
   Claude Code validates hook output against a schema that requires this
-  discriminator. Fixed in both go-mcp (`hook.go`) and rust-mcp (`hooks.rs`).
+  discriminator. Fixed in go-mcp (`hook.go`).
 
 ## RFC-0001: Package Binary Interface
 
@@ -36,17 +36,6 @@
 - [x] mgp: remove manual `generate-plugin` dispatch from main.go
 - [x] lux: remove `_generate` command, update `lux.nix` to call
   `generate-plugin`
-
-### rust-mcp library
-
-- [x] add `generate-plugin` subcommand support to rust-mcp (plugin.json,
-  mappings.json, hooks; all three output modes)
-
-### chix
-
-- [x] add `generate-plugin` to chix using rust-mcp support, replacing
-  `purse-first generate-plugin` + `chix generate-hooks` split
-- [x] update `chix.nix` to use single `$out/bin/chix generate-plugin $out` call
 
 ### purse-first CLI
 
@@ -75,21 +64,6 @@
 - [ ] FDR: eliminate .claude-plugin/marketplace.json collision so downstream
   consumers can symlinkJoin multiple marketplaces without infraInputs workaround
 
-- [x] tap-dancer rust: add `write_pragma` support (needed for
-  `pragma +streamed-output`)
-
-- [x] tap-dancer rust: add comment/description directive field to `TestResult`
-  (`ok 1 - name # comment`)
-
-- [x] tap-dancer rust: add carriage return stripping for YAML output fields
-
-- [x] tap-dancer rust: add ANSI escape code stripping in YAML output
-
-- [x] bootstrap root Cargo workspace --- add root Cargo.toml with members
-  \[packages/chix, packages/tap-dancer/rust, libs/rust-mcp\], delete per-crate
-  Cargo.lock files, remove chix.nix vendor workaround, verify:
-  `nix build .#chix`, `nix build .#tap-dancer`, `cargo test --workspace`
-
 - [x] grit: add `--amend` support to `commit` tool (git commit --amend)
 
 - [x] grit: add soft reset mode to `reset` tool (git reset --soft via `soft` +
@@ -100,29 +74,10 @@
 
 - [x] update tap-dancer with latest tap amendments
 
-- [x] tap-dancer rust: add combined color+locale constructor --- `with_locale`
-  hardcodes `color: false`, so ANSI display hints and locale formatting can't be
-  used together in the same TAP stream
-
-- [ ] tap-dancer: update SKILL.md Rust section to reflect TapWriterBuilder API
-  (old examples reference removed TapWriter::new() counter API)
-
-- [x] tap-dancer rust: `default_locale()` should normalize POSIX underscores to
-  BCP 47 hyphens before parsing --- `en_US.UTF-8` strips to `en_US` which fails
-  `Locale::parse` (expects `en-US`)
-
 - [ ] verify install-local skill path resolution (./skills/`<name>`{=html} in
   .claude-plugin/plugin.json may not resolve correctly --- needs manual test)
 
 - [x] add HTTP/SSE transport support to InstallMCP (MCPURL, MCPHeaders on App)
-
-- [x] tap-dancer rust: add quiet/suppress-YAML-block mode for test points
-
-- [x] add PreToolUse hook support to rust-mcp (parity with go-mcp's HandleHook,
-  GenerateHooks, ToolMapping/MapsTools, GeneratePlugin)
-
-- [x] add PreToolUse hooks to chix (depends on rust-mcp hook support) --- map
-  nix/fh/cachix CLI tools to MCP equivalents
 
 - [ ] FDR: single-package local test flow --- `purse-first test-local .#chix` or
   similar that installs one package's hooks+MCP into an isolated Claude Code

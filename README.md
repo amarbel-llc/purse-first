@@ -10,7 +10,7 @@ purse-first has three layers:
 |-------|-------------|
 | **Protocol** | A convention for Nix derivations to declare Claude Code capabilities via well-known paths under `share/purse-first/` |
 | **CLI** | The `purse-first` binary — implements tool routing (hooks), marketplace generation, installation, and validation |
-| **Libraries** | `go-mcp` and `rust-mcp` — building blocks for creating MCP servers that conform to the protocol |
+| **Libraries** | `go-mcp` — building blocks for creating MCP servers that conform to the protocol |
 
 ## Package Flavors
 
@@ -29,7 +29,7 @@ Packages come in three flavors:
 - **lux** (MCP) — LSP multiplexer via MCP: hover, definitions, references, and symbols
 - **chix** (MCP + Skill) — Nix MCP server and skills for Claude Code: build, evaluate, search, and manage flakes
 - **robin** (Skill) — BATS integration testing skill with bundled assertion libraries, sandcastle isolation, and justfile patterns
-- **tap-dancer** (Skill) — TAP-14 writer libraries (Go + Rust) and skill for producing spec-compliant TAP output
+- **tap-dancer** (Skill) — TAP-14 writer libraries (Go) and skill for producing spec-compliant TAP output
 - **bob** (Skill) — purse-first's own skill package: plugin-mcp, context-saving, and go-cli-framework skills
 
 ## Getting Started

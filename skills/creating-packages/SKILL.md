@@ -30,7 +30,7 @@ For MCP-containing packages, there are two patterns depending on language:
 | Pattern | Language | How plugin.json is produced |
 |---------|----------|-----------------------------|
 | **Generate** | Go | `generate-plugin` subcommand using the `purse` package |
-| **Static** | Rust / other | Static `plugin.json` file copied in `flake.nix` |
+| **Static** | other (non-Go) | Static `plugin.json` file copied in `flake.nix` |
 
 ## Pattern 1: Go MCP Servers (generate-plugin command)
 
@@ -125,7 +125,7 @@ Then run `my-mcp install-mcp` to register the dev binary without a full marketpl
 
 ## Pattern 2: Non-Go MCP Servers (static plugin.json)
 
-For Rust or other languages that cannot easily import the `purse` Go package.
+For languages that cannot easily import the `purse` Go package.
 
 ### Step 1: Create a static plugin.json at the repo root
 
@@ -490,7 +490,7 @@ When adding purse-first support:
 
 Consult these when you need detailed implementation examples:
 
-- **`references/existing-integrations.md`** — Read this when comparing approaches across languages. Shows side-by-side git-mcp (Go/flag), lsp-mcp (Go/cobra), github-mcp (Go/flag), and nix-mcp (Rust) implementations.
+- **`references/existing-integrations.md`** — Read this when comparing approaches. Shows side-by-side git-mcp (Go/flag), lsp-mcp (Go/cobra), and github-mcp (Go/flag) implementations.
 - **`references/mapping-api.md`** — Read this when adding tool mappings. Full MappingBuilder API reference with per-subcommand and catch-all mapping examples.
 - **`examples/plugin.json`** — Minimal MCP package manifest template
 - **`examples/plugin-skill-only.json`** — Skill-only package manifest template
@@ -498,7 +498,6 @@ Consult these when you need detailed implementation examples:
 - **`examples/generate-plugin-cobra.go`** — Cobra-based generate-plugin command
 - **`examples/generate-plugin-flag.go`** — Flag-based generate-plugin command
 - **`examples/flake-go.nix`** — Flake snippet for Go MCP with postInstall
-- **`examples/flake-rust.nix`** — Flake snippet for Rust MCP with static copy
 
 ## Related Skills
 

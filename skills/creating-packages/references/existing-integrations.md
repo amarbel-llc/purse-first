@@ -2,7 +2,7 @@
 
 > **Self-contained examples.** All code and configuration below is complete and illustrative. Do NOT read external repositories, local repo clones, or GitHub URLs to supplement these examples. Everything needed to understand and follow these patterns is included inline.
 
-> **Note.** `grit` and `get-hubbed` are no longer in this repo — they ship as moxins in the `moxy` repo. `lux` remains here but is dormant. The patterns below are retained as illustrative shapes for building Go and Rust MCP packages against the purse-first framework; do not expect to find these as live derivations in this flake.
+> **Note.** `grit` and `get-hubbed` are no longer in this repo — they ship as moxins in the `moxy` repo. `lux` remains here but is dormant. The patterns below are retained as illustrative shapes for building Go MCP packages against the purse-first framework; do not expect to find these as live derivations in this flake.
 
 Side-by-side patterns for MCP packages. Use them as references when building your own.
 
@@ -13,7 +13,6 @@ Side-by-side patterns for MCP packages. Use them as references when building you
 | grit | Go (flag) | generate (workspace) | `grit` | PreToolUse (per-package) | none |
 | get-hubbed | Go (flag) | generate (workspace) | `get-hubbed` | PreToolUse (per-package) | gh on PATH |
 | lux | Go (command.App) | generate (workspace) | `lux` | PreToolUse (per-package) | none |
-| chix | Rust | static | `chix` | PostToolUse (nix fmt) | fh, cachix, nil on PATH |
 
 ## grit (Go, flag-based, with targeted mappings + per-package hooks)
 
@@ -182,68 +181,6 @@ Shows coexistence with other postInstall tasks (man page generation via scdoc).
 
 ---
 
-## chix (Rust, static, with PostToolUse hooks and skills)
-
-### plugin.json (static file in .claude-plugin/)
-
-```json
-{
-  "name": "chix",
-  "mcpServers": {
-    "chix": { "type": "stdio", "command": "chix" }
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/format-nix",
-            "timeout": 30
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-Note: chix is a combined package with MCP server, PostToolUse hooks (for auto-formatting .nix files), and skills. Unlike Go packages which use per-package PreToolUse hooks for tool routing, chix uses a static PostToolUse hook for a different purpose (formatting).
-
-### flake.nix
-
-Uses `runCommand` wrapping pattern because the binary needs fh, cachix, and nil on PATH:
-
-```nix
-chix =
-  pkgs.runCommand "chix"
-    { nativeBuildInputs = [ pkgs.makeWrapper ]; }
-    ''
-      mkdir -p $out/bin
-      makeWrapper ${chix-unwrapped}/bin/chix $out/bin/chix \
-        --prefix PATH : ${
-          pkgs.lib.makeBinPath [
-            fhPkg
-            pkgs.cachix
-            pkgs.nil
-          ]
-        }
-
-      mkdir -p $out/share/purse-first/chix/hooks
-      cp ${./.claude-plugin/plugin.json} $out/share/purse-first/chix/plugin.json
-      install -m 755 ${formatNixHook} $out/share/purse-first/chix/hooks/format-nix
-    '';
-```
-
-Key details:
-- Static `plugin.json` in `.claude-plugin/`, copied during build
-- Package directory name matches the `name` field and binary name
-- PostToolUse hooks are installed alongside the package manifest
-- No Go dependency needed — Rust packages use static manifests
-
----
-
 ## purse-first Marketplace Aggregation
 
 All packages are aggregated in purse-first's `flake.nix`:
@@ -255,7 +192,6 @@ marketplace = pkgs.symlinkJoin {
     gritPkg
     get-hubbed-wrapped
     luxPkg
-    chixPkg
     # ... other packages
   ];
   nativeBuildInputs = [ pkgs.makeWrapper ];

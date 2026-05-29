@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Package framework for bundling CLIs, MCP servers, and skills into composable, Nix-built packages for humans and agents like Claude Code. Three layers: Protocol (`share/purse-first/` convention), CLI (`purse-first` binary), Libraries (`go-mcp`, `rust-mcp`, `dewey`).
+Package framework for bundling CLIs, MCP servers, and skills into composable, Nix-built packages for humans and agents like Claude Code. Three layers: Protocol (`share/purse-first/` convention), CLI (`purse-first` binary), Libraries (`go-mcp`, `dewey`).
 
-Most concrete MCP-server packages (grit, get-hubbed, lux, chix, etc.) have moved out of this repo — see [amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) for those as moxins. This repo now contains the framework itself plus a few co-located libraries and tools (purse-first CLI, go-mcp, rust-mcp, dewey, dagnabit).
+Most concrete MCP-server packages (grit, get-hubbed, lux, chix, etc.) have moved out of this repo — see [amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) for those as moxins. This repo now contains the framework itself plus a few co-located libraries and tools (purse-first CLI, go-mcp, dewey, dagnabit).
 
 ## Build & Test Commands
 
@@ -19,7 +19,7 @@ just                    # default = validate lint build test (CI gate; also runs
 just validate           # nix flake check + plugin manifest validation
 just lint               # go vet + lint-dewey-pkgs-drift (drift of dagnabit-generated facades)
 just build              # build-nix-gomod2nix + nix build (marketplace bundle)
-just test               # Run ALL tests (Go + Rust + BATS integration)
+just test               # Run ALL tests (Go + BATS integration)
 nix fmt                 # Repo-wide treefmt (Go via gofumpt, Nix via nixfmt, shell via shfmt)
 just fmt                # `go fmt ./...` only — for Go-only quick reformat
 just build-nix-gomod2nix # Sync go.work and regenerate gomod2nix.toml
@@ -34,7 +34,6 @@ just lint-dewey-pkgs-drift # rebuild dagnabit, re-export, fail on libs/dewey/pkg
 just test-go            # all Go tests (./...)
 just test-go-mcp        # libs/go-mcp/... (verbose)
 just test-dewey         # libs/dewey/... (with -tags test)
-just test-rust-mcp      # libs/rust-mcp (Rust, via cargo test)
 
 # Single Go test function (bypass justfile):
 nix develop --command go test -run TestFunctionName ./internal/...
@@ -169,12 +168,11 @@ Non-Go packages (and the repo itself) use `package.toml` at the package root ins
 | `internal/` | Go internal packages (`install`, `marketplace`, `config`, `validate`, `localplugin`, `mcp`, `packagebrew`, `packagetoml`, `decision`) |
 | `libs/go-mcp/` | Go MCP server library (`command`, `server`, `transport`, `output`, `purse`, `jsonrpc`, `executor`, `operation`, `protocol`) |
 | `libs/dewey/` | Multi-tier Go utility library (NATO-level dependency ordering; `internal/`, `pkgs/` stable facades) |
-| `libs/rust-mcp/` | Rust MCP server library |
 | `purse/` | Go package for building package manifests (plugin.json) |
-| `skills/` | In-tree skill documents (currently: claude-plugins, context-saving, creating-packages, design_patterns-downstream_rust, mcp, overview, using-packages) |
+| `skills/` | In-tree skill documents (currently: claude-plugins, context-saving, creating-packages, mcp, overview, using-packages) |
 | `lib/` | Nix build expressions (`mkMarketplace.nix`, `mkGoWorkspaceModule.nix`) |
 | `gomod.nix` | Per-system Nix interface to the Go workspace: builds every Go binary plus the RFC 0001 `go-pkgs` / `go-pkgs-test` source derivations |
-| `devenvs/` | Per-language dev shells composed into the default shell (`go`, `rust`, `bats`, `shell`, `nix`, `node`) |
+| `devenvs/` | Per-language dev shells composed into the default shell (`go`, `bats`, `shell`) |
 | `templates/marketplace/` | `nix flake init -t` template for new marketplaces |
 | `dev/lux-nvim/` | Auxiliary dev tooling |
 | `zz-tests_bats/` | BATS integration tests |
@@ -195,7 +193,7 @@ Every flake uses this pattern — do not deviate:
 
 ### Build Artifacts
 
-Nix builds output to `result`/`result-*` symlinks (managed by nix, already gitignored). All other toolchain builds (go, cargo, etc.) must output to the `build/` directory. Never place binaries in the repo root or source directories.
+Nix builds output to `result`/`result-*` symlinks (managed by nix, already gitignored). All other toolchain builds (go, etc.) must output to the `build/` directory. Never place binaries in the repo root or source directories.
 
 ### Code Style
 
@@ -271,9 +269,5 @@ Per eng-versioning(7), each independently-tagged target owns its own
 - `libs/go-mcp/version.env` — `GO_MCP_VERSION` for the go-mcp library;
   managed by the `*-go-mcp` recipe triple. No binaries are shipped, so
   there is no ldflag injection.
-- `libs/rust-mcp/version.env` — `RUST_MCP_VERSION` for the rust-mcp library;
-  managed by the `*-rust-mcp` recipe triple, which also bumps the
-  `[package].version` in `libs/rust-mcp/Cargo.toml` so the two stay in
-  lock-step.
 
 Pre-1.0: MINOR bumps may include breaking changes. Post-1.0: semver is strict.

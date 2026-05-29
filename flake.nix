@@ -13,12 +13,6 @@
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.flake-utils.follows = "utils";
     };
-    crane.url = "github:ipetkov/crane";
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # `nix fmt` driver. Config lives in ./treefmt.nix.
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
@@ -33,8 +27,6 @@
       nixpkgs-master,
       utils,
       gomod2nix,
-      crane,
-      rust-overlay,
       treefmt-nix,
     }:
     let
@@ -64,7 +56,6 @@
           go = import ./devenvs/go { inherit pkgs pkgs-master gomod2nix; };
           shell = import ./devenvs/shell { inherit pkgs; };
           bats = import ./devenvs/bats { inherit pkgs; };
-          rust = import ./devenvs/rust { inherit pkgs pkgs-master rust-overlay; };
         };
 
       # treefmtEval per system. The formatter wrapper is added to the
@@ -108,7 +99,6 @@
             devenvs.go.devShells.default
             devenvs.shell.devShells.default
             devenvs.bats.devShells.default
-            devenvs.rust.devShells.default
           ];
         devShellHook = ''
           echo "purse-first - dev environment"
@@ -137,7 +127,6 @@
             go = devenvs.go.devShells.default;
             shell = devenvs.shell.devShells.default;
             bats = devenvs.bats.devShells.default;
-            rust = devenvs.rust.devShells.default;
           };
 
           # `nix fmt` entry point.
