@@ -169,7 +169,7 @@ Non-Go packages (and the repo itself) use `package.toml` at the package root ins
 | `libs/go-mcp/` | Go MCP server library (`command`, `server`, `transport`, `output`, `purse`, `jsonrpc`, `executor`, `operation`, `protocol`) |
 | `libs/dewey/` | Multi-tier Go utility library (NATO-level dependency ordering; `internal/`, `pkgs/` stable facades) |
 | `purse/` | Go package for building package manifests (plugin.json) |
-| `skills/` | In-tree skill documents (currently: claude-plugins, creating-packages, mcp, overview, using-packages) |
+| `skills/` | In-tree skill documents (currently: claude-plugins, mcp) |
 | `lib/` | Nix build expressions (`mkMarketplace.nix`, `mkGoWorkspaceModule.nix`) |
 | `gomod.nix` | Per-system Nix interface to the Go workspace: builds every Go binary plus the RFC 0001 `go-pkgs` / `go-pkgs-test` source derivations |
 | `devenvs/` | Per-language dev shells composed into the default shell (`go`, `bats`, `shell`) |

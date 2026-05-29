@@ -151,5 +151,3 @@ For full details on any topic, consult the reference document:
 ## Related Skills
 
 - **bob:mcp** — MCP protocol specification (versions, capabilities, transports)
-- **bob:creating-packages** — Packaging MCP servers and skills for purse-first
-- **bob:using-packages** — How installed packages work at runtime
