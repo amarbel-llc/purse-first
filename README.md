@@ -10,27 +10,32 @@ purse-first has three layers:
 |-------|-------------|
 | **Protocol** | A convention for Nix derivations to declare Claude Code capabilities via well-known paths under `share/purse-first/` |
 | **CLI** | The `purse-first` binary — implements tool routing (hooks), marketplace generation, installation, and validation |
-| **Libraries** | `go-mcp` — building blocks for creating MCP servers that conform to the protocol |
+| **Libraries** | `go-mcp` — building blocks for creating MCP servers that conform to the protocol; `dewey` — multi-tier Go utilities, static analyzers, and the `dagnabit` export tool |
 
 ## Package Flavors
 
-Packages come in three flavors:
+The protocol defines three package flavors. Concrete MCP packages now live in
+[amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) as moxins; the in-tree
+skill packages are `claude-plugins` and `mcp`.
 
 | Flavor | Description | Examples |
 |--------|-------------|----------|
-| **MCP package** | Ships an MCP server with optional tool mappings | grit, get-hubbed |
-| **Skill package** | Ships skills only | robin, tap-dancer, bob |
-| **MCP + Skill package** | Ships both MCP server and skills | chix |
+| **MCP package** | Ships an MCP server with optional tool mappings | grit, get-hubbed (moxy) |
+| **Skill package** | Ships skills only | claude-plugins, mcp (in-tree) |
+| **MCP + Skill package** | Ships both MCP server and skills | chix (moxy) |
 
-## Current Packages
+## What's in this repo
 
-- **grit** (MCP) — Git operations via MCP: stage, commit, push, log, blame, and more
-- **get-hubbed** (MCP) — GitHub CLI wrapper via MCP: issues, pull requests, and repos
-- **lux** (MCP, _dormant_) — LSP multiplexer via MCP: hover, definitions, references, and symbols. Pulled out of this repo and currently parked; not published in moxy or any other active repo.
-- **chix** (MCP + Skill) — Nix MCP server and skills for Claude Code: build, evaluate, search, and manage flakes
-- **robin** (Skill) — BATS integration testing skill with bundled assertion libraries, sandcastle isolation, and justfile patterns
-- **tap-dancer** (Skill) — TAP-14 writer libraries (Go) and skill for producing spec-compliant TAP output
-- **bob** (Skill) — purse-first's own skill package: plugin-mcp and go-cli-framework skills
+purse-first was slimmed to the framework itself. The concrete MCP-server
+packages (grit, get-hubbed, chix, …) moved to
+[amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) as moxins; `lux` was
+pulled out and is currently **dormant** (not published in moxy or any other
+active repo). What remains here:
+
+- **`purse-first`** (CLI) — tool routing (hooks), marketplace generation, installation, and validation
+- **`go-mcp`** (library) — building blocks for protocol-conforming MCP servers
+- **`dewey`** (library) — multi-tier Go utilities, static analyzers, and the `dagnabit` rename/export tool
+- **In-tree skills** — `claude-plugins` and `mcp`
 
 ## Getting Started
 
@@ -39,11 +44,14 @@ purse-first packages are built with Nix and installed via the `purse-first` CLI.
 ### Installation
 
 ```sh
-# Install purse-first CLI
-nix profile install github:friedenberg/purse-first
+# Install the purse-first CLI
+nix profile install github:amarbel-llc/purse-first#purse-first
 
-# Generate a marketplace from packages
-purse-first marketplace generate --config marketplace-config.json --output ~/.claude/plugins/marketplace
+# Generate a marketplace.json from discovered packages
+purse-first generate-marketplace --config marketplace-config.json --output ~/.claude/plugins/marketplace
+
+# …or install this repo's own marketplace directly
+purse-first install-self
 ```
 
 For the complete protocol specification, see [docs/purse-first-protocol.md](docs/purse-first-protocol.md).
