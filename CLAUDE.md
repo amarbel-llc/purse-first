@@ -258,16 +258,23 @@ Packages use semantic versioning (MAJOR.MINOR.PATCH):
   `accepted` status)
 - **PATCH** --- bug fixes, documentation, dependency updates
 
-Per eng-versioning(7), each independently-tagged target owns its own
-`version.env`:
+Per eng-versioning(7) MULTI-ARTIFACT RELEASE, a single version covers every
+published artifact in this repo, sourced from one root `version.env`:
 
-- `version.env` (repo root) — `PURSE_FIRST_VERSION` for the purse-first CLI
-  + marketplace; consumed by `just bump-version-purse-first` / `tag-purse-first`
-  / `release-purse-first` and read by `gomod.nix` at build time.
-- `libs/dewey/version.env` — `DEWEY_VERSION` for the dewey library and its
-  binaries; managed by the `*-dewey` recipe triple.
-- `libs/go-mcp/version.env` — `GO_MCP_VERSION` for the go-mcp library;
-  managed by the `*-go-mcp` recipe triple. No binaries are shipped, so
-  there is no ldflag injection.
+- `version.env` (repo root) — `PURSE_FIRST_VERSION` is the sole source of
+  truth for the purse-first CLI + marketplace, the `libs/dewey` library and
+  its binaries, and the `libs/go-mcp` library. It is read by `gomod.nix` at
+  build time (CLI version + dewey buildinfo ldflag) and by `just build-dewey`.
+
+The `maintenance` group exposes one recipe triple:
+
+- `just bump-version <sem>` — rewrites `PURSE_FIRST_VERSION` (pure mutation).
+- `just tag <message>` — creates the full signed tag set at that version:
+  `v<sem>` (primary), `libs/dewey/v<sem>`, and `libs/go-mcp/v<sem>`. The
+  path-prefixed tags are required by the Go module proxy to resolve the
+  sub-directory modules (eng-versioning(7) → TAG NAMING).
+- `just release <sem>` — master-only: repo-wide changelog → bump → commit →
+  tag set → `gh release create` against the primary `v<sem>` tag, with notes
+  enumerating the sibling sub-module tags.
 
 Pre-1.0: MINOR bumps may include breaking changes. Post-1.0: semver is strict.

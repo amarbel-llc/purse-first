@@ -24,22 +24,21 @@ let
   };
   pkgs-master = import nixpkgs-master { inherit system; };
 
-  # Per eng-versioning(7): single source of truth lives in version.env.
-  # Hybrid layout — repo root for the purse-first CLI + marketplace, and
-  # one version.env per independently-tagged library (currently just
-  # libs/dewey; go-mcp migration tracked separately).
+  # Per eng-versioning(7): single source of truth lives in the repo-root
+  # version.env. One version covers every artifact (purse-first CLI +
+  # marketplace, libs/dewey, libs/go-mcp); the release recipe tags them as a
+  # set at the same version.
   readVersion =
     path: varName: builtins.head (builtins.match ".*${varName}=([^\n]+).*" (builtins.readFile path));
 
   purseFirstVersion = readVersion ./version.env "PURSE_FIRST_VERSION";
-  deweyVersion = readVersion ./libs/dewey/version.env "DEWEY_VERSION";
 
   commit = self.shortRev or self.dirtyShortRev or "dirty";
 
   deweyBuildinfo = "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/buildinfo";
 
   deweyLdflags = [
-    "-X ${deweyBuildinfo}.Version=${deweyVersion}"
+    "-X ${deweyBuildinfo}.Version=${purseFirstVersion}"
     "-X ${deweyBuildinfo}.Commit=${commit}"
   ];
 
@@ -65,7 +64,7 @@ let
     name:
     mkGoModule {
       pname = name;
-      version = deweyVersion;
+      version = purseFirstVersion;
       subPackages = [ "libs/dewey/cmd/${name}" ];
       ldflags = deweyLdflags;
     };

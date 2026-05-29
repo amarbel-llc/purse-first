@@ -97,18 +97,18 @@ build-no-hooks:
 build-go:
     {{ cmd_nix_dev }} go build -o build/purse-first ./cmd/purse-first
 
-# Build dewey library (all layers + CLI tools). Injects DEWEY_VERSION
+# Build dewey library (all layers + CLI tools). Injects PURSE_FIRST_VERSION
 # and the short commit into the buildinfo package via -ldflags, matching
 # what the Nix derivations do for dev parity.
 [group('build')]
 build-dewey:
     #!/usr/bin/env bash
     set -euo pipefail
-    . libs/dewey/version.env
+    . version.env
     commit=$(git rev-parse --short HEAD 2>/dev/null || echo dirty)
     bi=github.com/amarbel-llc/purse-first/libs/dewey/internal/0/buildinfo
     {{ cmd_nix_dev }} go build \
-      -ldflags "-X $bi.Version=$DEWEY_VERSION -X $bi.Commit=$commit" \
+      -ldflags "-X $bi.Version=$PURSE_FIRST_VERSION -X $bi.Commit=$commit" \
       ./libs/dewey/...
 
 # Sync go.work and regenerate gomod2nix.toml from go.mod / go.sum / go.work.
@@ -289,149 +289,75 @@ clean:
     rm -rf build/
     rm -rf result result-cli
 
-# Per eng-versioning(7): each independently-versioned target (purse-first
-# repo, libs/dewey, libs/go-mcp) has its own bump-version /
-# tag / release triple reading from its own version.env.
+# Per eng-versioning(7) MULTI-ARTIFACT RELEASE: one version covers every
+# artifact (purse-first CLI + marketplace, libs/dewey, libs/go-mcp), sourced
+# from the repo-root version.env. A single release recipe creates the whole
+# tag set atomically.
+
+# Tag prefixes the release tags, in order. The bare "v" tag is the primary
+# (purse-first CLI + marketplace + GitHub release); the path-prefixed entries
+# are required by the Go module proxy to resolve the sub-directory modules.
+release_tag_prefixes := "v libs/dewey/v libs/go-mcp/v"
 
 # Rewrite PURSE_FIRST_VERSION in version.env. Pure mutation — release owns
 # the commit and tag steps.
 [group('maintenance')]
-bump-version-purse-first new_version:
+bump-version new_version:
     sed -E -i 's/^(export PURSE_FIRST_VERSION)=.*/\1={{ new_version }}/' version.env
 
-# Read PURSE_FIRST_VERSION from version.env, create a signed annotated
-# tag v<sem>, push, and verify.
+# Read PURSE_FIRST_VERSION from version.env, then create the full signed,
+# annotated tag set (v<sem>, libs/dewey/v<sem>, libs/go-mcp/v<sem>) at that
+# single version, push each, and verify.
 [group('maintenance')]
-tag-purse-first message:
+tag message:
     #!/usr/bin/env bash
     set -euo pipefail
     . version.env
-    tag="v${PURSE_FIRST_VERSION:?missing PURSE_FIRST_VERSION in version.env}"
-    git tag -s -m "{{ message }}" "$tag"
-    gum log --level info "Created tag: $tag"
-    git push origin "$tag"
-    gum log --level info "Pushed $tag"
-    git tag -v "$tag"
+    version="${PURSE_FIRST_VERSION:?missing PURSE_FIRST_VERSION in version.env}"
+    # Create the whole tag set locally first, then push — a mid-set failure
+    # (signing, pre-existing tag) then leaves only local tags to delete, with
+    # nothing pushed to the remote to roll back.
+    tags=()
+    for prefix in {{ release_tag_prefixes }}; do
+        tag="${prefix}${version}"
+        git tag -s -m "{{ message }}" "$tag"
+        gum log --level info "Created tag: $tag"
+        tags+=("$tag")
+    done
+    for tag in "${tags[@]}"; do
+        git push origin "$tag"
+        gum log --level info "Pushed $tag"
+        git tag -v "$tag"
+    done
 
-# Full purse-first release flow: changelog → bump → commit → tag → gh release.
+# Full release flow versioning all artifacts together: repo-wide changelog →
+# bump → commit → tag set → gh release. The GitHub release points at the
+# primary v<sem> tag; its notes enumerate the sibling sub-module tags.
 [group('maintenance')]
-release-purse-first new_version:
+release new_version:
     #!/usr/bin/env bash
     set -euo pipefail
     branch=$(git rev-parse --abbrev-ref HEAD)
     if [[ "$branch" != "master" ]]; then
-        gum log --level error "release-purse-first only allowed from master (on '$branch')"
+        gum log --level error "release only allowed from master (on '$branch')"
         exit 1
     fi
+    # Changelog BEFORE the bump — the release-bump commit must not appear in
+    # the changelog it announces.
     prev=$(git tag --sort=-v:refname -l "v*" | grep -E '^v[0-9]' | head -1 || true)
     header="release v{{ new_version }}"
+    siblings=$'\n\nTags: libs/dewey/v{{ new_version }}, libs/go-mcp/v{{ new_version }}'
     if [[ -n "$prev" ]]; then
         summary=$(git log --format='- %s' "$prev"..HEAD)
-        msg="$header"$'\n\n'"$summary"
+        msg="$header"$'\n\n'"$summary""$siblings"
     else
-        msg="$header"
+        msg="$header""$siblings"
     fi
-    just bump-version-purse-first "{{ new_version }}"
+    just bump-version "{{ new_version }}"
     git add version.env
     git commit -m "$header"
-    just tag-purse-first "$msg"
+    just tag "$msg"
     gh release create "v{{ new_version }}" --title "$header" --notes "$msg"
-
-# Rewrite DEWEY_VERSION in libs/dewey/version.env. Pure mutation.
-[group('maintenance')]
-bump-version-dewey new_version:
-    sed -E -i 's/^(export DEWEY_VERSION)=.*/\1={{ new_version }}/' libs/dewey/version.env
-
-# Read DEWEY_VERSION, create signed annotated tag libs/dewey/v<sem>, push,
-# and verify. Tag prefix matches the sub-module path so the Go module proxy
-# resolves it.
-[group('maintenance')]
-tag-dewey message:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    . libs/dewey/version.env
-    tag="libs/dewey/v${DEWEY_VERSION:?missing DEWEY_VERSION in libs/dewey/version.env}"
-    git tag -s -m "{{ message }}" "$tag"
-    gum log --level info "Created tag: $tag"
-    git push origin "$tag"
-    gum log --level info "Pushed $tag"
-    git tag -v "$tag"
-
-# Full dewey release flow. Changelog filters commits touching libs/dewey/.
-[group('maintenance')]
-release-dewey new_version:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    branch=$(git rev-parse --abbrev-ref HEAD)
-    if [[ "$branch" != "master" ]]; then
-        gum log --level error "release-dewey only allowed from master (on '$branch')"
-        exit 1
-    fi
-    prev=$(git tag --sort=-v:refname -l "libs/dewey/v*" | head -1)
-    header="release libs/dewey/v{{ new_version }}"
-    if [[ -n "$prev" ]]; then
-        summary=$(git log --format='- %s' "$prev"..HEAD -- libs/dewey/)
-        if [[ -n "$summary" ]]; then
-            msg="$header"$'\n\n'"$summary"
-        else
-            msg="$header"
-        fi
-    else
-        msg="$header"
-    fi
-    just bump-version-dewey "{{ new_version }}"
-    git add libs/dewey/version.env
-    git commit -m "$header"
-    just tag-dewey "$msg"
-    gh release create "libs/dewey/v{{ new_version }}" --title "$header" --notes "$msg"
-
-# Rewrite GO_MCP_VERSION in libs/go-mcp/version.env. Pure mutation.
-[group('maintenance')]
-bump-version-go-mcp new_version:
-    sed -E -i 's/^(export GO_MCP_VERSION)=.*/\1={{ new_version }}/' libs/go-mcp/version.env
-
-# Read GO_MCP_VERSION, create signed annotated tag libs/go-mcp/v<sem>, push,
-# and verify. Tag prefix matches the sub-module path so the Go module proxy
-# resolves it.
-[group('maintenance')]
-tag-go-mcp message:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    . libs/go-mcp/version.env
-    tag="libs/go-mcp/v${GO_MCP_VERSION:?missing GO_MCP_VERSION in libs/go-mcp/version.env}"
-    git tag -s -m "{{ message }}" "$tag"
-    gum log --level info "Created tag: $tag"
-    git push origin "$tag"
-    gum log --level info "Pushed $tag"
-    git tag -v "$tag"
-
-# Full go-mcp release flow. Changelog filters commits touching libs/go-mcp/.
-[group('maintenance')]
-release-go-mcp new_version:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    branch=$(git rev-parse --abbrev-ref HEAD)
-    if [[ "$branch" != "master" ]]; then
-        gum log --level error "release-go-mcp only allowed from master (on '$branch')"
-        exit 1
-    fi
-    prev=$(git tag --sort=-v:refname -l "libs/go-mcp/v*" | head -1)
-    header="release libs/go-mcp/v{{ new_version }}"
-    if [[ -n "$prev" ]]; then
-        summary=$(git log --format='- %s' "$prev"..HEAD -- libs/go-mcp/)
-        if [[ -n "$summary" ]]; then
-            msg="$header"$'\n\n'"$summary"
-        else
-            msg="$header"
-        fi
-    else
-        msg="$header"
-    fi
-    just bump-version-go-mcp "{{ new_version }}"
-    git add libs/go-mcp/version.env
-    git commit -m "$header"
-    just tag-go-mcp "$msg"
-    gh release create "libs/go-mcp/v{{ new_version }}" --title "$header" --notes "$msg"
 
 # ──── explore ───────────────────────────────────────────────────────
 # Discovery / one-off experiments. Promoted to debug-* if they outlive
