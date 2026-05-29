@@ -1,9 +1,16 @@
 ---
-status: accepted
-date: 2026-02-28
+status: relocated
+date: 2026-05-29
+relocated-to: amarbel-llc/spinclass
 ---
 
 # Auto-generated session names
+
+> **Relocated:** `spinclass` moved out of purse-first in commit `e1d6632`
+> ("slim purse-first to framework-only"). This feature now lives in
+> [amarbel-llc/spinclass](https://github.com/amarbel-llc/spinclass); this FDR
+> is retained for historical context. The design doc referenced under **More
+> Information** remains in purse-first.
 
 ## Motivation
 

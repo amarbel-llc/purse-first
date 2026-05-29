@@ -1,11 +1,18 @@
 ---
-status: accepted
-date: 2026-03-04
+status: relocated
+date: 2026-05-29
+relocated-to: amarbel-llc/spinclass
 promotion-criteria: n/a — shipped; silent-error behaviors are known limitations,
   not bugs to fix
 ---
 
 # Merge & Close-Shop Lifecycle
+
+> **Relocated:** `spinclass` moved out of purse-first in commit `e1d6632`
+> ("slim purse-first to framework-only"). This feature now lives in
+> [amarbel-llc/spinclass](https://github.com/amarbel-llc/spinclass); this FDR
+> is retained for historical context. Paths in **More Information** are
+> relative to the former `packages/spinclass/`.
 
 ## Motivation
 

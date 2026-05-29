@@ -1,10 +1,16 @@
 ---
-status: accepted
-date: 2026-03-04
-promotion-criteria: n/a — shipped
+status: dormant
+date: 2026-05-29
+promotion-criteria: n/a — shipped, then parked
 ---
 
 # Lux Service Daemon
+
+> **Dormant:** `lux` moved out of purse-first in commit `e1d6632`
+> ("slim purse-first to framework-only") and is currently dormant in its
+> entirety — it is not published in `amarbel-llc/moxy` or any other active
+> repo. This FDR is retained for historical context. Paths in **More
+> Information** are relative to the former `packages/lux/`.
 
 ## Motivation
 

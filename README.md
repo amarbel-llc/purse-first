@@ -18,7 +18,7 @@ Packages come in three flavors:
 
 | Flavor | Description | Examples |
 |--------|-------------|----------|
-| **MCP package** | Ships an MCP server with optional tool mappings | grit, get-hubbed, lux |
+| **MCP package** | Ships an MCP server with optional tool mappings | grit, get-hubbed |
 | **Skill package** | Ships skills only | robin, tap-dancer, bob |
 | **MCP + Skill package** | Ships both MCP server and skills | chix |
 
@@ -26,7 +26,7 @@ Packages come in three flavors:
 
 - **grit** (MCP) — Git operations via MCP: stage, commit, push, log, blame, and more
 - **get-hubbed** (MCP) — GitHub CLI wrapper via MCP: issues, pull requests, and repos
-- **lux** (MCP) — LSP multiplexer via MCP: hover, definitions, references, and symbols
+- **lux** (MCP, _dormant_) — LSP multiplexer via MCP: hover, definitions, references, and symbols. Pulled out of this repo and currently parked; not published in moxy or any other active repo.
 - **chix** (MCP + Skill) — Nix MCP server and skills for Claude Code: build, evaluate, search, and manage flakes
 - **robin** (Skill) — BATS integration testing skill with bundled assertion libraries, sandcastle isolation, and justfile patterns
 - **tap-dancer** (Skill) — TAP-14 writer libraries (Go) and skill for producing spec-compliant TAP output

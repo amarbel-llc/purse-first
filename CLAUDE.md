@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Package framework for bundling CLIs, MCP servers, and skills into composable, Nix-built packages for humans and agents like Claude Code. Three layers: Protocol (`share/purse-first/` convention), CLI (`purse-first` binary), Libraries (`go-mcp`, `dewey`).
 
-Most concrete MCP-server packages (grit, get-hubbed, lux, chix, etc.) have moved out of this repo — see [amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) for those as moxins. This repo now contains the framework itself plus a few co-located libraries and tools (purse-first CLI, go-mcp, dewey, dagnabit).
+Most concrete MCP-server packages (grit, get-hubbed, chix, etc.) have moved out of this repo — see [amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) for those as moxins. (`lux` was also pulled out of this repo, but is currently **dormant** in its entirety — it is not published in moxy or any other active repo.) This repo now contains the framework itself plus a few co-located libraries and tools (purse-first CLI, go-mcp, dewey, dagnabit).
 
 ## Build & Test Commands
 
@@ -74,7 +74,7 @@ nix build .#go-pkgs-test             # RFC 0001 test-only Go workspace source
   - **Skill package** — Skill only
   - **MCP + Skill package** — Both
 - **Marketplace** — aggregated `symlinkJoin` output with `marketplace.json` listing all packages
-- **moxin** — a `purse-first`-protocol package consumed by a separate aggregator (`moxy`). The concrete MCP packages (grit, get-hubbed, lux, chix, etc.) now live in [amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) as moxins; this repo only defines the protocol and ships the framework, libraries, and a small set of in-tree skills.
+- **moxin** — a `purse-first`-protocol package consumed by a separate aggregator (`moxy`). The concrete MCP packages (grit, get-hubbed, chix, etc.) now live in [amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) as moxins; this repo only defines the protocol and ships the framework, libraries, and a small set of in-tree skills. (`lux` is currently dormant — see the Overview.)
 
 ## Architecture
 
@@ -92,7 +92,7 @@ The `libs/go-mcp` `command.App` abstraction expects every consuming Go MCP packa
 2. **`hook`** — Claude Code PreToolUse handler: `app.HandleHook(stdin, stdout)` reads hook input and denies built-in tools when an MCP tool should be used instead
 3. **no args** — runtime: starts the MCP server via `server.New(...).Run(ctx)`
 
-The downstream packages that live this lifecycle (grit, get-hubbed, lux, chix, etc.) now ship out of [amarbel-llc/moxy](https://github.com/amarbel-llc/moxy); this repo defines and tests the framework that supports them.
+The downstream packages that live this lifecycle (grit, get-hubbed, chix, etc.) now ship out of [amarbel-llc/moxy](https://github.com/amarbel-llc/moxy); this repo defines and tests the framework that supports them.
 
 ### command.App Pattern (libs/go-mcp)
 
@@ -174,7 +174,7 @@ Non-Go packages (and the repo itself) use `package.toml` at the package root ins
 | `gomod.nix` | Per-system Nix interface to the Go workspace: builds every Go binary plus the RFC 0001 `go-pkgs` / `go-pkgs-test` source derivations |
 | `devenvs/` | Per-language dev shells composed into the default shell (`go`, `bats`, `shell`) |
 | `templates/marketplace/` | `nix flake init -t` template for new marketplaces |
-| `dev/lux-nvim/` | Auxiliary dev tooling |
+| `dev/lux-nvim/` | Auxiliary dev tooling (Neovim client for the now-dormant `lux`) |
 | `zz-tests_bats/` | BATS integration tests |
 | `package.toml` | This repo's own package manifest source (consumed by `generate-plugin`) |
 | `marketplace-config.json` | Marketplace metadata (owner, repo, per-plugin version map) |

@@ -1,7 +1,12 @@
-# FDR: Homebrew Private Tap Distribution
+---
+status: experimental
+date: 2026-03-12
+promotion-criteria: multi-platform support beyond darwin-arm64; resolve the
+  post_install chicken-and-egg for first-time installs; cover the wired-but-untested
+  downloadStrategy config field (see Open items)
+---
 
-**Status:** Prototype validated, awaiting polish
-**Date:** 2026-03-12
+# FDR: Homebrew Private Tap Distribution
 
 ## Summary
 
