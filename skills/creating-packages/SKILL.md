@@ -12,7 +12,6 @@ If you're building an MCP server, CLI tool, or skill set and want Claude Code us
 
 For a high-level understanding of the framework, see the **bob:overview** skill.
 For understanding how installed packages behave at runtime, see the **bob:using-packages** skill.
-For adding output-limiting to MCP tools, see the **bob:context-saving** skill.
 For building Go MCP servers and CLIs, see **go-mcp-command(7)**.
 
 ## Overview
@@ -503,5 +502,4 @@ Consult these when you need detailed implementation examples:
 
 - **bob:overview** — Framework orientation, terminology, and workflow overview
 - **bob:using-packages** — How installed packages work at runtime, troubleshooting
-- **bob:context-saving** — Adding output-limiting to MCP tools (pagination, truncation)
 - **go-mcp(7)** — Building Go CLIs and MCP servers with go-mcp

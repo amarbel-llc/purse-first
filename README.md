@@ -30,7 +30,7 @@ Packages come in three flavors:
 - **chix** (MCP + Skill) — Nix MCP server and skills for Claude Code: build, evaluate, search, and manage flakes
 - **robin** (Skill) — BATS integration testing skill with bundled assertion libraries, sandcastle isolation, and justfile patterns
 - **tap-dancer** (Skill) — TAP-14 writer libraries (Go) and skill for producing spec-compliant TAP output
-- **bob** (Skill) — purse-first's own skill package: plugin-mcp, context-saving, and go-cli-framework skills
+- **bob** (Skill) — purse-first's own skill package: plugin-mcp and go-cli-framework skills
 
 ## Getting Started
 

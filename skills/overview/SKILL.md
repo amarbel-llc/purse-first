@@ -72,7 +72,6 @@ Runtime: PreToolUse hook routes tools via mappings
 | Understand what purse-first is | You're reading it |
 | Create a new package (MCP, skill, or both) | **bob:creating-packages** |
 | Understand how installed packages work at runtime | **bob:using-packages** |
-| Add output-limiting to MCP tools (pagination, truncation) | **bob:context-saving** |
 | Build a Go CLI or MCP server with go-mcp | **go-mcp(7)** manpage |
 | Create or modify a justfile | **bob:design_patterns-just** |
 
