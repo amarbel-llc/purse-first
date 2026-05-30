@@ -3,19 +3,19 @@
     "bun2nix": {
       "inputs": {
         "flake-parts": [
-          "nixpkgs",
+          "igloo",
           "flake-parts"
         ],
         "nixpkgs": [
-          "nixpkgs",
+          "igloo",
           "nixpkgs-master"
         ],
         "systems": [
-          "nixpkgs",
+          "igloo",
           "systems"
         ],
         "treefmt-nix": [
-          "nixpkgs",
+          "igloo",
           "treefmt-nix"
         ]
       },
@@ -36,7 +36,7 @@
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
-          "nixpkgs",
+          "igloo",
           "nixpkgs-master"
         ]
       },
@@ -77,7 +77,7 @@
         "type": "github"
       }
     },
-    "nixpkgs": {
+    "igloo": {
       "inputs": {
         "bun2nix": "bun2nix",
         "flake-parts": "flake-parts",
@@ -134,7 +134,7 @@
     "root": {
       "inputs": {
         "gomod2nix": "gomod2nix",
-        "nixpkgs": "nixpkgs",
+        "igloo": "igloo",
         "nixpkgs-master": "nixpkgs-master_2",
         "treefmt-nix": "treefmt-nix_2",
         "utils": "utils"
@@ -173,7 +173,7 @@
     "treefmt-nix": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs",
+          "igloo",
           "nixpkgs-master"
         ]
       },
@@ -194,7 +194,7 @@
     "treefmt-nix_2": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs"
+          "igloo"
         ]
       },
       "locked": {

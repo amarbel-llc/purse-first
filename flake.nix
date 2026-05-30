@@ -2,7 +2,7 @@
   description = "Package framework for bundling CLIs, MCP servers, and skills";
 
   inputs = {
-    nixpkgs.url = "github:amarbel-llc/igloo";
+    igloo.url = "github:amarbel-llc/igloo";
     nixpkgs-master.url = "github:NixOS/nixpkgs/d233902339c02a9c334e7e593de68855ad26c4cb";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
 
@@ -16,14 +16,14 @@
     # `nix fmt` driver. Config lives in ./treefmt.nix.
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "igloo";
     };
   };
 
   outputs =
     {
       self,
-      nixpkgs,
+      igloo,
       nixpkgs-master,
       utils,
       gomod2nix,
@@ -35,10 +35,10 @@
       # Per-system Nix interface to the Go workspace. See gomod.nix.
       # Memoized across systems so `marketplaceOutputs`'s plugins callback
       # and the outer eachDefaultSystem block share one evaluation.
-      gomodBySystem = nixpkgs.lib.genAttrs utils.lib.defaultSystems (
+      gomodBySystem = igloo.lib.genAttrs utils.lib.defaultSystems (
         import ./gomod.nix {
+          nixpkgs = igloo;
           inherit
-            nixpkgs
             nixpkgs-master
             gomod2nix
             self
@@ -49,7 +49,7 @@
       buildDevenvs =
         system:
         let
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = import igloo { inherit system; };
           pkgs-master = import nixpkgs-master { inherit system; };
         in
         {
@@ -62,12 +62,13 @@
       # default devshell so `treefmt` is on PATH for tools that integrate
       # with it (notably `dagnabit export`, which invokes treefmt on its
       # output directory if a config is present).
-      treefmtEvalBySystem = nixpkgs.lib.genAttrs utils.lib.defaultSystems (
-        system: treefmt-nix.lib.evalModule (import nixpkgs { inherit system; }) ./treefmt.nix
+      treefmtEvalBySystem = igloo.lib.genAttrs utils.lib.defaultSystems (
+        system: treefmt-nix.lib.evalModule (import igloo { inherit system; }) ./treefmt.nix
       );
 
       marketplaceOutputs = mkMarketplace {
-        inherit nixpkgs nixpkgs-master utils;
+        nixpkgs = igloo;
+        inherit nixpkgs-master utils;
         name = "purse-first";
         owner = {
           name = "friedenberg";
@@ -105,7 +106,7 @@
         '';
       };
     in
-    nixpkgs.lib.recursiveUpdate marketplaceOutputs (
+    igloo.lib.recursiveUpdate marketplaceOutputs (
       {
         lib.mkMarketplace = mkMarketplace;
         templates.marketplace = {
