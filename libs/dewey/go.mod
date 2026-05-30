@@ -12,6 +12,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/x/xpty v0.1.3
 	github.com/dave/jennifer v1.7.1
+	github.com/golangci/plugin-module-register v0.1.2
 	github.com/google/go-cmp v0.7.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/tonistiigi/vt100 v0.0.0-20240514184818-90bafcd6abab

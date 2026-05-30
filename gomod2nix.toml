@@ -318,6 +318,14 @@ schema = 3
     hash = 'sha256-/dGNGhn9Jvdb6D95qbN1DLfS6H7ZS4G4AubU9zUDgdU='
     goVersion = '1.18'
 
+  [mod.'github.com/golangci/plugin-module-register']
+    version = 'v0.1.2'
+    hash = 'sha256-1ynPByzfsjZtScZyxl36ARmva6rSIxIyDi6P7pQwl30='
+    goVersion = '1.23.0'
+    vendorPackages = [
+      'github.com/golangci/plugin-module-register/register'
+    ]
+
   [mod.'github.com/google/go-cmp']
     version = 'v0.7.0'
     hash = 'sha256-JbxZFBFGCh/Rj5XZ1vG94V2x7c18L8XKB0N9ZD5F2rM='
