@@ -187,7 +187,7 @@ Nix builds output to `result`/`result-*` symlinks (managed by nix, already gitig
 
 ### Code Style
 
-- **Nix**: Format with `nix fmt` (nixfmt-rfc-style)
+- **Nix**: Format with `nix fmt` (treelint → nixfmt)
 - **Shell**: `set -euo pipefail`, 2-space indent, `[[ ]]` conditionals, quote all vars. Format with `shfmt -s -i=2`
 - **Go**: `goimports` + `gofumpt`
 - **Tests**: TAP-14 output format when reasonable, BATS for CLI integration tests

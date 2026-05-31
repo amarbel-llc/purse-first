@@ -79,7 +79,7 @@
             treelint.packages.${system}.default
             pkgs-master.gofumpt
             pkgs-master.gotools
-            pkgs.nixfmt-rfc-style
+            pkgs.nixfmt
             pkgs.shfmt
             pkgs.shellcheck
           ];
@@ -112,7 +112,7 @@
               # nixfmt is added here now that the treefmt-nix wrapper is gone.
               # `dagnabit export` resolves `treelint` from PATH for facade formatting.
               treelint.packages.${system}.default
-              pkgs.nixfmt-rfc-style
+              pkgs.nixfmt
             ];
             inputsFrom = [
               devenvs.go.devShells.default
