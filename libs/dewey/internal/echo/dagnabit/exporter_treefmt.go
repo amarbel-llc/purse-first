@@ -70,7 +70,7 @@ func (exporter *Exporter) FormatOutput() error {
 		return nil
 	}
 
-	outputPath := filepath.Join(exporter.Dir, exporter.outputDir())
+	outputPath := filepath.Join(exporter.outputRoot(), exporter.outputDir())
 	if _, err := os.Stat(outputPath); err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -84,7 +84,18 @@ func (exporter *Exporter) FormatOutput() error {
 	}
 
 	if formatterPath, err := exec.LookPath(formatter); err == nil {
-		cmd := exec.Command(formatterPath, outputPath)
+		// treelint defaults to a git walk anchored at the worktree root, which
+		// skips untracked paths — including freshly generated facades and the
+		// temp dir used by `export --check`. Anchor the tree root at the output
+		// dir and walk the filesystem so every generated file is formatted
+		// regardless of git status. (treefmt has no such flags; it walks the
+		// given path directly.)
+		var cmd *exec.Cmd
+		if formatter == "treelint" {
+			cmd = exec.Command(formatterPath, "--tree-root", outputPath, "--walk", "filesystem", outputPath)
+		} else {
+			cmd = exec.Command(formatterPath, outputPath)
+		}
 		cmd.Dir = configDir
 		cmd.Stdout = os.Stderr
 		cmd.Stderr = os.Stderr
@@ -109,10 +120,15 @@ func (exporter *Exporter) FormatOutput() error {
 		}
 	}
 
-	fmt.Fprintf(
-		os.Stderr,
-		"warning: formatter config %s found at %s, but neither `%s` nor `nix fmt` is available; skipping format pass\n",
-		configName, configDir, formatter,
+	// Fail loud rather than silently emitting unformatted facades: a missing
+	// formatter in a config-present tree means generated output would diff
+	// against the committed (formatted) facades for the wrong reason. Callers
+	// must run inside an environment where the configured formatter is on PATH
+	// (e.g. the dev shell).
+	return fmt.Errorf(
+		"formatter config %s found at %s, but `%s` is not on PATH"+
+			" (and no `nix fmt` fallback); refusing to skip formatting"+
+			" — run inside the dev shell so `%s` is available",
+		configName, configDir, formatter, formatter,
 	)
-	return nil
 }

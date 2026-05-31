@@ -2,6 +2,7 @@ package dagnabit
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"go/ast"
 	"go/types"
@@ -27,6 +28,13 @@ type Exporter struct {
 	Dir        string
 	OutputDir  string
 	DryRun     bool
+
+	// OutputRoot, when non-empty, is the filesystem root under which facades
+	// are written (and formatted), in place of Dir. Package loading and
+	// formatter-config lookup still key off Dir; only the output location
+	// moves. CheckAll() uses this to render+format into a temp dir for a
+	// no-mutation drift comparison against the real Dir/<outputDir>.
+	OutputRoot string
 
 	// SkipConsumerRewrite, when true, disables the post-export pass that
 	// walks the workspace looking for files outside this module that import
@@ -56,6 +64,173 @@ func (exporter *Exporter) outputDir() string {
 	}
 
 	return "pkgs"
+}
+
+// outputRoot is the filesystem root facades are written under. Defaults to
+// Dir; CheckAll redirects it to a temp dir so it can compare without mutating
+// the real tree.
+func (exporter *Exporter) outputRoot() string {
+	if exporter.OutputRoot != "" {
+		return exporter.OutputRoot
+	}
+
+	return exporter.Dir
+}
+
+// CheckAll verifies every facade (library mode) is in sync. See checkExport.
+func (exporter *Exporter) CheckAll() error {
+	// Full regeneration: an on-disk facade with no generated counterpart is
+	// stale drift, so report those too.
+	return exporter.checkExport(
+		func(clone *Exporter) error { return clone.ExportAll() },
+		true,
+	)
+}
+
+// CheckPackage verifies a single package's facade is in sync. See checkExport.
+func (exporter *Exporter) CheckPackage(pkgPattern string) error {
+	// Partial regeneration: only the named package's files are in scope, so do
+	// not flag unrelated on-disk facades as stale.
+	return exporter.checkExport(
+		func(clone *Exporter) error { return clone.ExportPackage(pkgPattern) },
+		false,
+	)
+}
+
+// CheckScan verifies the directive-marked packages' facades are in sync. See
+// checkExport.
+func (exporter *Exporter) CheckScan() error {
+	return exporter.checkExport(
+		func(clone *Exporter) error { return clone.ScanAndExport() },
+		false,
+	)
+}
+
+// checkExport renders + formats facades into a temp dir (via run, one of the
+// Export* methods on a clone redirected there), then compares the result
+// against the on-disk Dir/<outputDir> tree — without writing to it. It returns
+// an error naming the out-of-sync packages if the committed facades differ
+// from a fresh export (drifted content, missing facades, or — when
+// reportStale is set — files no longer generated), else nil. This is the
+// side-effect-free equivalent of `export` followed by `git diff --exit-code`.
+//
+// reportStale is meaningful only for full/library runs; partial runs
+// (single-package, scan) regenerate a subset and must not flag the untouched
+// on-disk facades as drift.
+func (exporter *Exporter) checkExport(run func(*Exporter) error, reportStale bool) error {
+	tmp, err := os.MkdirTemp("", "dagnabit-check-")
+	if err != nil {
+		return fmt.Errorf("creating temp dir: %w", err)
+	}
+	defer os.RemoveAll(tmp)
+
+	// Render + format into the temp root; never touch the real tree. Consumer
+	// rewriting is a mutation of files outside <outputDir>, so it is disabled.
+	clone := *exporter
+	clone.OutputRoot = tmp
+	clone.SkipConsumerRewrite = true
+
+	if err := run(&clone); err != nil {
+		return err
+	}
+	if err := clone.FormatOutput(); err != nil {
+		return err
+	}
+
+	want := filepath.Join(exporter.Dir, exporter.outputDir())
+	got := filepath.Join(tmp, exporter.outputDir())
+
+	drift, err := diffFacadeTrees(want, got, reportStale)
+	if err != nil {
+		return err
+	}
+	if len(drift) > 0 {
+		return fmt.Errorf(
+			"%s/ is out of sync with internal/ (run `dagnabit export` and commit):\n  %s",
+			exporter.outputDir(),
+			strings.Join(drift, "\n  "),
+		)
+	}
+
+	return nil
+}
+
+// diffFacadeTrees compares the committed facade tree (want) against a freshly
+// generated one (got), returning a sorted list of human-readable drift
+// entries: files that differ or are missing from want, plus (when reportStale
+// is set) files present in want but not regenerated.
+func diffFacadeTrees(want, got string, reportStale bool) ([]string, error) {
+	wantFiles, err := readTree(want)
+	if err != nil {
+		return nil, fmt.Errorf("reading %s: %w", want, err)
+	}
+	gotFiles, err := readTree(got)
+	if err != nil {
+		return nil, fmt.Errorf("reading %s: %w", got, err)
+	}
+
+	seen := make(map[string]struct{}, len(gotFiles))
+	var drift []string
+	for rel, gotBody := range gotFiles {
+		seen[rel] = struct{}{}
+		wantBody, ok := wantFiles[rel]
+		if !ok {
+			drift = append(drift, rel+" (missing — not committed)")
+			continue
+		}
+		if !bytes.Equal(wantBody, gotBody) {
+			drift = append(drift, rel+" (out of date)")
+		}
+	}
+	if reportStale {
+		for rel := range wantFiles {
+			// Hand-written facade tests (*_test.go) live alongside generated
+			// files and are not produced by the exporter (which only emits
+			// main.go and build-tag facade files); never flag them as stale.
+			if strings.HasSuffix(rel, "_test.go") {
+				continue
+			}
+			if _, ok := seen[rel]; !ok {
+				drift = append(drift, rel+" (stale — no longer generated)")
+			}
+		}
+	}
+
+	sort.Strings(drift)
+	return drift, nil
+}
+
+// readTree maps each regular file under root to its contents, keyed by path
+// relative to root. A non-existent root yields an empty map.
+func readTree(root string) (map[string][]byte, error) {
+	out := map[string][]byte{}
+	if _, err := os.Stat(root); os.IsNotExist(err) {
+		return out, nil
+	}
+
+	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		body, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		out[rel] = body
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
 }
 
 // ExportPackage generates a facade for a single package path (e.g.,
@@ -219,7 +394,7 @@ func (exporter *Exporter) exportSinglePackage(pkg *packages.Package) error {
 	facadePkgName := filepath.Base(facadeSubpath)
 
 	outputPath := filepath.Join(
-		exporter.Dir,
+		exporter.outputRoot(),
 		exporter.outputDir(),
 		facadeSubpath,
 		"main.go",
@@ -229,7 +404,7 @@ func (exporter *Exporter) exportSinglePackage(pkg *packages.Package) error {
 		return exporter.dryRunSummary(pkg, outputPath)
 	}
 
-	outputSubdir := filepath.Join(exporter.Dir, exporter.outputDir(), facadeSubpath)
+	outputSubdir := filepath.Join(exporter.outputRoot(), exporter.outputDir(), facadeSubpath)
 
 	if exporter.Copy {
 		if err := exporter.exportPackageAsCopy(pkg, outputSubdir); err != nil {

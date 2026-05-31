@@ -252,6 +252,7 @@ func runExport() {
 	var noRewriteConsumers bool
 	var library bool
 	var copyMode bool
+	var check bool
 
 	exportFlags.BoolVar(&dryRun, "n", false, "show what would be generated without writing files")
 	exportFlags.BoolVar(&dryRun, "dry-run", false, "show what would be generated without writing files")
@@ -260,6 +261,8 @@ func runExport() {
 	exportFlags.BoolVar(&noRewriteConsumers, "no-rewrite-consumers", false, "skip rewriting external workspace consumers' imports to the new facade path")
 	exportFlags.BoolVar(&library, "library", false, "export facades for every package under internal/ (fails if any //go:generate dagnabit export directives exist)")
 	exportFlags.BoolVar(&copyMode, "copy", false, "copy internal source files into pkgs/, rewriting only intra-module imports, instead of emitting thin re-export aliases")
+	exportFlags.BoolVar(&check, "check", false, "verify the committed facades match a fresh export without writing; exit nonzero on drift (works with --library, explicit packages, or directive scan)")
+	exportFlags.BoolVar(&check, "c", false, "alias for --check")
 	exportFlags.Parse(os.Args[1:])
 
 	args := exportFlags.Args()
@@ -288,6 +291,31 @@ func runExport() {
 		DryRun:              dryRun,
 		SkipConsumerRewrite: noRewriteConsumers,
 		Copy:                copyMode,
+	}
+
+	if check {
+		// Check mode renders + formats into a temp dir and compares against the
+		// on-disk facades; it never writes the real tree and does its own
+		// formatting, so skip the trailing in-place FormatOutput below. Mirrors
+		// the export dispatch (library / explicit packages / directive scan).
+		var checkErr error
+		switch {
+		case library:
+			checkErr = exporter.CheckAll()
+		case len(args) > 0:
+			for _, arg := range args {
+				if checkErr = exporter.CheckPackage(arg); checkErr != nil {
+					break
+				}
+			}
+		default:
+			checkErr = exporter.CheckScan()
+		}
+		if checkErr != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", checkErr)
+			os.Exit(1)
+		}
+		return
 	}
 
 	if library {

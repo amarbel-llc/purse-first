@@ -35,14 +35,16 @@ lint: lint-go lint-dewey-pkgs-drift lint-treelint
 lint-go:
     {{ cmd_nix_dev }} go vet ./...
 
-# Drift lint: ensure libs/dewey/pkgs/ matches what `dagnabit export --library`
-# (plus the integrated treefmt pass) produces from the current internal/ tree.
-# Run from CI to catch stale facades before they merge. Depends on
-# `dagnabit-build` so the binary under test is the one in the current
-# working tree, and on `dewey-export-library` so the export actually runs.
+# Drift lint: verify libs/dewey/pkgs/ matches a fresh `dagnabit export --library`
+# without mutating the tree. `--check` renders + formats facades into a temp dir
+# and compares against the committed ones; it exits nonzero (naming the
+# out-of-sync packages) on drift and fails loud if the formatter (treelint) is
+# missing — no more silent skip / phantom drift. Depends on `dagnabit-build` so
+# the binary under test is the one in the current working tree. Runs the binary
+# ambient (not via `nix develop`) so dewey's `-tags test` build env is honored.
 [group('pre-build')]
-lint-dewey-pkgs-drift: dagnabit-build dewey-export-library
-    git diff --exit-code -- libs/dewey/pkgs/
+lint-dewey-pkgs-drift: dagnabit-build
+    cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit export --check --library
 
 # treelint check: read-only format + lint gate. Verifies formatter drift via
 # sandbox-and-diff (Go/Nix/shell, per ./treelint.toml) plus shellcheck.
