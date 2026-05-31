@@ -268,3 +268,70 @@ func prependPath(t *testing.T, dir string) {
 	})
 	os.Setenv("PATH", dir+string(os.PathListSeparator)+orig)
 }
+
+// withFakeTreelint writes a stub shell script named `treelint` into a fresh
+// directory and prepends it to PATH, mirroring withFakeTreefmt. The fake
+// records its argv into sentinelPath.
+func withFakeTreelint(t *testing.T, sentinelPath string) {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("PATH-injection fake binary not portable to Windows")
+	}
+
+	binDir := t.TempDir()
+	fake := filepath.Join(binDir, "treelint")
+	script := fmt.Sprintf("#!/bin/sh\nprintf '%%s\\n' \"$@\" > %q\n", sentinelPath)
+	if err := os.WriteFile(fake, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	prependPath(t, binDir)
+}
+
+// TestFindTreefmtConfig_PrefersTreelint confirms a treelint.toml is chosen
+// over a treefmt.toml in the same directory (treelint is the successor).
+func TestFindTreefmtConfig_PrefersTreelint(t *testing.T) {
+	tmpDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tmpDir, "treelint.toml"), []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, name, ok := findTreefmtConfig(tmpDir)
+	if !ok {
+		t.Fatal("expected to find a config")
+	}
+	if name != "treelint.toml" {
+		t.Errorf("expected treelint.toml to win over treefmt.toml, got %q", name)
+	}
+}
+
+// TestFormatOutput_InvokesTreelint confirms a treelint.toml config drives the
+// `treelint` binary rather than `treefmt`.
+func TestFormatOutput_InvokesTreelint(t *testing.T) {
+	tmpDir := t.TempDir()
+	mustMkdirAll(t, filepath.Join(tmpDir, "pkgs"))
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "treelint.toml"), []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	sentinel := filepath.Join(tmpDir, "sentinel")
+	withFakeTreelint(t, sentinel)
+
+	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
+	if err := exporter.FormatOutput(); err != nil {
+		t.Fatalf("FormatOutput: %v", err)
+	}
+
+	body, err := os.ReadFile(sentinel)
+	if err != nil {
+		t.Fatalf("expected sentinel to be written by fake treelint: %v", err)
+	}
+	args := strings.Split(strings.TrimSpace(string(body)), "\n")
+	if len(args) == 0 || !strings.HasSuffix(args[len(args)-1], "pkgs") {
+		t.Errorf("expected fake treelint to be invoked with output dir as last arg, got args=%v", args)
+	}
+}

@@ -5,11 +5,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
-// treefmtConfigNames are the filenames that indicate a treefmt setup,
-// searched in order. Plain treefmt and treefmt-nix both share this list.
+// treefmtConfigNames are the config filenames that indicate a treelint or
+// treefmt setup, searched in order. treelint (the treefmt successor) is
+// preferred; plain treefmt and treefmt-nix remain as fallbacks.
 var treefmtConfigNames = []string{
+	"treelint.toml",
+	".treelint.toml",
 	"treefmt.toml",
 	".treefmt.toml",
 	"treefmt.nix",
@@ -40,19 +44,22 @@ func findTreefmtConfig(start string) (dir, name string, ok bool) {
 	}
 }
 
-// FormatOutput runs treefmt on the output directory if a treefmt
-// configuration is present in the module's directory tree. No-op when
-// no config is found or when DryRun is set.
+// FormatOutput runs the project's formatter on the output directory if a
+// treelint or treefmt configuration is present in the module's directory
+// tree. No-op when no config is found or when DryRun is set.
 //
 // Resolution order:
-//  1. `treefmt <output-dir>` if the `treefmt` binary is on PATH.
-//  2. `nix fmt -- <output-dir>` if config is `treefmt.nix` and `nix`
-//     is on PATH.
+//  1. `<formatter> <output-dir>` where <formatter> is `treelint` for a
+//     treelint.toml/.treelint.toml config and `treefmt` for a
+//     treefmt.toml/.treefmt.toml/treefmt.nix config, if that binary is on
+//     PATH.
+//  2. `nix fmt -- <output-dir>` if config is `treefmt.nix` and `nix` is on
+//     PATH.
 //  3. Otherwise emit a warning to stderr and skip.
 //
-// Invocation runs with cwd set to the directory containing the
-// treefmt config so the formatter resolves project-relative paths
-// the same way the user's own invocations do.
+// Invocation runs with cwd set to the directory containing the config so
+// the formatter resolves project-relative paths the same way the user's
+// own invocations do.
 func (exporter *Exporter) FormatOutput() error {
 	if exporter.DryRun {
 		return nil
@@ -71,14 +78,19 @@ func (exporter *Exporter) FormatOutput() error {
 		return fmt.Errorf("stat output dir: %w", err)
 	}
 
-	if treefmtPath, err := exec.LookPath("treefmt"); err == nil {
-		cmd := exec.Command(treefmtPath, outputPath)
+	formatter := "treefmt"
+	if strings.Contains(configName, "treelint") {
+		formatter = "treelint"
+	}
+
+	if formatterPath, err := exec.LookPath(formatter); err == nil {
+		cmd := exec.Command(formatterPath, outputPath)
 		cmd.Dir = configDir
 		cmd.Stdout = os.Stderr
 		cmd.Stderr = os.Stderr
 
 		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("treefmt: %w", err)
+			return fmt.Errorf("%s: %w", formatter, err)
 		}
 		return nil
 	}
@@ -99,8 +111,8 @@ func (exporter *Exporter) FormatOutput() error {
 
 	fmt.Fprintf(
 		os.Stderr,
-		"warning: treefmt config %s found at %s, but neither `treefmt` nor `nix fmt` is available; skipping format pass\n",
-		configName, configDir,
+		"warning: formatter config %s found at %s, but neither `%s` nor `nix fmt` is available; skipping format pass\n",
+		configName, configDir, formatter,
 	)
 	return nil
 }
