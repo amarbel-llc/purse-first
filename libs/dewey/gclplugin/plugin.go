@@ -30,7 +30,7 @@
 //	        settings:
 //	          defererr: true
 //	          seqerror: true
-//	          repool: false
+//	          repool: true
 //
 // All three analyzers are enabled by default; the settings block lets a
 // consumer opt out per analyzer. defererr and seqerror are general Go
