@@ -21,8 +21,6 @@ func ValidateBytes(data []byte, docType DocType, strict bool) (*Result, DocType,
 		r = validatePlugin(data, strict)
 	case MappingDoc:
 		r = validateMapping(data, strict)
-	case MarketplaceDoc:
-		r = validateMarketplace(data, strict)
 	default:
 		return nil, docType, fmt.Errorf("unsupported document type: %s", docType)
 	}
@@ -45,7 +43,6 @@ func ValidateFile(path string, docType DocType, strict bool) (*Result, DocType, 
 
 var directoryTargets = []string{
 	".claude-plugin/plugin.json",
-	".claude-plugin/marketplace.json",
 	"mappings.json",
 }
 

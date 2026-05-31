@@ -69,10 +69,6 @@ result_dir() {
   echo "${result_path}"
 }
 
-marketplace_result() {
-  echo "$(result_dir)/.claude-plugin/marketplace.json"
-}
-
 purse_first_bin() {
   echo "${PURSE_FIRST_BIN:-purse-first}"
 }

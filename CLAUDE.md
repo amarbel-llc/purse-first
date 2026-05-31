@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Package framework for bundling CLIs, MCP servers, and skills into composable, Nix-built packages for humans and agents like Claude Code. Three layers: Protocol (`share/purse-first/` convention), CLI (`purse-first` binary), Libraries (`go-mcp`, `dewey`).
+Package framework for producing per-package Claude Code plugins (CLIs, MCP servers, and skills) as composable, Nix-built derivations for humans and agents like Claude Code. Each package conforms to the `share/purse-first/<name>/` convention; external tools aggregate the per-package outputs. Three layers: Protocol (`share/purse-first/` convention), CLI (`purse-first` binary), Libraries (`go-mcp`, `dewey`).
+
+Note: marketplace *aggregation* was removed in #110 — purse-first is now a per-package plugin *producer* toolkit plus libraries, not a marketplace assembler/installer.
 
 Most concrete MCP-server packages (grit, get-hubbed, chix, etc.) have moved out of this repo — see [amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) for those as moxins. (`lux` was also pulled out of this repo, but is currently **dormant** in its entirety — it is not published in moxy or any other active repo.) This repo now contains the framework itself plus a few co-located libraries and tools (purse-first CLI, go-mcp, dewey, dagnabit).
 
@@ -17,13 +19,14 @@ are aggregates (no body, only deps); leaves are verb-noun. `just`
 ```sh
 just                    # default = validate lint build test (CI gate; also runs in merge-this-session)
 just validate           # nix flake check + plugin manifest validation
-just lint               # go vet + lint-dewey-pkgs-drift (drift of dagnabit-generated facades)
-just build              # build-nix-gomod2nix + nix build (marketplace bundle)
+just lint               # go vet + lint-dewey-pkgs-drift (facade drift) + lint-fmt (read-only treefmt gate)
+just build              # build-nix-gomod2nix + nix build (default = purse-first CLI)
 just test               # Run ALL tests (Go + BATS integration)
 nix fmt                 # Repo-wide treefmt (Go via gofumpt, Nix via nixfmt, shell via shfmt)
-just fmt                # `go fmt ./...` only — for Go-only quick reformat
+just codemod-fmt        # treefmt pass (codemod-fmt-treefmt) + Go-only go fmt (codemod-fmt-go)
+just codemod-fmt-go     # `go fmt ./...` only — for Go-only quick reformat
 just build-nix-gomod2nix # Sync go.work and regenerate gomod2nix.toml
-just deps                # alias for build-nix-gomod2nix
+just update-go           # alias for build-nix-gomod2nix
 just lint-dewey-pkgs-drift # rebuild dagnabit, re-export, fail on libs/dewey/pkgs/ drift
 ```
 
@@ -39,15 +42,12 @@ just test-dewey         # libs/dewey/... (with -tags test)
 nix develop --command go test -run TestFunctionName ./internal/...
 
 # Single BATS file:
-nix develop --command bats --tap zz-tests_bats/validate_marketplace.bats
+nix develop --command bats --tap zz-tests_bats/validate_documents.bats
 
 # Integration tests (requires nix build first):
-just test-integration   # validate_marketplace + validate_documents + validate_mcp
-just test-lifecycle     # hook_lifecycle.bats
+just test-integration   # validate_documents + validate_mcp
 just test-validate      # validate_documents.bats only
 just test-validate-mcp  # validate_mcp.bats only
-just test-package-brew  # package_brew.bats
-just test-template      # marketplace_template.bats
 ```
 
 ### Building Individual Packages
@@ -61,11 +61,12 @@ nix build .#defererr                 # dewey static analyzer
 nix build .#repool                   # dewey static analyzer
 nix build .#seqerror                 # dewey static analyzer
 nix build .#reflexive-interface-generator  # dewey codegen tool
-nix build .#marketplace              # default: full marketplace bundle
-nix build .#marketplace-no-hooks     # marketplace with hooks stripped
+nix build .#manpages                 # go-mcp manpage tree
 nix build .#go-pkgs                  # RFC 0001 published Go workspace source
 nix build .#go-pkgs-test             # RFC 0001 test-only Go workspace source
 ```
+
+The default `nix build` (no attribute) builds the `purse-first` CLI.
 
 ## Terminology
 
@@ -73,7 +74,6 @@ nix build .#go-pkgs-test             # RFC 0001 test-only Go workspace source
   - **MCP package** — MCP server only
   - **Skill package** — Skill only
   - **MCP + Skill package** — Both
-- **Marketplace** — aggregated `symlinkJoin` output with `marketplace.json` listing all packages
 - **moxin** — a `purse-first`-protocol package consumed by a separate aggregator (`moxy`). The concrete MCP packages (grit, get-hubbed, chix, etc.) now live in [amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) as moxins; this repo only defines the protocol and ships the framework, libraries, and a small set of in-tree skills. (`lux` is currently dormant — see the Overview.)
 
 ## Architecture
@@ -132,30 +132,23 @@ Skills MAY have `references/` and `examples/` subdirectories. The SKILL.md body 
 
 Non-Go packages (and the repo itself) use `package.toml` at the package root instead of Go's `generate-plugin` pattern. `purse-first generate-plugin` reads it to produce `plugin.json`.
 
-### mkMarketplace.nix
-
-`lib/mkMarketplace.nix` is the core Nix function that assembles everything. It takes a list of plugin derivations, runs `symlinkJoin`, then `purse-first generate-marketplace` in `postBuild` to scan `share/purse-first/` and write `marketplace.json`. It also resolves or builds the `purse-first` CLI, optionally builds a meta-plugin from `skills/`, and generates dev shells.
-
 ### purse-first CLI
+
+The CLI is a slim per-package producer toolkit — it generates and validates
+individual package manifests. Aggregation of per-package outputs is done by
+external tools (e.g. clown), not by purse-first.
 
 | Command | Purpose |
 |---------|---------|
-| `install <marketplace-root>` | Install a built marketplace's packages into Claude Code |
-| `install-self` | Install this repo's own marketplace |
-| `install-local` | Set up local dev: skills and MCP servers |
-| `install-dev-mcp <binary>` | Wire a single dev MCP binary into the local Claude config |
-| `generate-marketplace` | Discover packages in `share/purse-first/` and write `marketplace.json` |
 | `generate-plugin` | Generate `plugin.json` from `package.toml` |
-| `validate [path]` | Validate plugin.json, mapping.json, or marketplace.json (auto-detects type) |
+| `validate [path]` | Validate plugin.json or mappings (auto-detects type; `--type mcp` for MCP probe) |
 | `validate-mcp <binary>` | Probe a binary as an MCP server (initialize + tools/list + resources) |
-| `package brew` | Brew (Homebrew) packaging subcommand |
 
 ### Protocol Key Rules
 
 - `plugin.name` MUST equal the directory name under `share/purse-first/`
 - Binaries resolve as `<package-root>/../../bin/<command>` (two levels up from share dir)
-- Runtime discovery: `$PURSE_FIRST_PLUGINS_DIR` env var, then `<exe-dir>/../share/purse-first/`
-- Two derivations MUST NOT produce the same package name — `symlinkJoin` fails at build time
+- Two packages MUST NOT produce the same name when an external tool composes them via `symlinkJoin`
 - Reserved paths: `commands/`, `agents/`, `output-styles/`
 
 ## Repository Layout
@@ -164,20 +157,17 @@ Non-Go packages (and the repo itself) use `package.toml` at the package root ins
 |-----------|---------|
 | `cmd/purse-first/` | CLI entrypoint |
 | `cmd/dagnabit/` | dewey-aware Go rename/export tool (used by `dewey-*` justfile recipes) |
-| `cmd/go-mcp-docs/` | Generates the `go-mcp` manpage tree (consumed as a marketplace plugin via `gomod.nix`) |
-| `internal/` | Go internal packages (`install`, `marketplace`, `config`, `validate`, `localplugin`, `mcp`, `packagebrew`, `packagetoml`, `decision`) |
+| `cmd/go-mcp-docs/` | Generates the `go-mcp` manpage tree (built via `gomod.nix`) |
+| `internal/` | Go internal packages (`validate`, `packagetoml`) |
 | `libs/go-mcp/` | Go MCP server library (`command`, `server`, `transport`, `output`, `purse`, `jsonrpc`, `executor`, `operation`, `protocol`) |
 | `libs/dewey/` | Multi-tier Go utility library (NATO-level dependency ordering; `internal/`, `pkgs/` stable facades) |
-| `purse/` | Go package for building package manifests (plugin.json) |
 | `skills/` | In-tree skill documents (currently: claude-plugins, mcp) |
-| `lib/` | Nix build expressions (`mkMarketplace.nix`, `mkGoWorkspaceModule.nix`) |
+| `lib/` | Nix build expressions (`mkGoWorkspaceModule.nix`) |
 | `gomod.nix` | Per-system Nix interface to the Go workspace: builds every Go binary plus the RFC 0001 `go-pkgs` / `go-pkgs-test` source derivations |
 | `devenvs/` | Per-language dev shells composed into the default shell (`go`, `bats`, `shell`) |
-| `templates/marketplace/` | `nix flake init -t` template for new marketplaces |
 | `dev/lux-nvim/` | Auxiliary dev tooling (Neovim client for the now-dormant `lux`) |
 | `zz-tests_bats/` | BATS integration tests |
 | `package.toml` | This repo's own package manifest source (consumed by `generate-plugin`) |
-| `marketplace-config.json` | Marketplace metadata (owner, repo, per-plugin version map) |
 | `docs/` | Protocol spec (`purse-first-protocol.md`), decisions/, features/, rfcs/, plans/, superpowers/ |
 
 ## Key Conventions
@@ -234,7 +224,8 @@ When Claude Code reports a hook error (e.g., "PreToolUse:Bash hook error"):
    the fastest path to root cause.
 2. Claude Code caches `hooks.json` at session startup. Edits to files in
    `~/.claude/plugins/cache/` have no effect on the running session's hook
-   config. You must reinstall (`purse-first install`) and restart the session.
+   config. You must reinstall the plugin (via whatever aggregator installed it)
+   and restart the session.
 3. The pre-tool-use *script* is re-resolved at exec time (symlinks followed),
    so replacing the script file works for diagnostics captured by other sessions.
 4. Hook output MUST include `hookEventName` inside `hookSpecificOutput` — see
@@ -246,7 +237,7 @@ When Claude Code reports a hook error (e.g., "PreToolUse:Bash hook error"):
 |-------------|---------------|
 | direnv (`prepareDirenv`) | Integration test suite or manual: create worktree, `direnv allow` |
 | MCP JSON-RPC | `purse-first validate-mcp <binary>`, verify initialize + tools/list + resources |
-| Claude Code plugin install | `purse-first install`, verify plugin appears |
+| Plugin manifest | `purse-first validate <path>`, verify plugin.json / mappings conform |
 
 ## Versioning
 
@@ -262,9 +253,9 @@ Per eng-versioning(7) MULTI-ARTIFACT RELEASE, a single version covers every
 published artifact in this repo, sourced from one root `version.env`:
 
 - `version.env` (repo root) — `PURSE_FIRST_VERSION` is the sole source of
-  truth for the purse-first CLI + marketplace, the `libs/dewey` library and
-  its binaries, and the `libs/go-mcp` library. It is read by `gomod.nix` at
-  build time (CLI version + dewey buildinfo ldflag) and by `just build-dewey`.
+  truth for the purse-first CLI, the `libs/dewey` library and its binaries,
+  and the `libs/go-mcp` library. It is read by `gomod.nix` at build time
+  (CLI version + dewey buildinfo ldflag) and by `just build-dewey`.
 
 The `maintenance` group exposes one recipe triple:
 

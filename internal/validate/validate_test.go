@@ -12,7 +12,6 @@ func TestDetectTypeFromFilename(t *testing.T) {
 		{"plugin.json", PluginDoc},
 		{".claude-plugin/plugin.json", PluginDoc},
 		{"mappings.json", MappingDoc},
-		{"marketplace.json", MarketplaceDoc},
 		{"other.json", Unknown},
 		{"README.md", Unknown},
 	}
@@ -33,11 +32,6 @@ func TestDetectTypeFromContent(t *testing.T) {
 		data string
 		want DocType
 	}{
-		{
-			"marketplace",
-			`{"name":"x","owner":{"name":"o"},"plugins":[]}`,
-			MarketplaceDoc,
-		},
 		{
 			"mapping",
 			`{"server":"x","mappings":[]}`,
@@ -287,121 +281,6 @@ func TestValidateMappingNoScopingStrict(t *testing.T) {
 	assertHasError(t, r, "mappings[0]", "must have extensions or command_prefixes")
 }
 
-func TestValidateMarketplaceMinimal(t *testing.T) {
-	data := []byte(`{
-		"name": "my-marketplace",
-		"owner": {"name": "me"},
-		"plugins": [{"name": "p", "source": {"source": "github", "repo": "me/p"}}]
-	}`)
-	r, dt, err := ValidateBytes(data, MarketplaceDoc, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if dt != MarketplaceDoc {
-		t.Errorf("got doctype %v, want %v", dt, MarketplaceDoc)
-	}
-	if r.HasErrors() {
-		t.Errorf("unexpected errors: %v", r.Errors())
-	}
-}
-
-func TestValidateMarketplaceMissingName(t *testing.T) {
-	data := []byte(`{"owner":{"name":"o"},"plugins":[{"name":"p","source":"./p"}]}`)
-	r, _, err := ValidateBytes(data, MarketplaceDoc, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertHasError(t, r, "name", "name is required")
-}
-
-func TestValidateMarketplaceMissingOwner(t *testing.T) {
-	data := []byte(`{"name":"x","owner":{},"plugins":[{"name":"p","source":"./p"}]}`)
-	r, _, err := ValidateBytes(data, MarketplaceDoc, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertHasError(t, r, "owner.name", "owner name is required")
-}
-
-func TestValidateMarketplaceEmptyPlugins(t *testing.T) {
-	data := []byte(`{"name":"x","owner":{"name":"o"},"plugins":[]}`)
-	r, _, err := ValidateBytes(data, MarketplaceDoc, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertHasError(t, r, "plugins", "at least one plugin is required")
-}
-
-func TestValidateMarketplaceDuplicatePlugins(t *testing.T) {
-	data := []byte(`{
-		"name": "x",
-		"owner": {"name": "o"},
-		"plugins": [
-			{"name": "a", "source": "./a"},
-			{"name": "a", "source": "./b"}
-		]
-	}`)
-	r, _, err := ValidateBytes(data, MarketplaceDoc, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertHasError(t, r, "plugins[1].name", "duplicate plugin name")
-}
-
-func TestValidateMarketplaceBadSource(t *testing.T) {
-	data := []byte(`{
-		"name": "x",
-		"owner": {"name": "o"},
-		"plugins": [{"name": "p", "source": {"source": "ftp"}}]
-	}`)
-	r, _, err := ValidateBytes(data, MarketplaceDoc, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertHasError(t, r, "plugins[0].source.source", "must be one of")
-}
-
-func TestValidateMarketplaceGithubMissingRepo(t *testing.T) {
-	data := []byte(`{
-		"name": "x",
-		"owner": {"name": "o"},
-		"plugins": [{"name": "p", "source": {"source": "github"}}]
-	}`)
-	r, _, err := ValidateBytes(data, MarketplaceDoc, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertHasError(t, r, "plugins[0].source.repo", "repo is required")
-}
-
-func TestValidateMarketplaceStringSource(t *testing.T) {
-	data := []byte(`{
-		"name": "x",
-		"owner": {"name": "o"},
-		"plugins": [{"name": "p", "source": "./local-path"}]
-	}`)
-	r, _, err := ValidateBytes(data, MarketplaceDoc, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if r.HasErrors() {
-		t.Errorf("unexpected errors for string source: %v", r.Errors())
-	}
-}
-
-func TestValidateMarketplaceMissingSource(t *testing.T) {
-	data := []byte(`{
-		"name": "x",
-		"owner": {"name": "o"},
-		"plugins": [{"name": "p"}]
-	}`)
-	r, _, err := ValidateBytes(data, MarketplaceDoc, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertHasError(t, r, "plugins[0].source", "source is required")
-}
-
 func TestValidateBytesAutoDetect(t *testing.T) {
 	data := []byte(`{"name":"x","mcpServers":{"x":{"type":"stdio","command":"x"}}}`)
 	_, dt, err := ValidateBytes(data, Unknown, false)
@@ -471,7 +350,6 @@ func TestDocTypeString(t *testing.T) {
 	}{
 		{PluginDoc, "plugin"},
 		{MappingDoc, "mapping"},
-		{MarketplaceDoc, "marketplace"},
 		{Unknown, "unknown"},
 	}
 	for _, tt := range tests {

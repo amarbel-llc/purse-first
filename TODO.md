@@ -57,13 +57,6 @@
   `just test-integration` or as a standalone
   `purse-first validate --hook-output` mode
 
-- [ ] skill: downstream marketplace consumer workflow (how to consume
-  mkMarketplace outputs in a parent flake, handle collisions, install
-  separately)
-
-- [ ] FDR: eliminate .claude-plugin/marketplace.json collision so downstream
-  consumers can symlinkJoin multiple marketplaces without infraInputs workaround
-
 - [x] grit: add `--amend` support to `commit` tool (git commit --amend)
 
 - [x] grit: add soft reset mode to `reset` tool (git reset --soft via `soft` +
@@ -73,9 +66,6 @@
   SANDCASTLE_BIN sandcastle)
 
 - [x] update tap-dancer with latest tap amendments
-
-- [ ] verify install-local skill path resolution (./skills/`<name>`{=html} in
-  .claude-plugin/plugin.json may not resolve correctly --- needs manual test)
 
 - [x] add HTTP/SSE transport support to InstallMCP (MCPURL, MCPHeaders on App)
 

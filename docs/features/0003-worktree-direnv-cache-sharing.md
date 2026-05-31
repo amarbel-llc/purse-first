@@ -1,8 +1,16 @@
 ---
-status: exploring
+status: relocated
 date: 2026-03-01
+relocated-to: amarbel-llc/igloo
 promotion-criteria: prototype a nix-built devshell loaded without nix-direnv, measure against baseline
 ---
+
+> **Relocated:** this exploration moved to
+> [amarbel-llc/igloo](https://github.com/amarbel-llc/igloo)
+> (`docs/features/0005-fast-direnv-for-worktrees.md`) on 2026-05-31 — fast
+> direnv for worktrees is a nix-overlay infrastructure concern owned by
+> igloo, the flake every eng repo consumes. This FDR is retained for
+> historical context; further work continues in igloo.
 
 # Fast direnv for worktrees
 

@@ -70,7 +70,7 @@ the full snippet.
 
 Use `just test-dewey` from the repo root. It runs `go test -tags test
 ./libs/dewey/...`. The `test` build tag gates helpers that must not ship to
-consumers. `just vet-dewey` is known to flag one residual issue in
+consumers. `just lint-dewey` is known to flag one residual issue in
 `*/catgut` (the `noescape` helper trips the `unsafeptr` check by
 design — see the comment on the function for why this is intentional);
 treat that as prior art, not a regression.

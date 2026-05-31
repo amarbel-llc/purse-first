@@ -1,9 +1,11 @@
 ---
-status: accepted
+status: superseded
 date: 2026-02-25
 ---
 
 # Refactor purse-first as a reusable marketplace framework
+
+> _Superseded by #110 (marketplace aggregation removed)._
 
 ## Context and Problem Statement
 

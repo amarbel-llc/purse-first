@@ -1,5 +1,5 @@
 ---
-status: experimental
+status: deprecated
 date: 2026-03-12
 promotion-criteria: multi-platform support beyond darwin-arm64; resolve the
   post_install chicken-and-egg for first-time installs; cover the wired-but-untested

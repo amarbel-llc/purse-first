@@ -11,7 +11,6 @@ const (
 	Unknown DocType = iota
 	PluginDoc
 	MappingDoc
-	MarketplaceDoc
 	MCPDoc
 )
 
@@ -21,8 +20,6 @@ func (d DocType) String() string {
 		return "plugin"
 	case MappingDoc:
 		return "mapping"
-	case MarketplaceDoc:
-		return "marketplace"
 	case MCPDoc:
 		return "mcp"
 	default:
@@ -37,8 +34,6 @@ func DetectTypeFromFilename(name string) DocType {
 		return PluginDoc
 	case "mappings.json":
 		return MappingDoc
-	case "marketplace.json":
-		return MarketplaceDoc
 	default:
 		return Unknown
 	}
@@ -48,12 +43,6 @@ func DetectTypeFromContent(data []byte) DocType {
 	var obj map[string]any
 	if err := json.Unmarshal(data, &obj); err != nil {
 		return Unknown
-	}
-
-	_, hasPlugins := obj["plugins"]
-	_, hasOwner := obj["owner"]
-	if hasPlugins && hasOwner {
-		return MarketplaceDoc
 	}
 
 	_, hasMappings := obj["mappings"]

@@ -19,20 +19,10 @@ validate: validate-nix validate-purse-first-manifest
 validate-nix:
     nix flake check
 
-# Validate the marketplace's own plugin manifest.
+# Validate the repo's own plugin.json manifest.
 [group('pre-build')]
 validate-purse-first-manifest:
     {{ cmd_nix_dev }} go run ./cmd/purse-first validate .claude-plugin/plugin.json
-
-# Verify mkMarketplace.nix parses.
-[group('pre-build')]
-check-lib:
-    nix-instantiate --parse lib/mkMarketplace.nix
-
-# Verify template parses.
-[group('pre-build')]
-check-template:
-    nix-instantiate --parse templates/marketplace/flake.nix
 
 # ──── lint ──────────────────────────────────────────────────────────
 # Read-only style / convention / drift checks. Does not modify code.
@@ -61,9 +51,9 @@ lint-dewey-pkgs-drift: dagnabit-build dewey-export-library
 lint-treelint:
     {{ cmd_nix_dev }} treelint check
 
-# Vet dewey library.
+# Lint dewey library.
 [group('pre-build')]
-vet-dewey:
+lint-dewey:
     {{ cmd_nix_dev }} go vet -tags test ./libs/dewey/...
 
 # Build one dewey analyzer (defererr|repool|seqerror) and run it via -vettool.
@@ -80,11 +70,11 @@ analyze-dewey-all: (analyze-dewey "defererr") (analyze-dewey "repool") (analyze-
 # Compile / generate artifacts.
 
 [group('build')]
-build: build-nix-gomod2nix build-marketplace
+build: build-nix-gomod2nix build-nix
 
-# Build the marketplace bundle (default Nix output).
+# Build the default Nix output (the purse-first CLI).
 [group('build')]
-build-marketplace:
+build-nix:
     nix build
 
 [group('build')]
@@ -94,11 +84,6 @@ build-purse-first:
 [group('build')]
 build-purse-first-cli:
     nix build .#purse-first -o result-cli
-
-# Build marketplace without hooks.
-[group('build')]
-build-no-hooks:
-    nix build .#marketplace-no-hooks
 
 [group('build')]
 build-go:
@@ -154,10 +139,7 @@ test: \
     test-go \
     test-go-mcp \
     test-dewey \
-    test-integration \
-    test-lifecycle \
-    test-package-brew \
-    test-template
+    test-integration
 
 # Run Go tests.
 [group('post-build')]
@@ -187,9 +169,7 @@ test-dewey:
 # Run BATS integration tests.
 [group('post-build')]
 test-integration: build-purse-first-cli
-    nix build
     PURSE_FIRST_BIN={{ justfile_directory() }}/result-cli/bin/purse-first {{ cmd_nix_dev }} bats --tap --jobs {{ num_cpus() }} \
-      zz-tests_bats/validate_marketplace.bats \
       zz-tests_bats/validate_documents.bats \
       zz-tests_bats/validate_mcp.bats
 
@@ -199,46 +179,30 @@ test-validate: build-purse-first-cli
     nix build
     PURSE_FIRST_BIN={{ justfile_directory() }}/result-cli/bin/purse-first {{ cmd_nix_dev }} bats --tap --jobs {{ num_cpus() }} zz-tests_bats/validate_documents.bats
 
-# Run lifecycle tests.
-[group('post-build')]
-test-lifecycle: build-purse-first-cli
-    nix build
-    PURSE_FIRST_BIN={{ justfile_directory() }}/result-cli/bin/purse-first {{ cmd_nix_dev }} bats --tap --jobs {{ num_cpus() }} zz-tests_bats/hook_lifecycle.bats
-
 # Run MCP validation tests.
 [group('post-build')]
 test-validate-mcp: build-purse-first-cli
     PURSE_FIRST_BIN={{ justfile_directory() }}/result-cli/bin/purse-first {{ cmd_nix_dev }} bats --tap zz-tests_bats/validate_mcp.bats
 
-# Run package brew tests.
-[group('post-build')]
-test-package-brew: build-purse-first-cli
-    nix build
-    PURSE_FIRST_BIN={{ justfile_directory() }}/result-cli/bin/purse-first {{ cmd_nix_dev }} bats --tap --jobs {{ num_cpus() }} zz-tests_bats/package_brew.bats
-
-# Run template tests.
-[group('post-build')]
-test-template:
-    {{ cmd_nix_dev }} bats --tap --jobs {{ num_cpus() }} zz-tests_bats/marketplace_template.bats
-
-# ──── operational ───────────────────────────────────────────────────
-# Side-effects on the running system.
-
-# Install this marketplace's packages into Claude Code.
-[group('operational')]
-install: build-purse-first-cli
-    nix build
-    {{ justfile_directory() }}/result-cli/bin/purse-first install {{ justfile_directory() }}/result
-
 # ──── codemod ───────────────────────────────────────────────────────
 # Modifies source code.
 
+# Format aggregate: repo-wide treelint pass plus the Go-only quick reformat.
+[group('codemod')]
+codemod-fmt: codemod-fmt-treelint codemod-fmt-go
+
 # Repo-wide format via treelint (the treefmt successor): Go (goimports ->
 # gofumpt), Nix (nixfmt), and shell (shfmt), per ./treelint.toml. Replaces the
-# old `nix fmt` (treefmt-nix) path.
+# old `nix fmt` (treefmt-nix) path. The read-only counterpart is `lint-treelint`.
 [group('codemod')]
-fmt:
+codemod-fmt-treelint:
     {{ cmd_nix_dev }} treelint
+
+# `go fmt ./...` for a quick Go-only reformat. The canonical repo-wide
+# formatter is `codemod-fmt-treelint`.
+[group('codemod')]
+codemod-fmt-go:
+    {{ cmd_nix_dev }} go fmt ./...
 
 # Dry-run a single-package rename: print the proposed move as NDJSON,
 # touch nothing on disk. `new_leaf` is optional; defaults to src's leaf.
@@ -279,15 +243,16 @@ dewey-export-library *flags:
 # Refresh dependencies, bump versions, tag/release, clean.
 
 [group('maintenance')]
-update: update-nix
+update: update-nix update-go
 
 [group('maintenance')]
 update-nix:
     nix flake update
 
-# Update go dependencies, tidy all modules, and refresh gomod2nix.toml.
+# Resync go.work and refresh gomod2nix.toml. (Regenerates the lockfile from
+# the current go.mod / go.sum / go.work; does not bump pins.)
 [group('maintenance')]
-deps: build-nix-gomod2nix
+update-go: build-nix-gomod2nix
 
 # Clean build artifacts.
 [group('maintenance')]

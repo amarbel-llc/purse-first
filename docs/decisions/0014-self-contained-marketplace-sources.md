@@ -1,9 +1,11 @@
 ---
-status: accepted
+status: superseded
 date: 2026-02-25
 ---
 
 # Use relative directory paths for self-contained marketplace
+
+> _Superseded by #110 (marketplace aggregation removed)._
 
 ## Context and Problem Statement
 

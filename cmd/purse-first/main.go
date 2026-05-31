@@ -9,10 +9,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/amarbel-llc/purse-first/internal/install"
-	"github.com/amarbel-llc/purse-first/internal/localplugin"
-	"github.com/amarbel-llc/purse-first/internal/marketplace"
-	"github.com/amarbel-llc/purse-first/internal/packagebrew"
 	"github.com/amarbel-llc/purse-first/internal/packagetoml"
 	"github.com/amarbel-llc/purse-first/internal/validate"
 )
@@ -22,105 +18,6 @@ func main() {
 		Use:   "purse-first",
 		Short: "Package framework for Claude Code",
 	}
-
-	installCmd := &cobra.Command{
-		Use:   "install <marketplace-root>",
-		Short: "Install marketplace packages into Claude Code",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return install.Run(os.Stderr, args[0])
-		},
-	}
-
-	installSelfCmd := &cobra.Command{
-		Use:   "install-self",
-		Short: "Install this marketplace's packages into Claude Code",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return install.RunSelf(os.Stderr)
-		},
-	}
-
-	var (
-		pluginsDir string
-		configPath string
-		outputPath string
-		genNoHooks bool
-	)
-
-	genMarketplaceCmd := &cobra.Command{
-		Use:   "generate-marketplace",
-		Short: "Generate .claude-plugin/marketplace.json from discovered packages",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			var config marketplace.Config
-			if configPath != "" {
-				var err error
-				config, err = marketplace.ReadConfig(configPath)
-				if err != nil {
-					return fmt.Errorf("reading config: %w", err)
-				}
-			}
-
-			discovered, err := marketplace.DiscoverPlugins(pluginsDir)
-			if err != nil {
-				return fmt.Errorf("discovering packages: %w", err)
-			}
-
-			// Compute the relative path from the marketplace root to the
-			// plugins directory. The marketplace root is the parent of
-			// .claude-plugin/ (which contains the output file).
-			outputDir := filepath.Dir(outputPath)
-			marketplaceRoot := filepath.Dir(outputDir)
-			pluginsPrefix, err := filepath.Rel(marketplaceRoot, pluginsDir)
-			if err != nil {
-				return fmt.Errorf("computing plugins prefix: %w", err)
-			}
-
-			m := marketplace.Generate(config, discovered, marketplace.GenerateOptions{
-				StripHooks:    genNoHooks,
-				PluginsPrefix: pluginsPrefix,
-			})
-
-			if err := marketplace.Write(m, outputPath); err != nil {
-				return fmt.Errorf("writing marketplace.json: %w", err)
-			}
-
-			fmt.Fprintf(os.Stderr, "wrote %s (%d packages)\n", outputPath, len(m.Plugins))
-			return nil
-		},
-	}
-
-	genMarketplaceCmd.Flags().StringVar(&pluginsDir, "plugins-dir", "", "directory containing package manifest files")
-	genMarketplaceCmd.Flags().StringVar(&configPath, "config", "", "marketplace config file with metadata")
-	genMarketplaceCmd.Flags().StringVar(&outputPath, "output", ".claude-plugin/marketplace.json", "output path")
-	genMarketplaceCmd.Flags().BoolVar(&genNoHooks, "no-hooks", false, "strip hooks from generated marketplace packages")
-	genMarketplaceCmd.MarkFlagRequired("plugins-dir")
-
-	var (
-		installLocalRoot   string
-		installLocalBinary string
-	)
-
-	installLocalCmd := &cobra.Command{
-		Use:   "install-local",
-		Short: "Set up local dev environment: skills and MCP servers",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if installLocalRoot == "" {
-				cwd, err := os.Getwd()
-				if err != nil {
-					return fmt.Errorf("getting working directory: %w", err)
-				}
-				installLocalRoot = cwd
-			}
-
-			return localplugin.InstallLocal(os.Stderr, installLocalRoot, localplugin.InstallLocalOptions{
-				Binary: installLocalBinary,
-			})
-		},
-	}
-
-	installLocalCmd.Flags().StringVar(&installLocalRoot, "root", "", "repository root (defaults to cwd)")
-	installLocalCmd.Flags().StringVar(&installLocalBinary, "binary", "", "Go binary name under cmd/ to run _generate")
 
 	var (
 		genPluginRoot      string
@@ -167,19 +64,6 @@ func main() {
 	genPluginCmd.Flags().StringVar(&genPluginOutput, "output", "", "output directory (defaults to root)")
 	genPluginCmd.Flags().StringVar(&genPluginSkillsDir, "skills-dir", "", "directory containing skills to discover and copy")
 
-	installDevMCPCmd := &cobra.Command{
-		Use:   "install-dev-mcp <binary>",
-		Short: "Generate .mcp.json from a locally-built package binary",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return fmt.Errorf("getting working directory: %w", err)
-			}
-			return localplugin.InstallDevMCP(os.Stderr, args[0], cwd)
-		},
-	}
-
 	var (
 		validateType   string
 		validateStrict bool
@@ -187,7 +71,7 @@ func main() {
 
 	validateCmd := &cobra.Command{
 		Use:   "validate [path]",
-		Short: "Validate package, mapping, or marketplace documents",
+		Short: "Validate package or mapping documents",
 		Long: `Validate purse-first package documents.
 
 Accepts a file path, directory, or "-" for stdin.
@@ -199,7 +83,7 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			docType := parseDocType(validateType)
 			if validateType != "" && docType == validate.Unknown {
-				return fmt.Errorf("unknown type %q; use plugin, mapping, marketplace, or mcp", validateType)
+				return fmt.Errorf("unknown type %q; use plugin, mapping, or mcp", validateType)
 			}
 
 			if docType == validate.MCPDoc {
@@ -231,49 +115,8 @@ Use --type to override detection. Use --strict to promote warnings to errors.`,
 		},
 	}
 
-	validateCmd.Flags().StringVar(&validateType, "type", "", "document type: plugin, mapping, marketplace, mcp")
+	validateCmd.Flags().StringVar(&validateType, "type", "", "document type: plugin, mapping, mcp")
 	validateCmd.Flags().BoolVar(&validateStrict, "strict", false, "promote warnings to errors")
-
-	packageCmd := &cobra.Command{
-		Use:   "package",
-		Short: "Package commands for distribution",
-	}
-
-	var (
-		brewConfigPath    string
-		brewOutputDir     string
-		brewNoAutoInstall bool
-	)
-
-	brewCmd := &cobra.Command{
-		Use:           "brew",
-		Short:         "Generate a Homebrew tap from pre-built packages",
-		SilenceUsage:  true,
-		SilenceErrors: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			output := brewOutputDir
-			if output == "" {
-				cwd, err := os.Getwd()
-				if err != nil {
-					return fmt.Errorf("getting working directory: %w", err)
-				}
-				output = cwd
-			}
-
-			return packagebrew.Run(packagebrew.RunOptions{
-				ConfigPath:  brewConfigPath,
-				OutputDir:   output,
-				AutoInstall: !brewNoAutoInstall,
-			})
-		},
-	}
-
-	brewCmd.Flags().StringVar(&brewConfigPath, "config", "", "path to brew-config.json")
-	brewCmd.Flags().StringVar(&brewOutputDir, "output", "", "output directory (defaults to cwd)")
-	brewCmd.Flags().BoolVar(&brewNoAutoInstall, "no-auto-install", false, "omit purse-first install from meta-formula post_install")
-	brewCmd.MarkFlagRequired("config")
-
-	packageCmd.AddCommand(brewCmd)
 
 	validateMCPCmd := &cobra.Command{
 		Use:   "validate-mcp <binary> [args...]",
@@ -290,7 +133,7 @@ resources/list (schema), and resources/templates/list (schema).`,
 		},
 	}
 
-	root.AddCommand(installCmd, installSelfCmd, genMarketplaceCmd, installLocalCmd, installDevMCPCmd, genPluginCmd, validateCmd, validateMCPCmd, packageCmd)
+	root.AddCommand(genPluginCmd, validateCmd, validateMCPCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
@@ -322,8 +165,6 @@ func parseDocType(s string) validate.DocType {
 		return validate.PluginDoc
 	case "mapping":
 		return validate.MappingDoc
-	case "marketplace":
-		return validate.MarketplaceDoc
 	case "mcp":
 		return validate.MCPDoc
 	default:
