@@ -247,11 +247,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780230646,
-        "narHash": "sha256-2vz8+jTSbZtROqhdO5xFE5/RnDniofkSKMstr69sU6w=",
+        "lastModified": 1780235515,
+        "narHash": "sha256-WfvO0dB9bOpRcuL1O0Ai2mu0wkRXqok6g4pGY04WUU0=",
         "owner": "amarbel-llc",
         "repo": "treelint",
-        "rev": "4bc4c4b84fe15acee0c4d2b373207ec6f208db88",
+        "rev": "dbc3fb9a923ae3601c3f294cd985586c24bdefd2",
         "type": "github"
       },
       "original": {
