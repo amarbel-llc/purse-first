@@ -8,7 +8,7 @@ setup() {
   # Create fake binary.
   BIN_DIR="${BATS_TEST_TMPDIR}/bins"
   mkdir -p "$BIN_DIR"
-  printf '#!/bin/sh\necho hello' > "$BIN_DIR/my-tool"
+  printf '#!/bin/sh\necho hello' >"$BIN_DIR/my-tool"
   chmod +x "$BIN_DIR/my-tool"
 
   # Create share directories.
@@ -16,19 +16,19 @@ setup() {
 
   TOOL_SHARE="$SHARE_BASE/my-tool"
   mkdir -p "$TOOL_SHARE/.claude-plugin"
-  cat > "$TOOL_SHARE/.claude-plugin/plugin.json" <<'EOF'
+  cat >"$TOOL_SHARE/.claude-plugin/plugin.json" <<'EOF'
 {"name":"my-tool","mcpServers":{"my-tool":{"type":"stdio","command":"my-tool"}}}
 EOF
 
   SKILL_SHARE="$SHARE_BASE/my-skills"
   mkdir -p "$SKILL_SHARE/.claude-plugin"
   mkdir -p "$SKILL_SHARE/skills/test-skill"
-  echo '{"name":"my-skills"}' > "$SKILL_SHARE/.claude-plugin/plugin.json"
-  printf -- '---\nname: test\n---\nContent' > "$SKILL_SHARE/skills/test-skill/SKILL.md"
+  echo '{"name":"my-skills"}' >"$SKILL_SHARE/.claude-plugin/plugin.json"
+  printf -- '---\nname: test\n---\nContent' >"$SKILL_SHARE/skills/test-skill/SKILL.md"
 
   # Write config.
   CONFIG_PATH="${BATS_TEST_TMPDIR}/brew-config.json"
-  cat > "$CONFIG_PATH" <<CONF
+  cat >"$CONFIG_PATH" <<CONF
 {
   "name": "test-marketplace",
   "description": "Test marketplace",
@@ -140,7 +140,7 @@ CONF
 setup_private_config() {
   PRIVATE_OUTPUT_DIR="${BATS_TEST_TMPDIR}/brew-private-output"
   PRIVATE_CONFIG_PATH="${BATS_TEST_TMPDIR}/brew-config-private.json"
-  cat > "$PRIVATE_CONFIG_PATH" <<CONF
+  cat >"$PRIVATE_CONFIG_PATH" <<CONF
 {
   "name": "test-marketplace",
   "description": "Test marketplace",

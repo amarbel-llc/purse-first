@@ -15,12 +15,12 @@ require_bin() {
   local cmd_name="${2:-}"
   local var_value="${!var_name:-}"
 
-  if [[ -n "$var_value" ]]; then
-    if [[ ! -x "$var_value" ]]; then
+  if [[ -n $var_value ]]; then
+    if [[ ! -x $var_value ]]; then
       echo "error: $var_name=$var_value is not executable" >&2
       exit 1
     fi
-  elif [[ -n "$cmd_name" ]]; then
+  elif [[ -n $cmd_name ]]; then
     if ! command -v "$cmd_name" &>/dev/null; then
       echo "error: $cmd_name not found. Set $var_name or add to PATH" >&2
       exit 1

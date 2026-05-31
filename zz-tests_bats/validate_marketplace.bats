@@ -13,7 +13,7 @@ teardown() {
 }
 
 function marketplace_json_exists { # @test
-  [[ -f "$marketplace_json" ]]
+  [[ -f $marketplace_json ]]
 }
 
 function validate_marketplace_json_passes { # @test

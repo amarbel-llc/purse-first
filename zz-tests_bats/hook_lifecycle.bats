@@ -27,12 +27,12 @@ function installed_hooks_reference_valid_binary { # @test
   "$purse_first" install
 
   local settings="$HOME/.claude/settings.json"
-  [[ -f "$settings" ]]
+  [[ -f $settings ]]
 
   # Extract hook binary path and verify it exists
   local hook_bin
   hook_bin=$(jq -r '.hooks.PreToolUse[0].hooks[0].command' "$settings" | awk '{print $1}')
-  [[ -x "$hook_bin" ]]
+  [[ -x $hook_bin ]]
 }
 
 function pretooluse_hook_is_blocking { # @test
@@ -41,11 +41,11 @@ function pretooluse_hook_is_blocking { # @test
   "$purse_first" install
 
   local settings="$HOME/.claude/settings.json"
-  [[ -f "$settings" ]]
+  [[ -f $settings ]]
 
   local blocking
   blocking=$(jq -r '.hooks.PreToolUse[0].hooks[0].blocking' "$settings")
-  [[ "$blocking" == "true" ]]
+  [[ $blocking == "true" ]]
 }
 
 function marketplace_json_validates { # @test
@@ -64,7 +64,7 @@ function get_hubbed_has_mappings { # @test
   skip "TODO: get-hubbed does not ship mappings.json yet (issue #7)"
 
   local mappings="$result_path/share/purse-first/get-hubbed/mappings.json"
-  [[ -f "$mappings" ]]
+  [[ -f $mappings ]]
 
   run jq -e '.server == "get-hubbed"' "$mappings"
   assert_success

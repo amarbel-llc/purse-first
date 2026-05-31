@@ -35,7 +35,7 @@ function stdin_with_type_works { # @test
 function directory_validation_finds_plugin { # @test
   local dir="$BATS_TEST_TMPDIR/test-dir"
   mkdir -p "$dir/.claude-plugin"
-  echo '{"name":"x","mcpServers":{"x":{"type":"stdio","command":"x"}}}' > "$dir/.claude-plugin/plugin.json"
+  echo '{"name":"x","mcpServers":{"x":{"type":"stdio","command":"x"}}}' >"$dir/.claude-plugin/plugin.json"
   run "$purse_first" validate "$dir"
   assert_success
 }

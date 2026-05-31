@@ -12,7 +12,7 @@ function directory_mode_writes_plugin_json { # @test
   # Find plugin.json under the output directory (package name varies)
   local plugin_json
   plugin_json=$(find "$BATS_TEST_TMPDIR/share/purse-first" -name plugin.json -type f)
-  [[ -n "$plugin_json" ]]
+  [[ -n $plugin_json ]]
 }
 
 # RFC-0001 section 2.1: plugin.name must equal directory name
@@ -40,7 +40,7 @@ function mcp_servers_has_at_least_one_entry { # @test
 
   local count
   count=$(jq '.mcpServers | length' "$plugin_json")
-  [[ "$count" -ge 1 ]]
+  [[ $count -ge 1 ]]
 }
 
 # RFC-0001 section 2.1: command field must be a bare name (no /)
@@ -86,7 +86,7 @@ function pwd_default_writes_to_cwd { # @test
 
   local plugin_json
   plugin_json=$(find "$workdir/share/purse-first" -name plugin.json -type f)
-  [[ -n "$plugin_json" ]]
+  [[ -n $plugin_json ]]
 }
 
 # RFC-0001 section 2.1: stdout mode outputs valid JSON
