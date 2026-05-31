@@ -1,5 +1,8 @@
 #!/usr/bin/env bats
 
+# `run !` (the SC2314-correct assertion form) requires Bats >= 1.5.0.
+bats_require_minimum_version 1.5.0
+
 setup() {
   load "$(dirname "$BATS_TEST_FILE")/common.bash"
   purse_first="$(purse_first_bin)"
