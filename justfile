@@ -282,8 +282,13 @@ bump-version new_version:
 # Read PURSE_FIRST_VERSION from version.env, then create the full signed,
 # annotated tag set (v<sem>, libs/dewey/v<sem>, libs/go-mcp/v<sem>) at that
 # single version, push each, and verify.
+# tag accepts the message as $message (an exported env var), NOT {{ message }}.
+# just's {{ }} is literal text-splicing into this script — a changelog subject
+# containing backticks or $(...) (e.g. a commit titled `export --check`) would
+# be evaluated as a command. The $-prefixed parameter is passed via the
+# environment, so git sees it as inert data. Do NOT revert to {{ message }}.
 [group('maintenance')]
-tag message:
+tag $message:
     #!/usr/bin/env bash
     set -euo pipefail
     . version.env
@@ -294,7 +299,7 @@ tag message:
     tags=()
     for prefix in {{ release_tag_prefixes }}; do
         tag="${prefix}${version}"
-        git tag -s -m "{{ message }}" "$tag"
+        git tag -s -m "$message" "$tag"
         gum log --level info "Created tag: $tag"
         tags+=("$tag")
     done
