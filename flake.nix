@@ -18,6 +18,15 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "igloo";
     };
+
+    # treelint: the linter + formatter multiplexer (treefmt successor).
+    # Config lives in ./treelint.toml.
+    treelint = {
+      url = "github:amarbel-llc/treelint";
+      inputs.igloo.follows = "igloo";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+      inputs.utils.follows = "utils";
+    };
   };
 
   outputs =
@@ -28,6 +37,7 @@
       utils,
       gomod2nix,
       treefmt-nix,
+      treelint,
     }:
     let
       mkMarketplace = import ./lib/mkMarketplace.nix;
@@ -90,6 +100,12 @@
           # Treefmt wrapper carrying the configured formatter chain from
           # ./treefmt.nix. `dagnabit export` looks this binary up on PATH.
           treefmtEvalBySystem.${system}.config.build.wrapper
+          # treelint (treefmt successor) + the one formatter binary its
+          # treelint.toml drives that the devshell doesn't already carry.
+          # gofumpt/goimports/shfmt/shellcheck come from the go/shell devenvs;
+          # nixfmt was previously bundled inside the treefmt-nix wrapper only.
+          treelint.packages.${system}.default
+          pkgs.nixfmt-rfc-style
         ];
         devShellInputsFrom =
           system:

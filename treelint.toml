@@ -1,0 +1,56 @@
+# treelint configuration (treefmt successor). Mirrors ./treefmt.nix's formatter
+# chain so `treelint` produces byte-identical output, plus linters treelint runs
+# natively (shellcheck). Run via `treelint` (repair) / `treelint check`.
+
+# Generated / locked / prose — not formatted. Mirrors treefmt.nix global excludes.
+excludes = [
+  "flake.lock",
+  "go.sum",
+  "gomod2nix.toml",
+  "version.env",
+  "LICENSE",
+  "*.md",
+  "result",
+  "result-*",
+  ".tmp/**",
+  # Templates ship as scaffolding for downstream `nix flake init`; formatting
+  # them would invalidate nix-instantiate --parse test snapshots.
+  "templates/**",
+  # treelint's own config is TOML with intentional layout; leave it be.
+  "treelint.toml",
+]
+
+# Go: goimports (priority 1) must run before gofumpt (priority 2) so the
+# import-grouped output is re-canonicalized by gofumpt — the grouping dagnabit
+# export relies on for stable facades. -w so each writes in place (required for
+# treelint's sandbox check to observe drift).
+[formatter.goimports]
+command = "goimports"
+options = ["-w"]
+includes = ["*.go"]
+# helper_test.go uses a deliberate `stmt; stmt` one-liner; goimports/gofumpt
+# normalise semicolons to newlines, breaking a line-number invariant.
+excludes = ["libs/go-mcp/operation/helper_test.go"]
+priority = 1
+
+[formatter.gofumpt]
+command = "gofumpt"
+options = ["-w"]
+includes = ["*.go"]
+excludes = ["libs/go-mcp/operation/helper_test.go"]
+priority = 2
+
+[formatter.nixfmt]
+command = "nixfmt"
+includes = ["*.nix"]
+
+# Project shell style: 2-space indent, simplify, case-branch indent. -w writes.
+[formatter.shfmt]
+command = "shfmt"
+options = ["-w", "-i", "2", "-s", "-ci"]
+includes = ["*.sh", "*.bash", "*.bats"]
+
+# Linter: shellcheck runs read-only in `treelint check` (no autofix).
+[linter.shellcheck]
+command = "shellcheck"
+includes = ["*.sh", "*.bash", "*.bats"]
