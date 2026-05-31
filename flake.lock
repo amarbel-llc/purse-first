@@ -136,7 +136,6 @@
         "gomod2nix": "gomod2nix",
         "igloo": "igloo",
         "nixpkgs-master": "nixpkgs-master_2",
-        "treefmt-nix": "treefmt-nix_2",
         "treelint": "treelint",
         "utils": "utils"
       }
@@ -195,26 +194,6 @@
     "treefmt-nix_2": {
       "inputs": {
         "nixpkgs": [
-          "igloo"
-        ]
-      },
-      "locked": {
-        "lastModified": 1775636079,
-        "narHash": "sha256-pc20NRoMdiar8oPQceQT47UUZMBTiMdUuWrYu2obUP0=",
-        "owner": "numtide",
-        "repo": "treefmt-nix",
-        "rev": "790751ff7fd3801feeaf96d7dc416a8d581265ba",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "treefmt-nix",
-        "type": "github"
-      }
-    },
-    "treefmt-nix_3": {
-      "inputs": {
-        "nixpkgs": [
           "treelint",
           "igloo"
         ]
@@ -241,7 +220,7 @@
         "nixpkgs-master": [
           "nixpkgs-master"
         ],
-        "treefmt-nix": "treefmt-nix_3",
+        "treefmt-nix": "treefmt-nix_2",
         "utils": [
           "utils"
         ]

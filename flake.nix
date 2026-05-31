@@ -13,12 +13,6 @@
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.flake-utils.follows = "utils";
     };
-    # `nix fmt` driver. Config lives in ./treefmt.nix.
-    treefmt-nix = {
-      url = "github:numtide/treefmt-nix";
-      inputs.nixpkgs.follows = "igloo";
-    };
-
     # treelint: the linter + formatter multiplexer (treefmt successor).
     # Config lives in ./treelint.toml.
     treelint = {
@@ -36,7 +30,6 @@
       nixpkgs-master,
       utils,
       gomod2nix,
-      treefmt-nix,
       treelint,
     }:
     let
@@ -68,14 +61,6 @@
           bats = import ./devenvs/bats { inherit pkgs; };
         };
 
-      # treefmtEval per system. The formatter wrapper is added to the
-      # default devshell so `treefmt` is on PATH for tools that integrate
-      # with it (notably `dagnabit export`, which invokes treefmt on its
-      # output directory if a config is present).
-      treefmtEvalBySystem = igloo.lib.genAttrs utils.lib.defaultSystems (
-        system: treefmt-nix.lib.evalModule (import igloo { inherit system; }) ./treefmt.nix
-      );
-
       marketplaceOutputs = mkMarketplace {
         nixpkgs = igloo;
         inherit nixpkgs-master utils;
@@ -97,13 +82,11 @@
           pkgs.gum
           pkgs.openssh
           pkgs-master.claude-code
-          # Treefmt wrapper carrying the configured formatter chain from
-          # ./treefmt.nix. `dagnabit export` looks this binary up on PATH.
-          treefmtEvalBySystem.${system}.config.build.wrapper
           # treelint (treefmt successor) + the one formatter binary its
           # treelint.toml drives that the devshell doesn't already carry.
           # gofumpt/goimports/shfmt/shellcheck come from the go/shell devenvs;
-          # nixfmt was previously bundled inside the treefmt-nix wrapper only.
+          # nixfmt is added here now that the treefmt-nix wrapper is gone.
+          # `dagnabit export` resolves `treelint` from PATH for facade formatting.
           treelint.packages.${system}.default
           pkgs.nixfmt-rfc-style
         ];
@@ -134,7 +117,24 @@
         system:
         let
           devenvs = buildDevenvs system;
-          treefmtEval = treefmtEvalBySystem.${system};
+          pkgs = import igloo { inherit system; };
+          pkgs-master = import nixpkgs-master { inherit system; };
+
+          # `nix fmt` entry point: treelint (the treefmt successor) wrapped with
+          # the formatter binaries its ./treelint.toml drives on PATH. Formatting
+          # drift is gated by `just lint` (treelint check), not a flake check.
+          treelintFmt = pkgs.writeShellApplication {
+            name = "treelint-fmt";
+            runtimeInputs = [
+              treelint.packages.${system}.default
+              pkgs-master.gofumpt
+              pkgs-master.gotools
+              pkgs.nixfmt-rfc-style
+              pkgs.shfmt
+              pkgs.shellcheck
+            ];
+            text = ''exec treelint "$@"'';
+          };
         in
         {
           packages = (marketplaceOutputs.packages.${system} or { }) // gomodBySystem.${system}.packages;
@@ -146,12 +146,8 @@
             bats = devenvs.bats.devShells.default;
           };
 
-          # `nix fmt` entry point.
-          formatter = treefmtEval.config.build.wrapper;
-
-          # Sandboxed treefmt check for `nix flake check`. Runs formatters
-          # over the source tree and exits non-zero on drift.
-          checks.treefmt = treefmtEval.config.build.check self;
+          # `nix fmt` runs treelint (see treelintFmt above).
+          formatter = treelintFmt;
         }
       ))
     );
