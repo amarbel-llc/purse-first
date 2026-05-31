@@ -19,7 +19,7 @@ are aggregates (no body, only deps); leaves are verb-noun. `just`
 ```sh
 just                    # default = validate lint build test (CI gate; also runs in merge-this-session)
 just validate           # nix flake check + plugin manifest validation
-just lint               # go vet + lint-dewey-pkgs-drift (facade drift) + lint-fmt (read-only treefmt gate)
+just lint               # go vet + lint-dewey_pkgs_drift (facade drift) + lint-treelint (read-only format+lint gate)
 just build              # build-nix-gomod2nix + nix build (default = purse-first CLI)
 just test               # Run ALL tests (Go + BATS integration)
 nix fmt                 # Repo-wide treefmt (Go via gofumpt, Nix via nixfmt, shell via shfmt)
@@ -27,7 +27,7 @@ just codemod-fmt        # treefmt pass (codemod-fmt-treefmt) + Go-only go fmt (c
 just codemod-fmt-go     # `go fmt ./...` only — for Go-only quick reformat
 just build-nix-gomod2nix # Sync go.work and regenerate gomod2nix.toml
 just update-go           # alias for build-nix-gomod2nix
-just lint-dewey-pkgs-drift # rebuild dagnabit, re-export, fail on libs/dewey/pkgs/ drift
+just lint-dewey_pkgs_drift # dagnabit export --check: fail on libs/dewey/pkgs/ facade drift (no tree mutation)
 ```
 
 ### Running Individual Tests

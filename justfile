@@ -28,7 +28,7 @@ validate-purse-first-manifest:
 # Read-only style / convention / drift checks. Does not modify code.
 
 [group('pre-build')]
-lint: lint-go lint-dewey-pkgs-drift lint-treelint
+lint: lint-go lint-dewey_pkgs_drift lint-treelint
 
 # `go vet` across the workspace.
 [group('pre-build')]
@@ -43,7 +43,7 @@ lint-go:
 # the binary under test is the one in the current working tree. Runs the binary
 # ambient (not via `nix develop`) so dewey's `-tags test` build env is honored.
 [group('pre-build')]
-lint-dewey-pkgs-drift: dagnabit-build
+lint-dewey_pkgs_drift: dagnabit-build
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit export --check --library
 
 # treelint check: read-only format + lint gate. Verifies formatter drift via
