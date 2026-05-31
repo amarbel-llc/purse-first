@@ -94,6 +94,7 @@ function stdout_mode_outputs_valid_json { # @test
   run_package_bin generate-plugin -
   assert_success
 
+  # shellcheck disable=SC2154  # $output is set by run_package_bin's `run`
   echo "$output" | jq -e '.name' >/dev/null
 }
 

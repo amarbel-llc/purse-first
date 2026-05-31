@@ -98,12 +98,12 @@ CONF
 
 @test "skill-only formula lacks bin.install" {
   "$purse_first" package brew --config "$CONFIG_PATH" --output "$OUTPUT_DIR"
-  ! grep -q 'bin.install' "$OUTPUT_DIR/Formula/my-skills.rb"
+  run ! grep -q 'bin.install' "$OUTPUT_DIR/Formula/my-skills.rb"
 }
 
 @test "formula has real sha256 hashes" {
   "$purse_first" package brew --config "$CONFIG_PATH" --output "$OUTPUT_DIR"
-  ! grep -q 'SHA256_PLACEHOLDER' "$OUTPUT_DIR/Formula/my-tool.rb"
+  run ! grep -q 'SHA256_PLACEHOLDER' "$OUTPUT_DIR/Formula/my-tool.rb"
   grep -qE 'sha256 "[a-f0-9]{64}"' "$OUTPUT_DIR/Formula/my-tool.rb"
 }
 
@@ -120,7 +120,7 @@ CONF
 
 @test "meta formula omits post_install with --no-auto-install" {
   "$purse_first" package brew --config "$CONFIG_PATH" --output "$OUTPUT_DIR" --no-auto-install
-  ! grep -q 'post_install' "$OUTPUT_DIR/Formula/test-marketplace.rb"
+  run ! grep -q 'post_install' "$OUTPUT_DIR/Formula/test-marketplace.rb"
 }
 
 @test "binary formula has brew dependency" {
@@ -200,10 +200,10 @@ CONF
 
 @test "non-private config formula omits require_relative" {
   "$purse_first" package brew --config "$CONFIG_PATH" --output "$OUTPUT_DIR"
-  ! grep -q 'require_relative' "$OUTPUT_DIR/Formula/my-tool.rb"
+  run ! grep -q 'require_relative' "$OUTPUT_DIR/Formula/my-tool.rb"
 }
 
 @test "non-private config formula omits using: directive" {
   "$purse_first" package brew --config "$CONFIG_PATH" --output "$OUTPUT_DIR"
-  ! grep -q 'using:' "$OUTPUT_DIR/Formula/my-tool.rb"
+  run ! grep -q 'using:' "$OUTPUT_DIR/Formula/my-tool.rb"
 }
