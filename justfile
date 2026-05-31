@@ -38,7 +38,7 @@ check-template:
 # Read-only style / convention / drift checks. Does not modify code.
 
 [group('pre-build')]
-lint: lint-go lint-dewey-pkgs-drift
+lint: lint-go lint-dewey-pkgs-drift lint-treelint
 
 # `go vet` across the workspace.
 [group('pre-build')]
@@ -53,6 +53,13 @@ lint-go:
 [group('pre-build')]
 lint-dewey-pkgs-drift: dagnabit-build dewey-export-library
     git diff --exit-code -- libs/dewey/pkgs/
+
+# treelint check: read-only format + lint gate. Verifies formatter drift via
+# sandbox-and-diff (Go/Nix/shell, per ./treelint.toml) plus shellcheck.
+# treelint is the treefmt successor; this replaces the treefmt-nix check.
+[group('pre-build')]
+lint-treelint:
+    {{ cmd_nix_dev }} treelint check
 
 # Vet dewey library.
 [group('pre-build')]
@@ -224,14 +231,14 @@ install: build-purse-first-cli
     {{ justfile_directory() }}/result-cli/bin/purse-first install {{ justfile_directory() }}/result
 
 # ──── codemod ───────────────────────────────────────────────────────
-# Modifies source code. Prefer `nix fmt` for the repo-wide treefmt
-# pass (covers Go via gofumpt, Nix via nixfmt, shell via shfmt).
+# Modifies source code.
 
-# `go fmt ./...` for a quick Go-only reformat. The canonical
-# repo-wide formatter is `nix fmt` (treefmt-nix wrapper).
+# Repo-wide format via treelint (the treefmt successor): Go (goimports ->
+# gofumpt), Nix (nixfmt), and shell (shfmt), per ./treelint.toml. Replaces the
+# old `nix fmt` (treefmt-nix) path.
 [group('codemod')]
 fmt:
-    {{ cmd_nix_dev }} go fmt ./...
+    {{ cmd_nix_dev }} treelint
 
 # Dry-run a single-package rename: print the proposed move as NDJSON,
 # touch nothing on disk. `new_leaf` is optional; defaults to src's leaf.
