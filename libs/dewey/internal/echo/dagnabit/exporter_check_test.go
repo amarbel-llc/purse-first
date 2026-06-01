@@ -9,17 +9,26 @@ import (
 
 // writeCheckFixture creates a temp module with the given internal packages
 // (relPath under internal/ → main.go source) and returns an Exporter rooted
-// there. Mirrors the fixtures in exporter_test.go. It skips the test if an
-// ancestor of the temp dir happens to carry a treefmt/treelint config, so the
-// FormatOutput pass inside CheckAll/CheckPackage is a deterministic no-op and
-// the tests don't depend on a formatter being on PATH.
+// there. Mirrors the fixtures in exporter_test.go.
+//
+// It plants its own treefmt.toml at the module root and installs a no-op fake
+// `treefmt` on PATH so the FormatOutput pass inside CheckAll/CheckPackage runs
+// deterministically (and as a no-op on the facade bytes) regardless of where
+// $TMPDIR lives. This helper previously skipped whenever an ancestor carried a
+// treefmt/treelint config — always the case when $TMPDIR sits inside a repo
+// that has one (e.g. this worktree's .tmp/ under the root treelint.toml),
+// which left these tests unexecuted in-repo (#127). The fixture's own config is
+// the nearest ancestor, so findTreefmtConfig resolves to it (formatter
+// "treefmt") rather than any real config further up.
 func writeCheckFixture(t *testing.T, pkgs map[string]string) *Exporter {
 	t.Helper()
 
 	tmpDir := t.TempDir()
-	if _, _, ok := findTreefmtConfig(tmpDir); ok {
-		t.Skip("ancestor treefmt/treelint config present; check tests need a config-free tree")
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
+		t.Fatal(err)
 	}
+	withFakeTreefmt(t, filepath.Join(t.TempDir(), "sentinel"))
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
 		[]byte("module example.com/mod\n\ngo 1.22\n"), 0o644); err != nil {
