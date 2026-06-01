@@ -118,14 +118,24 @@ func (exporter *Exporter) CheckScan() error {
 // (single-package, scan) regenerate a subset and must not flag the untouched
 // on-disk facades as drift.
 func (exporter *Exporter) checkExport(run func(*Exporter) error, reportStale bool) error {
-	tmp, err := os.MkdirTemp("", "dagnabit-check-")
+	// Render the comparison copy into a temp dir UNDER the module root, not the
+	// system temp dir. FormatOutput runs the project formatter (treefmt / nix
+	// fmt) with its tree root anchored at the config/module root, and a
+	// formatter invoked on a path OUTSIDE that tree root formats nothing. A
+	// system-temp output dir is in-tree only when $TMPDIR happens to sit inside
+	// the repo; when it does not (the usual /tmp), the comparison copy is left
+	// unformatted and diffs against the committed (formatted) facades, reporting
+	// phantom drift (#125). Keeping the temp dir in-tree guarantees the
+	// formatter treats it exactly like a real export's <outputDir>. The dot
+	// prefix hides it from go/packages and `go build ./...`; defer removes it.
+	tmp, err := os.MkdirTemp(exporter.Dir, ".dagnabit-check-")
 	if err != nil {
 		return fmt.Errorf("creating temp dir: %w", err)
 	}
 	defer os.RemoveAll(tmp)
 
-	// Render + format into the temp root; never touch the real tree. Consumer
-	// rewriting is a mutation of files outside <outputDir>, so it is disabled.
+	// Render + format into the temp root; never mutate the committed tree.
+	// Consumer rewriting would touch files outside <outputDir>, so disable it.
 	clone := *exporter
 	clone.OutputRoot = tmp
 	clone.SkipConsumerRewrite = true

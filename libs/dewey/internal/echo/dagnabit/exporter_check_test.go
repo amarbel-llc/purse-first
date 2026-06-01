@@ -182,3 +182,61 @@ func TestFormatOutputFailsLoudWhenFormatterMissing(t *testing.T) {
 		t.Errorf("error should name the missing formatter, got: %v", err)
 	}
 }
+
+// TestCheckAllReproducesFormatterAcrossTempDir guards against #125: the
+// comparison copy `export --check` renders must be formatted identically to a
+// real export before being diffed. The project formatter anchors its tree root
+// at the config/module root and formats nothing outside it, so when the
+// comparison copy lived in the system temp dir (typically outside the repo) it
+// was compared unformatted against the committed (formatted) facades and
+// reported phantom drift. The fix renders the copy in-tree (under exporter.Dir).
+//
+// Unlike the other check tests, this one provides its own treefmt.toml so it
+// does NOT skip on an ancestor config — it must actually run FormatOutput. The
+// fake treefmt models real treefmt's tree-root behavior (see
+// withTreeRootAwareFakeTreefmt): only files under its working directory are
+// formatted.
+func TestCheckAllReproducesFormatterAcrossTempDir(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Force the treefmt branch with our own config. findTreefmtConfig finds this
+	// before any ancestor treelint/treefmt config.
+	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
+		[]byte("module example.com/mod\n\ngo 1.22\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	pkgDir := filepath.Join(tmpDir, "internal", "alfa", "widget")
+	mustMkdirAll(t, pkgDir)
+	if err := os.WriteFile(filepath.Join(pkgDir, "main.go"),
+		[]byte("package widget\n\ntype Widget struct{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	withTreeRootAwareFakeTreefmt(t)
+
+	e := &Exporter{
+		ModulePath:          "example.com/mod",
+		Dir:                 tmpDir,
+		OutputDir:           "pkgs",
+		SkipConsumerRewrite: true,
+		Env:                 append(os.Environ(), "GOWORK=off"),
+	}
+
+	// Real export: generate, then format the committed facades in-tree.
+	if err := e.ExportAll(); err != nil {
+		t.Fatalf("ExportAll: %v", err)
+	}
+	if err := e.FormatOutput(); err != nil {
+		t.Fatalf("FormatOutput: %v", err)
+	}
+
+	// A faithful --check reproduces that same formatting on its comparison copy
+	// and finds no drift. Before the fix the copy lived out-of-tree and was left
+	// unformatted, so this reported phantom drift.
+	if err := e.CheckAll(); err != nil {
+		t.Fatalf("CheckAll false-positived on a clean formatted export: %v", err)
+	}
+}

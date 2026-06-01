@@ -241,6 +241,44 @@ func withFakeTreefmt(t *testing.T, sentinelPath string) {
 	prependPath(t, binDir)
 }
 
+// withTreeRootAwareFakeTreefmt installs a fake `treefmt` that models real
+// treefmt's tree-root anchoring: it only "formats" .go files located within its
+// working directory (FormatOutput sets that to the config/module root) and is a
+// no-op for any path outside it. Formatting appends a sentinel line, so a file
+// the fake skipped is detectably different from one it processed. Used to
+// reproduce #125, where the comparison copy lived outside the tree root and was
+// silently left unformatted.
+func withTreeRootAwareFakeTreefmt(t *testing.T) {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("PATH-injection fake binary not portable to Windows")
+	}
+
+	binDir := t.TempDir()
+	fake := filepath.Join(binDir, "treefmt")
+	script := `#!/bin/sh
+root=$PWD
+for arg in "$@"; do
+  case "$arg" in
+    --*) continue ;;
+  esac
+  case "$arg" in
+    "$root"/*) ;;
+    *) continue ;;
+  esac
+  find "$arg" -name '*.go' -type f | while IFS= read -r f; do
+    grep -q '//treefmt-formatted' "$f" || printf '//treefmt-formatted\n' >>"$f"
+  done
+done
+exit 0
+`
+	if err := os.WriteFile(fake, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	prependPath(t, binDir)
+}
+
 // withFailingFakeTreefmt installs a fake treefmt that exits non-zero.
 func withFailingFakeTreefmt(t *testing.T) {
 	t.Helper()
