@@ -200,6 +200,17 @@ func (h *Handler) handleToolsCall(ctx context.Context, msg *jsonrpc.Message) (*j
 		return jsonrpc.NewErrorResponse(*msg.ID, jsonrpc.InvalidParams, "invalid params", nil)
 	}
 
+	// If the client supplied a progress token, inject a transport-bound
+	// emitter so the handler can push notifications/progress mid-call.
+	// Token-less calls leave the no-op emitter in place (spec-correct:
+	// the client drops untokened progress). Both dispatch branches below
+	// run with the wrapped ctx.
+	if params.Meta != nil {
+		if fn := newTransportProgress(h.server.transport, params.Meta.ProgressToken); fn != nil {
+			ctx = withProgress(ctx, fn)
+		}
+	}
+
 	// If V1 negotiated (or PreferV1Providers) and provider supports V1, use V1 call.
 	if h.isV1() || h.server.opts.PreferV1Providers {
 		if p, ok := h.server.opts.Tools.(ToolProviderV1); ok {

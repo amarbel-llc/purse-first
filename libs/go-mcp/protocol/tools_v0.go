@@ -33,6 +33,21 @@ type ToolCallParamsV0 struct {
 
 	// Arguments are the JSON-encoded tool arguments.
 	Arguments json.RawMessage `json:"arguments,omitempty"`
+
+	// Meta carries the request's _meta block. The server reads
+	// _meta.progressToken from here to correlate notifications/progress
+	// emitted while the tool runs.
+	Meta *ToolCallMeta `json:"_meta,omitempty"`
+}
+
+// ToolCallMeta is the _meta block on a tools/call request. Only the
+// progress token is interpreted; other keys are ignored.
+type ToolCallMeta struct {
+	// ProgressToken, when present, opts the call into progress
+	// notifications. The server echoes it verbatim on each
+	// notifications/progress message. It is left raw because the spec
+	// allows either a string or an integer.
+	ProgressToken ProgressToken `json:"progressToken,omitempty"`
 }
 
 // ToolCallParams is a type alias for backward compatibility.
