@@ -2,10 +2,10 @@
 // golangci-lint Module Plugin.
 //
 // It wires the dewey go/analysis analyzers — defererr, seqerror, and
-// repool (enabled by default) plus actx (opt-in) — into golangci-lint's
-// module plugin system so a downstream repo that already gates on
-// golangci-lint can fold them into that same run instead of a separate
-// `go vet -vettool` pass.
+// repool (enabled by default) plus actx and paramobj (opt-in) — into
+// golangci-lint's module plugin system so a downstream repo that already
+// gates on golangci-lint can fold them into that same run instead of a
+// separate `go vet -vettool` pass.
 //
 // # Consuming the plugin
 //
@@ -33,17 +33,20 @@
 //	          seqerror: true
 //	          repool: true
 //	          actx: true
+//	          paramobj: true
 //
 // defererr, seqerror, and repool are enabled by default; the settings
 // block lets a consumer opt out per analyzer. defererr and seqerror are
 // general Go checks; repool is purse-first-pool-specific and a no-op in
-// packages that do not import the pool ownership types. actx is opt-in
-// (disabled unless set to true) because enforcing dewey's ActiveContext
-// over stdlib context.Context is an ecosystem-specific opinion.
+// packages that do not import the pool ownership types. actx (enforce
+// dewey's ActiveContext over stdlib context.Context) and paramobj
+// (suggest parameter-object structs) are opt-in — disabled unless set to
+// true — because they surface ecosystem-specific opinions rather than
+// general Go correctness checks.
 //
 // The analyzers' suppression comments (//defer:err-checked,
-// //seq:err-checked, //repool:owned, //repool:suppress, //actx:allow)
-// carry over unchanged.
+// //seq:err-checked, //repool:owned, //repool:suppress, //actx:allow,
+// //paramobj:allow) carry over unchanged.
 package gclplugin
 
 import (
@@ -52,6 +55,7 @@ import (
 
 	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/analyzer_actx"
 	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/analyzer_defererr"
+	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/analyzer_paramobj"
 	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/analyzer_repool"
 	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/analyzer_seqerror"
 )
@@ -72,6 +76,10 @@ type Settings struct {
 	// Actx is opt-in: a nil pointer leaves it disabled. Set to true to
 	// enforce dewey's ActiveContext over stdlib context.Context.
 	Actx *bool `json:"actx,omitempty"`
+	// Paramobj is opt-in: a nil pointer leaves it disabled. Set to true
+	// to surface clusters of functions sharing a parameter list as
+	// parameter-struct candidates.
+	Paramobj *bool `json:"paramobj,omitempty"`
 }
 
 // Plugin is the dewey golangci-lint module plugin.
@@ -91,7 +99,7 @@ func New(conf any) (register.LinterPlugin, error) {
 
 // BuildAnalyzers returns the enabled dewey analyzers.
 func (p *Plugin) BuildAnalyzers() ([]*analysis.Analyzer, error) {
-	analyzers := make([]*analysis.Analyzer, 0, 4)
+	analyzers := make([]*analysis.Analyzer, 0, 5)
 
 	if enabled(p.settings.Defererr) {
 		analyzers = append(analyzers, analyzer_defererr.Analyzer)
@@ -104,6 +112,9 @@ func (p *Plugin) BuildAnalyzers() ([]*analysis.Analyzer, error) {
 	}
 	if optIn(p.settings.Actx) {
 		analyzers = append(analyzers, analyzer_actx.Analyzer)
+	}
+	if optIn(p.settings.Paramobj) {
+		analyzers = append(analyzers, analyzer_paramobj.Analyzer)
 	}
 
 	return analyzers, nil

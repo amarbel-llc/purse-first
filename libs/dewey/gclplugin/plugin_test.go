@@ -61,6 +61,16 @@ func TestSettingsSelectAnalyzers(t *testing.T) {
 			settings: map[string]any{"defererr": false, "seqerror": false, "repool": false, "actx": true},
 			want:     []string{"actx"},
 		},
+		{
+			name:     "paramobj opt-in",
+			settings: map[string]any{"paramobj": true},
+			want:     []string{"defererr", "seqerror", "repool", "paramobj"},
+		},
+		{
+			name:     "both opt-ins",
+			settings: map[string]any{"actx": true, "paramobj": true},
+			want:     []string{"defererr", "seqerror", "repool", "actx", "paramobj"},
+		},
 	}
 
 	for _, tc := range cases {

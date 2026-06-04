@@ -110,6 +110,7 @@ in
 
     actx = mkDeweyBin "actx";
     defererr = mkDeweyBin "defererr";
+    paramobj = mkDeweyBin "paramobj";
     repool = mkDeweyBin "repool";
     seqerror = mkDeweyBin "seqerror";
     reflexive-interface-generator = mkDeweyBin "reflexive-interface-generator";
