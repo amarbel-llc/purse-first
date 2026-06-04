@@ -108,6 +108,7 @@ in
       '';
     };
 
+    actx = mkDeweyBin "actx";
     defererr = mkDeweyBin "defererr";
     repool = mkDeweyBin "repool";
     seqerror = mkDeweyBin "seqerror";

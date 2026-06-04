@@ -19,6 +19,8 @@ func TestNewDefaultsToAllAnalyzers(t *testing.T) {
 		t.Fatalf("BuildAnalyzers: %v", err)
 	}
 
+	// Only the default-on analyzers (defererr, seqerror, repool) appear;
+	// actx is opt-in and stays out of the default set.
 	if got, want := len(analyzers), 3; got != want {
 		t.Fatalf("default analyzer count = %d, want %d", got, want)
 	}
@@ -48,6 +50,16 @@ func TestSettingsSelectAnalyzers(t *testing.T) {
 			name:     "all explicitly off",
 			settings: map[string]any{"defererr": false, "seqerror": false, "repool": false},
 			want:     nil,
+		},
+		{
+			name:     "actx opt-in",
+			settings: map[string]any{"actx": true},
+			want:     []string{"defererr", "seqerror", "repool", "actx"},
+		},
+		{
+			name:     "actx opt-in alone",
+			settings: map[string]any{"defererr": false, "seqerror": false, "repool": false, "actx": true},
+			want:     []string{"actx"},
 		},
 	}
 
@@ -95,5 +107,17 @@ func TestEnabledHelper(t *testing.T) {
 	}
 	if !enabled(ptr(true)) {
 		t.Fatal("enabled(true) = false, want true")
+	}
+}
+
+func TestOptInHelper(t *testing.T) {
+	if optIn(nil) {
+		t.Fatal("optIn(nil) = true, want false")
+	}
+	if optIn(ptr(false)) {
+		t.Fatal("optIn(false) = true, want false")
+	}
+	if !optIn(ptr(true)) {
+		t.Fatal("optIn(true) = false, want true")
 	}
 }
