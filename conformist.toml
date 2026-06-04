@@ -1,8 +1,9 @@
-# treelint configuration (treefmt successor). Mirrors ./treefmt.nix's formatter
-# chain so `treelint` produces byte-identical output, plus linters treelint runs
-# natively (shellcheck). Run via `treelint` (repair) / `treelint check`.
+# conformist configuration (treefmt successor): the goimports -> gofumpt -> nixfmt
+# -> shfmt formatter chain that produces this repo's canonical formatting, plus
+# linters conformist runs natively (shellcheck). Run via `conformist` (repair) /
+# `conformist check`.
 
-# Generated / locked / prose — not formatted. Mirrors treefmt.nix global excludes.
+# Generated / locked / prose — not formatted.
 excludes = [
   "flake.lock",
   "go.sum",
@@ -16,14 +17,14 @@ excludes = [
   # Templates ship as scaffolding for downstream `nix flake init`; formatting
   # them would invalidate nix-instantiate --parse test snapshots.
   "templates/**",
-  # treelint's own config is TOML with intentional layout; leave it be.
-  "treelint.toml",
+  # conformist's own config is TOML with intentional layout; leave it be.
+  "conformist.toml",
 ]
 
 # Go: goimports (priority 1) must run before gofumpt (priority 2) so the
 # import-grouped output is re-canonicalized by gofumpt — the grouping dagnabit
 # export relies on for stable facades. -w so each writes in place (required for
-# treelint's sandbox check to observe drift).
+# conformist's sandbox check to observe drift).
 [formatter.goimports]
 command = "goimports"
 options = ["-w"]
@@ -50,7 +51,7 @@ command = "shfmt"
 options = ["-w", "-i", "2", "-s", "-ci"]
 includes = ["*.sh", "*.bash", "*.bats"]
 
-# Linter: shellcheck runs read-only in `treelint check` (no autofix).
+# Linter: shellcheck runs read-only in `conformist check` (no autofix).
 [linter.shellcheck]
 command = "shellcheck"
 includes = ["*.sh", "*.bash", "*.bats"]

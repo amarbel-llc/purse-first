@@ -13,10 +13,10 @@
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.flake-utils.follows = "utils";
     };
-    # treelint: the linter + formatter multiplexer (treefmt successor).
-    # Config lives in ./treelint.toml.
-    treelint = {
-      url = "github:amarbel-llc/treelint";
+    # conformist: the linter + formatter multiplexer (treefmt successor).
+    # Config lives in ./conformist.toml.
+    conformist = {
+      url = "github:amarbel-llc/conformist";
       inputs.igloo.follows = "igloo";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";
@@ -30,7 +30,7 @@
       nixpkgs-master,
       utils,
       gomod2nix,
-      treelint,
+      conformist,
     }:
     let
       # Per-system Nix interface to the Go workspace. See gomod.nix. Builds
@@ -70,20 +70,20 @@
         devenvs = buildDevenvs system;
         gomod = gomodBySystem.${system};
 
-        # `nix fmt` entry point: treelint (the treefmt successor) wrapped with
-        # the formatter binaries its ./treelint.toml drives on PATH. Formatting
-        # drift is gated by `just lint` (treelint check), not a flake check.
-        treelintFmt = pkgs.writeShellApplication {
-          name = "treelint-fmt";
+        # `nix fmt` entry point: conformist (the treefmt successor) wrapped with
+        # the formatter binaries its ./conformist.toml drives on PATH. Formatting
+        # drift is gated by `just lint` (conformist check), not a flake check.
+        conformistFmt = pkgs.writeShellApplication {
+          name = "conformist-fmt";
           runtimeInputs = [
-            treelint.packages.${system}.default
+            conformist.packages.${system}.default
             pkgs-master.gofumpt
             pkgs-master.gotools
             pkgs.nixfmt
             pkgs.shfmt
             pkgs.shellcheck
           ];
-          text = ''exec treelint "$@"'';
+          text = ''exec conformist "$@"'';
         };
       in
       {
@@ -106,12 +106,12 @@
               pkgs.gum
               pkgs.openssh
               pkgs-master.claude-code
-              # treelint (treefmt successor) + the one formatter binary its
-              # treelint.toml drives that the devShell doesn't already carry.
+              # conformist (treefmt successor) + the one formatter binary its
+              # conformist.toml drives that the devShell doesn't already carry.
               # gofumpt/goimports/shfmt/shellcheck come from the go/shell devenvs;
               # nixfmt is added here now that the treefmt-nix wrapper is gone.
-              # `dagnabit export` resolves `treelint` from PATH for facade formatting.
-              treelint.packages.${system}.default
+              # `dagnabit export` resolves `conformist` from PATH for facade formatting.
+              conformist.packages.${system}.default
               pkgs.nixfmt
             ];
             inputsFrom = [
@@ -128,8 +128,8 @@
           bats = devenvs.bats.devShells.default;
         };
 
-        # `nix fmt` runs treelint (see treelintFmt above).
-        formatter = treelintFmt;
+        # `nix fmt` runs conformist (see conformistFmt above).
+        formatter = conformistFmt;
       }
     );
 }

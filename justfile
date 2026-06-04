@@ -28,7 +28,7 @@ validate-purse-first-manifest:
 # Read-only style / convention / drift checks. Does not modify code.
 
 [group('pre-build')]
-lint: lint-go lint-dewey_pkgs_drift lint-treelint
+lint: lint-go lint-dewey_pkgs_drift lint-conformist
 
 # `go vet` across the workspace.
 [group('pre-build')]
@@ -38,7 +38,7 @@ lint-go:
 # Drift lint: verify libs/dewey/pkgs/ matches a fresh `dagnabit export --library`
 # without mutating the tree. `--check` renders + formats facades into a temp dir
 # and compares against the committed ones; it exits nonzero (naming the
-# out-of-sync packages) on drift and fails loud if the formatter (treelint) is
+# out-of-sync packages) on drift and fails loud if the formatter (conformist) is
 # missing — no more silent skip / phantom drift. Depends on `dagnabit-build` so
 # the binary under test is the one in the current working tree. Runs the binary
 # ambient (not via `nix develop`) so dewey's `-tags test` build env is honored.
@@ -46,12 +46,12 @@ lint-go:
 lint-dewey_pkgs_drift: dagnabit-build
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit export --check --library
 
-# treelint check: read-only format + lint gate. Verifies formatter drift via
-# sandbox-and-diff (Go/Nix/shell, per ./treelint.toml) plus shellcheck.
-# treelint is the treefmt successor; this replaces the treefmt-nix check.
+# conformist check: read-only format + lint gate. Verifies formatter drift via
+# sandbox-and-diff (Go/Nix/shell, per ./conformist.toml) plus shellcheck.
+# conformist is the treefmt successor; this replaces the treefmt-nix check.
 [group('pre-build')]
-lint-treelint:
-    {{ cmd_nix_dev }} treelint check
+lint-conformist:
+    {{ cmd_nix_dev }} conformist check
 
 # Lint dewey library.
 [group('pre-build')]
@@ -189,19 +189,19 @@ test-validate-mcp: build-purse-first-cli
 # ──── codemod ───────────────────────────────────────────────────────
 # Modifies source code.
 
-# Format aggregate: repo-wide treelint pass plus the Go-only quick reformat.
+# Format aggregate: repo-wide conformist pass plus the Go-only quick reformat.
 [group('codemod')]
-codemod-fmt: codemod-fmt-treelint codemod-fmt-go
+codemod-fmt: codemod-fmt-conformist codemod-fmt-go
 
-# Repo-wide format via treelint (the treefmt successor): Go (goimports ->
-# gofumpt), Nix (nixfmt), and shell (shfmt), per ./treelint.toml. Replaces the
-# old `nix fmt` (treefmt-nix) path. The read-only counterpart is `lint-treelint`.
+# Repo-wide format via conformist (the treefmt successor): Go (goimports ->
+# gofumpt), Nix (nixfmt), and shell (shfmt), per ./conformist.toml. Replaces the
+# old `nix fmt` (treefmt-nix) path. The read-only counterpart is `lint-conformist`.
 [group('codemod')]
-codemod-fmt-treelint:
-    {{ cmd_nix_dev }} treelint
+codemod-fmt-conformist:
+    {{ cmd_nix_dev }} conformist
 
 # `go fmt ./...` for a quick Go-only reformat. The canonical repo-wide
-# formatter is `codemod-fmt-treelint`.
+# formatter is `codemod-fmt-conformist`.
 [group('codemod')]
 codemod-fmt-go:
     {{ cmd_nix_dev }} go fmt ./...

@@ -33,6 +33,32 @@
         "type": "github"
       }
     },
+    "conformist": {
+      "inputs": {
+        "igloo": [
+          "igloo"
+        ],
+        "nixpkgs-master": [
+          "nixpkgs-master"
+        ],
+        "utils": [
+          "utils"
+        ]
+      },
+      "locked": {
+        "lastModified": 1780578823,
+        "narHash": "sha256-fYpYfjnpvcQ1/byC6UisbYc5boGxbH0gj0jyJfUDhOI=",
+        "owner": "amarbel-llc",
+        "repo": "conformist",
+        "rev": "e7a3240c6fe46caec85c4966b011f784e1846637",
+        "type": "github"
+      },
+      "original": {
+        "owner": "amarbel-llc",
+        "repo": "conformist",
+        "type": "github"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
@@ -133,10 +159,10 @@
     },
     "root": {
       "inputs": {
+        "conformist": "conformist",
         "gomod2nix": "gomod2nix",
         "igloo": "igloo",
         "nixpkgs-master": "nixpkgs-master_2",
-        "treelint": "treelint",
         "utils": "utils"
       }
     },
@@ -188,32 +214,6 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "type": "github"
-      }
-    },
-    "treelint": {
-      "inputs": {
-        "igloo": [
-          "igloo"
-        ],
-        "nixpkgs-master": [
-          "nixpkgs-master"
-        ],
-        "utils": [
-          "utils"
-        ]
-      },
-      "locked": {
-        "lastModified": 1780578823,
-        "narHash": "sha256-fYpYfjnpvcQ1/byC6UisbYc5boGxbH0gj0jyJfUDhOI=",
-        "owner": "amarbel-llc",
-        "repo": "treelint",
-        "rev": "e7a3240c6fe46caec85c4966b011f784e1846637",
-        "type": "github"
-      },
-      "original": {
-        "owner": "amarbel-llc",
-        "repo": "treelint",
         "type": "github"
       }
     },

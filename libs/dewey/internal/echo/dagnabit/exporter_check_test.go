@@ -15,8 +15,8 @@ import (
 // `treefmt` on PATH so the FormatOutput pass inside CheckAll/CheckPackage runs
 // deterministically (and as a no-op on the facade bytes) regardless of where
 // $TMPDIR lives. This helper previously skipped whenever an ancestor carried a
-// treefmt/treelint config — always the case when $TMPDIR sits inside a repo
-// that has one (e.g. this worktree's .tmp/ under the root treelint.toml),
+// treefmt/conformist config — always the case when $TMPDIR sits inside a repo
+// that has one (e.g. this worktree's .tmp/ under the root conformist.toml),
 // which left these tests unexecuted in-repo (#127). The fixture's own config is
 // the nearest ancestor, so findTreefmtConfig resolves to it (formatter
 // "treefmt") rather than any real config further up.
@@ -175,11 +175,11 @@ func TestCheckPackageScopedToOnePackage(t *testing.T) {
 func TestFormatOutputFailsLoudWhenFormatterMissing(t *testing.T) {
 	tmpDir := t.TempDir()
 	mustMkdirAll(t, filepath.Join(tmpDir, "pkgs"))
-	if err := os.WriteFile(filepath.Join(tmpDir, "treelint.toml"), []byte(""), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "conformist.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	// Scrub PATH so neither `treelint` nor `nix` is resolvable.
+	// Scrub PATH so neither `conformist` nor `nix` is resolvable.
 	t.Setenv("PATH", t.TempDir())
 
 	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
@@ -187,7 +187,7 @@ func TestFormatOutputFailsLoudWhenFormatterMissing(t *testing.T) {
 	if err == nil {
 		t.Fatal("FormatOutput should fail loud when the configured formatter is missing")
 	}
-	if !strings.Contains(err.Error(), "treelint") {
+	if !strings.Contains(err.Error(), "conformist") {
 		t.Errorf("error should name the missing formatter, got: %v", err)
 	}
 }
@@ -209,7 +209,7 @@ func TestCheckAllReproducesFormatterAcrossTempDir(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Force the treefmt branch with our own config. findTreefmtConfig finds this
-	// before any ancestor treelint/treefmt config.
+	// before any ancestor conformist/treefmt config.
 	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}

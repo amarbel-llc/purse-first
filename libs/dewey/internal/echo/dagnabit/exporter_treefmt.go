@@ -8,12 +8,12 @@ import (
 	"strings"
 )
 
-// treefmtConfigNames are the config filenames that indicate a treelint or
-// treefmt setup, searched in order. treelint (the treefmt successor) is
+// treefmtConfigNames are the config filenames that indicate a conformist or
+// treefmt setup, searched in order. conformist (the treefmt successor) is
 // preferred; plain treefmt and treefmt-nix remain as fallbacks.
 var treefmtConfigNames = []string{
-	"treelint.toml",
-	".treelint.toml",
+	"conformist.toml",
+	".conformist.toml",
 	"treefmt.toml",
 	".treefmt.toml",
 	"treefmt.nix",
@@ -45,12 +45,12 @@ func findTreefmtConfig(start string) (dir, name string, ok bool) {
 }
 
 // FormatOutput runs the project's formatter on the output directory if a
-// treelint or treefmt configuration is present in the module's directory
+// conformist or treefmt configuration is present in the module's directory
 // tree. No-op when no config is found or when DryRun is set.
 //
 // Resolution order:
-//  1. `<formatter> <output-dir>` where <formatter> is `treelint` for a
-//     treelint.toml/.treelint.toml config and `treefmt` for a
+//  1. `<formatter> <output-dir>` where <formatter> is `conformist` for a
+//     conformist.toml/.conformist.toml config and `treefmt` for a
 //     treefmt.toml/.treefmt.toml/treefmt.nix config, if that binary is on
 //     PATH.
 //  2. `nix fmt -- <output-dir>` if config is `treefmt.nix` and `nix` is on
@@ -79,19 +79,19 @@ func (exporter *Exporter) FormatOutput() error {
 	}
 
 	formatter := "treefmt"
-	if strings.Contains(configName, "treelint") {
-		formatter = "treelint"
+	if strings.Contains(configName, "conformist") {
+		formatter = "conformist"
 	}
 
 	if formatterPath, err := exec.LookPath(formatter); err == nil {
-		// treelint defaults to a git walk anchored at the worktree root, which
+		// conformist defaults to a git walk anchored at the worktree root, which
 		// skips untracked paths — including freshly generated facades and the
 		// temp dir used by `export --check`. Anchor the tree root at the output
 		// dir and walk the filesystem so every generated file is formatted
 		// regardless of git status. (treefmt has no such flags; it walks the
 		// given path directly.)
 		var cmd *exec.Cmd
-		if formatter == "treelint" {
+		if formatter == "conformist" {
 			cmd = exec.Command(formatterPath, "--tree-root", outputPath, "--walk", "filesystem", outputPath)
 		} else {
 			cmd = exec.Command(formatterPath, outputPath)
