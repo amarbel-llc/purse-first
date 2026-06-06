@@ -120,6 +120,8 @@ func callName(call *ast.CallExpr) string {
 	return "<deferred function>"
 }
 
+// hasSuppressComment honors the directive at the end of the flagged
+// line or on the line immediately above it (purse-first#136).
 func hasSuppressComment(pass *analysis.Pass, node ast.Node) bool {
 	pos := pass.Fset.Position(node.Pos())
 
@@ -127,7 +129,7 @@ func hasSuppressComment(pass *analysis.Pass, node ast.Node) bool {
 		for _, cg := range f.Comments {
 			for _, comment := range cg.List {
 				cpos := pass.Fset.Position(comment.Pos())
-				if cpos.Line == pos.Line && strings.Contains(comment.Text, "//defer:err-checked") {
+				if (cpos.Line == pos.Line || cpos.Line == pos.Line-1) && strings.Contains(comment.Text, "//defer:err-checked") {
 					return true
 				}
 			}

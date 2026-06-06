@@ -415,6 +415,8 @@ func importsFuncRepool(pkg *types.Package) bool {
 	return false
 }
 
+// hasRepoolOwnedComment honors the directive at the end of the flagged
+// line or on the line immediately above it (purse-first#136).
 func hasRepoolOwnedComment(pass *analysis.Pass, node ast.Node) bool {
 	pos := pass.Fset.Position(node.Pos())
 
@@ -422,7 +424,7 @@ func hasRepoolOwnedComment(pass *analysis.Pass, node ast.Node) bool {
 		for _, c := range cg.Comments {
 			for _, comment := range c.List {
 				cpos := pass.Fset.Position(comment.Pos())
-				if cpos.Line == pos.Line && strings.Contains(comment.Text, "//repool:owned") {
+				if (cpos.Line == pos.Line || cpos.Line == pos.Line-1) && strings.Contains(comment.Text, "//repool:owned") {
 					return true
 				}
 			}
@@ -432,6 +434,8 @@ func hasRepoolOwnedComment(pass *analysis.Pass, node ast.Node) bool {
 	return false
 }
 
+// hasRepoolSuppressComment honors the directive at the end of the
+// flagged line or on the line immediately above it (purse-first#136).
 func hasRepoolSuppressComment(pass *analysis.Pass, node ast.Node) bool {
 	pos := pass.Fset.Position(node.Pos())
 
@@ -439,7 +443,7 @@ func hasRepoolSuppressComment(pass *analysis.Pass, node ast.Node) bool {
 		for _, c := range cg.Comments {
 			for _, comment := range c.List {
 				cpos := pass.Fset.Position(comment.Pos())
-				if cpos.Line == pos.Line && strings.Contains(comment.Text, "//repool:suppress") {
+				if (cpos.Line == pos.Line || cpos.Line == pos.Line-1) && strings.Contains(comment.Text, "//repool:suppress") {
 					return true
 				}
 			}

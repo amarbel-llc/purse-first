@@ -20,6 +20,13 @@ func blankErrorSuppressed() {
 	}
 }
 
+func blankErrorSuppressedLineAbove() {
+	//seq:err-checked
+	for x := range makeSeq() {
+		_ = x
+	}
+}
+
 // --- Rule 2: named but unchecked error ---
 
 func namedButUnchecked() {

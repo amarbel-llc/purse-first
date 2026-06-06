@@ -18,6 +18,11 @@ func discardedBlankWithOwned() {
 	_, _ = pool.GetWithRepool() //repool:owned
 }
 
+func discardedBlankOwnedLineAbove() {
+	//repool:owned
+	_, _ = pool.GetWithRepool()
+}
+
 func deferRepool() {
 	_, repool := pool.GetWithRepool()
 	defer repool()
@@ -72,6 +77,14 @@ func suppressedConditional() {
 
 func suppressedWithIssueLink() {
 	v, repool := pool.GetWithRepool() //repool:suppress #47 false positive: nil-guarded defer
+	if v == "x" {
+		repool()
+	}
+}
+
+func suppressedConditionalLineAbove() {
+	//repool:suppress ownership transfer
+	v, repool := pool.GetWithRepool()
 	if v == "x" {
 		repool()
 	}

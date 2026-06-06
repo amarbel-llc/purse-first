@@ -27,3 +27,12 @@ func hotel(a, b int)   {}
 func india(p, q, r string)  {}
 func juliet(p, q, r string) {}
 func kilo(p, q, r string)   {} //paramobj:allow
+
+// --- No diagnostics: line-above directive also suppresses, dropping the
+// group to two ---
+
+func lima(p, q, r byte) {}
+func mike(p, q, r byte) {}
+
+//paramobj:allow
+func november(p, q, r byte) {}

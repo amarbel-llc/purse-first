@@ -43,6 +43,16 @@ type allowedField struct {
 	ctx context.Context //actx:allow
 }
 
+// Directive on the line above the flagged usage also suppresses.
+//
+//actx:allow
+func interopBoundaryLineAbove(ctx context.Context) {}
+
+type allowedFieldLineAbove struct {
+	//actx:allow
+	ctx context.Context
+}
+
 // Non-context parameters are untouched.
 func noContext(name string, n int) {}
 

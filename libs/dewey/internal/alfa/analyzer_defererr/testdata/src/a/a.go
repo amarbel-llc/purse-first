@@ -62,3 +62,8 @@ func deferSuppressed() {
 func deferMultiReturnSuppressed() {
 	defer returnsIntError() //defer:err-checked
 }
+
+func deferSuppressedLineAbove() {
+	//defer:err-checked
+	defer returnsError()
+}

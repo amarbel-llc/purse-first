@@ -14,7 +14,7 @@ go vet -vettool=build/repool-analyzer ./...  # run directly
 
 1.  **Discarded repool (blank `_`)**: Reports when the repool function is
     assigned to `_` without a `//repool:owned` suppression comment on the same
-    line.
+    line or the line immediately above.
 
 2.  **Incomplete call paths**: Uses CFG analysis to find repool variables that
     are not called on all code paths before the function returns (potential
@@ -24,8 +24,8 @@ go vet -vettool=build/repool-analyzer ./...  # run directly
 
 ### `//repool:owned` --- discarded repool (blank `_`)
 
-Add `//repool:owned` on the assignment line to indicate the caller intentionally
-takes ownership of the element's lifetime:
+Add `//repool:owned` on the assignment line (or the line immediately above) to
+indicate the caller intentionally takes ownership of the element's lifetime:
 
 ``` go
 hash, _ := config.hashFormat.GetHash() //repool:owned
@@ -33,9 +33,10 @@ hash, _ := config.hashFormat.GetHash() //repool:owned
 
 ### `//repool:suppress` --- incomplete call paths (false positives)
 
-Add `//repool:suppress <reason>` on the assignment line to silence the "not
-called on all paths" diagnostic when the analyzer cannot prove safety but the
-code is correct. A reason is required (e.g., an issue link or description):
+Add `//repool:suppress <reason>` on the assignment line (or the line
+immediately above) to silence the "not called on all paths" diagnostic when the
+analyzer cannot prove safety but the code is correct. A reason is required
+(e.g., an issue link or description):
 
 ``` go
 v, repool := pool.GetWithRepool() //repool:suppress #47 ownership transfer via return

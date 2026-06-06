@@ -16,7 +16,7 @@
 // with third-party or framework APIs that require it — go-mcp tool
 // handlers, exec.CommandContext, net/http, gRPC, and so on. Suppress
 // those interop boundaries with a //actx:allow comment on the same
-// line.
+// line or on the line immediately above.
 package analyzer_actx
 
 import (
@@ -94,6 +94,8 @@ func isStdlibContext(t types.Type) bool {
 	return obj.Pkg().Path() == "context" && obj.Name() == "Context"
 }
 
+// hasAllowComment honors the directive at the end of the flagged line
+// or on the line immediately above it (purse-first#136).
 func hasAllowComment(pass *analysis.Pass, node ast.Node) bool {
 	pos := pass.Fset.Position(node.Pos())
 
@@ -101,7 +103,7 @@ func hasAllowComment(pass *analysis.Pass, node ast.Node) bool {
 		for _, cg := range f.Comments {
 			for _, comment := range cg.List {
 				cpos := pass.Fset.Position(comment.Pos())
-				if cpos.Line == pos.Line && strings.Contains(comment.Text, "//actx:allow") {
+				if (cpos.Line == pos.Line || cpos.Line == pos.Line-1) && strings.Contains(comment.Text, "//actx:allow") {
 					return true
 				}
 			}

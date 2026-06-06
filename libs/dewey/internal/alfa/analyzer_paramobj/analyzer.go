@@ -20,7 +20,8 @@
 // (w http.ResponseWriter, r *http.Request) and
 // (ctx context.Context, args json.RawMessage)); only groups reaching
 // -min-group are reported; and any single declaration opts out with a
-// //paramobj:allow comment on its signature line.
+// //paramobj:allow comment on its signature line or on the line
+// immediately above (e.g. as the final doc-comment line).
 package analyzer_paramobj
 
 import (
@@ -120,6 +121,9 @@ func signatureKey(sig *types.Signature, pkg *types.Package) string {
 	return strings.Join(parts, ", ")
 }
 
+// hasAllowComment honors the directive at the end of the signature line
+// or on the line immediately above it, e.g. as the final doc-comment
+// line (purse-first#136).
 func hasAllowComment(pass *analysis.Pass, node ast.Node) bool {
 	pos := pass.Fset.Position(node.Pos())
 
@@ -127,7 +131,7 @@ func hasAllowComment(pass *analysis.Pass, node ast.Node) bool {
 		for _, cg := range f.Comments {
 			for _, comment := range cg.List {
 				cpos := pass.Fset.Position(comment.Pos())
-				if cpos.Line == pos.Line && strings.Contains(comment.Text, "//paramobj:allow") {
+				if (cpos.Line == pos.Line || cpos.Line == pos.Line-1) && strings.Contains(comment.Text, "//paramobj:allow") {
 					return true
 				}
 			}
