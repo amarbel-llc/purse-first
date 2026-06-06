@@ -69,6 +69,53 @@ let
       ldflags = deweyLdflags;
     };
 
+  # The dewey custom golangci-lint binary: stock golangci-lint with
+  # libs/dewey/gclplugin (module plugin) linked in — the pure-nix
+  # replacement for `golangci-lint custom` (purse-first#134). The module
+  # is standalone (outside go.work) with its own gomod2nix.toml so the
+  # linter's dependency closure stays out of the shared workspace
+  # lockfile. The golangci-lint version is read from that go.mod — the
+  # single source of truth for the binary AND the plugin ABI, which match
+  # by construction because both compile from this same source tree.
+  gclDeweyDir = "cmd/golangci-lint-dewey";
+
+  golangciLintVersion = builtins.head (
+    builtins.match ".*github\\.com/golangci/golangci-lint/v2 v([^ \n\t]+).*" (
+      builtins.readFile (./. + "/${gclDeweyDir}/go.mod")
+    )
+  );
+
+  golangciLintDeweyVersion = "${golangciLintVersion}-dewey.${purseFirstVersion}";
+
+  golangciLintDewey = goPkgs.buildGoApplication {
+    pname = "golangci-lint-dewey";
+    version = golangciLintDeweyVersion;
+    go = pkgs-master.go_1_26;
+    src = self;
+    # pwd is eval-time: where the builder parses go.mod (and resolves the
+    # `replace ... => ../../libs/dewey` into the vendor env). modRoot is
+    # build-time: the hooks cd here, plant vendor/, and build subPackages
+    # relative to it.
+    pwd = self + "/${gclDeweyDir}";
+    modRoot = gclDeweyDir;
+    modules = self + "/${gclDeweyDir}/gomod2nix.toml";
+    subPackages = [ "." ];
+    # go.work discovery walks up from modRoot and would find the root
+    # workspace, which does not list this module; force module mode.
+    GOWORK = "off";
+    ldflags = [
+      "-s"
+      "-w"
+      "-X main.version=${golangciLintDeweyVersion}"
+      "-X main.commit=${commit}"
+      "-X main.date=${self.lastModifiedDate or ""}"
+    ];
+    meta = with goPkgs.lib; {
+      description = "golangci-lint with the dewey module plugin linked in";
+      license = licenses.gpl3Plus;
+    };
+  };
+
   goMcpDocsBin = mkGoModule {
     pname = "go-mcp-docs";
     version = "0.0.9";
@@ -107,6 +154,8 @@ in
         install -Dm644 $src/cmd/dagnabit/dagnabit.1 $out/share/man/man1/dagnabit.1
       '';
     };
+
+    golangci-lint-dewey = golangciLintDewey;
 
     actx = mkDeweyBin "actx";
     defererr = mkDeweyBin "defererr";

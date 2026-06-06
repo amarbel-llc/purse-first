@@ -66,6 +66,17 @@ path stays for non-golangci consumers. Consumers wire it via
 `.custom-gcl.yml` + `golangci-lint custom`; the package doc comment carries
 the full snippet.
 
+The repo also ships a prebuilt custom binary as the flake output
+`golangci-lint-dewey` (purse-first#134) — the pure-nix, no-network
+equivalent of `golangci-lint custom`, for consumers that take this repo
+as a flake input. Its module is dewey-owned but lives at repo-root
+`cmd/golangci-lint-dewey/` (NOT under `libs/dewey/`): the nix vendor env
+materializes the dewey replace as a symlink of the whole `libs/dewey`
+tree, so a nested module inside it would see itself twice (ambiguous
+import — amarbel-llc/gomod2nix#11). The golangci-lint version pinned in
+that module's go.mod is the single source of truth for the binary and
+the plugin ABI.
+
 ## Testing
 
 Use `just test-dewey` from the repo root. It runs `go test -tags test

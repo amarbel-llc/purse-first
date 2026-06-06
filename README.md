@@ -91,6 +91,7 @@ nix build .#defererr                       # dewey static analyzer
 nix build .#repool                         # dewey static analyzer
 nix build .#seqerror                       # dewey static analyzer
 nix build .#reflexive-interface-generator  # dewey codegen tool
+nix build .#golangci-lint-dewey            # golangci-lint with the dewey plugin linked in
 nix build .#manpages                       # go-mcp manpage tree
 nix build .#go-pkgs                        # RFC 0001 published Go workspace source
 nix build .#go-pkgs-test                   # RFC 0001 test-only Go workspace source
@@ -121,6 +122,13 @@ Each is available two ways:
   via `.custom-gcl.yml` + `golangci-lint custom`; `Settings` lets a consumer opt
   out per analyzer. The `gclplugin` package doc comment carries the full config
   snippet.
+- **Prebuilt custom binary** — `nix build .#golangci-lint-dewey` produces
+  golangci-lint with the plugin already linked (the pure-nix, no-network
+  equivalent of `golangci-lint custom`). The golangci-lint version is pinned in
+  `cmd/golangci-lint-dewey/go.mod`, and the plugin compiles from the same tree,
+  so the module-plugin ABI constraint holds by construction. Downstream repos
+  consume it as a flake input instead of running `golangci-lint custom`
+  themselves.
 
 ## go-mcp lifecycle (three-mode main)
 
@@ -145,6 +153,7 @@ dispatch on its first argument:
 | `cmd/purse-first/` | CLI entrypoint |
 | `cmd/dagnabit/` | dewey-aware Go rename/export tool |
 | `cmd/go-mcp-docs/` | Generates the `go-mcp` manpage tree (the `.#manpages` output) |
+| `cmd/golangci-lint-dewey/` | Standalone module: golangci-lint with the dewey plugin linked in (`.#golangci-lint-dewey`) |
 | `internal/` | Go internal packages (`validate`, `packagetoml`) |
 | `libs/go-mcp/` | Go MCP server library (`command`, `server`, `transport`, `output`, `purse`, `jsonrpc`, `executor`, `operation`, `protocol`) |
 | `libs/dewey/` | Multi-tier Go library (`internal/`, `pkgs/` stable facades, `cmd/` analyzers, `gclplugin/`) |

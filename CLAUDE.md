@@ -61,6 +61,7 @@ nix build .#defererr                 # dewey static analyzer
 nix build .#repool                   # dewey static analyzer
 nix build .#seqerror                 # dewey static analyzer
 nix build .#reflexive-interface-generator  # dewey codegen tool
+nix build .#golangci-lint-dewey      # golangci-lint with the dewey module plugin linked in
 nix build .#manpages                 # go-mcp manpage tree
 nix build .#go-pkgs                  # RFC 0001 published Go workspace source
 nix build .#go-pkgs-test             # RFC 0001 test-only Go workspace source
@@ -158,6 +159,7 @@ external tools (e.g. clown), not by purse-first.
 | `cmd/purse-first/` | CLI entrypoint |
 | `cmd/dagnabit/` | dewey-aware Go rename/export tool (used by `dewey-*` justfile recipes) |
 | `cmd/go-mcp-docs/` | Generates the `go-mcp` manpage tree (built via `gomod.nix`) |
+| `cmd/golangci-lint-dewey/` | Standalone Go module (own go.mod + gomod2nix.toml, NOT in go.work): golangci-lint with dewey's `gclplugin` linked in. Regen lockfiles with `just build-nix-gomod2nix-gcl` after changing its go.mod |
 | `internal/` | Go internal packages (`validate`, `packagetoml`) |
 | `libs/go-mcp/` | Go MCP server library (`command`, `server`, `transport`, `output`, `purse`, `jsonrpc`, `executor`, `operation`, `protocol`) |
 | `libs/dewey/` | Multi-tier Go utility library (NATO-level dependency ordering; `internal/`, `pkgs/` stable facades) |

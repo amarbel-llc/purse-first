@@ -87,6 +87,12 @@ build-purse-first:
 build-purse-first-cli:
     nix build .#purse-first -o result-cli
 
+# Nix-build the dewey custom golangci-lint binary (gclplugin linked in,
+# purse-first#134) for the bats acceptance lane and downstream consumers.
+[group('build')]
+build-golangci-dewey:
+    nix build .#golangci-lint-dewey -o result-gcl
+
 [group('build')]
 build-go:
     {{ cmd_nix_dev }} go build -o build/purse-first ./cmd/purse-first
@@ -125,6 +131,34 @@ build-nix-gomod2nix:
         --target darwin/amd64 \
         --target darwin/arm64
 
+# Compile the standalone golangci-lint-dewey module into build/ for the
+# dev loop. It is not in go.work, so `go build ./...` never touches it;
+# this is the cheap compile gate (and local smoke-test binary) before the
+# nix build. GOWORK=off for the same reason as build-nix-gomod2nix-gcl.
+[group('build')]
+build-go-gcl:
+    cd {{ justfile_directory() }}/cmd/golangci-lint-dewey && \
+      {{ cmd_nix_dev }} env GOWORK=off go build -o {{ justfile_directory() }}/build/golangci-lint-dewey .
+
+# Regenerate the standalone golangci-lint-dewey lockfiles (go.sum +
+# gomod2nix.toml) in cmd/golangci-lint-dewey. That module is
+# deliberately NOT in go.work — golangci-lint's closure is a lint tool's
+# dependency set, isolated from the shared workspace lockfile so product
+# binaries don't rebuild on linter bumps (purse-first#134). GOWORK=off
+# keeps go in module mode despite the workspace above it; without it go
+# refuses to run in a module that the surrounding go.work doesn't list.
+# Run after changing the golangci-lint pin or the module's go.mod.
+[group('build')]
+build-nix-gomod2nix-gcl:
+    cd {{ justfile_directory() }}/cmd/golangci-lint-dewey && \
+      {{ cmd_nix_dev }} env GOWORK=off go mod tidy
+    cd {{ justfile_directory() }}/cmd/golangci-lint-dewey && \
+      {{ cmd_nix_dev }} env GOWORK=off gomod2nix \
+        --target linux/amd64 \
+        --target linux/arm64 \
+        --target darwin/amd64 \
+        --target darwin/arm64
+
 # Rebuild build/dagnabit from source. Not a dep of the dewey-* recipes
 # because those need to work mid-bootstrap when cmd/dagnabit's imports
 # may temporarily reference paths that don't compile yet. Run this
@@ -141,7 +175,8 @@ test: \
     test-go \
     test-go-mcp \
     test-dewey \
-    test-integration
+    test-integration \
+    test-golangci-dewey
 
 # Run Go tests.
 [group('post-build')]
@@ -180,6 +215,19 @@ test-integration: build-purse-first-cli
 test-validate: build-purse-first-cli
     nix build
     PURSE_FIRST_BIN={{ justfile_directory() }}/result-cli/bin/purse-first {{ cmd_nix_dev }} bats --tap --jobs {{ num_cpus() }} zz-tests_bats/validate_documents.bats
+
+# Run the golangci-lint-dewey BATS lane against the nix-built custom
+# binary — the purse-first#134 acceptance test (plugin loads, analyzers fire).
+[group('post-build')]
+test-golangci-dewey: build-golangci-dewey
+    GOLANGCI_LINT_DEWEY_BIN={{ justfile_directory() }}/result-gcl/bin/golangci-lint-dewey {{ cmd_nix_dev }} bats --tap zz-tests_bats/golangci_lint_dewey.bats
+
+# Dev-loop variant of test-golangci-dewey: run the bats lane against the
+# go-built binary in build/ (no nix build). The version-suffix assertion
+# self-skips here — the "dewey" suffix is injected by nix ldflags only.
+[group('explore')]
+explore-test-golangci-dewey-dev: build-go-gcl
+    GOLANGCI_LINT_DEWEY_BIN={{ justfile_directory() }}/build/golangci-lint-dewey {{ cmd_nix_dev }} bats --tap zz-tests_bats/golangci_lint_dewey.bats
 
 # Run MCP validation tests.
 [group('post-build')]
@@ -261,7 +309,7 @@ update-go: build-nix-gomod2nix
 clean:
     rm -f purse-first
     rm -rf build/
-    rm -rf result result-cli
+    rm -rf result result-cli result-gcl
 
 # Per eng-versioning(7) MULTI-ARTIFACT RELEASE: one version covers every
 # artifact (purse-first CLI + marketplace, libs/dewey, libs/go-mcp), sourced

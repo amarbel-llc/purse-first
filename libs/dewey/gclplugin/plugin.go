@@ -17,8 +17,11 @@
 //	    import: github.com/amarbel-llc/purse-first/libs/dewey/gclplugin
 //	    version: latest
 //
-// Build a custom binary with `golangci-lint custom`, then enable the
-// linter in .golangci.yml:
+// Build a custom binary with `golangci-lint custom` — or skip that and
+// consume this repo's flake output `golangci-lint-dewey`, a nix-built
+// custom binary with the plugin already linked (see
+// cmd/golangci-lint-dewey, purse-first#134). Then enable the linter in
+// .golangci.yml:
 //
 //	linters:
 //	  enable:
