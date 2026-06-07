@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	cargo_metadata "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/cargo_metadata"
 	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/dagnabit"
+	dagnabit_rust "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/dagnabit_rust"
 	go_list "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/go_list"
 	go_module "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/go_module"
 	nato_levels "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/nato_levels"
@@ -109,12 +111,14 @@ func runReposition() {
 	var modulePath string
 	var depth int
 	var initial bool
+	var lang string
 
 	flag.BoolVar(&dryRun, "n", false, "show what would be moved without moving")
 	flag.BoolVar(&dryRun, "dry-run", false, "show what would be moved without moving")
 	flag.BoolVar(&verbose, "v", false, "enable verbose output")
 	flag.BoolVar(&verbose, "verbose", false, "enable verbose output")
 	flag.StringVar(&modulePath, "module", "", "Go module path (read from go.mod if empty)")
+	flag.StringVar(&lang, "lang", "", "operating language: go or rust (auto-detected when empty)")
 	flag.IntVar(&depth, "depth", 3, "path component depth: 3 for prefix/level/package, 2 for level/package")
 	flag.BoolVar(&initial, "initial", false, "insert a NATO level segment into a flat <prefix>/<pkg> layout (forces depth=2)")
 	flag.Usage = func() {
@@ -143,23 +147,59 @@ func runReposition() {
 		os.Exit(1)
 	}
 
-	modulePath, err = go_module.ResolveModulePath(dir, modulePath)
+	detected, rootDir, err := detectLanguage(dir, lang)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
-	reader := &go_list.Reader{
-		Dir:             dir,
-		ModulePath:      modulePath,
-		PackagePrefixes: prefixes,
-		ComponentDepth:  depth,
-		Verbose:         verbose,
+	var reader dagnabit.DependencyReader
+	var mover dagnabit.PackageMover
+
+	switch detected {
+	case langGo:
+		// Deliberately dir (cwd), not rootDir: go mode keeps its
+		// pre-detection contract of running from the module root.
+		// Honoring rootDir from a subdirectory is tracked separately.
+		modulePath, err = go_module.ResolveModulePath(dir, modulePath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+		reader = &go_list.Reader{
+			Dir:             dir,
+			ModulePath:      modulePath,
+			PackagePrefixes: prefixes,
+			ComponentDepth:  depth,
+			Verbose:         verbose,
+		}
+
+		mover = &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
+
+	case langRust:
+		if modulePath != "" {
+			fmt.Fprintf(os.Stderr, "error: -module is go-only; not valid with -lang rust\n")
+			os.Exit(1)
+		}
+
+		reader = &cargo_metadata.Reader{
+			Dir:             rootDir,
+			PackagePrefixes: prefixes,
+			ComponentDepth:  depth,
+			Verbose:         verbose,
+		}
+
+		mover = &dagnabit_rust.Mover{WorkspaceRoot: rootDir}
+
+	default:
+		// detectLanguage never returns langUnknown with a nil error;
+		// fail fast if a future language breaks that invariant.
+		fmt.Fprintf(os.Stderr, "error: internal: unhandled language %d\n", detected)
+		os.Exit(1)
 	}
 
 	mapper := nato_levels.MakeNATOLevelMapper()
-
-	mover := &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
 
 	mode := dagnabit.ModeReposition
 	if initial {
