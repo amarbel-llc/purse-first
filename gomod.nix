@@ -150,8 +150,16 @@ in
       pname = "dagnabit";
       version = "0.1.0";
       subPackages = [ "cmd/dagnabit" ];
+      nativeBuildInputs = [ goPkgs.makeWrapper ];
+      # Rust mode shells out to ast-grep for crate-rename source rewrites.
+      # --suffix (not --prefix): a user-provided ast-grep on PATH wins; the
+      # wrapped store path is the fallback. cargo is intentionally NOT
+      # wrapped — plain runtime-PATH expectation, like go. ast-grep comes
+      # from pkgs-master to match devenvs/rust.
       postInstall = ''
         install -Dm644 $src/cmd/dagnabit/dagnabit.1 $out/share/man/man1/dagnabit.1
+        wrapProgram $out/bin/dagnabit \
+          --suffix PATH : ${goPkgs.lib.makeBinPath [ pkgs-master.ast-grep ]}
       '';
     };
 
