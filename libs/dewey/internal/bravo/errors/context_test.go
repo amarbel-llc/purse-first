@@ -103,6 +103,48 @@ func TestContextCancelledRetry(t *testing.T) {
 	}
 }
 
+type errTestTyped struct{ code int }
+
+func (errTestTyped) Error() string { return "typed test error" }
+
+// errTestRecoverAbortTyped is retryable but always aborts with a caller-chosen
+// typed error, so tests can assert the abort path preserves the error chain
+// (issue #145: errContextRetryAborted had no Unwrap, type-erasing the
+// underlying error on the other side of ctx.Run).
+type errTestRecoverAbortTyped struct{ abortWith error }
+
+func (errTestRecoverAbortTyped) Error() string { return "test recover abort typed" }
+
+func (err errTestRecoverAbortTyped) Recover(
+	ctx interfaces.ActiveContext,
+	retry interfaces.FuncRetry,
+	abort interfaces.FuncRetryAborted,
+) {
+	abort(err.abortWith)
+}
+
+func TestContextRetryAbortedPreservesErrorChain(t *testing.T) {
+	ctx := MakeContext(ConTeXT.Background())
+
+	err := ctx.Run(
+		func(ctx Context) {
+			ctx.Cancel(errTestRecoverAbortTyped{abortWith: errTestTyped{code: 7}})
+		},
+	)
+	if err == nil {
+		t.Fatalf("expected an error")
+	}
+
+	var typed errTestTyped
+	if !As(err, &typed) {
+		t.Fatalf("As could not reach the typed abort error through %q (%T)", err, err)
+	}
+
+	if typed.code != 7 {
+		t.Errorf("expected code 7 but got %d", typed.code)
+	}
+}
+
 func TestContextCancelledRetryFailed(t *testing.T) {
 	ctx := MakeContext(ConTeXT.Background())
 

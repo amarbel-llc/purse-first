@@ -20,6 +20,14 @@ func (err errContextRetryAborted) Error() string {
 	}
 }
 
+// Unwrap exposes the error passed to abort so errors.Is/errors.As reach
+// it through ctx.Run's returned error (issue #145: without this, typed
+// errors going through a retryable Recover → abort cycle were
+// type-erased).
+func (err errContextRetryAborted) Unwrap() error {
+	return err.underlying
+}
+
 func (err errContextRetryAborted) Is(target error) bool {
 	_, ok := target.(errContextRetryAborted)
 	return ok
