@@ -66,8 +66,37 @@ func writeFixtureWorkspace(t *testing.T) string {
 	gitInTestRepo(t, root, "config", "user.name", "Test")
 	gitInTestRepo(t, root, "config", "commit.gpgSign", "false")
 
+	writeFixtureWorkspaceTree(t, root)
+
+	gitInTestRepo(t, root, "add", "-A")
+	gitInTestRepo(t, root, "commit", "-m", "fixture")
+
+	return root
+}
+
+// writeFixtureWorkspaceFiles writes the same workspace tree as
+// writeFixtureWorkspace but files-only: no git init, no cargo
+// requirement. Suitable for pure-file exporter tests.
+func writeFixtureWorkspaceFiles(t *testing.T) string {
+	t.Helper()
+
+	root := t.TempDir()
+	writeFixtureWorkspaceTree(t, root)
+
+	return root
+}
+
+// writeFixtureWorkspaceTree writes the fixture workspace's files under
+// root. The members array is deliberately multiline:
+// cargo_manifest.AddMember rejects single-line arrays by design.
+func writeFixtureWorkspaceTree(t *testing.T, root string) {
+	t.Helper()
+
 	writeFixture(t, root, "Cargo.toml", `[workspace]
-members = ["internal/0/blob_store_id", "internal/alfa/store"]
+members = [
+  "internal/0/blob_store_id",
+  "internal/alfa/store",
+]
 resolver = "2"
 `)
 
@@ -99,9 +128,4 @@ blob_store_id_internal = { path = "../../0/blob_store_id" }
 		"internal/alfa/store/src/lib.rs",
 		"pub fn make() -> u32 { blob_store_id_internal::make_id() }\n",
 	)
-
-	gitInTestRepo(t, root, "add", "-A")
-	gitInTestRepo(t, root, "commit", "-m", "fixture")
-
-	return root
 }

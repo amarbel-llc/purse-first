@@ -4,6 +4,13 @@ package dagnabit_rust
 
 import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/dagnabit_rust"
 
+// Exporter generates <OutputDir>/ glob-facade crates (`pub use
+// <internal>::*;`) from internal crates. Rust analog of dagnabit's
+// Exporter: where the Go exporter enumerates symbols, Rust's glob
+// re-export makes facades drift-proof by construction — the facade only
+// names the internal crate, never its contents.
+type Exporter = internal.Exporter
+
 // Mover implements dagnabit.PackageMover for cargo workspaces: git-mv
 // the crate directory, then rewrite every relative path-dependency in
 // the workspace that the move invalidated (references TO the moved
