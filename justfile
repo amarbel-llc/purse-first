@@ -176,7 +176,8 @@ test: \
     test-go-mcp \
     test-dewey \
     test-integration \
-    test-golangci-dewey
+    test-golangci-dewey \
+    test-dagnabit-rust
 
 # Run Go tests.
 [group('post-build')]
@@ -228,6 +229,13 @@ test-golangci-dewey: build-golangci-dewey
 [group('explore')]
 explore-test-golangci-dewey-dev: build-go-gcl
     GOLANGCI_LINT_DEWEY_BIN={{ justfile_directory() }}/build/golangci-lint-dewey {{ cmd_nix_dev }} bats --tap zz-tests_bats/golangci_lint_dewey.bats
+
+# BATS lane for dagnabit rust mode (reposition / export / rename against
+# cargo fixture workspaces). Tests skip gracefully when cargo/ast-grep
+# are not on PATH, so the CI gate stays green without the rust devshell.
+[group('post-build')]
+test-dagnabit-rust: dagnabit-build
+    {{ cmd_nix_dev }} bats --tap zz-tests_bats/dagnabit_rust.bats
 
 # Run MCP validation tests.
 [group('post-build')]
