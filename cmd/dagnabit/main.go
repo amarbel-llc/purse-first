@@ -293,6 +293,7 @@ func runExport() {
 	var library bool
 	var copyMode bool
 	var check bool
+	var lang string
 
 	exportFlags.BoolVar(&dryRun, "n", false, "show what would be generated without writing files")
 	exportFlags.BoolVar(&dryRun, "dry-run", false, "show what would be generated without writing files")
@@ -303,6 +304,7 @@ func runExport() {
 	exportFlags.BoolVar(&copyMode, "copy", false, "copy internal source files into pkgs/, rewriting only intra-module imports, instead of emitting thin re-export aliases")
 	exportFlags.BoolVar(&check, "check", false, "verify the committed facades match a fresh export without writing; exit nonzero on drift (works with --library, explicit packages, or directive scan)")
 	exportFlags.BoolVar(&check, "c", false, "alias for --check")
+	exportFlags.StringVar(&lang, "lang", "", "operating language: go or rust (auto-detected when empty)")
 	exportFlags.Parse(os.Args[1:])
 
 	args := exportFlags.Args()
@@ -318,67 +320,152 @@ func runExport() {
 		os.Exit(1)
 	}
 
-	modulePath, err = go_module.ResolveModulePath(dir, modulePath)
+	detected, rootDir, err := detectLanguage(dir, lang)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
-	exporter := &dagnabit.Exporter{
-		ModulePath:          modulePath,
-		Dir:                 dir,
-		OutputDir:           outputDir,
-		DryRun:              dryRun,
-		SkipConsumerRewrite: noRewriteConsumers,
-		Copy:                copyMode,
-	}
-
-	if check {
-		// Check mode renders + formats into a temp dir and compares against the
-		// on-disk facades; it never writes the real tree and does its own
-		// formatting, so skip the trailing in-place FormatOutput below. Mirrors
-		// the export dispatch (library / explicit packages / directive scan).
-		var checkErr error
-		switch {
-		case library:
-			checkErr = exporter.CheckAll()
-		case len(args) > 0:
-			for _, arg := range args {
-				if checkErr = exporter.CheckPackage(arg); checkErr != nil {
-					break
-				}
-			}
-		default:
-			checkErr = exporter.CheckScan()
-		}
-		if checkErr != nil {
-			fmt.Fprintf(os.Stderr, "error: %v\n", checkErr)
-			os.Exit(1)
-		}
-		return
-	}
-
-	if library {
-		if err := exporter.ExportAll(); err != nil {
+	switch detected {
+	case langGo:
+		// Deliberately dir (cwd), not rootDir: go mode keeps its
+		// pre-detection contract of running from the module root.
+		// Honoring rootDir from a subdirectory is tracked separately.
+		modulePath, err = go_module.ResolveModulePath(dir, modulePath)
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
-	} else if len(args) > 0 {
-		for _, arg := range args {
-			if err := exporter.ExportPackage(arg); err != nil {
+
+		exporter := &dagnabit.Exporter{
+			ModulePath:          modulePath,
+			Dir:                 dir,
+			OutputDir:           outputDir,
+			DryRun:              dryRun,
+			SkipConsumerRewrite: noRewriteConsumers,
+			Copy:                copyMode,
+		}
+
+		if check {
+			// Check mode renders + formats into a temp dir and compares against the
+			// on-disk facades; it never writes the real tree and does its own
+			// formatting, so skip the trailing in-place FormatOutput below. Mirrors
+			// the export dispatch (library / explicit packages / directive scan).
+			var checkErr error
+			switch {
+			case library:
+				checkErr = exporter.CheckAll()
+			case len(args) > 0:
+				for _, arg := range args {
+					if checkErr = exporter.CheckPackage(arg); checkErr != nil {
+						break
+					}
+				}
+			default:
+				checkErr = exporter.CheckScan()
+			}
+			if checkErr != nil {
+				fmt.Fprintf(os.Stderr, "error: %v\n", checkErr)
+				os.Exit(1)
+			}
+			return
+		}
+
+		if library {
+			if err := exporter.ExportAll(); err != nil {
+				fmt.Fprintf(os.Stderr, "error: %v\n", err)
+				os.Exit(1)
+			}
+		} else if len(args) > 0 {
+			for _, arg := range args {
+				if err := exporter.ExportPackage(arg); err != nil {
+					fmt.Fprintf(os.Stderr, "error: %v\n", err)
+					os.Exit(1)
+				}
+			}
+		} else {
+			if err := exporter.ScanAndExport(); err != nil {
 				fmt.Fprintf(os.Stderr, "error: %v\n", err)
 				os.Exit(1)
 			}
 		}
-	} else {
-		if err := exporter.ScanAndExport(); err != nil {
+
+		if err := exporter.FormatOutput(); err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
-	}
 
-	if err := exporter.FormatOutput(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+	case langRust:
+		if modulePath != "" {
+			fmt.Fprintf(os.Stderr, "error: -module is go-only; not valid with -lang rust\n")
+			os.Exit(1)
+		}
+
+		if copyMode {
+			fmt.Fprintf(os.Stderr, "error: --copy is not supported for rust (see docs/plans/2026-06-06-dagnabit-rust-design.md §3)\n")
+			os.Exit(1)
+		}
+
+		if noRewriteConsumers {
+			fmt.Fprintf(os.Stderr, "error: --no-rewrite-consumers is not supported for rust (see docs/plans/2026-06-06-dagnabit-rust-design.md §3)\n")
+			os.Exit(1)
+		}
+
+		exporter := &dagnabit_rust.Exporter{
+			WorkspaceRoot: rootDir,
+			OutputDir:     outputDir,
+			DryRun:        dryRun,
+		}
+
+		if check {
+			var checkErr error
+			switch {
+			case library:
+				checkErr = exporter.CheckAll()
+			case len(args) > 0:
+				for _, arg := range args {
+					if checkErr = exporter.CheckPackage(arg); checkErr != nil {
+						break
+					}
+				}
+			default:
+				checkErr = exporter.CheckScan()
+			}
+			if checkErr != nil {
+				fmt.Fprintf(os.Stderr, "error: %v\n", checkErr)
+				os.Exit(1)
+			}
+			return
+		}
+
+		if library {
+			if err := exporter.ExportAll(); err != nil {
+				fmt.Fprintf(os.Stderr, "error: %v\n", err)
+				os.Exit(1)
+			}
+		} else if len(args) > 0 {
+			for _, arg := range args {
+				if err := exporter.ExportPackage(arg); err != nil {
+					fmt.Fprintf(os.Stderr, "error: %v\n", err)
+					os.Exit(1)
+				}
+			}
+		} else {
+			if err := exporter.ScanAndExport(); err != nil {
+				fmt.Fprintf(os.Stderr, "error: %v\n", err)
+				os.Exit(1)
+			}
+		}
+
+		// Deliberately no FormatOutput here: the rust exporter's output
+		// is byte-canonical by construction, and a best-effort rustfmt
+		// pass would reintroduce env-dependent export/check drift (see
+		// the comment in dagnabit_rust's ExportPackage).
+
+	default:
+		// detectLanguage never returns langUnknown with a nil error;
+		// fail fast if a future language breaks that invariant.
+		fmt.Fprintf(os.Stderr, "error: internal: unhandled language %d\n", detected)
 		os.Exit(1)
 	}
 }
