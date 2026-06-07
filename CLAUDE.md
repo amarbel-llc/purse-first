@@ -48,6 +48,7 @@ nix develop --command bats --tap zz-tests_bats/validate_documents.bats
 just test-integration   # validate_documents + validate_mcp
 just test-validate      # validate_documents.bats only
 just test-validate-mcp  # validate_mcp.bats only
+just test-dagnabit-rust # dagnabit_rust.bats (cargo fixture workspaces; skips without cargo/ast-grep)
 ```
 
 ### Building Individual Packages
@@ -157,7 +158,7 @@ external tools (e.g. clown), not by purse-first.
 | Directory | Purpose |
 |-----------|---------|
 | `cmd/purse-first/` | CLI entrypoint |
-| `cmd/dagnabit/` | dewey-aware Go rename/export tool (used by `dewey-*` justfile recipes) |
+| `cmd/dagnabit/` | dewey-aware rename/export tool for Go packages and cargo workspace crates (rust mode); used by `dewey-*` justfile recipes |
 | `cmd/go-mcp-docs/` | Generates the `go-mcp` manpage tree (built via `gomod.nix`) |
 | `cmd/golangci-lint-dewey/` | Standalone Go module (own go.mod + gomod2nix.toml, NOT in go.work): golangci-lint with dewey's `gclplugin` linked in. Regen lockfiles with `just build-nix-gomod2nix-gcl` after changing its go.mod |
 | `internal/` | Go internal packages (`validate`, `packagetoml`) |
@@ -166,7 +167,7 @@ external tools (e.g. clown), not by purse-first.
 | `skills/` | In-tree skill documents (currently: claude-plugins, mcp) |
 | `lib/` | Nix build expressions (`mkGoWorkspaceModule.nix`) |
 | `gomod.nix` | Per-system Nix interface to the Go workspace: builds every Go binary plus the RFC 0001 `go-pkgs` / `go-pkgs-test` source derivations |
-| `devenvs/` | Per-language dev shells composed into the default shell (`go`, `bats`, `shell`) |
+| `devenvs/` | Per-language dev shells composed into the default shell (`go`, `bats`, `shell`, `rust`) |
 | `dev/lux-nvim/` | Auxiliary dev tooling (Neovim client for the now-dormant `lux`) |
 | `zz-tests_bats/` | BATS integration tests |
 | `package.toml` | This repo's own package manifest source (consumed by `generate-plugin`) |

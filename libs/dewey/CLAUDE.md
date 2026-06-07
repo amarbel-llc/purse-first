@@ -42,6 +42,18 @@ this file.
   settled; expect rough edges and missing features. `cmd/dagnabit` is
   planned as the tracer bullet to mature it (see purse-first#45 and the
   follow-up tracer-bullet plan it links to).
+- `*/cargo_workspace` — cargo workspace root discovery: walks up to the
+  nearest `Cargo.toml` with a `[workspace]` table and parses its members.
+- `*/cargo_manifest` — comment-preserving span edits for `Cargo.toml`
+  (path-dep rewrites, member add/replace, `[package]` name set, dep-key
+  rename).
+- `*/cargo_metadata` — shells `cargo metadata` and returns per-prefix
+  dependency edges (rust analog of `*/go_list`). Powers
+  `dagnabit reposition` in rust mode.
+- `*/dagnabit_rust` — powers dagnabit's rust mode: crate mover
+  (Cargo.toml-only moves gated by `cargo metadata`), glob-facade
+  exporter (`pub use <name>_internal::*;`), and renamer (ast-grep
+  source rewrites gated by `cargo check`).
 
 ## cmd/
 

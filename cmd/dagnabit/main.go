@@ -377,10 +377,10 @@ func runExport() {
 
 	exportFlags.BoolVar(&dryRun, "n", false, "show what would be generated without writing files")
 	exportFlags.BoolVar(&dryRun, "dry-run", false, "show what would be generated without writing files")
-	exportFlags.StringVar(&outputDir, "output-dir", "pkgs", "output directory for generated facades (relative to module root)")
+	exportFlags.StringVar(&outputDir, "output-dir", "pkgs", "output directory for generated facades (relative to the module/workspace root)")
 	exportFlags.StringVar(&modulePath, "module", "", "Go module path (read from go.mod if empty)")
 	exportFlags.BoolVar(&noRewriteConsumers, "no-rewrite-consumers", false, "skip rewriting external workspace consumers' imports to the new facade path")
-	exportFlags.BoolVar(&library, "library", false, "export facades for every package under internal/ (fails if any //go:generate dagnabit export directives exist)")
+	exportFlags.BoolVar(&library, "library", false, "export facades for every package under internal/ (go: fails if any //go:generate dagnabit export directives exist; rust: every crate under internal/)")
 	exportFlags.BoolVar(&copyMode, "copy", false, "copy internal source files into pkgs/, rewriting only intra-module imports, instead of emitting thin re-export aliases")
 	exportFlags.BoolVar(&check, "check", false, "verify the committed facades match a fresh export without writing; exit nonzero on drift (works with --library, explicit packages, or directive scan)")
 	exportFlags.BoolVar(&check, "c", false, "alias for --check")

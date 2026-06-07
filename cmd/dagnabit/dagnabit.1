@@ -1,6 +1,6 @@
-.TH DAGNABIT 1 "2026-04-17" "dagnabit 0.1.0" "Developer Tools"
+.TH DAGNABIT 1 "2026-06-07" "dagnabit 0.1.0" "Developer Tools"
 .SH NAME
-dagnabit \- reposition Go packages by dependency depth and generate export facades
+dagnabit \- reposition Go packages and Rust crates by dependency depth and generate export facades
 .SH SYNOPSIS
 .B dagnabit
 .RB [ \-n ]
@@ -8,6 +8,8 @@ dagnabit \- reposition Go packages by dependency depth and generate export facad
 .RB [ \-depth
 .IR N ]
 .RB [ \-\-initial ]
+.RB [ \-lang
+.IR go | rust ]
 .RB [ \-module
 .IR path ]
 .IR prefix ...
@@ -16,6 +18,12 @@ dagnabit \- reposition Go packages by dependency depth and generate export facad
 .RB [ \-n ]
 .RB [ \-output\-dir
 .IR dir ]
+.RB [ \-\-library ]
+.RB [ \-\-check ]
+.RB [ \-\-copy ]
+.RB [ \-\-no\-rewrite\-consumers ]
+.RB [ \-lang
+.IR go | rust ]
 .RB [ \-module
 .IR path ]
 .RI [ packages... ]
@@ -24,23 +32,45 @@ dagnabit \- reposition Go packages by dependency depth and generate export facad
 .RB [ \-n ]
 .RB [ \-v ]
 .RB [ \-\-force ]
+.RB [ \-lang
+.IR go | rust ]
 .RB [ \-module
 .IR path ]
 .IR src
 .IR dst
+.PP
+.B dagnabit rename
+.RB [ \-n ]
+.RB [ \-v ]
+.RB [ \-\-force ]
+.RB [ \-lang
+.IR go | rust ]
+.RB [ \-module
+.IR path ]
+.IR src
+.RI [ new\-leaf ]
 .SH DESCRIPTION
 .B dagnabit
-is a Go code organization tool with three subcommands: repositioning,
-export facade generation, and package relocation.
+is a code organization tool for Go modules and cargo (Rust) workspaces
+with four subcommands: repositioning, export facade generation, package
+relocation
+.RB ( move ),
+and single-package repositioning
+.RB ( rename ).
+The operating language is auto-detected; see
+.BR LANGUAGES .
 .PP
 Without a subcommand,
 .B dagnabit
-analyzes the dependency graph of Go packages using
-.BR "go list" ,
-computes a topological sort, and moves packages into directories
-named after NATO phonetic levels based on their dependency depth.
+analyzes the dependency graph of packages, computes a topological sort,
+and moves packages into directories named after NATO phonetic levels
+based on their dependency depth.
 Leaf packages (no internal dependencies) go to level 0, their
 dependents to alfa, and so on up through the NATO alphabet.
+In go mode the graph comes from
+.BR "go list" ;
+in rust mode from
+.BR "cargo metadata" .
 .PP
 The
 .B export
@@ -48,30 +78,104 @@ subcommand generates facade packages that re-export symbols from
 .I internal/
 packages, creating a public API surface in
 .IR pkgs/ .
-Types are re-exported as aliases, non-generic functions and variables
-as var bindings, and constants as const bindings.
+In go mode, types are re-exported as aliases, non-generic functions and
+variables as var bindings, and constants as const bindings.
 Generic functions are wrapped because Go does not support assigning
 them to variables without instantiation (see
 .UR https://github.com/golang/go/issues/52654
 golang/go#52654\c
 .UE ).
 Functions whose signatures reference unexported types are skipped.
-.PP
-Code generation uses
+Go code generation uses
 .B jennifer
 (github.com/dave/jennifer) for proper import management.
+In rust mode, facades are one-line glob re-export crates; see the
+.B export
+subsection under
+.BR SUBCOMMANDS .
+.SH LANGUAGES
+.B dagnabit
+operates on Go modules (go mode) and cargo workspaces (rust mode).
+The mode is auto-detected by walking up from the current directory; the
+first directory containing either marker wins:
+.TP
+.B go.mod
+go mode.
+.TP
+.B Cargo.toml containing a [workspace] table
+rust mode. A crate-only
+.B Cargo.toml
+(a
+.B [package]
+table without
+.BR [workspace] )
+does not count; the walk continues upward past it.
+.PP
+Finding both markers in the same directory, or neither anywhere up to
+the filesystem root, is an error. Pass
+.B \-lang go
+or
+.B \-lang rust
+to disambiguate;
+.B \-lang
+also restricts the upward walk to the named language's marker.
+.PP
+Go mode must still be run from the module root (the directory containing
+.IR go.mod ):
+the pre-detection contract of resolving paths against the current
+directory is preserved. Rust mode operates on the detected workspace
+root and may be invoked from any subdirectory of the workspace.
+.PP
+The
+.B \-module
+flag is go-only; combining it with rust mode is an error.
+.SS "Runtime requirements (rust mode)"
+Rust mode shells out to
+.BR cargo (1),
+which must be on
+.BR PATH .
+Crate renames
+.RB ( move
+or
+.B rename
+with a differing leaf) additionally require
+.B ast-grep
+for dependent-source rewrites. The Nix package wraps the
+.B dagnabit
+binary with ast-grep appended to
+.B PATH
+as a fallback; a user-provided ast-grep earlier on
+.B PATH
+wins.
 .SH SUBCOMMANDS
 .SS "reposition (default)"
 Analyze and reposition packages based on dependency depth.
-Must be run from a directory containing
+In go mode, must be run from a directory containing
 .IR go.mod .
+.PP
+In rust mode, crates are the unit of repositioning. The dependency
+graph is read from
+.BR "cargo metadata \-\-format\-version 1 \-\-no\-deps" ;
+only path-dependencies that resolve to workspace members contribute
+edges (registry dependencies are ignored). Moving a crate rewrites the
+relative path-dependencies the move invalidated in every member
+.B Cargo.toml
+plus the
+.B [workspace]
+members entry in the root manifest; no
+.I .rs
+file is touched (crate names do not change in a pure move). Each move
+is gated by re-running
+.B cargo metadata
+to verify the workspace still resolves.
 .SS "move"
-Relocate a single Go package from
+Relocate a single package from
 .I src
 to
 .I dst
-(both relative to the module root). When the leaf directory name differs
-between
+(both relative to the module or workspace root).
+.PP
+In go mode, when the leaf directory name differs between
 .I src
 and
 .IR dst ,
@@ -86,20 +190,103 @@ in every caller, using
 .B golang.org/x/tools/go/packages
 to discriminate package uses from local variables, aliased imports, and
 dot-imports.
-.PP
 A pre-move analysis aborts if
 .B packages.Load
 reports any type errors in the module. Pass
 .B \-\-force
 to proceed anyway.
-.SS "export"
-Generate
-.I pkgs/
-facade files from
-.I internal/
-packages.
 .PP
-After generation, if a
+In rust mode, a move whose leaf is unchanged is a pure directory move
+with Cargo.toml-only rewrites, exactly as in
+.BR reposition .
+When the leaf differs, the move is a crate rename: in addition to the
+directory move and manifest path-dependency rewrites,
+.B dagnabit
+rewrites the crate's
+.B [package]
+name (preserving the
+.IB <name> _internal
+convention:
+.IB oldLeaf _internal
+\(->
+.IB newLeaf _internal ),
+renames the dependency key in every directly dependent member's
+.BR Cargo.toml ,
+and rewrites source references in those dependents via
+.B ast-grep
+using a single whole-identifier pattern (the old lib-target identifier
+\(-> the new one), which matches use declarations, qualified
+expressions, and type positions without substring false positives.
+.PP
+Rust renames are gated by
+.B cargo check \-\-workspace
+both before and after the rewrite;
+.B \-\-force
+skips only the pre-flight check. Independent of
+.BR \-\-force ,
+a rename always verifies ast-grep is on
+.B PATH
+and fails fast if a generated facade
+.IB pkgs/ oldLeaf
+exists, before any tree mutation: facades are generated, not renamed;
+remove it and re-run
+.B dagnabit export
+after the rename. On a post-flight failure the tree is left dirty for
+inspection.
+.SS "rename"
+Reposition ONE package (go) or crate (rust) to the NATO level dictated
+by its transitive internal dependencies, optionally renaming its leaf.
+Other packages are NOT moved, even if they sit at the wrong level; use
+the default reposition subcommand to rebalance the whole tree.
+.PP
+The destination is computed, not given: the leaf is kept (or replaced
+by
+.IR new\-leaf ,
+when given) and the level segment is replaced by the computed one. The
+actual move delegates to
+.BR move ,
+so the per-language rewrite and gating behavior described there applies
+unchanged. In go mode,
+.I src
+is a two-component
+.I <level>/<leaf>
+path; in rust mode it must be a three-component
+.I <prefix>/<level>/<leaf>
+path.
+.SS "export"
+Generate facades from
+.I internal/
+packages into the output directory (default
+.IR pkgs/ ).
+.PP
+Three invocation modes:
+.TP
+.B "dagnabit export"
+Scan
+.I internal/
+for opted-in packages and generate facades for each. In go mode, a
+package opts in with a
+.B //go:generate dagnabit export
+directive in a source file; in rust mode, with
+.B [package.metadata.dagnabit] export = true
+in the crate manifest.
+.TP
+.BI "dagnabit export " packages...
+Generate facades for the specified packages (go: package patterns such
+as
+.BR ./internal/alfa/... ;
+rust: crate directories relative to the workspace root, such as
+.BR internal/alfa/store ).
+.TP
+.B "dagnabit export \-\-library"
+Export every package under
+.IR internal/ .
+In go mode this fails if any
+.B //go:generate dagnabit export
+directives exist; in rust mode it exports every crate under
+.IR internal/ .
+.PP
+In go mode, after generation, if a
 .BR treefmt (1)
 configuration
 .RB ( treefmt.toml ,
@@ -120,25 +307,34 @@ with the output dir as a positional argument. This is skipped under
 .B \-\-dry\-run
 and when neither tool is available.
 .PP
-Three invocation modes:
-.TP
-.B "dagnabit export"
-Scan
-.I internal/
-for files containing
-.B //go:generate dagnabit export
-directives and generate facades for each.
-.TP
-.BI "dagnabit export " packages...
-Generate facades for the specified package patterns
-(e.g.,
-.BR ./internal/alfa/... ).
-.TP
-.B "//go:generate dagnabit export"
-Place this directive in a source file within an internal package.
-Run
-.B go generate
-to invoke dagnabit for that package.
+In rust mode, facades are glob re-export crates: for an internal crate
+at
+.IB internal/<level>/ name
+whose
+.B [package]
+name is
+.IB name _internal\fR,\fP
+.B export
+generates
+.IB pkgs/ name /Cargo.toml
+(a single path-dependency on the internal crate) and
+.IB pkgs/ name /src/lib.rs
+containing
+.BI "pub use " name "_internal::*;"
+and idempotently adds the facade to the root
+.B [workspace]
+members. Internal crates MUST follow the
+.IB <name> _internal
+package-name convention; an internal crate whose
+.B [package]
+name equals its facade name is an error.
+.B No
+formatter pass runs on rust facades: the generated output is
+byte-canonical (rustfmt-clean) by construction, keeping
+.B export
+and
+.B \-\-check
+environment-independent.
 .SH POSITIONAL ARGUMENTS
 .TP
 .IR prefix ...
@@ -172,43 +368,95 @@ its dependency height, producing
 Implies
 .BR "\-depth 2" .
 .TP
+.BI \-lang " go|rust"
+Operating language. Auto-detected when empty (see
+.BR LANGUAGES ).
+.TP
 .BI \-module " path"
 Go module path. Read from
 .I go.mod
-if empty.
+if empty. Go-only.
 .SS "Move options"
 .TP
 .BR \-n ", " \-\-dry\-run
-Show what would be moved without moving. Prints counts of package-decl
-rewrites and qualified-reference rewrite sites.
+Show what would be moved without moving: a
+.B would-move
+event is emitted for the planned move. In rust mode, a leaf rename
+additionally prints the rename plan with per-pattern ast-grep match
+counts (same-leaf moves print only the planned move).
 .TP
 .BR \-v ", " \-\-verbose
 Enable verbose output on stderr.
 .TP
 .B \-\-force
-Proceed even if
+Go: proceed even if
 .B packages.Load
 reports type errors. Rewrites may miss call sites in packages with type
 errors; use only when the errors are unrelated to the moved package.
+Rust: skip the
+.B cargo check \-\-workspace
+pre-flight gate (the post-flight gate still runs).
+.TP
+.BI \-lang " go|rust"
+Operating language. Auto-detected when empty (see
+.BR LANGUAGES ).
 .TP
 .BI \-module " path"
 Go module path. Read from
 .I go.mod
-if empty.
+if empty. Go-only.
+.SS "Rename options"
+Same flags as
+.BR move :
+.BR \-n / \-\-dry\-run ,
+.BR \-v / \-\-verbose ,
+.BR \-\-force ,
+.BI \-lang " go|rust"
+and the go-only
+.BI \-module " path"
+all behave identically.
 .SS "Export options"
 .TP
 .BR \-n ", " \-\-dry\-run
 Show what would be generated without writing files.
 .TP
 .BI \-output\-dir " dir"
-Output directory for generated facades, relative to the module root
-(default:
+Output directory for generated facades, relative to the module or
+workspace root (default:
 .BR pkgs ).
+.TP
+.B \-\-library
+Export facades for every package under
+.IR internal/ .
+Does not accept package arguments. Go mode fails if any
+.B //go:generate dagnabit export
+directives exist.
+.TP
+.BR \-c ", " \-\-check
+Verify the committed facades match a fresh export without writing:
+regenerate into a temporary directory, byte-compare against the
+committed tree, and exit nonzero on drift. Works with
+.BR \-\-library ,
+explicit packages, or the directive scan.
+.TP
+.B \-\-copy
+Copy internal source files into
+.IR pkgs/ ,
+rewriting only intra-module imports, instead of emitting thin re-export
+aliases. Go-only.
+.TP
+.B \-\-no\-rewrite\-consumers
+Skip rewriting external workspace consumers' imports to the new facade
+path. Go-only.
+.TP
+.BI \-lang " go|rust"
+Operating language. Auto-detected when empty (see
+.BR LANGUAGES ).
 .TP
 .BI \-module " path"
 Go module path. Read from
 .I go.mod
-if empty.
+if empty. Go-only.
 .SH EXAMPLES
 Reposition packages in a repo with
 .I lib/
@@ -290,8 +538,44 @@ Dry-run to see what would be generated:
 dagnabit export -n ./internal/...
 .fi
 .RE
+.PP
+Dry-run a repositioning of cargo workspace crates under
+.I internal/
+(runs from any subdirectory of the workspace):
+.PP
+.RS
+.nf
+dagnabit -n -v -lang rust internal
+.fi
+.RE
+.PP
+Generate glob facades for every internal crate of a cargo workspace:
+.PP
+.RS
+.nf
+dagnabit export --library
+.fi
+.RE
+.PP
+Move a crate with a rename (rewrites the [package] name, dependents'
+dependency keys, and dependents' sources via ast-grep, gated by
+.BR "cargo check" ):
+.PP
+.RS
+.nf
+dagnabit move internal/alfa/store internal/alfa/blob_store
+.fi
+.RE
+.PP
+Verify the committed rust facades are in sync without writing:
+.PP
+.RS
+.nf
+dagnabit export --check --library
+.fi
+.RE
 .SH GENERATED OUTPUT
-For an internal package at
+In go mode, for an internal package at
 .IR internal/alfa/blob_store_id ,
 dagnabit generates
 .IR pkgs/blob_store_id/main.go :
@@ -315,8 +599,39 @@ var (
 )
 .fi
 .RE
+.PP
+In rust mode, for an internal crate at
+.I internal/alfa/blob_store_id
+whose
+.B [package]
+name is
+.BR blob_store_id_internal ,
+dagnabit generates
+.I pkgs/blob_store_id/Cargo.toml
+and
+.IR pkgs/blob_store_id/src/lib.rs :
+.PP
+.RS
+.nf
+[package]
+name = "blob_store_id"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+blob_store_id_internal = { path = "../../internal/alfa/blob_store_id" }
+.fi
+.RE
+.PP
+.RS
+.nf
+// Code generated by dagnabit; DO NOT EDIT.
+
+pub use blob_store_id_internal::*;
+.fi
+.RE
 .SH DIRECTIVES
-Place the following comment in any
+In go mode, place the following comment in any
 .I .go
 file within an internal package to mark it for export:
 .PP
@@ -324,22 +639,41 @@ file within an internal package to mark it for export:
 .B //go:generate dagnabit export
 .RE
 .PP
+In rust mode, the analog is a manifest key in the internal crate's
+.BR Cargo.toml :
+.PP
+.RS
+.nf
+[package.metadata.dagnabit]
+export = true
+.fi
+.RE
+.PP
 When
 .B dagnabit export
 is run without arguments, it scans
 .I internal/
-for this directive.
+for these markers.
 .SH EXIT STATUS
 .TP
 .B 0
 Success.
 .TP
 .B 1
-Error (dependency cycle, missing go.mod, generation failure, etc.).
+Error (dependency cycle, missing
+.I go.mod
+or
+.B [workspace]
+.IR Cargo.toml ,
+generation failure, failed cargo gate, etc.).
 .SH SEE ALSO
 .BR go-generate (1),
 .BR go-list (1),
-.BR treefmt (1)
+.BR treefmt (1),
+.BR cargo (1),
+.BR cargo-metadata (1),
+.BR cargo-check (1),
+.BR ast-grep (1)
 .SH BUGS
 Report bugs at
 .UR https://github.com/amarbel-llc/purse-first/issues
