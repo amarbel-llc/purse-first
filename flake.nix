@@ -13,14 +13,12 @@
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.flake-utils.follows = "utils";
     };
-    # conformist: the linter + formatter multiplexer (treefmt successor).
-    # Config lives in ./conformist.toml.
-    conformist = {
-      url = "github:amarbel-llc/conformist";
-      inputs.igloo.follows = "igloo";
-      inputs.nixpkgs-master.follows = "nixpkgs-master";
-      inputs.utils.follows = "utils";
-    };
+    # conformist is deliberately NOT a flake input: conformist itself takes
+    # purse-first as an input (golangci-lint-dewey), so a conformist input
+    # here forms a cycle that unrolls igloo duplicates into every consumer's
+    # lock graph. conformist resolves from PATH instead (the eng devshell
+    # ships a cwd-aware wrapper everywhere); formatting/linting goes through
+    # `just codemod-fmt` / `just lint-conformist`, driven by ./conformist.toml.
   };
 
   outputs =
@@ -30,7 +28,6 @@
       nixpkgs-master,
       utils,
       gomod2nix,
-      conformist,
     }:
     let
       # Per-system Nix interface to the Go workspace. See gomod.nix. Builds
@@ -70,22 +67,6 @@
         };
         devenvs = buildDevenvs system;
         gomod = gomodBySystem.${system};
-
-        # `nix fmt` entry point: conformist (the treefmt successor) wrapped with
-        # the formatter binaries its ./conformist.toml drives on PATH. Formatting
-        # drift is gated by `just lint` (conformist check), not a flake check.
-        conformistFmt = pkgs.writeShellApplication {
-          name = "conformist-fmt";
-          runtimeInputs = [
-            conformist.packages.${system}.default
-            pkgs-master.gofumpt
-            pkgs-master.gotools
-            pkgs.nixfmt
-            pkgs.shfmt
-            pkgs.shellcheck
-          ];
-          text = ''exec conformist "$@"'';
-        };
       in
       {
         packages = gomod.packages // {
@@ -107,12 +88,12 @@
               pkgs.gum
               pkgs.openssh
               pkgs-master.claude-code
-              # conformist (treefmt successor) + the one formatter binary its
-              # conformist.toml drives that the devShell doesn't already carry.
-              # gofumpt/goimports/shfmt/shellcheck come from the go/shell devenvs;
-              # nixfmt is added here now that the treefmt-nix wrapper is gone.
-              # `dagnabit export` resolves `conformist` from PATH for facade formatting.
-              conformist.packages.${system}.default
+              # conformist itself comes from the ambient environment (the eng
+              # devshell ships it; see the inputs comment for why it must not
+              # be a flake input). The devShell carries the formatter binaries
+              # its conformist.toml drives: gofumpt/goimports/shfmt/shellcheck
+              # via the go/shell devenvs, nixfmt here. `dagnabit export` and
+              # the just recipes resolve `conformist` from PATH.
               pkgs.nixfmt
             ];
             inputsFrom = [
@@ -131,8 +112,8 @@
           rust = devenvs.rust.devShells.default;
         };
 
-        # `nix fmt` runs conformist (see conformistFmt above).
-        formatter = conformistFmt;
+        # No `formatter` output: it would need conformist, which must not be
+        # a flake input (see the inputs comment). Use `just codemod-fmt`.
       }
     );
 }

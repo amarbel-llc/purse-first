@@ -22,8 +22,7 @@ just validate           # nix flake check + plugin manifest validation
 just lint               # go vet + lint-dewey_pkgs_drift (facade drift) + lint-conformist (read-only format+lint gate)
 just build              # build-nix-gomod2nix + nix build (default = purse-first CLI)
 just test               # Run ALL tests (Go + BATS integration)
-nix fmt                 # Repo-wide treefmt (Go via gofumpt, Nix via nixfmt, shell via shfmt)
-just codemod-fmt        # conformist pass (codemod-fmt-conformist) + Go-only go fmt (codemod-fmt-go)
+just codemod-fmt        # Repo-wide formatter: conformist pass (codemod-fmt-conformist) + Go-only go fmt (codemod-fmt-go). There is no `nix fmt` — conformist must not be a flake input (cycle; see flake.nix inputs comment), it resolves from the eng devshell's PATH
 just codemod-fmt-go     # `go fmt ./...` only — for Go-only quick reformat
 just build-nix-gomod2nix # Sync go.work and regenerate gomod2nix.toml
 just update-go           # alias for build-nix-gomod2nix
@@ -190,7 +189,7 @@ Nix builds output to `result`/`result-*` symlinks (managed by nix, already gitig
 
 ### Code Style
 
-- **Nix**: Format with `nix fmt` (conformist → nixfmt)
+- **Nix**: Format with `just codemod-fmt` (conformist → nixfmt)
 - **Shell**: `set -euo pipefail`, 2-space indent, `[[ ]]` conditionals, quote all vars. Format with `shfmt -s -i=2`
 - **Go**: `goimports` + `gofumpt`
 - **Tests**: TAP-14 output format when reasonable, BATS for CLI integration tests
