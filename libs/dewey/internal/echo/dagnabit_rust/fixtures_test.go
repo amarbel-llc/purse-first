@@ -16,6 +16,15 @@ func requireCargo(t *testing.T) {
 	}
 }
 
+// requireAstGrep skips the calling test when ast-grep is not on PATH.
+func requireAstGrep(t *testing.T) {
+	t.Helper()
+
+	if _, err := exec.LookPath("ast-grep"); err != nil {
+		t.Skip("ast-grep not on PATH")
+	}
+}
+
 // writeFixture creates a file with parents under dir.
 func writeFixture(t *testing.T, dir, relPath, content string) {
 	t.Helper()
@@ -122,10 +131,17 @@ edition = "2021"
 blob_store_id_internal = { path = "../../0/blob_store_id" }
 `)
 
+	// Both reference styles on purpose: the renamer's ast-grep pattern
+	// set must rewrite use-imports as well as qualified paths.
 	writeFixture(
 		t,
 		root,
 		"internal/alfa/store/src/lib.rs",
-		"pub fn make() -> u32 { blob_store_id_internal::make_id() }\n",
+		`use blob_store_id_internal::make_id as mk;
+
+pub fn make() -> u32 { blob_store_id_internal::make_id() }
+
+pub fn make_via_use() -> u32 { mk() }
+`,
 	)
 }

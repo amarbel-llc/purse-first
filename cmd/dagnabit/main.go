@@ -43,12 +43,15 @@ func runRename() {
 	var modulePath string
 	var force bool
 
+	var lang string
+
 	renameFlags.BoolVar(&dryRun, "n", false, "show what would happen without moving")
 	renameFlags.BoolVar(&dryRun, "dry-run", false, "show what would happen without moving")
 	renameFlags.BoolVar(&verbose, "v", false, "enable verbose output")
 	renameFlags.BoolVar(&verbose, "verbose", false, "enable verbose output")
 	renameFlags.StringVar(&modulePath, "module", "", "Go module path (read from go.mod if empty)")
-	renameFlags.BoolVar(&force, "force", false, "proceed even if packages.Load reports type errors")
+	renameFlags.BoolVar(&force, "force", false, "proceed even if packages.Load reports type errors (go) or cargo check fails (rust)")
+	renameFlags.StringVar(&lang, "lang", "", "operating language: go or rust (auto-detected when empty)")
 	renameFlags.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: dagnabit rename [flags] <src> [<new-leaf>]\n\n")
 		fmt.Fprintf(os.Stderr, "Repositions ONE package to the NATO level dictated by its\n")
@@ -83,7 +86,7 @@ func runRename() {
 		os.Exit(1)
 	}
 
-	modulePath, err = go_module.ResolveModulePath(dir, modulePath)
+	detected, rootDir, err := detectLanguage(dir, lang)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
@@ -91,16 +94,53 @@ func runRename() {
 
 	mapper := nato_levels.MakeNATOLevelMapper()
 
-	mover := &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
+	switch detected {
+	case langGo:
+		// Deliberately dir (cwd), not rootDir: go mode keeps its
+		// pre-detection contract of running from the module root.
+		// Honoring rootDir from a subdirectory is tracked separately.
+		modulePath, err = go_module.ResolveModulePath(dir, modulePath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
 
-	opts := dagnabit.MoveOptions{
-		DryRun:          dryRun,
-		Verbose:         verbose,
-		AllowTypeErrors: force,
-	}
+		mover := &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
 
-	if err := mover.RenamePackage(src, newLeaf, mapper, opts); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		opts := dagnabit.MoveOptions{
+			DryRun:          dryRun,
+			Verbose:         verbose,
+			AllowTypeErrors: force,
+		}
+
+		if err := mover.RenamePackage(src, newLeaf, mapper, opts); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+	case langRust:
+		if modulePath != "" {
+			fmt.Fprintf(os.Stderr, "error: -module is go-only; not valid with -lang rust\n")
+			os.Exit(1)
+		}
+
+		renamer := &dagnabit_rust.Renamer{WorkspaceRoot: rootDir}
+
+		opts := dagnabit_rust.Options{
+			DryRun:  dryRun,
+			Verbose: verbose,
+			Force:   force,
+		}
+
+		if err := renamer.Rename(src, newLeaf, mapper, opts); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+	default:
+		// detectLanguage never returns langUnknown with a nil error;
+		// fail fast if a future language breaks that invariant.
+		fmt.Fprintf(os.Stderr, "error: internal: unhandled language %d\n", detected)
 		os.Exit(1)
 	}
 }
@@ -230,12 +270,15 @@ func runMove() {
 	var modulePath string
 	var force bool
 
+	var lang string
+
 	moveFlags.BoolVar(&dryRun, "n", false, "show what would be moved without moving")
 	moveFlags.BoolVar(&dryRun, "dry-run", false, "show what would be moved without moving")
 	moveFlags.BoolVar(&verbose, "v", false, "enable verbose output")
 	moveFlags.BoolVar(&verbose, "verbose", false, "enable verbose output")
 	moveFlags.StringVar(&modulePath, "module", "", "Go module path (read from go.mod if empty)")
-	moveFlags.BoolVar(&force, "force", false, "proceed even if packages.Load reports type errors")
+	moveFlags.BoolVar(&force, "force", false, "proceed even if packages.Load reports type errors (go) or cargo check fails (rust)")
+	moveFlags.StringVar(&lang, "lang", "", "operating language: go or rust (auto-detected when empty)")
 	moveFlags.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: dagnabit move [flags] <src> <dst>\n\n")
 		fmt.Fprintf(os.Stderr, "Positional arguments:\n")
@@ -263,22 +306,59 @@ func runMove() {
 		os.Exit(1)
 	}
 
-	modulePath, err = go_module.ResolveModulePath(dir, modulePath)
+	detected, rootDir, err := detectLanguage(dir, lang)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
-	mover := &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
+	switch detected {
+	case langGo:
+		// Deliberately dir (cwd), not rootDir: go mode keeps its
+		// pre-detection contract of running from the module root.
+		// Honoring rootDir from a subdirectory is tracked separately.
+		modulePath, err = go_module.ResolveModulePath(dir, modulePath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
 
-	opts := dagnabit.MoveOptions{
-		DryRun:          dryRun,
-		Verbose:         verbose,
-		AllowTypeErrors: force,
-	}
+		mover := &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
 
-	if err := mover.MovePackageRename(src, dst, opts); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		opts := dagnabit.MoveOptions{
+			DryRun:          dryRun,
+			Verbose:         verbose,
+			AllowTypeErrors: force,
+		}
+
+		if err := mover.MovePackageRename(src, dst, opts); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+	case langRust:
+		if modulePath != "" {
+			fmt.Fprintf(os.Stderr, "error: -module is go-only; not valid with -lang rust\n")
+			os.Exit(1)
+		}
+
+		renamer := &dagnabit_rust.Renamer{WorkspaceRoot: rootDir}
+
+		opts := dagnabit_rust.Options{
+			DryRun:  dryRun,
+			Verbose: verbose,
+			Force:   force,
+		}
+
+		if err := renamer.MoveRename(src, dst, opts); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+	default:
+		// detectLanguage never returns langUnknown with a nil error;
+		// fail fast if a future language breaks that invariant.
+		fmt.Fprintf(os.Stderr, "error: internal: unhandled language %d\n", detected)
 		os.Exit(1)
 	}
 }

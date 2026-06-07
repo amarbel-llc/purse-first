@@ -11,6 +11,13 @@ import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/dag
 // names the internal crate, never its contents.
 type Exporter = internal.Exporter
 
+// LevelMapper is the structural subset of dagnabit.LevelMapper this
+// package needs. It is declared locally instead of importing dagnabit:
+// both packages live at echo level and the dewey tier convention
+// forbids echo→echo imports. nato_levels' mapper satisfies it
+// structurally at the CLI layer.
+type LevelMapper = internal.LevelMapper
+
 // Mover implements dagnabit.PackageMover for cargo workspaces: git-mv
 // the crate directory, then rewrite every relative path-dependency in
 // the workspace that the move invalidated (references TO the moved
@@ -18,3 +25,12 @@ type Exporter = internal.Exporter
 // relative base changed), plus the [workspace] members entry. No .rs
 // file is touched — crate names do not change in a pure move.
 type Mover = internal.Mover
+
+// Options mirrors dagnabit.MoveOptions for the rust renamer.
+type Options = internal.Options
+
+// Renamer moves and renames crates in a cargo workspace: the Mover's
+// directory move plus [package] name rewrite, dependent dep-key
+// renames, and ast-grep source rewrites, gated by cargo check on both
+// sides.
+type Renamer = internal.Renamer
