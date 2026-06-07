@@ -57,6 +57,7 @@
           go = import ./devenvs/go { inherit pkgs pkgs-master gomod2nix; };
           shell = import ./devenvs/shell { inherit pkgs; };
           bats = import ./devenvs/bats { inherit pkgs; };
+          rust = import ./devenvs/rust { inherit pkgs pkgs-master; };
         };
     in
     utils.lib.eachDefaultSystem (
@@ -118,6 +119,7 @@
               devenvs.go.devShells.default
               devenvs.shell.devShells.default
               devenvs.bats.devShells.default
+              devenvs.rust.devShells.default
             ];
             shellHook = ''
               echo "purse-first - dev environment"
@@ -126,6 +128,7 @@
           go = devenvs.go.devShells.default;
           shell = devenvs.shell.devShells.default;
           bats = devenvs.bats.devShells.default;
+          rust = devenvs.rust.devShells.default;
         };
 
         # `nix fmt` runs conformist (see conformistFmt above).
