@@ -96,16 +96,16 @@ func runRename() {
 
 	switch detected {
 	case langGo:
-		// Deliberately dir (cwd), not rootDir: go mode keeps its
-		// pre-detection contract of running from the module root.
-		// Honoring rootDir from a subdirectory is tracked separately.
-		modulePath, err = go_module.ResolveModulePath(dir, modulePath)
+		// rootDir is the detected module root (the directory containing
+		// go.mod), so go mode works from any subdirectory; prefixes and
+		// package paths stay root-relative (purse-first#142).
+		modulePath, err = go_module.ResolveModulePath(rootDir, modulePath)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
 
-		mover := &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
+		mover := &dagnabit.GitMover{Dir: rootDir, ModulePath: modulePath}
 
 		opts := dagnabit.MoveOptions{
 			DryRun:          dryRun,
@@ -198,24 +198,24 @@ func runReposition() {
 
 	switch detected {
 	case langGo:
-		// Deliberately dir (cwd), not rootDir: go mode keeps its
-		// pre-detection contract of running from the module root.
-		// Honoring rootDir from a subdirectory is tracked separately.
-		modulePath, err = go_module.ResolveModulePath(dir, modulePath)
+		// rootDir is the detected module root (the directory containing
+		// go.mod), so go mode works from any subdirectory; prefixes and
+		// package paths stay root-relative (purse-first#142).
+		modulePath, err = go_module.ResolveModulePath(rootDir, modulePath)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
 
 		reader = &go_list.Reader{
-			Dir:             dir,
+			Dir:             rootDir,
 			ModulePath:      modulePath,
 			PackagePrefixes: prefixes,
 			ComponentDepth:  depth,
 			Verbose:         verbose,
 		}
 
-		mover = &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
+		mover = &dagnabit.GitMover{Dir: rootDir, ModulePath: modulePath}
 
 	case langRust:
 		if modulePath != "" {
@@ -314,16 +314,16 @@ func runMove() {
 
 	switch detected {
 	case langGo:
-		// Deliberately dir (cwd), not rootDir: go mode keeps its
-		// pre-detection contract of running from the module root.
-		// Honoring rootDir from a subdirectory is tracked separately.
-		modulePath, err = go_module.ResolveModulePath(dir, modulePath)
+		// rootDir is the detected module root (the directory containing
+		// go.mod), so go mode works from any subdirectory; prefixes and
+		// package paths stay root-relative (purse-first#142).
+		modulePath, err = go_module.ResolveModulePath(rootDir, modulePath)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
 
-		mover := &dagnabit.GitMover{Dir: dir, ModulePath: modulePath}
+		mover := &dagnabit.GitMover{Dir: rootDir, ModulePath: modulePath}
 
 		opts := dagnabit.MoveOptions{
 			DryRun:          dryRun,
@@ -408,10 +408,10 @@ func runExport() {
 
 	switch detected {
 	case langGo:
-		// Deliberately dir (cwd), not rootDir: go mode keeps its
-		// pre-detection contract of running from the module root.
-		// Honoring rootDir from a subdirectory is tracked separately.
-		modulePath, err = go_module.ResolveModulePath(dir, modulePath)
+		// rootDir is the detected module root (the directory containing
+		// go.mod), so go mode works from any subdirectory; prefixes and
+		// package paths stay root-relative (purse-first#142).
+		modulePath, err = go_module.ResolveModulePath(rootDir, modulePath)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
@@ -419,7 +419,7 @@ func runExport() {
 
 		exporter := &dagnabit.Exporter{
 			ModulePath:          modulePath,
-			Dir:                 dir,
+			Dir:                 rootDir,
 			OutputDir:           outputDir,
 			DryRun:              dryRun,
 			SkipConsumerRewrite: noRewriteConsumers,

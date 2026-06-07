@@ -120,11 +120,13 @@ to disambiguate;
 .B \-lang
 also restricts the upward walk to the named language's marker.
 .PP
-Go mode must still be run from the module root (the directory containing
-.IR go.mod ):
-the pre-detection contract of resolving paths against the current
-directory is preserved. Rust mode operates on the detected workspace
-root and may be invoked from any subdirectory of the workspace.
+Both modes operate on the detected root: the directory containing
+.I go.mod
+(go) or the workspace
+.I Cargo.toml
+(rust). Either mode may be invoked from any subdirectory beneath its
+root. Prefix arguments and package paths are always interpreted
+relative to that root, not the invocation directory.
 .PP
 The
 .B \-module

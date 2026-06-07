@@ -287,3 +287,18 @@ function go_mode_is_unaffected { # @test
   assert_success
   assert_output ""
 }
+
+function go_mode_works_from_module_subdirectory { # @test
+  # purse-first#142: language detection walks up and finds the module
+  # root, so go mode must operate on it from any subdirectory — same as
+  # rust mode — with prefixes interpreted relative to the root.
+  command -v go >/dev/null || skip "go not on PATH"
+  write_go_fixture
+  cd "$fixture/internal" || return 1
+
+  export GOWORK=off
+
+  run "$dagnabit" -n internal
+  assert_success
+  assert_output ""
+}
