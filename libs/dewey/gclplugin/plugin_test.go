@@ -19,9 +19,9 @@ func TestNewDefaultsToAllAnalyzers(t *testing.T) {
 		t.Fatalf("BuildAnalyzers: %v", err)
 	}
 
-	// Only the default-on analyzers (defererr, seqerror, repool) appear;
-	// actx is opt-in and stays out of the default set.
-	if got, want := len(analyzers), 3; got != want {
+	// Only the default-on analyzers (defererr, seqerror, repool, testui)
+	// appear; actx and paramobj are opt-in and stay out of the default set.
+	if got, want := len(analyzers), 4; got != want {
 		t.Fatalf("default analyzer count = %d, want %d", got, want)
 	}
 
@@ -39,37 +39,42 @@ func TestSettingsSelectAnalyzers(t *testing.T) {
 		{
 			name:     "repool disabled",
 			settings: map[string]any{"repool": false},
-			want:     []string{"defererr", "seqerror"},
+			want:     []string{"defererr", "seqerror", "testui"},
+		},
+		{
+			name:     "testui disabled",
+			settings: map[string]any{"testui": false},
+			want:     []string{"defererr", "seqerror", "repool"},
 		},
 		{
 			name:     "only defererr",
-			settings: map[string]any{"defererr": true, "seqerror": false, "repool": false},
+			settings: map[string]any{"defererr": true, "seqerror": false, "repool": false, "testui": false},
 			want:     []string{"defererr"},
 		},
 		{
 			name:     "all explicitly off",
-			settings: map[string]any{"defererr": false, "seqerror": false, "repool": false},
+			settings: map[string]any{"defererr": false, "seqerror": false, "repool": false, "testui": false},
 			want:     nil,
 		},
 		{
 			name:     "actx opt-in",
 			settings: map[string]any{"actx": true},
-			want:     []string{"defererr", "seqerror", "repool", "actx"},
+			want:     []string{"defererr", "seqerror", "repool", "testui", "actx"},
 		},
 		{
 			name:     "actx opt-in alone",
-			settings: map[string]any{"defererr": false, "seqerror": false, "repool": false, "actx": true},
+			settings: map[string]any{"defererr": false, "seqerror": false, "repool": false, "testui": false, "actx": true},
 			want:     []string{"actx"},
 		},
 		{
 			name:     "paramobj opt-in",
 			settings: map[string]any{"paramobj": true},
-			want:     []string{"defererr", "seqerror", "repool", "paramobj"},
+			want:     []string{"defererr", "seqerror", "repool", "testui", "paramobj"},
 		},
 		{
 			name:     "both opt-ins",
 			settings: map[string]any{"actx": true, "paramobj": true},
-			want:     []string{"defererr", "seqerror", "repool", "actx", "paramobj"},
+			want:     []string{"defererr", "seqerror", "repool", "testui", "actx", "paramobj"},
 		},
 	}
 

@@ -170,6 +170,7 @@ in
     paramobj = mkDeweyBin "paramobj";
     repool = mkDeweyBin "repool";
     seqerror = mkDeweyBin "seqerror";
+    testui = mkDeweyBin "testui";
     reflexive-interface-generator = mkDeweyBin "reflexive-interface-generator";
   };
 }

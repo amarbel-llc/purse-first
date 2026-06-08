@@ -66,14 +66,15 @@ kept the public tool separate from reusable primitives.
 
 ## gclplugin/
 
-`libs/dewey/gclplugin/` registers the three static analyzers (`defererr`,
-`seqerror`, `repool`) as a golangci-lint **module plugin** so downstream
-repos that already gate on `golangci-lint` can fold them into that run
-instead of a separate `go vet -vettool` pass (see purse-first#120). It
-imports the stable `pkgs/analyzer_<name>.Analyzer` facades and calls
-`register.Plugin("dewey", New)`; `Settings` lets a consumer opt out per
-analyzer (all enabled by default; `repool` is a no-op outside pool-owning
-packages). This is additive — the `cmd/<name>` singlechecker + vettool
+`libs/dewey/gclplugin/` registers the dewey static analyzers as a
+golangci-lint **module plugin** so downstream repos that already gate on
+`golangci-lint` can fold them into that run instead of a separate
+`go vet -vettool` pass (see purse-first#120). `defererr`, `seqerror`,
+`repool`, and `testui` are enabled by default; `actx` and `paramobj` are
+opt-in. It imports the stable `pkgs/analyzer_<name>.Analyzer` facades and
+calls `register.Plugin("dewey", New)`; `Settings` lets a consumer toggle
+each analyzer (`repool` is a no-op outside pool-owning packages, and
+`testui` is a no-op outside test files). This is additive — the `cmd/<name>` singlechecker + vettool
 path stays for non-golangci consumers. Consumers wire it via
 `.custom-gcl.yml` + `golangci-lint custom`; the package doc comment carries
 the full snippet.

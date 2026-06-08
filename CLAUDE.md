@@ -57,9 +57,12 @@ The flake exposes these `packages.<system>` outputs (see `nix flake show`):
 ```sh
 nix build .#purse-first              # the purse-first CLI
 nix build .#dagnabit                 # libs/dewey rename/export tool
+nix build .#actx                     # dewey static analyzer
 nix build .#defererr                 # dewey static analyzer
+nix build .#paramobj                 # dewey static analyzer
 nix build .#repool                   # dewey static analyzer
 nix build .#seqerror                 # dewey static analyzer
+nix build .#testui                   # dewey static analyzer
 nix build .#reflexive-interface-generator  # dewey codegen tool
 nix build .#golangci-lint-dewey      # golangci-lint with the dewey module plugin linked in
 nix build .#manpages                 # go-mcp manpage tree
