@@ -4,29 +4,30 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"testing"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 // requireCargo skips the calling test when cargo is not on PATH.
-func requireCargo(t *testing.T) {
+func requireCargo(t test_ui.T) {
 	t.Helper()
 
 	if _, err := exec.LookPath("cargo"); err != nil {
-		t.Skip("cargo not on PATH")
+		t.T.Skip("cargo not on PATH")
 	}
 }
 
 // requireAstGrep skips the calling test when ast-grep is not on PATH.
-func requireAstGrep(t *testing.T) {
+func requireAstGrep(t test_ui.T) {
 	t.Helper()
 
 	if _, err := exec.LookPath("ast-grep"); err != nil {
-		t.Skip("ast-grep not on PATH")
+		t.T.Skip("ast-grep not on PATH")
 	}
 }
 
 // writeFixture creates a file with parents under dir.
-func writeFixture(t *testing.T, dir, relPath, content string) {
+func writeFixture(t test_ui.T, dir, relPath, content string) {
 	t.Helper()
 
 	abs := filepath.Join(dir, relPath)
@@ -40,7 +41,7 @@ func writeFixture(t *testing.T, dir, relPath, content string) {
 }
 
 // gitInTestRepo runs a git command in dir, failing the test on error.
-func gitInTestRepo(t *testing.T, dir string, args ...string) {
+func gitInTestRepo(t test_ui.T, dir string, args ...string) {
 	t.Helper()
 
 	cmd := exec.Command("git", args...)
@@ -63,7 +64,7 @@ func gitInTestRepo(t *testing.T, dir string, args ...string) {
 // and committed, because Mover uses `git mv`. The fixture is only useful
 // when cargo can read it, so it requires cargo on PATH (skipping the
 // calling test otherwise).
-func writeFixtureWorkspace(t *testing.T) string {
+func writeFixtureWorkspace(t test_ui.T) string {
 	t.Helper()
 
 	requireCargo(t)
@@ -86,7 +87,7 @@ func writeFixtureWorkspace(t *testing.T) string {
 // writeFixtureWorkspaceFiles writes the same workspace tree as
 // writeFixtureWorkspace but files-only: no git init, no cargo
 // requirement. Suitable for pure-file exporter tests.
-func writeFixtureWorkspaceFiles(t *testing.T) string {
+func writeFixtureWorkspaceFiles(t test_ui.T) string {
 	t.Helper()
 
 	root := t.TempDir()
@@ -98,7 +99,7 @@ func writeFixtureWorkspaceFiles(t *testing.T) string {
 // writeFixtureWorkspaceTree writes the fixture workspace's files under
 // root. The members array is deliberately multiline:
 // cargo_manifest.AddMember rejects single-line arrays by design.
-func writeFixtureWorkspaceTree(t *testing.T, root string) {
+func writeFixtureWorkspaceTree(t test_ui.T, root string) {
 	t.Helper()
 
 	writeFixture(t, root, "Cargo.toml", `[workspace]

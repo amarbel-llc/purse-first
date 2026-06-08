@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 // writeCheckFixture creates a temp module with the given internal packages
@@ -20,7 +22,7 @@ import (
 // which left these tests unexecuted in-repo (#127). The fixture's own config is
 // the nearest ancestor, so findTreefmtConfig resolves to it (formatter
 // "treefmt") rather than any real config further up.
-func writeCheckFixture(t *testing.T, pkgs map[string]string) *Exporter {
+func writeCheckFixture(t test_ui.T, pkgs map[string]string) *Exporter {
 	t.Helper()
 
 	tmpDir := t.TempDir()
@@ -53,7 +55,8 @@ func writeCheckFixture(t *testing.T, pkgs map[string]string) *Exporter {
 }
 
 func TestCheckAllPassesWhenInSync(t *testing.T) {
-	e := writeCheckFixture(t, map[string]string{
+	tt := test_ui.T{T: t}
+	e := writeCheckFixture(tt, map[string]string{
 		"alfa/widget": "package widget\n\ntype Widget struct{}\n",
 	})
 	if err := e.ExportAll(); err != nil {
@@ -65,7 +68,8 @@ func TestCheckAllPassesWhenInSync(t *testing.T) {
 }
 
 func TestCheckAllDetectsDrift(t *testing.T) {
-	e := writeCheckFixture(t, map[string]string{
+	tt := test_ui.T{T: t}
+	e := writeCheckFixture(tt, map[string]string{
 		"alfa/widget": "package widget\n\ntype Widget struct{}\n",
 	})
 	if err := e.ExportAll(); err != nil {
@@ -99,7 +103,8 @@ func TestCheckAllDetectsDrift(t *testing.T) {
 }
 
 func TestCheckAllDetectsMissingFacade(t *testing.T) {
-	e := writeCheckFixture(t, map[string]string{
+	tt := test_ui.T{T: t}
+	e := writeCheckFixture(tt, map[string]string{
 		"alfa/widget": "package widget\n\ntype Widget struct{}\n",
 	})
 	if err := e.ExportAll(); err != nil {
@@ -119,7 +124,8 @@ func TestCheckAllDetectsMissingFacade(t *testing.T) {
 // living alongside generated facades (e.g. pkgs/<x>/<x>_test.go) is not flagged
 // as stale drift — the exporter only produces main.go + build-tag files.
 func TestCheckAllIgnoresHandWrittenFacadeTests(t *testing.T) {
-	e := writeCheckFixture(t, map[string]string{
+	tt := test_ui.T{T: t}
+	e := writeCheckFixture(tt, map[string]string{
 		"alfa/widget": "package widget\n\ntype Widget struct{}\n",
 	})
 	if err := e.ExportAll(); err != nil {
@@ -141,7 +147,8 @@ func TestCheckAllIgnoresHandWrittenFacadeTests(t *testing.T) {
 // validates the named package and does not flag unrelated on-disk facades
 // (reportStale=false for partial regeneration).
 func TestCheckPackageScopedToOnePackage(t *testing.T) {
-	e := writeCheckFixture(t, map[string]string{
+	tt := test_ui.T{T: t}
+	e := writeCheckFixture(tt, map[string]string{
 		"alfa/widget": "package widget\n\ntype Widget struct{}\n",
 		"alfa/gadget": "package gadget\n\ntype Gadget struct{}\n",
 	})
@@ -173,8 +180,9 @@ func TestCheckPackageScopedToOnePackage(t *testing.T) {
 // behavior: a config-present tree with no formatter on PATH must error rather
 // than silently skip formatting (which would emit unformatted facades).
 func TestFormatOutputFailsLoudWhenFormatterMissing(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
-	mustMkdirAll(t, filepath.Join(tmpDir, "pkgs"))
+	mustMkdirAll(tt, filepath.Join(tmpDir, "pkgs"))
 	if err := os.WriteFile(filepath.Join(tmpDir, "conformist.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -206,6 +214,7 @@ func TestFormatOutputFailsLoudWhenFormatterMissing(t *testing.T) {
 // withTreeRootAwareFakeTreefmt): only files under its working directory are
 // formatted.
 func TestCheckAllReproducesFormatterAcrossTempDir(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 
 	// Force the treefmt branch with our own config. findTreefmtConfig finds this
@@ -218,13 +227,13 @@ func TestCheckAllReproducesFormatterAcrossTempDir(t *testing.T) {
 		t.Fatal(err)
 	}
 	pkgDir := filepath.Join(tmpDir, "internal", "alfa", "widget")
-	mustMkdirAll(t, pkgDir)
+	mustMkdirAll(tt, pkgDir)
 	if err := os.WriteFile(filepath.Join(pkgDir, "main.go"),
 		[]byte("package widget\n\ntype Widget struct{}\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	withTreeRootAwareFakeTreefmt(t)
+	withTreeRootAwareFakeTreefmt(tt)
 
 	e := &Exporter{
 		ModulePath:          "example.com/mod",

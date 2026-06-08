@@ -9,6 +9,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/tonistiigi/vt100"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 // syncWriter is a concurrency-safe io.Writer used to capture bubbletea
@@ -60,7 +62,7 @@ func findLineContaining(lines []string, substr string) int {
 // model, captures its output into a syncWriter, feeds the supplied
 // messages one by one, then sends BatchDone and waits for exit. The
 // captured raw output is returned for VT100 rendering.
-func runProgramWithMessages(t *testing.T, m Model, msgs []tea.Msg, batchErr error) []byte {
+func runProgramWithMessages(t test_ui.T, m Model, msgs []tea.Msg, batchErr error) []byte {
 	t.Helper()
 
 	out := &syncWriter{}
@@ -100,9 +102,10 @@ func runProgramWithMessages(t *testing.T, m Model, msgs []tea.Msg, batchErr erro
 }
 
 func TestVT_SuccessTerminalState(t *testing.T) {
+	tt := test_ui.T{T: t}
 	m := NewModel(WithTitle("loading tent"))
 	raw := runProgramWithMessages(
-		t, m,
+		tt, m,
 		[]tea.Msg{
 			OperationStarted{Name: "loading tent", Index: 1, Total: 1},
 			LogLine{Text: "blob 1"},
@@ -112,15 +115,16 @@ func TestVT_SuccessTerminalState(t *testing.T) {
 	)
 	lines, _ := renderScreen(raw)
 	if findLineContaining(lines, "✓ loading tent") < 0 {
-		t.Errorf("expected success line containing '✓ loading tent', got lines:\n%s",
+		tt.Errorf("expected success line containing '✓ loading tent', got lines:\n%s",
 			strings.Join(lines, "\n"))
 	}
 }
 
 func TestVT_FailureTerminalState(t *testing.T) {
+	tt := test_ui.T{T: t}
 	m := NewModel(WithTitle("loading tent"))
 	raw := runProgramWithMessages(
-		t, m,
+		tt, m,
 		[]tea.Msg{
 			OperationStarted{Name: "loading tent", Index: 1, Total: 1},
 			LogLine{Text: "bad data"},
@@ -129,7 +133,7 @@ func TestVT_FailureTerminalState(t *testing.T) {
 	)
 	lines, _ := renderScreen(raw)
 	if findLineContaining(lines, "✗ loading tent — failed") < 0 {
-		t.Errorf("expected failure line, got lines:\n%s", strings.Join(lines, "\n"))
+		tt.Errorf("expected failure line, got lines:\n%s", strings.Join(lines, "\n"))
 	}
 }
 

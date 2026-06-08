@@ -20,6 +20,7 @@ type TestContext struct {
 }
 
 func RunTestContext(
+	//testui:allow -- seam: receives the runtime *testing.T to build a TestContext.
 	t *testing.T,
 	run func(*TestContext),
 ) {
@@ -38,6 +39,7 @@ func RunTestContext(
 }
 
 func makeTestContext(
+	//testui:allow -- seam: builds the embedded test_ui.T from the stdlib T.
 	t *testing.T,
 	ctx errors.Context,
 ) *TestContext {

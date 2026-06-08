@@ -1,0 +1,36 @@
+# Runs the dewey static analyzers over this repo's OWN Go source via the
+# golangci-lint-dewey custom binary (see justfile `lint-dewey-self`).
+#
+# build-tags: test is required because dewey's test_ui.T — the type the
+# `testui` analyzer steers toward — lives behind //go:build test, and the
+# migrated test files import it.
+#
+# Scope note: this config currently gates the dewey module only (the
+# `lint-dewey-self` recipe runs from libs/dewey). The go-mcp and root
+# modules are a tracked follow-up.
+version: "2"
+
+run:
+  build-tags:
+    - test
+
+linters:
+  default: none
+  enable:
+    - dewey
+  settings:
+    custom:
+      dewey:
+        type: module
+        description: dewey static analyzers (defererr, seqerror, repool, testui)
+        # Defaults apply: defererr/seqerror/repool/testui on; actx/paramobj off.
+  exclusions:
+    rules:
+      # Levels 0 and alfa are at or below test_ui's own level (alfa), so
+      # they cannot depend on it — the testui analyzer is excluded there.
+      # (test_ui can later be lowered to level 0 to enable alfa adoption;
+      # tracked separately.) Level-0 packages can never use it regardless.
+      - path: internal/(0|alfa)/
+        text: "prefer dewey's test_ui.T"
+        linters:
+          - dewey

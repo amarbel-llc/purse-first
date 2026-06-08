@@ -5,9 +5,12 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 func TestInstallMCPCreatesNewConfig(t *testing.T) {
+	tt := test_ui.T{T: t}
 	app := NewUtility("chrest", "Chrome REST client")
 	app.MCPArgs = []string{"mcp"}
 
@@ -17,15 +20,16 @@ func TestInstallMCPCreatesNewConfig(t *testing.T) {
 		t.Fatalf("installMCPTo: %v", err)
 	}
 
-	config := readTestConfig(t, configPath)
-	server := getTestServer(t, config, "chrest")
+	config := readTestConfig(tt, configPath)
+	server := getTestServer(tt, config, "chrest")
 
-	assertField(t, server, "type", "stdio")
-	assertField(t, server, "command", "/nix/store/abc-chrest/bin/chrest")
-	assertArgs(t, server, []string{"mcp"})
+	assertField(tt, server, "type", "stdio")
+	assertField(tt, server, "command", "/nix/store/abc-chrest/bin/chrest")
+	assertArgs(tt, server, []string{"mcp"})
 }
 
 func TestInstallMCPPreservesExistingEntries(t *testing.T) {
+	tt := test_ui.T{T: t}
 	configPath := filepath.Join(t.TempDir(), ".claude.json")
 
 	existing := map[string]any{
@@ -37,7 +41,7 @@ func TestInstallMCPPreservesExistingEntries(t *testing.T) {
 			},
 		},
 	}
-	writeTestConfig(t, configPath, existing)
+	writeTestConfig(tt, configPath, existing)
 
 	app := NewUtility("grit", "Git MCP server")
 
@@ -45,17 +49,18 @@ func TestInstallMCPPreservesExistingEntries(t *testing.T) {
 		t.Fatalf("installMCPTo: %v", err)
 	}
 
-	config := readTestConfig(t, configPath)
+	config := readTestConfig(tt, configPath)
 
 	// Original entry preserved
-	_ = getTestServer(t, config, "other-server")
+	_ = getTestServer(tt, config, "other-server")
 
 	// New entry added
-	server := getTestServer(t, config, "grit")
-	assertField(t, server, "command", "/nix/store/xyz-grit/bin/grit")
+	server := getTestServer(tt, config, "grit")
+	assertField(tt, server, "command", "/nix/store/xyz-grit/bin/grit")
 }
 
 func TestInstallMCPUpdatesExistingEntry(t *testing.T) {
+	tt := test_ui.T{T: t}
 	configPath := filepath.Join(t.TempDir(), ".claude.json")
 
 	existing := map[string]any{
@@ -67,7 +72,7 @@ func TestInstallMCPUpdatesExistingEntry(t *testing.T) {
 			},
 		},
 	}
-	writeTestConfig(t, configPath, existing)
+	writeTestConfig(tt, configPath, existing)
 
 	app := NewUtility("chrest", "Chrome REST client")
 	app.MCPArgs = []string{"mcp"}
@@ -76,12 +81,13 @@ func TestInstallMCPUpdatesExistingEntry(t *testing.T) {
 		t.Fatalf("installMCPTo: %v", err)
 	}
 
-	config := readTestConfig(t, configPath)
-	server := getTestServer(t, config, "chrest")
-	assertField(t, server, "command", "/nix/store/new-chrest/bin/chrest")
+	config := readTestConfig(tt, configPath)
+	server := getTestServer(tt, config, "chrest")
+	assertField(tt, server, "command", "/nix/store/new-chrest/bin/chrest")
 }
 
 func TestInstallMCPWithEmptyArgs(t *testing.T) {
+	tt := test_ui.T{T: t}
 	app := NewUtility("simple", "Simple server")
 	// MCPArgs not set — should use empty slice
 
@@ -91,26 +97,27 @@ func TestInstallMCPWithEmptyArgs(t *testing.T) {
 		t.Fatalf("installMCPTo: %v", err)
 	}
 
-	config := readTestConfig(t, configPath)
-	server := getTestServer(t, config, "simple")
-	assertArgs(t, server, []string{})
+	config := readTestConfig(tt, configPath)
+	server := getTestServer(tt, config, "simple")
+	assertArgs(tt, server, []string{})
 }
 
 func TestInstallMCPPreservesNonServerFields(t *testing.T) {
+	tt := test_ui.T{T: t}
 	configPath := filepath.Join(t.TempDir(), ".claude.json")
 
 	existing := map[string]any{
 		"someOtherField": "value",
 		"mcpServers":     map[string]any{},
 	}
-	writeTestConfig(t, configPath, existing)
+	writeTestConfig(tt, configPath, existing)
 
 	app := NewUtility("test", "Test server")
 	if err := app.installMCPTo("/usr/bin/test", configPath); err != nil {
 		t.Fatalf("installMCPTo: %v", err)
 	}
 
-	config := readTestConfig(t, configPath)
+	config := readTestConfig(tt, configPath)
 	if config["someOtherField"] != "value" {
 		t.Errorf("non-server field lost: got %v", config["someOtherField"])
 	}
@@ -118,7 +125,7 @@ func TestInstallMCPPreservesNonServerFields(t *testing.T) {
 
 // Test helpers
 
-func readTestConfig(t *testing.T, path string) map[string]any {
+func readTestConfig(t test_ui.T, path string) map[string]any {
 	t.Helper()
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -131,7 +138,7 @@ func readTestConfig(t *testing.T, path string) map[string]any {
 	return config
 }
 
-func writeTestConfig(t *testing.T, path string, config map[string]any) {
+func writeTestConfig(t test_ui.T, path string, config map[string]any) {
 	t.Helper()
 	data, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
@@ -142,7 +149,7 @@ func writeTestConfig(t *testing.T, path string, config map[string]any) {
 	}
 }
 
-func getTestServer(t *testing.T, config map[string]any, name string) map[string]any {
+func getTestServer(t test_ui.T, config map[string]any, name string) map[string]any {
 	t.Helper()
 	servers, ok := config["mcpServers"].(map[string]any)
 	if !ok {
@@ -155,7 +162,7 @@ func getTestServer(t *testing.T, config map[string]any, name string) map[string]
 	return server
 }
 
-func assertField(t *testing.T, server map[string]any, key, want string) {
+func assertField(t test_ui.T, server map[string]any, key, want string) {
 	t.Helper()
 	got, _ := server[key].(string)
 	if got != want {
@@ -163,7 +170,7 @@ func assertField(t *testing.T, server map[string]any, key, want string) {
 	}
 }
 
-func assertArgs(t *testing.T, server map[string]any, want []string) {
+func assertArgs(t test_ui.T, server map[string]any, want []string) {
 	t.Helper()
 	raw, ok := server["args"].([]any)
 	if !ok {

@@ -12,12 +12,14 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 // captureStdout runs fn with os.Stdout redirected to a pipe and returns
 // the captured bytes. Copied from dagnabit's events_test.go (echo→echo
 // imports are forbidden by the tier convention, test helpers included).
-func captureStdout(t *testing.T, fn func()) []byte {
+func captureStdout(t test_ui.T, fn func()) []byte {
 	t.Helper()
 
 	r, w, err := os.Pipe()
@@ -71,7 +73,7 @@ func (m sliceLevelMapper) LevelIndex(name string) (int, error) {
 
 // requireCargoCheck fails the test when `cargo check --workspace` fails
 // at root.
-func requireCargoCheck(t *testing.T, root string) {
+func requireCargoCheck(t test_ui.T, root string) {
 	t.Helper()
 
 	cmd := exec.Command("cargo", "check", "--workspace")
@@ -86,7 +88,7 @@ func requireCargoCheck(t *testing.T, root string) {
 // sha256, excluding .git/ (whose mtime-sensitive internals are not part
 // of the tree under test). Unlike rsContentHashes, paths are included:
 // a dry run must change neither contents nor layout.
-func allContentHashes(t *testing.T, root string) map[string]string {
+func allContentHashes(t test_ui.T, root string) map[string]string {
 	t.Helper()
 
 	hashes := make(map[string]string)
@@ -127,9 +129,10 @@ func allContentHashes(t *testing.T, root string) map[string]string {
 }
 
 func TestMoveRenameRewritesDependentSources(t *testing.T) {
-	requireCargo(t)
-	requireAstGrep(t)
-	root := writeFixtureWorkspace(t)
+	tt := test_ui.T{T: t}
+	requireCargo(tt)
+	requireAstGrep(tt)
+	root := writeFixtureWorkspace(tt)
 
 	r := &Renamer{WorkspaceRoot: root}
 
@@ -146,12 +149,12 @@ func TestMoveRenameRewritesDependentSources(t *testing.T) {
 		t.Errorf("old crate dir still present (err: %v)", err)
 	}
 
-	moved := readFixtureFile(t, root, "internal/0/blob_id/Cargo.toml")
+	moved := readFixtureFile(tt, root, "internal/0/blob_id/Cargo.toml")
 	if !strings.Contains(moved, `name = "blob_id_internal"`) {
 		t.Errorf("moved crate [package] name not renamed:\n%s", moved)
 	}
 
-	dep := readFixtureFile(t, root, "internal/alfa/store/Cargo.toml")
+	dep := readFixtureFile(tt, root, "internal/alfa/store/Cargo.toml")
 
 	if !strings.Contains(dep, "blob_id_internal") {
 		t.Errorf("dependent dep key not renamed:\n%s", dep)
@@ -161,7 +164,7 @@ func TestMoveRenameRewritesDependentSources(t *testing.T) {
 		t.Errorf("dependent path-dep not updated:\n%s", dep)
 	}
 
-	lib := readFixtureFile(t, root, "internal/alfa/store/src/lib.rs")
+	lib := readFixtureFile(tt, root, "internal/alfa/store/src/lib.rs")
 
 	if strings.Contains(lib, "blob_store_id_internal") {
 		t.Errorf("dependent sources still reference the old crate name:\n%s", lib)
@@ -176,20 +179,21 @@ func TestMoveRenameRewritesDependentSources(t *testing.T) {
 		}
 	}
 
-	requireCargoCheck(t, root)
+	requireCargoCheck(tt, root)
 }
 
 func TestMoveRenamePreflightGateAbortsOnBrokenWorkspace(t *testing.T) {
-	requireCargo(t)
-	requireAstGrep(t)
-	root := writeFixtureWorkspace(t)
+	tt := test_ui.T{T: t}
+	requireCargo(tt)
+	requireAstGrep(tt)
+	root := writeFixtureWorkspace(tt)
 
 	libPath := filepath.Join(root, "internal/alfa/store/src/lib.rs")
 	if err := os.WriteFile(libPath, []byte("pub fn broken( {\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	manifestBefore := readFixtureFile(t, root, "internal/alfa/store/Cargo.toml")
+	manifestBefore := readFixtureFile(tt, root, "internal/alfa/store/Cargo.toml")
 
 	r := &Renamer{WorkspaceRoot: root}
 
@@ -210,15 +214,16 @@ func TestMoveRenamePreflightGateAbortsOnBrokenWorkspace(t *testing.T) {
 		t.Errorf("dst crate dir created despite failed pre-flight (err: %v)", statErr)
 	}
 
-	if got := readFixtureFile(t, root, "internal/alfa/store/Cargo.toml"); got != manifestBefore {
+	if got := readFixtureFile(tt, root, "internal/alfa/store/Cargo.toml"); got != manifestBefore {
 		t.Errorf("dependent manifest mutated despite failed pre-flight:\n%s", got)
 	}
 }
 
 func TestMoveRenameForceSkipsPreflight(t *testing.T) {
-	requireCargo(t)
-	requireAstGrep(t)
-	root := writeFixtureWorkspace(t)
+	tt := test_ui.T{T: t}
+	requireCargo(tt)
+	requireAstGrep(tt)
+	root := writeFixtureWorkspace(tt)
 
 	// Break a dependent source. Without Force the pre-flight rejects
 	// this workspace (test above); with Force the rename must proceed
@@ -254,11 +259,12 @@ func TestMoveRenameForceSkipsPreflight(t *testing.T) {
 }
 
 func TestMoveWithoutLeafRenameTouchesNoRs(t *testing.T) {
-	requireCargo(t)
-	requireAstGrep(t)
-	root := writeFixtureWorkspace(t)
+	tt := test_ui.T{T: t}
+	requireCargo(tt)
+	requireAstGrep(tt)
+	root := writeFixtureWorkspace(tt)
 
-	before := rsContentHashes(t, root)
+	before := rsContentHashes(tt, root)
 
 	r := &Renamer{WorkspaceRoot: root}
 
@@ -271,7 +277,7 @@ func TestMoveWithoutLeafRenameTouchesNoRs(t *testing.T) {
 		t.Fatal("crate dir not moved:", err)
 	}
 
-	after := rsContentHashes(t, root)
+	after := rsContentHashes(tt, root)
 
 	if len(before) != len(after) {
 		t.Fatalf(".rs file count changed: %d before, %d after", len(before), len(after))
@@ -285,20 +291,21 @@ func TestMoveWithoutLeafRenameTouchesNoRs(t *testing.T) {
 }
 
 func TestRenameComputesRequiredLevel(t *testing.T) {
-	requireCargo(t)
-	requireAstGrep(t)
+	tt := test_ui.T{T: t}
+	requireCargo(tt)
+	requireAstGrep(tt)
 
 	// store sits at the WRONG level (0) while depending on
 	// blob_store_id at level 0; its dep height is 1, so Rename must
 	// land it at the mapper's level-1 name ("alfa").
 	root := t.TempDir()
 
-	gitInTestRepo(t, root, "init")
-	gitInTestRepo(t, root, "config", "user.email", "test@test.com")
-	gitInTestRepo(t, root, "config", "user.name", "Test")
-	gitInTestRepo(t, root, "config", "commit.gpgSign", "false")
+	gitInTestRepo(tt, root, "init")
+	gitInTestRepo(tt, root, "config", "user.email", "test@test.com")
+	gitInTestRepo(tt, root, "config", "user.name", "Test")
+	gitInTestRepo(tt, root, "config", "commit.gpgSign", "false")
 
-	writeFixture(t, root, "Cargo.toml", `[workspace]
+	writeFixture(tt, root, "Cargo.toml", `[workspace]
 members = [
   "internal/0/blob_store_id",
   "internal/0/store",
@@ -306,20 +313,20 @@ members = [
 resolver = "2"
 `)
 
-	writeFixture(t, root, "internal/0/blob_store_id/Cargo.toml", `[package]
+	writeFixture(tt, root, "internal/0/blob_store_id/Cargo.toml", `[package]
 name = "blob_store_id_internal"
 version = "0.1.0"
 edition = "2021"
 `)
 
 	writeFixture(
-		t,
+		tt,
 		root,
 		"internal/0/blob_store_id/src/lib.rs",
 		"pub fn make_id() -> u32 { 7 }\n",
 	)
 
-	writeFixture(t, root, "internal/0/store/Cargo.toml", `[package]
+	writeFixture(tt, root, "internal/0/store/Cargo.toml", `[package]
 name = "store_internal"
 version = "0.1.0"
 edition = "2021"
@@ -329,14 +336,14 @@ blob_store_id_internal = { path = "../blob_store_id" }
 `)
 
 	writeFixture(
-		t,
+		tt,
 		root,
 		"internal/0/store/src/lib.rs",
 		"pub fn make() -> u32 { blob_store_id_internal::make_id() }\n",
 	)
 
-	gitInTestRepo(t, root, "add", "-A")
-	gitInTestRepo(t, root, "commit", "-m", "fixture")
+	gitInTestRepo(tt, root, "add", "-A")
+	gitInTestRepo(tt, root, "commit", "-m", "fixture")
 
 	r := &Renamer{WorkspaceRoot: root}
 	mapper := sliceLevelMapper{levels: []string{"0", "alfa"}}
@@ -353,21 +360,22 @@ blob_store_id_internal = { path = "../blob_store_id" }
 		t.Errorf("old crate dir still present (err: %v)", err)
 	}
 
-	requireCargoCheck(t, root)
+	requireCargoCheck(tt, root)
 }
 
 func TestDryRunPrintsPlanAndChangesNothing(t *testing.T) {
-	requireCargo(t)
-	requireAstGrep(t)
-	root := writeFixtureWorkspace(t)
+	tt := test_ui.T{T: t}
+	requireCargo(tt)
+	requireAstGrep(tt)
+	root := writeFixtureWorkspace(tt)
 
-	before := allContentHashes(t, root)
+	before := allContentHashes(tt, root)
 
 	r := &Renamer{WorkspaceRoot: root}
 
 	var renameErr error
 
-	out := captureStdout(t, func() {
+	out := captureStdout(tt, func() {
 		renameErr = r.MoveRename(
 			"internal/0/blob_store_id",
 			"internal/0/blob_id",
@@ -390,7 +398,7 @@ func TestDryRunPrintsPlanAndChangesNothing(t *testing.T) {
 		t.Errorf("dry-run plan reports no ast-grep match counts:\n%s", plan)
 	}
 
-	after := allContentHashes(t, root)
+	after := allContentHashes(tt, root)
 
 	if len(before) != len(after) {
 		t.Fatalf("file count changed in dry run: %d before, %d after", len(before), len(after))

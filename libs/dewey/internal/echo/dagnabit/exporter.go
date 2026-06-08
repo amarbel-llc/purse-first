@@ -132,7 +132,7 @@ func (exporter *Exporter) checkExport(run func(*Exporter) error, reportStale boo
 	if err != nil {
 		return fmt.Errorf("creating temp dir: %w", err)
 	}
-	defer os.RemoveAll(tmp)
+	defer os.RemoveAll(tmp) //defer:err-checked temp-dir cleanup; failure must not clobber the real return
 
 	// Render + format into the temp root; never mutate the committed tree.
 	// Consumer rewriting would touch files outside <outputDir>, so disable it.

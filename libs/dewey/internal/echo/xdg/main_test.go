@@ -4,9 +4,11 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
-func mustMkdirAll(t *testing.T, path string) {
+func mustMkdirAll(t test_ui.T, path string) {
 	t.Helper()
 	if err := os.MkdirAll(path, 0o755); err != nil {
 		t.Fatalf("mkdir %s: %v", path, err)
@@ -14,16 +16,17 @@ func mustMkdirAll(t *testing.T, path string) {
 }
 
 func TestGetCwdXDGOverridePathChecksCeilingDir(t *testing.T) {
-	tmp := t.TempDir()
+	tt := test_ui.T{T: t}
+	tmp := tt.TempDir()
 
 	root := filepath.Join(tmp, "x")
 	leaf := filepath.Join(root, "leaf")
 	marker := filepath.Join(root, ".myutil")
 
-	mustMkdirAll(t, leaf)
-	mustMkdirAll(t, marker)
+	mustMkdirAll(tt, leaf)
+	mustMkdirAll(tt, marker)
 
-	t.Setenv(CeilingEnvVarName("myutil"), root)
+	tt.Setenv(CeilingEnvVarName("myutil"), root)
 
 	initArgs := InitArgs{
 		Cwd:         leaf,
@@ -32,25 +35,26 @@ func TestGetCwdXDGOverridePathChecksCeilingDir(t *testing.T) {
 
 	got, ok := initArgs.getCwdXDGOverridePath()
 	if !ok {
-		t.Fatalf("expected to find override at %s, got (%s, false)", root, got)
+		tt.Fatalf("expected to find override at %s, got (%s, false)", root, got)
 	}
 	if got != root {
-		t.Fatalf("expected override path %s, got %s", root, got)
+		tt.Fatalf("expected override path %s, got %s", root, got)
 	}
 }
 
 func TestGetCwdXDGOverridePathStopsAboveCeiling(t *testing.T) {
-	tmp := t.TempDir()
+	tt := test_ui.T{T: t}
+	tmp := tt.TempDir()
 
 	above := filepath.Join(tmp, "above")
 	ceiling := filepath.Join(above, "x")
 	leaf := filepath.Join(ceiling, "leaf")
 	stray := filepath.Join(above, ".myutil")
 
-	mustMkdirAll(t, leaf)
-	mustMkdirAll(t, stray)
+	mustMkdirAll(tt, leaf)
+	mustMkdirAll(tt, stray)
 
-	t.Setenv(CeilingEnvVarName("myutil"), ceiling)
+	tt.Setenv(CeilingEnvVarName("myutil"), ceiling)
 
 	initArgs := InitArgs{
 		Cwd:         leaf,
@@ -58,19 +62,20 @@ func TestGetCwdXDGOverridePathStopsAboveCeiling(t *testing.T) {
 	}
 
 	if got, ok := initArgs.getCwdXDGOverridePath(); ok {
-		t.Fatalf("expected no override (marker is above ceiling), got (%s, true)", got)
+		tt.Fatalf("expected no override (marker is above ceiling), got (%s, true)", got)
 	}
 }
 
 func TestGetCwdXDGOverridePathFindsMarkerAtCwd(t *testing.T) {
-	tmp := t.TempDir()
+	tt := test_ui.T{T: t}
+	tmp := tt.TempDir()
 
 	cwd := filepath.Join(tmp, "x")
 	marker := filepath.Join(cwd, ".myutil")
 
-	mustMkdirAll(t, marker)
+	mustMkdirAll(tt, marker)
 
-	t.Setenv(CeilingEnvVarName("myutil"), cwd)
+	tt.Setenv(CeilingEnvVarName("myutil"), cwd)
 
 	initArgs := InitArgs{
 		Cwd:         cwd,
@@ -79,10 +84,10 @@ func TestGetCwdXDGOverridePathFindsMarkerAtCwd(t *testing.T) {
 
 	got, ok := initArgs.getCwdXDGOverridePath()
 	if !ok {
-		t.Fatalf("expected to find override at %s, got (%s, false)", cwd, got)
+		tt.Fatalf("expected to find override at %s, got (%s, false)", cwd, got)
 	}
 	if got != cwd {
-		t.Fatalf("expected override path %s, got %s", cwd, got)
+		tt.Fatalf("expected override path %s, got %s", cwd, got)
 	}
 }
 
@@ -91,16 +96,17 @@ func TestGetCwdXDGOverridePathFindsMarkerAtCwd(t *testing.T) {
 const uniqueUtility = "dewey-xdg-test-no-ceiling-7f3a9b"
 
 func TestGetCwdXDGOverridePathWithoutCeilingWalksUp(t *testing.T) {
-	tmp := t.TempDir()
+	tt := test_ui.T{T: t}
+	tmp := tt.TempDir()
 
 	root := filepath.Join(tmp, "x")
 	leaf := filepath.Join(root, "y", "z")
 	marker := filepath.Join(root, "."+uniqueUtility)
 
-	mustMkdirAll(t, leaf)
-	mustMkdirAll(t, marker)
+	mustMkdirAll(tt, leaf)
+	mustMkdirAll(tt, marker)
 
-	t.Setenv(CeilingEnvVarName(uniqueUtility), "")
+	tt.Setenv(CeilingEnvVarName(uniqueUtility), "")
 
 	initArgs := InitArgs{
 		Cwd:         leaf,
@@ -109,10 +115,10 @@ func TestGetCwdXDGOverridePathWithoutCeilingWalksUp(t *testing.T) {
 
 	got, ok := initArgs.getCwdXDGOverridePath()
 	if !ok {
-		t.Fatalf("expected to find override at %s, got (%s, false)", root, got)
+		tt.Fatalf("expected to find override at %s, got (%s, false)", root, got)
 	}
 	if got != root {
-		t.Fatalf("expected override path %s, got %s", root, got)
+		tt.Fatalf("expected override path %s, got %s", root, got)
 	}
 }
 
@@ -127,19 +133,20 @@ func TestGetCwdXDGOverridePathWithoutCeilingWalksUp(t *testing.T) {
 // expressed through different symlink chains, so the lexical comparison
 // misses the relationship entirely.
 func TestIsAboveCeilingResolvesSymlinks(t *testing.T) {
-	tmp := t.TempDir()
+	tt := test_ui.T{T: t}
+	tmp := tt.TempDir()
 
 	realCeiling := filepath.Join(tmp, "real-ceiling")
-	mustMkdirAll(t, filepath.Join(realCeiling, "leaf"))
+	mustMkdirAll(tt, filepath.Join(realCeiling, "leaf"))
 
 	linkToCeiling := filepath.Join(tmp, "link-ceiling")
 	if err := os.Symlink(realCeiling, linkToCeiling); err != nil {
-		t.Fatalf("symlink %s -> %s: %v", linkToCeiling, realCeiling, err)
+		tt.Fatalf("symlink %s -> %s: %v", linkToCeiling, realCeiling, err)
 	}
 
 	// dir == ceiling via different symlink chains.
 	if !IsAtOrAboveCeiling(realCeiling, []string{linkToCeiling}) {
-		t.Fatalf(
+		tt.Fatalf(
 			"expected %s to be at-or-above ceiling %s (same canonical path via symlink)",
 			realCeiling, linkToCeiling,
 		)
@@ -148,7 +155,7 @@ func TestIsAboveCeilingResolvesSymlinks(t *testing.T) {
 	// dir is a strict ancestor of ceiling via different symlink chains.
 	above := filepath.Dir(realCeiling)
 	if !IsAboveCeiling(above, []string{linkToCeiling}) {
-		t.Fatalf(
+		tt.Fatalf(
 			"expected %s to be above ceiling %s (canonical parent via symlink)",
 			above, linkToCeiling,
 		)
@@ -172,18 +179,19 @@ func TestIsAboveCeilingFallsBackToCleanForNonExistentEntry(t *testing.T) {
 }
 
 func TestGetCwdXDGOverridePathHonorsMultipleCeilings(t *testing.T) {
-	tmp := t.TempDir()
+	tt := test_ui.T{T: t}
+	tmp := tt.TempDir()
 
 	otherCeiling := filepath.Join(tmp, "other")
 	relevantCeiling := filepath.Join(tmp, "relevant")
 	leaf := filepath.Join(relevantCeiling, "leaf")
 	marker := filepath.Join(relevantCeiling, ".myutil")
 
-	mustMkdirAll(t, otherCeiling)
-	mustMkdirAll(t, leaf)
-	mustMkdirAll(t, marker)
+	mustMkdirAll(tt, otherCeiling)
+	mustMkdirAll(tt, leaf)
+	mustMkdirAll(tt, marker)
 
-	t.Setenv(
+	tt.Setenv(
 		CeilingEnvVarName("myutil"),
 		otherCeiling+string(filepath.ListSeparator)+relevantCeiling,
 	)
@@ -195,9 +203,9 @@ func TestGetCwdXDGOverridePathHonorsMultipleCeilings(t *testing.T) {
 
 	got, ok := initArgs.getCwdXDGOverridePath()
 	if !ok {
-		t.Fatalf("expected to find override at %s, got (%s, false)", relevantCeiling, got)
+		tt.Fatalf("expected to find override at %s, got (%s, false)", relevantCeiling, got)
 	}
 	if got != relevantCeiling {
-		t.Fatalf("expected override path %s, got %s", relevantCeiling, got)
+		tt.Fatalf("expected override path %s, got %s", relevantCeiling, got)
 	}
 }

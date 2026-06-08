@@ -7,9 +7,12 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 func TestFindTreefmtConfig_TomlAtRoot(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 	tomlPath := filepath.Join(tmpDir, "treefmt.toml")
 	if err := os.WriteFile(tomlPath, []byte(""), 0o644); err != nil {
@@ -23,7 +26,7 @@ func TestFindTreefmtConfig_TomlAtRoot(t *testing.T) {
 	if name != "treefmt.toml" {
 		t.Errorf("expected name=treefmt.toml, got %q", name)
 	}
-	if dir != absForTest(t, tmpDir) {
+	if dir != absForTest(tt, tmpDir) {
 		t.Errorf("expected dir=%s, got %s", tmpDir, dir)
 	}
 }
@@ -45,6 +48,7 @@ func TestFindTreefmtConfig_NixAtRoot(t *testing.T) {
 }
 
 func TestFindTreefmtConfig_WalksUp(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 	rootConfig := filepath.Join(tmpDir, "treefmt.toml")
 	if err := os.WriteFile(rootConfig, []byte(""), 0o644); err != nil {
@@ -60,7 +64,7 @@ func TestFindTreefmtConfig_WalksUp(t *testing.T) {
 	if !ok {
 		t.Fatal("expected config to be found by walking up")
 	}
-	if dir != absForTest(t, tmpDir) {
+	if dir != absForTest(tt, tmpDir) {
 		t.Errorf("expected dir=%s, got %s", tmpDir, dir)
 	}
 }
@@ -103,8 +107,9 @@ func TestFindTreefmtConfig_NotFound(t *testing.T) {
 }
 
 func TestFormatOutput_NoConfigIsNoop(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
-	mustMkdirAll(t, filepath.Join(tmpDir, "pkgs"))
+	mustMkdirAll(tt, filepath.Join(tmpDir, "pkgs"))
 
 	if _, _, ok := findTreefmtConfig(tmpDir); ok {
 		t.Skip("test environment has a treefmt config in an ancestor directory")
@@ -117,15 +122,16 @@ func TestFormatOutput_NoConfigIsNoop(t *testing.T) {
 }
 
 func TestFormatOutput_DryRunIsNoop(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
-	mustMkdirAll(t, filepath.Join(tmpDir, "pkgs"))
+	mustMkdirAll(tt, filepath.Join(tmpDir, "pkgs"))
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	sentinel := filepath.Join(tmpDir, "sentinel")
-	withFakeTreefmt(t, sentinel)
+	withFakeTreefmt(tt, sentinel)
 
 	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs", DryRun: true}
 	if err := exporter.FormatOutput(); err != nil {
@@ -138,6 +144,7 @@ func TestFormatOutput_DryRunIsNoop(t *testing.T) {
 }
 
 func TestFormatOutput_MissingOutputDirIsNoop(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
@@ -145,7 +152,7 @@ func TestFormatOutput_MissingOutputDirIsNoop(t *testing.T) {
 	}
 
 	sentinel := filepath.Join(tmpDir, "sentinel")
-	withFakeTreefmt(t, sentinel)
+	withFakeTreefmt(tt, sentinel)
 
 	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
 	if err := exporter.FormatOutput(); err != nil {
@@ -158,16 +165,17 @@ func TestFormatOutput_MissingOutputDirIsNoop(t *testing.T) {
 }
 
 func TestFormatOutput_InvokesTreefmt(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 	outDir := filepath.Join(tmpDir, "pkgs")
-	mustMkdirAll(t, outDir)
+	mustMkdirAll(tt, outDir)
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	sentinel := filepath.Join(tmpDir, "sentinel")
-	withFakeTreefmt(t, sentinel)
+	withFakeTreefmt(tt, sentinel)
 
 	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
 	if err := exporter.FormatOutput(); err != nil {
@@ -185,14 +193,15 @@ func TestFormatOutput_InvokesTreefmt(t *testing.T) {
 }
 
 func TestFormatOutput_PropagatesTreefmtFailure(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
-	mustMkdirAll(t, filepath.Join(tmpDir, "pkgs"))
+	mustMkdirAll(tt, filepath.Join(tmpDir, "pkgs"))
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	withFailingFakeTreefmt(t)
+	withFailingFakeTreefmt(tt)
 
 	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
 	err := exporter.FormatOutput()
@@ -205,7 +214,7 @@ func TestFormatOutput_PropagatesTreefmtFailure(t *testing.T) {
 }
 
 // absForTest returns filepath.Abs(path) or fails the test.
-func absForTest(t *testing.T, path string) string {
+func absForTest(t test_ui.T, path string) string {
 	t.Helper()
 	abs, err := filepath.Abs(path)
 	if err != nil {
@@ -214,7 +223,7 @@ func absForTest(t *testing.T, path string) string {
 	return abs
 }
 
-func mustMkdirAll(t *testing.T, path string) {
+func mustMkdirAll(t test_ui.T, path string) {
 	t.Helper()
 	if err := os.MkdirAll(path, 0o755); err != nil {
 		t.Fatal(err)
@@ -225,10 +234,10 @@ func mustMkdirAll(t *testing.T, path string) {
 // fresh directory, prepends that directory to PATH, and registers a
 // cleanup that restores PATH at the end of the test. The fake
 // records its argv into sentinelPath.
-func withFakeTreefmt(t *testing.T, sentinelPath string) {
+func withFakeTreefmt(t test_ui.T, sentinelPath string) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
-		t.Skip("PATH-injection fake binary not portable to Windows")
+		t.T.Skip("PATH-injection fake binary not portable to Windows")
 	}
 
 	binDir := t.TempDir()
@@ -248,10 +257,10 @@ func withFakeTreefmt(t *testing.T, sentinelPath string) {
 // the fake skipped is detectably different from one it processed. Used to
 // reproduce #125, where the comparison copy lived outside the tree root and was
 // silently left unformatted.
-func withTreeRootAwareFakeTreefmt(t *testing.T) {
+func withTreeRootAwareFakeTreefmt(t test_ui.T) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
-		t.Skip("PATH-injection fake binary not portable to Windows")
+		t.T.Skip("PATH-injection fake binary not portable to Windows")
 	}
 
 	binDir := t.TempDir()
@@ -280,10 +289,10 @@ exit 0
 }
 
 // withFailingFakeTreefmt installs a fake treefmt that exits non-zero.
-func withFailingFakeTreefmt(t *testing.T) {
+func withFailingFakeTreefmt(t test_ui.T) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
-		t.Skip("PATH-injection fake binary not portable to Windows")
+		t.T.Skip("PATH-injection fake binary not portable to Windows")
 	}
 
 	binDir := t.TempDir()
@@ -298,7 +307,7 @@ func withFailingFakeTreefmt(t *testing.T) {
 
 // prependPath puts dir at the front of PATH for the duration of the
 // test, restoring the original PATH on cleanup.
-func prependPath(t *testing.T, dir string) {
+func prependPath(t test_ui.T, dir string) {
 	t.Helper()
 	orig := os.Getenv("PATH")
 	t.Cleanup(func() {
@@ -310,10 +319,10 @@ func prependPath(t *testing.T, dir string) {
 // withFakeConformist writes a stub shell script named `conformist` into a fresh
 // directory and prepends it to PATH, mirroring withFakeTreefmt. The fake
 // records its argv into sentinelPath.
-func withFakeConformist(t *testing.T, sentinelPath string) {
+func withFakeConformist(t test_ui.T, sentinelPath string) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
-		t.Skip("PATH-injection fake binary not portable to Windows")
+		t.T.Skip("PATH-injection fake binary not portable to Windows")
 	}
 
 	binDir := t.TempDir()
@@ -349,15 +358,16 @@ func TestFindTreefmtConfig_PrefersConformist(t *testing.T) {
 // TestFormatOutput_InvokesConformist confirms a conformist.toml config drives the
 // `conformist` binary rather than `treefmt`.
 func TestFormatOutput_InvokesConformist(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
-	mustMkdirAll(t, filepath.Join(tmpDir, "pkgs"))
+	mustMkdirAll(tt, filepath.Join(tmpDir, "pkgs"))
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "conformist.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	sentinel := filepath.Join(tmpDir, "sentinel")
-	withFakeConformist(t, sentinel)
+	withFakeConformist(tt, sentinel)
 
 	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
 	if err := exporter.FormatOutput(); err != nil {

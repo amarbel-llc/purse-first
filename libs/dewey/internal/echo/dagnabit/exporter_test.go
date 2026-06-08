@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"golang.org/x/tools/go/packages"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 func identity(s string) string { return s }
@@ -194,6 +196,7 @@ func TestCollectBuildTags(t *testing.T) {
 }
 
 func TestExportPackageWithBuildTags(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
@@ -235,16 +238,17 @@ func TestExportPackageWithBuildTags(t *testing.T) {
 		t.Fatalf("test.go not generated: %v", err)
 	}
 
-	assertContains(t, string(mainContent), "Widget")
-	assertNotContains(t, string(mainContent), "TestWidget")
-	assertNotContains(t, string(mainContent), "//go:build")
+	assertContains(tt, string(mainContent), "Widget")
+	assertNotContains(tt, string(mainContent), "TestWidget")
+	assertNotContains(tt, string(mainContent), "//go:build")
 
-	assertContains(t, string(testContent), "TestWidget")
-	assertContains(t, string(testContent), "//go:build test")
-	assertNotContains(t, string(testContent), "\tWidget =") // base Widget should not appear (only TestWidget)
+	assertContains(tt, string(testContent), "TestWidget")
+	assertContains(tt, string(testContent), "//go:build test")
+	assertNotContains(tt, string(testContent), "\tWidget =") // base Widget should not appear (only TestWidget)
 }
 
 func TestExportPackageWithNegatedBuildTag(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
@@ -290,28 +294,28 @@ func TestExportPackageWithNegatedBuildTag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("main.go not generated: %v", err)
 	}
-	assertContains(t, string(mainContent), "Widget")
-	assertNotContains(t, string(mainContent), "NormalWidget")
-	assertNotContains(t, string(mainContent), "DebugWidget")
-	assertNotContains(t, string(mainContent), "//go:build")
+	assertContains(tt, string(mainContent), "Widget")
+	assertNotContains(tt, string(mainContent), "NormalWidget")
+	assertNotContains(tt, string(mainContent), "DebugWidget")
+	assertNotContains(tt, string(mainContent), "//go:build")
 
 	// debug.go: DebugWidget (unique to debug build)
 	debugContent, err := os.ReadFile(filepath.Join(tmpDir, "pkgs", "widget", "debug.go"))
 	if err != nil {
 		t.Fatalf("debug.go not generated: %v", err)
 	}
-	assertContains(t, string(debugContent), "DebugWidget")
-	assertContains(t, string(debugContent), "//go:build debug")
-	assertNotContains(t, string(debugContent), "NormalWidget")
+	assertContains(tt, string(debugContent), "DebugWidget")
+	assertContains(tt, string(debugContent), "//go:build debug")
+	assertNotContains(tt, string(debugContent), "NormalWidget")
 
 	// not_debug.go: NormalWidget (unique to !debug build)
 	notDebugContent, err := os.ReadFile(filepath.Join(tmpDir, "pkgs", "widget", "not_debug.go"))
 	if err != nil {
 		t.Fatalf("not_debug.go not generated: %v", err)
 	}
-	assertContains(t, string(notDebugContent), "NormalWidget")
-	assertContains(t, string(notDebugContent), "//go:build !debug")
-	assertNotContains(t, string(notDebugContent), "DebugWidget")
+	assertContains(tt, string(notDebugContent), "NormalWidget")
+	assertContains(tt, string(notDebugContent), "//go:build !debug")
+	assertNotContains(tt, string(notDebugContent), "DebugWidget")
 }
 
 func TestBuildFlagsForExpression(t *testing.T) {
@@ -350,6 +354,7 @@ func TestFilenameForExpression(t *testing.T) {
 // a type from another internal package as a generic constraint, the generated
 // facade must import the pkgs/ facade path, not the internal/ source path.
 func TestExportPackageFacadeImportPath(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
@@ -426,14 +431,15 @@ func Lookup[K interfaces.Value](m map[K]string, key K) string {
 	// The generic constraint must reference the pkgs/ facade path, not the
 	// internal/ source path. (The facade itself still imports its own internal
 	// package for delegation — that import is expected.)
-	assertContains(t, got, "example.com/mod/pkgs/interfaces")
-	assertNotContains(t, got, "example.com/mod/internal/0/interfaces")
+	assertContains(tt, got, "example.com/mod/pkgs/interfaces")
+	assertNotContains(tt, got, "example.com/mod/internal/0/interfaces")
 }
 
 // TestExportPackageSelfReferentialTypes reproduces issue #97: when a package
 // defines named types used in its own generic function signatures, the remap
 // must NOT redirect those types to the pkgs/ facade path (self-import cycle).
 func TestExportPackageSelfReferentialTypes(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
@@ -481,9 +487,9 @@ func Wrap[BLOB any](coder CoderToTypedBlob[BLOB], raw []byte) (TypedBlob[BLOB], 
 	got := string(content)
 
 	// Same-package named types must reference the internal alias, not the pkgs/ path.
-	assertNotContains(t, got, `"example.com/mod/pkgs/hyphence"`)
-	assertContains(t, got, "internal.CoderToTypedBlob")
-	assertContains(t, got, "internal.TypedBlob")
+	assertNotContains(tt, got, `"example.com/mod/pkgs/hyphence"`)
+	assertContains(tt, got, "internal.CoderToTypedBlob")
+	assertContains(tt, got, "internal.TypedBlob")
 }
 
 // TestExportPackageGeneratedFacadeCompiles verifies that generated facades
@@ -547,14 +553,14 @@ func Wrap[BLOB any](coder CoderToTypedBlob[BLOB], raw []byte) (TypedBlob[BLOB], 
 	}
 }
 
-func assertContains(t *testing.T, got, want string) {
+func assertContains(t test_ui.T, got, want string) {
 	t.Helper()
 	if !strings.Contains(got, want) {
 		t.Errorf("output does not contain %q\n\ngot:\n%s", want, got)
 	}
 }
 
-func assertNotContains(t *testing.T, got, unwanted string) {
+func assertNotContains(t test_ui.T, got, unwanted string) {
 	t.Helper()
 	if strings.Contains(got, unwanted) {
 		t.Errorf("output should not contain %q\n\ngot:\n%s", unwanted, got)

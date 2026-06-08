@@ -271,7 +271,7 @@ func (e *Exporter) checkExport(run func(*Exporter) error, reportStale bool) erro
 	if err != nil {
 		return fmt.Errorf("creating temp dir: %w", err)
 	}
-	defer os.RemoveAll(tmp)
+	defer os.RemoveAll(tmp) //defer:err-checked temp-dir cleanup; failure must not clobber the real return
 
 	clone := *e
 	clone.outputRoot = tmp

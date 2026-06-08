@@ -4,12 +4,15 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 // TestExportPropagatesDocComments verifies that doc comments attached to
 // exported declarations in an internal package are carried over to the
 // generated facade.
 func TestExportPropagatesDocComments(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
@@ -68,7 +71,7 @@ var Singleton = Widget{}
 		"// Singleton is the canonical widget instance.",
 	}
 	for _, want := range wants {
-		assertContains(t, got, want)
+		assertContains(tt, got, want)
 	}
 }
 
@@ -77,6 +80,7 @@ var Singleton = Widget{}
 // is a re-export; compiler directives apply to the original symbol's
 // implementation, not to its alias.
 func TestExportSkipsGoDirectives(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
@@ -116,6 +120,6 @@ func HotPath() {}
 	}
 	got := string(content)
 
-	assertContains(t, got, "// HotPath is a frequently-called helper.")
-	assertNotContains(t, got, "//go:noinline")
+	assertContains(tt, got, "// HotPath is a frequently-called helper.")
+	assertNotContains(tt, got, "//go:noinline")
 }

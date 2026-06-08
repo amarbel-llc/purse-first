@@ -10,6 +10,9 @@ import (
 
 type T = test_ui.T
 
+// MakeT wraps the runtime *testing.T into dewey's test_ui.T.
+//
+//testui:allow -- constructor seam: test_ui.T is built from the stdlib T here.
 func MakeT(t *testing.T) T {
 	return T{
 		T:            t,

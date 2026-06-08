@@ -7,12 +7,14 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 // captureStdout runs fn with os.Stdout redirected to a pipe and returns the
 // captured bytes. Reads happen on a separate goroutine to avoid blocking
 // when fn writes more than the pipe buffer can hold.
-func captureStdout(t *testing.T, fn func()) []byte {
+func captureStdout(t test_ui.T, fn func()) []byte {
 	t.Helper()
 
 	r, w, err := os.Pipe()
@@ -50,7 +52,8 @@ func TestEmitMoveEvent(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			out := captureStdout(t, func() {
+			tt := test_ui.T{T: t}
+			out := captureStdout(tt, func() {
 				emitMoveEvent(tc.event, tc.src, tc.dst)
 			})
 

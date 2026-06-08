@@ -6,9 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
-func initTestRepo(t *testing.T) string {
+func initTestRepo(t test_ui.T) string {
 	t.Helper()
 
 	dir := t.TempDir()
@@ -32,7 +34,7 @@ func initTestRepo(t *testing.T) string {
 	return dir
 }
 
-func writeFile(t *testing.T, dir, relPath, content string) {
+func writeFile(t test_ui.T, dir, relPath, content string) {
 	t.Helper()
 
 	abs := filepath.Join(dir, relPath)
@@ -45,7 +47,7 @@ func writeFile(t *testing.T, dir, relPath, content string) {
 	}
 }
 
-func readFile(t *testing.T, dir, relPath string) string {
+func readFile(t test_ui.T, dir, relPath string) string {
 	t.Helper()
 
 	abs := filepath.Join(dir, relPath)
@@ -57,7 +59,7 @@ func readFile(t *testing.T, dir, relPath string) string {
 	return string(data)
 }
 
-func commitAll(t *testing.T, dir, msg string) {
+func commitAll(t test_ui.T, dir, msg string) {
 	t.Helper()
 
 	git := func(args ...string) {
@@ -74,10 +76,11 @@ func commitAll(t *testing.T, dir, msg string) {
 }
 
 func TestGitMoverMovesFiles(t *testing.T) {
-	dir := initTestRepo(t)
+	tt := test_ui.T{T: t}
+	dir := initTestRepo(tt)
 
-	writeFile(t, dir, "lib/alfa/pkg/main.go", "package pkg\n")
-	commitAll(t, dir, "initial")
+	writeFile(tt, dir, "lib/alfa/pkg/main.go", "package pkg\n")
+	commitAll(tt, dir, "initial")
 
 	mover := &GitMover{Dir: dir, ModulePath: "example.com/mod"}
 
@@ -95,10 +98,11 @@ func TestGitMoverMovesFiles(t *testing.T) {
 }
 
 func TestGitMoverRewritesImports(t *testing.T) {
-	dir := initTestRepo(t)
+	tt := test_ui.T{T: t}
+	dir := initTestRepo(tt)
 
-	writeFile(t, dir, "lib/alfa/pkg/pkg.go", "package pkg\n\nfunc Hello() {}\n")
-	writeFile(t, dir, "cmd/main.go", `package main
+	writeFile(tt, dir, "lib/alfa/pkg/pkg.go", "package pkg\n\nfunc Hello() {}\n")
+	writeFile(tt, dir, "cmd/main.go", `package main
 
 import "example.com/mod/lib/alfa/pkg"
 
@@ -106,7 +110,7 @@ func main() {
 	pkg.Hello()
 }
 `)
-	commitAll(t, dir, "initial")
+	commitAll(tt, dir, "initial")
 
 	mover := &GitMover{Dir: dir, ModulePath: "example.com/mod"}
 
@@ -114,7 +118,7 @@ func main() {
 		t.Fatalf("MovePackage: %v", err)
 	}
 
-	content := readFile(t, dir, "cmd/main.go")
+	content := readFile(tt, dir, "cmd/main.go")
 	if !strings.Contains(content, `"example.com/mod/lib/bravo/pkg"`) {
 		t.Errorf("expected rewritten import, got:\n%s", content)
 	}
@@ -125,11 +129,12 @@ func main() {
 }
 
 func TestGitMoverRewritesSubpathImports(t *testing.T) {
-	dir := initTestRepo(t)
+	tt := test_ui.T{T: t}
+	dir := initTestRepo(tt)
 
-	writeFile(t, dir, "lib/alfa/pkg/sub/sub.go", "package sub\n\nfunc World() {}\n")
-	writeFile(t, dir, "lib/alfa/pkg/pkg.go", "package pkg\n")
-	writeFile(t, dir, "cmd/main.go", `package main
+	writeFile(tt, dir, "lib/alfa/pkg/sub/sub.go", "package sub\n\nfunc World() {}\n")
+	writeFile(tt, dir, "lib/alfa/pkg/pkg.go", "package pkg\n")
+	writeFile(tt, dir, "cmd/main.go", `package main
 
 import "example.com/mod/lib/alfa/pkg/sub"
 
@@ -137,7 +142,7 @@ func main() {
 	sub.World()
 }
 `)
-	commitAll(t, dir, "initial")
+	commitAll(tt, dir, "initial")
 
 	mover := &GitMover{Dir: dir, ModulePath: "example.com/mod"}
 
@@ -145,17 +150,18 @@ func main() {
 		t.Fatalf("MovePackage: %v", err)
 	}
 
-	content := readFile(t, dir, "cmd/main.go")
+	content := readFile(tt, dir, "cmd/main.go")
 	if !strings.Contains(content, `"example.com/mod/lib/bravo/pkg/sub"`) {
 		t.Errorf("expected subpath import rewritten, got:\n%s", content)
 	}
 }
 
 func TestGitMoverSkipsUnrelatedImports(t *testing.T) {
-	dir := initTestRepo(t)
+	tt := test_ui.T{T: t}
+	dir := initTestRepo(tt)
 
-	writeFile(t, dir, "lib/alfa/pkg/pkg.go", "package pkg\n")
-	writeFile(t, dir, "cmd/main.go", `package main
+	writeFile(tt, dir, "lib/alfa/pkg/pkg.go", "package pkg\n")
+	writeFile(tt, dir, "cmd/main.go", `package main
 
 import "fmt"
 
@@ -163,7 +169,7 @@ func main() {
 	fmt.Println("hello")
 }
 `)
-	commitAll(t, dir, "initial")
+	commitAll(tt, dir, "initial")
 
 	mover := &GitMover{Dir: dir, ModulePath: "example.com/mod"}
 
@@ -171,20 +177,21 @@ func main() {
 		t.Fatalf("MovePackage: %v", err)
 	}
 
-	content := readFile(t, dir, "cmd/main.go")
+	content := readFile(tt, dir, "cmd/main.go")
 	if !strings.Contains(content, `"fmt"`) {
 		t.Errorf("unrelated import should be preserved, got:\n%s", content)
 	}
 }
 
 func TestGitMoverDestinationFileConflict(t *testing.T) {
-	dir := initTestRepo(t)
+	tt := test_ui.T{T: t}
+	dir := initTestRepo(tt)
 
-	writeFile(t, dir, "lib/alfa/pkg/pkg.go", "package pkg\n")
+	writeFile(tt, dir, "lib/alfa/pkg/pkg.go", "package pkg\n")
 	// Create a file at the exact destination path so git mv cannot
 	// create the directory — this forces a conflict.
-	writeFile(t, dir, "lib/bravo/pkg", "not a directory\n")
-	commitAll(t, dir, "initial")
+	writeFile(tt, dir, "lib/bravo/pkg", "not a directory\n")
+	commitAll(tt, dir, "initial")
 
 	mover := &GitMover{Dir: dir, ModulePath: "example.com/mod"}
 
@@ -195,11 +202,12 @@ func TestGitMoverDestinationFileConflict(t *testing.T) {
 }
 
 func TestGitMoverMultipleImportsInOneFile(t *testing.T) {
-	dir := initTestRepo(t)
+	tt := test_ui.T{T: t}
+	dir := initTestRepo(tt)
 
-	writeFile(t, dir, "lib/alfa/pkg/pkg.go", "package pkg\n\nfunc Hello() {}\n")
-	writeFile(t, dir, "lib/alfa/pkg/sub/sub.go", "package sub\n\nfunc World() {}\n")
-	writeFile(t, dir, "cmd/main.go", `package main
+	writeFile(tt, dir, "lib/alfa/pkg/pkg.go", "package pkg\n\nfunc Hello() {}\n")
+	writeFile(tt, dir, "lib/alfa/pkg/sub/sub.go", "package sub\n\nfunc World() {}\n")
+	writeFile(tt, dir, "cmd/main.go", `package main
 
 import (
 	"example.com/mod/lib/alfa/pkg"
@@ -211,7 +219,7 @@ func main() {
 	sub.World()
 }
 `)
-	commitAll(t, dir, "initial")
+	commitAll(tt, dir, "initial")
 
 	mover := &GitMover{Dir: dir, ModulePath: "example.com/mod"}
 
@@ -219,7 +227,7 @@ func main() {
 		t.Fatalf("MovePackage: %v", err)
 	}
 
-	content := readFile(t, dir, "cmd/main.go")
+	content := readFile(tt, dir, "cmd/main.go")
 	if !strings.Contains(content, `"example.com/mod/lib/bravo/pkg"`) {
 		t.Errorf("expected rewritten import, got:\n%s", content)
 	}

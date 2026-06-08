@@ -10,11 +10,13 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 // requireCargoMetadata fails the test when the workspace at root no
 // longer resolves under `cargo metadata`.
-func requireCargoMetadata(t *testing.T, root string) {
+func requireCargoMetadata(t test_ui.T, root string) {
 	t.Helper()
 
 	cmd := exec.Command("cargo", "metadata", "--format-version", "1", "--no-deps")
@@ -28,7 +30,7 @@ func requireCargoMetadata(t *testing.T, root string) {
 // rsContentHashes returns the sorted sha256 hex digests of every .rs
 // file's contents under root. Paths are deliberately excluded — a move
 // changes paths but must never change .rs contents.
-func rsContentHashes(t *testing.T, root string) []string {
+func rsContentHashes(t test_ui.T, root string) []string {
 	t.Helper()
 
 	var hashes []string
@@ -62,8 +64,9 @@ func rsContentHashes(t *testing.T, root string) []string {
 }
 
 func TestMoverMovesCrateAndRewritesPathDeps(t *testing.T) {
-	requireCargo(t)
-	root := writeFixtureWorkspace(t) // git-initialized + committed
+	tt := test_ui.T{T: t}
+	requireCargo(tt)
+	root := writeFixtureWorkspace(tt) // git-initialized + committed
 
 	m := &Mover{WorkspaceRoot: root}
 
@@ -85,14 +88,15 @@ func TestMoverMovesCrateAndRewritesPathDeps(t *testing.T) {
 		t.Errorf("workspace members not updated:\n%s", ws)
 	}
 
-	requireCargoMetadata(t, root)
+	requireCargoMetadata(tt, root)
 }
 
 func TestMoverNoRsFilesTouched(t *testing.T) {
-	requireCargo(t)
-	root := writeFixtureWorkspace(t)
+	tt := test_ui.T{T: t}
+	requireCargo(tt)
+	root := writeFixtureWorkspace(tt)
 
-	before := rsContentHashes(t, root)
+	before := rsContentHashes(tt, root)
 
 	m := &Mover{WorkspaceRoot: root}
 
@@ -100,7 +104,7 @@ func TestMoverNoRsFilesTouched(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	after := rsContentHashes(t, root)
+	after := rsContentHashes(tt, root)
 
 	if len(before) != len(after) {
 		t.Fatalf(".rs file count changed: %d before, %d after", len(before), len(after))
@@ -114,8 +118,9 @@ func TestMoverNoRsFilesTouched(t *testing.T) {
 }
 
 func TestMoverRewritesMovedCratesOwnDeps(t *testing.T) {
-	requireCargo(t)
-	root := writeFixtureWorkspace(t)
+	tt := test_ui.T{T: t}
+	requireCargo(tt)
+	root := writeFixtureWorkspace(tt)
 
 	m := &Mover{WorkspaceRoot: root}
 
@@ -140,12 +145,13 @@ func TestMoverRewritesMovedCratesOwnDeps(t *testing.T) {
 		t.Errorf("workspace members not updated:\n%s", ws)
 	}
 
-	requireCargoMetadata(t, root)
+	requireCargoMetadata(tt, root)
 }
 
 func TestMoverRewritesMovedCratesOwnDepsAcrossDepthChange(t *testing.T) {
-	requireCargo(t)
-	root := writeFixtureWorkspace(t)
+	tt := test_ui.T{T: t}
+	requireCargo(tt)
+	root := writeFixtureWorkspace(tt)
 
 	m := &Mover{WorkspaceRoot: root}
 
@@ -167,5 +173,5 @@ func TestMoverRewritesMovedCratesOwnDepsAcrossDepthChange(t *testing.T) {
 		t.Errorf("moved crate's own path-dep not recomputed:\n%s", dep)
 	}
 
-	requireCargoMetadata(t, root)
+	requireCargoMetadata(tt, root)
 }

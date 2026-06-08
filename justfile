@@ -28,7 +28,7 @@ validate-purse-first-manifest:
 # Read-only style / convention / drift checks. Does not modify code.
 
 [group('pre-build')]
-lint: lint-go lint-dewey_pkgs_drift lint-conformist
+lint: lint-go lint-dewey_pkgs_drift lint-conformist lint-dewey-self
 
 # `go vet` across the workspace.
 [group('pre-build')]
@@ -67,6 +67,17 @@ analyze-dewey name:
 # Run all three dewey static analyzers.
 [group('pre-build')]
 analyze-dewey-all: (analyze-dewey "defererr") (analyze-dewey "repool") (analyze-dewey "seqerror")
+
+# Dogfood the dewey analyzers over dewey's OWN source via the published
+# golangci-lint-dewey custom binary (not -vettool), exercising the exact
+# gclplugin default set (defererr/seqerror/repool/testui). golangci-lint v2
+# is go.work-unaware, so run from the module dir with GOWORK=off; the root
+# .golangci.yml (found by walk-up) carries build-tags=test and the level-0/
+# alfa testui exclusion. Scoped to libs/dewey for now (go-mcp + root are a
+# tracked follow-up).
+[group('pre-build')]
+lint-dewey-self: build-go-gcl
+    cd {{ justfile_directory() }}/libs/dewey && {{ cmd_nix_dev }} env GOWORK=off {{ justfile_directory() }}/build/golangci-lint-dewey run ./...
 
 # ──── build ─────────────────────────────────────────────────────────
 # Compile / generate artifacts.

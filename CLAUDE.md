@@ -19,7 +19,7 @@ are aggregates (no body, only deps); leaves are verb-noun. `just`
 ```sh
 just                    # default = validate lint build test (CI gate; also runs in merge-this-session)
 just validate           # nix flake check + plugin manifest validation
-just lint               # go vet + lint-dewey_pkgs_drift (facade drift) + lint-conformist (read-only format+lint gate)
+just lint               # go vet + lint-dewey_pkgs_drift (facade drift) + lint-conformist (read-only format+lint gate) + lint-dewey-self (dewey analyzers over dewey's own source)
 just build              # build-nix-gomod2nix + nix build (default = purse-first CLI)
 just test               # Run ALL tests (Go + BATS integration)
 just codemod-fmt        # Repo-wide formatter: conformist pass (codemod-fmt-conformist) + Go-only go fmt (codemod-fmt-go). There is no `nix fmt` — conformist must not be a flake input (cycle; see flake.nix inputs comment), it resolves from the eng devshell's PATH

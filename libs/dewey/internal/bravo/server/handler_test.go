@@ -7,6 +7,7 @@ import (
 
 	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/jsonrpc"
 	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
+	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 // stubToolProvider is a minimal V0 tool provider for tests.
@@ -25,6 +26,7 @@ func (s *stubToolProvider) CallTool(ctx context.Context, name string, args json.
 }
 
 func TestVersionNegotiationV0(t *testing.T) {
+	tt := test_ui.T{T: t}
 	s := &Server{
 		opts: Options{
 			ServerName:    "test",
@@ -35,7 +37,7 @@ func TestVersionNegotiationV0(t *testing.T) {
 	s.handler = NewHandler(s)
 
 	// Client sends V0 initialize.
-	initMsg := makeInitialize(t, protocol.ProtocolVersionV0)
+	initMsg := makeInitialize(tt, protocol.ProtocolVersionV0)
 	resp, err := s.handler.Handle(context.Background(), initMsg)
 	if err != nil {
 		t.Fatalf("Handle: %v", err)
@@ -52,6 +54,7 @@ func TestVersionNegotiationV0(t *testing.T) {
 }
 
 func TestVersionNegotiationV1FallbackWhenNoV1Providers(t *testing.T) {
+	tt := test_ui.T{T: t}
 	s := &Server{
 		opts: Options{
 			ServerName:    "test",
@@ -62,7 +65,7 @@ func TestVersionNegotiationV1FallbackWhenNoV1Providers(t *testing.T) {
 	s.handler = NewHandler(s)
 
 	// Client requests V1, but server has no V1 providers — should fall back to V0.
-	initMsg := makeInitialize(t, protocol.ProtocolVersionV1)
+	initMsg := makeInitialize(tt, protocol.ProtocolVersionV1)
 	resp, err := s.handler.Handle(context.Background(), initMsg)
 	if err != nil {
 		t.Fatalf("Handle: %v", err)
@@ -79,6 +82,7 @@ func TestVersionNegotiationV1FallbackWhenNoV1Providers(t *testing.T) {
 }
 
 func TestVersionNegotiationV1WithLoggingProvider(t *testing.T) {
+	tt := test_ui.T{T: t}
 	s := &Server{
 		opts: Options{
 			ServerName:    "test",
@@ -90,7 +94,7 @@ func TestVersionNegotiationV1WithLoggingProvider(t *testing.T) {
 	s.handler = NewHandler(s)
 
 	// Client requests V1 and server has a V1 provider (logging).
-	initMsg := makeInitialize(t, protocol.ProtocolVersionV1)
+	initMsg := makeInitialize(tt, protocol.ProtocolVersionV1)
 	resp, err := s.handler.Handle(context.Background(), initMsg)
 	if err != nil {
 		t.Fatalf("Handle: %v", err)
@@ -113,6 +117,7 @@ func TestVersionNegotiationV1WithLoggingProvider(t *testing.T) {
 }
 
 func TestVersionNegotiationV1WithToolRegistryV1(t *testing.T) {
+	tt := test_ui.T{T: t}
 	registry := NewToolRegistryV1()
 	registry.Register(protocol.ToolV1{
 		Name:        "greet",
@@ -135,7 +140,7 @@ func TestVersionNegotiationV1WithToolRegistryV1(t *testing.T) {
 	s.handler = NewHandler(s)
 
 	// Client requests V1 and server has a V1 tool provider.
-	initMsg := makeInitialize(t, protocol.ProtocolVersionV1)
+	initMsg := makeInitialize(tt, protocol.ProtocolVersionV1)
 	resp, err := s.handler.Handle(context.Background(), initMsg)
 	if err != nil {
 		t.Fatalf("Handle: %v", err)
@@ -208,6 +213,7 @@ func TestUnknownMethodReturnsError(t *testing.T) {
 }
 
 func TestToolsListV0(t *testing.T) {
+	tt := test_ui.T{T: t}
 	s := &Server{
 		opts: Options{
 			ServerName: "test",
@@ -217,7 +223,7 @@ func TestToolsListV0(t *testing.T) {
 	s.handler = NewHandler(s)
 
 	// Initialize first.
-	initMsg := makeInitialize(t, protocol.ProtocolVersionV0)
+	initMsg := makeInitialize(tt, protocol.ProtocolVersionV0)
 	s.handler.Handle(context.Background(), initMsg)
 
 	// List tools.
@@ -248,7 +254,7 @@ func TestToolsListV0(t *testing.T) {
 
 // Helpers
 
-func makeInitialize(t *testing.T, version string) *jsonrpc.Message {
+func makeInitialize(t test_ui.T, version string) *jsonrpc.Message {
 	t.Helper()
 	params := protocol.InitializeParams{
 		ProtocolVersion: version,
@@ -309,6 +315,7 @@ func (s *stubToolProviderV1) CallToolV1(ctx context.Context, name string, args j
 }
 
 func TestPreferV1ProvidersCallTool(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tools := &stubToolProviderV1{}
 	s := &Server{
 		opts: Options{
@@ -321,7 +328,7 @@ func TestPreferV1ProvidersCallTool(t *testing.T) {
 	s.handler = NewHandler(s)
 
 	// Client negotiates V0.
-	initMsg := makeInitialize(t, protocol.ProtocolVersionV0)
+	initMsg := makeInitialize(tt, protocol.ProtocolVersionV0)
 	resp, err := s.handler.Handle(context.Background(), initMsg)
 	if err != nil {
 		t.Fatalf("Handle initialize: %v", err)
@@ -362,6 +369,7 @@ func TestPreferV1ProvidersCallTool(t *testing.T) {
 }
 
 func TestPreferV1ProvidersListTools(t *testing.T) {
+	tt := test_ui.T{T: t}
 	tools := &stubToolProviderV1{}
 	s := &Server{
 		opts: Options{
@@ -374,7 +382,7 @@ func TestPreferV1ProvidersListTools(t *testing.T) {
 	s.handler = NewHandler(s)
 
 	// Client negotiates V0.
-	initMsg := makeInitialize(t, protocol.ProtocolVersionV0)
+	initMsg := makeInitialize(tt, protocol.ProtocolVersionV0)
 	s.handler.Handle(context.Background(), initMsg)
 
 	// List tools — should use V1 provider despite V0 negotiation.
