@@ -19,13 +19,13 @@ are aggregates (no body, only deps); leaves are verb-noun. `just`
 ```sh
 just                    # default = validate lint build test (CI gate; also runs in merge-this-session)
 just validate           # nix flake check + plugin manifest validation
-just lint               # go vet + lint-dewey_pkgs_drift (facade drift) + lint-conformist (read-only format+lint gate) + lint-dewey-self (dewey analyzers over dewey's own source)
+just lint               # go vet + lint-dewey_pkgs_drift (facade drift) + lint-conformist (read-only format+lint gate; builds checks.<sys>.formatting) + lint-dewey-self (dewey analyzers over dewey's own source)
 just build              # build-nix-gomod2nix + nix build (default = purse-first CLI)
 just test               # Run ALL tests (Go + BATS integration)
-just codemod-fmt        # Repo-wide formatter: conformist pass (codemod-fmt-conformist) + Go-only go fmt (codemod-fmt-go). There is no `nix fmt` — conformist must not be a flake input (cycle; see flake.nix inputs comment), it resolves from the eng devshell's PATH
+just codemod-fmt        # Repo-wide formatter: conformist pass (codemod-fmt-conformist = `nix fmt`) + Go-only go fmt (codemod-fmt-go). conformist is now a flake input (the former cycle was broken — see flake.nix inputs comment); the formatter+linter config lives in ./conformist.nix, consumed via conformist.lib.evalModule + presets.eng
 just codemod-fmt-go     # `go fmt ./...` only — for Go-only quick reformat
 just build-nix-gomod2nix # Sync go.work and regenerate gomod2nix.toml
-just update-go           # alias for build-nix-gomod2nix
+just update-go           # delegates to build-nix-gomod2nix
 just lint-dewey_pkgs_drift # dagnabit export --check: fail on libs/dewey/pkgs/ facade drift (no tree mutation)
 ```
 

@@ -175,10 +175,10 @@ eng-design_patterns-justfile(7): bare-verb recipes are aggregates; leaves are
 ```sh
 just                     # default = validate lint build test (the CI gate)
 just validate            # nix flake check + plugin manifest validation
-just lint                # go vet + dewey-facade drift + read-only treefmt gate (lint-fmt)
+just lint                # go vet + dewey-facade drift + read-only conformist gate (lint-conformist) + dewey analyzer dogfood
 just build               # sync gomod2nix + nix build (default = purse-first CLI)
 just test                # all tests (Go + BATS integration)
-nix fmt                  # repo-wide treefmt (Go gofumpt, Nix nixfmt, shell shfmt)
+nix fmt                  # repo-wide conformist format (Go goimports->gofumpt, Nix nixfmt, shell shfmt); = just codemod-fmt-conformist
 just codemod-fmt-go      # go fmt ./... only (quick Go reformat)
 just build-nix-gomod2nix # sync go.work and regenerate gomod2nix.toml
 ```

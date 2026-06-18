@@ -13,12 +13,20 @@
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.flake-utils.follows = "utils";
     };
-    # conformist is deliberately NOT a flake input: conformist itself takes
-    # purse-first as an input (golangci-lint-dewey), so a conformist input
-    # here forms a cycle that unrolls igloo duplicates into every consumer's
-    # lock graph. conformist resolves from PATH instead (the eng devshell
-    # ships a cwd-aware wrapper everywhere); formatting/linting goes through
-    # `just codemod-fmt` / `just lint-conformist`, driven by ./conformist.toml.
+
+    # conformist is purse-first's formatter + eng-convention linter library.
+    # It is now an upstream input (the former cycle is gone): conformist no
+    # longer consumes purse-first — it builds golangci-lint-dewey itself from a
+    # pinned source FOD (conformist master a8471278), so this input does not
+    # close a loop. purse-first consumes conformist.lib.evalModule + presets.eng
+    # via ./conformist.nix; `just lint-conformist` / `just codemod-fmt` drive the
+    # generated check / wrapper. The follows collapse the shared lock subtree.
+    conformist = {
+      url = "github:amarbel-llc/conformist/a8471278ac47e7156581bd214ae5d12c42b4a52d";
+      inputs.igloo.follows = "igloo";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+      inputs.utils.follows = "utils";
+    };
   };
 
   outputs =
@@ -28,6 +36,7 @@
       nixpkgs-master,
       utils,
       gomod2nix,
+      conformist,
     }:
     let
       # Per-system Nix interface to the Go workspace. See gomod.nix. Builds
@@ -67,6 +76,26 @@
         };
         devenvs = buildDevenvs system;
         gomod = gomodBySystem.${system};
+
+        # The conformist binary purse-first runs for `conformist check` /
+        # repair. Its output is input-addressed and version-stamped, so it
+        # churns only when the conformist input is deliberately bumped — not
+        # per purse-first commit.
+        conformistBin = conformist.packages.${system}.default;
+
+        # conformist's own evalModule, fed purse-first's ./conformist.nix plus
+        # the eng-convention preset (presets.eng is a path exposed on
+        # conformist.lib; importing it here keeps ./conformist.nix free of any
+        # `conformist` reference). Yields:
+        #   .config.build.wrapper      — repair-mode runner (`nix fmt`)
+        #   .config.build.check <tree> — read-only `conformist check` gate
+        conformistEval = conformist.lib.evalModule pkgs {
+          imports = [
+            ./conformist.nix
+            conformist.lib.presets.eng
+          ];
+          package = conformistBin;
+        };
       in
       {
         packages = gomod.packages // {
@@ -88,12 +117,13 @@
               pkgs.gum
               pkgs.openssh
               pkgs-master.claude-code
-              # conformist itself comes from the ambient environment (the eng
-              # devshell ships it; see the inputs comment for why it must not
-              # be a flake input). The devShell carries the formatter binaries
-              # its conformist.toml drives: gofumpt/goimports/shfmt/shellcheck
-              # via the go/shell devenvs, nixfmt here. `dagnabit export` and
-              # the just recipes resolve `conformist` from PATH.
+              # conformist itself, pinned via the flake input — on PATH so
+              # dagnabit's FormatOutput() (libs/dewey/.../exporter_treefmt.go)
+              # resolves `conformist` for facade formatting, and for interactive
+              # use. The formatter binaries it drives still come from the
+              # devenvs: gofumpt/goimports/shfmt/shellcheck via go/shell, nixfmt
+              # here.
+              conformistBin
               pkgs.nixfmt
             ];
             inputsFrom = [
@@ -112,8 +142,15 @@
           rust = devenvs.rust.devShells.default;
         };
 
-        # No `formatter` output: it would need conformist, which must not be
-        # a flake input (see the inputs comment). Use `just codemod-fmt`.
+        # Repair-mode formatter (`nix fmt`): conformist wrapped with the
+        # generated config. `just codemod-fmt-conformist` drives this.
+        formatter = conformistEval.config.build.wrapper;
+
+        # Read-only gate: the project tree passes `conformist check` (formatters
+        # would make no change; linters report no findings) without mutating
+        # anything. `just lint-conformist` builds this. build.check takes the
+        # tree path (self), mirroring conformist's own checks.formatting.
+        checks.formatting = conformistEval.config.build.check self;
       }
     );
 }

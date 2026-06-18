@@ -1,9 +1,6 @@
 
 cmd_nix_dev := "nix develop " + justfile_directory() + " --command "
 
-# `just` = CI gate. Aggregates only — see eng-design_patterns-justfile(7)
-# §DEFAULT RECIPE. Pre-merge hook (`merge-this-session`) runs this; if
-# it passes, the project is in a good state.
 default: validate lint build test
 
 # ──── validate ──────────────────────────────────────────────────────
@@ -13,8 +10,9 @@ default: validate lint build test
 validate: validate-nix validate-purse-first-manifest
 
 # `nix flake check` evaluates every flake check, including
-# `checks.treefmt` (catches formatter drift across the whole tree)
-# and the per-package builds the flake exposes.
+# `checks.formatting` (the conformist read-only gate: formatter drift across the
+# whole tree + shellcheck + the eng-convention linters) and the per-package
+# builds the flake exposes.
 [group('pre-build')]
 validate-nix:
     nix flake check
@@ -39,34 +37,38 @@ lint-go:
 # without mutating the tree. `--check` renders + formats facades into a temp dir
 # and compares against the committed ones; it exits nonzero (naming the
 # out-of-sync packages) on drift and fails loud if the formatter (conformist) is
-# missing — no more silent skip / phantom drift. Depends on `dagnabit-build` so
+# missing — no more silent skip / phantom drift. Depends on `build-dagnabit` so
 # the binary under test is the one in the current working tree. Runs the binary
 # ambient (not via `nix develop`) so dewey's `-tags test` build env is honored.
 [group('pre-build')]
-lint-dewey_pkgs_drift: dagnabit-build
+lint-dewey_pkgs_drift: build-dagnabit
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit export --check --library
 
-# conformist check: read-only format + lint gate. Verifies formatter drift via
-# sandbox-and-diff (Go/Nix/shell, per ./conformist.toml) plus shellcheck.
-# conformist is the treefmt successor; this replaces the treefmt-nix check.
+# conformist check: read-only format + lint gate. Builds the flake's
+# `checks.<sys>.formatting` (conformistEval.config.build.check self) — the
+# sandboxed `conformist check` over the whole tree (Go/Nix/shell formatter drift
+# + shellcheck + the eng-convention linters from presets.eng), driven by
+# ./conformist.nix. The read-write counterpart is `codemod-fmt-conformist`.
 [group('pre-build')]
 lint-conformist:
-    {{ cmd_nix_dev }} conformist check
+    nix build {{ justfile_directory() }}#checks.$(nix eval --impure --raw --expr builtins.currentSystem).formatting --no-link
 
-# Lint dewey library.
+[group('pre-build')]
+lint-dewey-extra: lint-dewey lint-dewey-analyzers
+
+# go vet -tags test across the dewey library.
 [group('pre-build')]
 lint-dewey:
     {{ cmd_nix_dev }} go vet -tags test ./libs/dewey/...
 
 # Build one dewey analyzer (defererr|repool|seqerror) and run it via -vettool.
 [group('pre-build')]
-analyze-dewey name:
+lint-dewey-analyzer name:
     {{ cmd_nix_dev }} go build -o build/{{ name }} ./libs/dewey/cmd/{{ name }}
     {{ cmd_nix_dev }} go vet -vettool={{ justfile_directory() }}/build/{{ name }} -tags test ./libs/dewey/...
 
-# Run all three dewey static analyzers.
 [group('pre-build')]
-analyze-dewey-all: (analyze-dewey "defererr") (analyze-dewey "repool") (analyze-dewey "seqerror")
+lint-dewey-analyzers: (lint-dewey-analyzer "defererr") (lint-dewey-analyzer "repool") (lint-dewey-analyzer "seqerror")
 
 # Dogfood the dewey analyzers over dewey's OWN source via the published
 # golangci-lint-dewey custom binary (not -vettool), exercising the exact
@@ -85,15 +87,23 @@ lint-dewey-self: build-go-gcl
 [group('build')]
 build: build-nix-gomod2nix build-nix
 
+[group('build')]
+build-dev: build-go build-dewey build-dagnabit build-go-gcl
+
+[group('build')]
+build-artifacts: build-purse-first build-purse-first-cli build-golangci-dewey build-nix-gomod2nix-gcl
+
 # Build the default Nix output (the purse-first CLI).
 [group('build')]
 build-nix:
     nix build
 
+# Nix-build the purse-first CLI package (result symlink).
 [group('build')]
 build-purse-first:
     nix build .#purse-first
 
+# Nix-build the purse-first CLI to result-cli (for the bats integration lane).
 [group('build')]
 build-purse-first-cli:
     nix build .#purse-first -o result-cli
@@ -104,6 +114,7 @@ build-purse-first-cli:
 build-golangci-dewey:
     nix build .#golangci-lint-dewey -o result-gcl
 
+# Go-build the purse-first CLI into build/ for the dev loop (no nix).
 [group('build')]
 build-go:
     {{ cmd_nix_dev }} go build -o build/purse-first ./cmd/purse-first
@@ -170,25 +181,22 @@ build-nix-gomod2nix-gcl:
         --target darwin/amd64 \
         --target darwin/arm64
 
-# Rebuild build/dagnabit from source. Not a dep of the dewey-* recipes
+# Rebuild build/dagnabit from source. Not a dep of the codemod-dewey-* recipes
 # because those need to work mid-bootstrap when cmd/dagnabit's imports
 # may temporarily reference paths that don't compile yet. Run this
 # manually when you've changed dagnabit's source.
 [group('build')]
-dagnabit-build:
+build-dagnabit:
     {{ cmd_nix_dev }} go build -o {{ justfile_directory() }}/build/dagnabit ./cmd/dagnabit
 
 # ──── test ──────────────────────────────────────────────────────────
 # Post-build: run test suites against built artifacts and source.
 
 [group('post-build')]
-test: \
-    test-go \
-    test-go-mcp \
-    test-dewey \
-    test-integration \
-    test-golangci-dewey \
-    test-dagnabit-rust
+test: test-go test-go-mcp test-dewey test-integration test-golangci-dewey test-dagnabit-rust
+
+[group('post-build')]
+test-extra: test-v test-race test-validate test-validate-mcp
 
 # Run Go tests.
 [group('post-build')]
@@ -245,7 +253,7 @@ explore-test-golangci-dewey-dev: build-go-gcl
 # cargo fixture workspaces). Tests skip gracefully when cargo/ast-grep
 # are not on PATH, so the CI gate stays green without the rust devshell.
 [group('post-build')]
-test-dagnabit-rust: dagnabit-build
+test-dagnabit-rust: build-dagnabit
     {{ cmd_nix_dev }} bats --tap zz-tests_bats/dagnabit_rust.bats
 
 # Run MCP validation tests.
@@ -256,16 +264,16 @@ test-validate-mcp: build-purse-first-cli
 # ──── codemod ───────────────────────────────────────────────────────
 # Modifies source code.
 
-# Format aggregate: repo-wide conformist pass plus the Go-only quick reformat.
 [group('codemod')]
 codemod-fmt: codemod-fmt-conformist codemod-fmt-go
 
-# Repo-wide format via conformist (the treefmt successor): Go (goimports ->
-# gofumpt), Nix (nixfmt), and shell (shfmt), per ./conformist.toml. Replaces the
-# old `nix fmt` (treefmt-nix) path. The read-only counterpart is `lint-conformist`.
+# Repo-wide format via conformist: Go (goimports -> gofumpt), Nix (nixfmt), and
+# shell (shfmt -i 2 -s -ci), per ./conformist.nix. Runs the flake `formatter`
+# output (conformistEval.config.build.wrapper, repair mode). The read-only
+# counterpart is `lint-conformist`.
 [group('codemod')]
 codemod-fmt-conformist:
-    {{ cmd_nix_dev }} conformist
+    nix fmt
 
 # `go fmt ./...` for a quick Go-only reformat. The canonical repo-wide
 # formatter is `codemod-fmt-conformist`.
@@ -275,37 +283,37 @@ codemod-fmt-go:
 
 # Dry-run a single-package rename: print the proposed move as NDJSON,
 # touch nothing on disk. `new_leaf` is optional; defaults to src's leaf.
-[group('codemod')]
-dewey-rename pkg new_leaf="":
+[group('debug')]
+debug-dewey-rename pkg new_leaf="":
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit rename -n {{ pkg }} {{ new_leaf }}
 
 # Apply a single-package rename. Emits an NDJSON `move` event on success.
-[group('codemod')]
-dewey-rename-apply pkg new_leaf="":
+[group('debug')]
+debug-dewey-rename-apply pkg new_leaf="":
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit rename {{ pkg }} {{ new_leaf }}
 
 # Dry-run a full reposition of libs/dewey/internal/. Prints NDJSON
 # `would-move` events for each package that needs repositioning.
-[group('codemod')]
-dewey-reposition:
+[group('debug')]
+debug-dewey-reposition:
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit -n internal
 
 # Apply a full reposition of libs/dewey/internal/. Real moves print
 # NDJSON `move` events as they happen.
-[group('codemod')]
-dewey-reposition-apply:
+[group('debug')]
+debug-dewey-reposition-apply:
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit internal
 
 # Generate a public facade in libs/dewey/pkgs/ for a single internal
 # package. `pkg` is the path inside libs/dewey, e.g. `internal/0/go_module`.
-[group('codemod')]
-dewey-export pkg:
+[group('debug')]
+debug-dewey-export pkg:
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit export ./{{ pkg }}
 
 # Generate pkgs/ facades for every package under libs/dewey/internal/ (library mode).
 # Fails if any //go:generate dagnabit export directives are found.
-[group('codemod')]
-dewey-export-library *flags:
+[group('debug')]
+debug-dewey-export-library *flags:
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit export --library {{ flags }}
 
 # ──── maintenance ───────────────────────────────────────────────────
@@ -314,18 +322,22 @@ dewey-export-library *flags:
 [group('maintenance')]
 update: update-nix update-go
 
+# Refresh the flake.lock inputs.
 [group('maintenance')]
 update-nix:
     nix flake update
 
 # Resync go.work and refresh gomod2nix.toml. (Regenerates the lockfile from
-# the current go.mod / go.sum / go.work; does not bump pins.)
+# the current go.mod / go.sum / go.work; does not bump pins.) Delegates to
+# build-nix-gomod2nix via a body call rather than a dependency so that recipe
+# stays owned by exactly one aggregate (build) per the task-hierarchy rule.
 [group('maintenance')]
-update-go: build-nix-gomod2nix
+update-go:
+    just build-nix-gomod2nix
 
 # Clean build artifacts.
 [group('maintenance')]
-clean:
+clean-build:
     rm -f purse-first
     rm -rf build/
     rm -rf result result-cli result-gcl
@@ -409,6 +421,10 @@ release new_version:
 # Discovery / one-off experiments. Promoted to debug-* if they outlive
 # their question.
 
+# One-off probe: copy dewey to a temp dir, reposition NATO levels into
+# internal/, run dagnabit export, and isolate a single facade build on failure.
+# Scratch reproduction for the dagnabit export/reposition bootstrap; delete once
+# its question is answered.
 [group('explore')]
 explore-dagnabit-export:
     #!/usr/bin/env bash
