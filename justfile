@@ -193,7 +193,13 @@ build-dagnabit:
 # Post-build: run test suites against built artifacts and source.
 
 [group('post-build')]
-test: test-go test-go-mcp test-dewey test-integration test-golangci-dewey test-dagnabit-rust
+test: \
+    test-go \
+    test-go-mcp \
+    test-dewey \
+    test-integration \
+    test-golangci-dewey \
+    test-dagnabit-rust
 
 [group('post-build')]
 test-extra: test-v test-race test-validate test-validate-mcp

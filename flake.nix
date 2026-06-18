@@ -15,14 +15,15 @@
     };
 
     # conformist is purse-first's formatter + eng-convention linter library.
-    # It is now an upstream input (the former cycle is gone): conformist no
-    # longer consumes purse-first — it builds golangci-lint-dewey itself from a
-    # pinned source FOD (conformist master a8471278), so this input does not
-    # close a loop. purse-first consumes conformist.lib.evalModule + presets.eng
-    # via ./conformist.nix; `just lint-conformist` / `just codemod-fmt` drive the
-    # generated check / wrapper. The follows collapse the shared lock subtree.
+    # It is an upstream input (no cycle): conformist no longer consumes
+    # purse-first — it builds golangci-lint-dewey itself from a pinned source
+    # FOD, so this input does not close a loop. purse-first consumes
+    # conformist.lib.evalModule + presets.eng via ./conformist.nix; `just
+    # lint-conformist` / `just codemod-fmt` drive the generated check / wrapper.
+    # The follows collapse the shared lock subtree. Pinned at 1b8e32d for the
+    # canonical fixed justfile-default and the programs.shfmt.caseIndent option.
     conformist = {
-      url = "github:amarbel-llc/conformist/a8471278ac47e7156581bd214ae5d12c42b4a52d";
+      url = "github:amarbel-llc/conformist/1b8e32db0ee450601b0e70bb84b3b784e5f7cc3d";
       inputs.igloo.follows = "igloo";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";
@@ -86,16 +87,12 @@
         # conformist's own evalModule, fed purse-first's ./conformist.nix plus
         # the eng-convention preset (presets.eng is a path exposed on
         # conformist.lib; importing it here keeps ./conformist.nix free of any
-        # `conformist` reference) and purse-first's own correct
-        # justfile-default linter (./nix/linters/justfile-default-native.nix —
-        # mkLinterModule/mkFormatterModule are in scope via evalModule's
-        # specialArgs). Yields:
+        # `conformist` reference). Yields:
         #   .config.build.wrapper      — repair-mode runner (`nix fmt`)
         #   .config.build.check <tree> — read-only `conformist check` gate
         conformistEval = conformist.lib.evalModule pkgs {
           imports = [
             ./conformist.nix
-            ./nix/linters/justfile-default-native.nix
             conformist.lib.presets.eng
           ];
           package = conformistBin;

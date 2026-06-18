@@ -9,7 +9,7 @@
 #
 # See conformist's own nix/conformist.nix for the reference shape and the
 # `nix flake init -t github:amarbel-llc/conformist#eng` template.
-{ lib, ... }:
+{ ... }:
 {
   projectRootFile = "flake.nix";
 
@@ -26,25 +26,18 @@
   programs.nixfmt.enable = true;
 
   # Project shell style: 2-space indent, simplify, switch-case indent.
-  # programs.shfmt contributes `-i 2 -s` (indent_size defaults to 2, simplify
-  # defaults to true); it does NOT expose `-ci`, so append it via raw settings
-  # (mkAfter so `-ci` lands after the program's `-i 2 -s`). A first-class
-  # programs.shfmt.caseIndent option is a tracked conformist followup; swap to
-  # it once available and drop this augmentation.
+  # programs.shfmt emits `-i 2 -s -ci` by default (indent_size 2, simplify true,
+  # caseIndent true as of conformist 1b8e32d — the option that retired the old
+  # `settings.formatter.shfmt.options = lib.mkAfter ["-ci"]` augmentation).
   programs.shfmt.enable = true;
-  settings.formatter.shfmt.options = lib.mkAfter [ "-ci" ];
 
   # Linter: shellcheck over the justfile recipes' shell and any *.sh/*.bash/*.bats.
   linters.shellcheck.enable = true;
 
-  # justfile-default: use purse-first's CORRECT implementation (native
-  # `just --dump` plumbing) and force OFF presets.eng's buggy one, which
-  # awk-sniffs raw text and false-positives on backslash-continued aggregates.
-  # mkForce overrides the preset's `enable = true`. The native module is imported
-  # in flake.nix's evalModule. Reclaim the canonical name once conformist drops
-  # its version (purse-first task #8 / conformist drop request).
-  linters.justfile-default.enable = lib.mkForce false;
-  linters.justfile-default-native.enable = true;
+  # justfile-default comes from presets.eng — conformist fixed its
+  # backslash-continued-aggregate false positive upstream (587cabc, then 1b8e32d)
+  # by switching to `just --dump --dump-format json` plumbing, so purse-first no
+  # longer needs a local replacement.
 
   # NOTE: do NOT enable linters.golangci-dewey. purse-first's lint-go is
   # `go vet ./...` and there is no root .golangci.{yml,yaml}; that linter is
