@@ -86,12 +86,16 @@
         # conformist's own evalModule, fed purse-first's ./conformist.nix plus
         # the eng-convention preset (presets.eng is a path exposed on
         # conformist.lib; importing it here keeps ./conformist.nix free of any
-        # `conformist` reference). Yields:
+        # `conformist` reference) and purse-first's own correct
+        # justfile-default linter (./nix/linters/justfile-default-native.nix —
+        # mkLinterModule/mkFormatterModule are in scope via evalModule's
+        # specialArgs). Yields:
         #   .config.build.wrapper      — repair-mode runner (`nix fmt`)
         #   .config.build.check <tree> — read-only `conformist check` gate
         conformistEval = conformist.lib.evalModule pkgs {
           imports = [
             ./conformist.nix
+            ./nix/linters/justfile-default-native.nix
             conformist.lib.presets.eng
           ];
           package = conformistBin;

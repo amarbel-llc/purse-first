@@ -37,6 +37,15 @@
   # Linter: shellcheck over the justfile recipes' shell and any *.sh/*.bash/*.bats.
   linters.shellcheck.enable = true;
 
+  # justfile-default: use purse-first's CORRECT implementation (native
+  # `just --dump` plumbing) and force OFF presets.eng's buggy one, which
+  # awk-sniffs raw text and false-positives on backslash-continued aggregates.
+  # mkForce overrides the preset's `enable = true`. The native module is imported
+  # in flake.nix's evalModule. Reclaim the canonical name once conformist drops
+  # its version (purse-first task #8 / conformist drop request).
+  linters.justfile-default.enable = lib.mkForce false;
+  linters.justfile-default-native.enable = true;
+
   # NOTE: do NOT enable linters.golangci-dewey. purse-first's lint-go is
   # `go vet ./...` and there is no root .golangci.{yml,yaml}; that linter is
   # whole-tree tree-root and would hit its "repo does not gate on golangci-lint;
