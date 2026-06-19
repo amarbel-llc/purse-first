@@ -26,7 +26,21 @@ validate-purse-first-manifest:
 # Read-only style / convention / drift checks. Does not modify code.
 
 [group('pre-build')]
-lint: lint-go lint-dewey_pkgs_drift lint-conformist lint-dewey-self
+lint: lint-go lint-dewey_pkgs_drift lint-conformist lint-dewey-self lint-worktree
+
+# Impure conformist lane (purse-first#160): the working-tree checks that can't
+# run in the sandboxed checks.formatting because they need host tools + the live
+# module graph — currently the dewey NATO-level reposition-drift check, which
+# shells out to `go list`. Builds the impure config (.#conformist-impure-config)
+# and runs `conformist check` against the working tree with `dagnabit` (built
+# into build/) and `go` on PATH. Mirrors conformist's own `lint-worktree`.
+[group('pre-build')]
+lint-worktree: build-dagnabit
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cfg=$(nix build {{ justfile_directory() }}#conformist-impure-config --no-link --print-out-paths)
+    PATH="{{ justfile_directory() }}/build:$PATH" \
+      {{ cmd_nix_dev }} conformist check --config-file "$cfg" --tree-root {{ justfile_directory() }}
 
 # `go vet` across the workspace.
 [group('pre-build')]

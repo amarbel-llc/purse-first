@@ -97,6 +97,19 @@
           ];
           package = conformistBin;
         };
+
+        # IMPURE conformist config: whole-tree checks that need the live working
+        # tree + host tools (the Go module cache / `go list` via the dewey
+        # reposition linter) and so cannot run in the sandboxed checks.formatting.
+        # `just lint-worktree` builds this config and runs `conformist check`
+        # against the working tree. See ./conformist-impure.nix.
+        conformistImpureEval = conformist.lib.evalModule pkgs {
+          imports = [
+            ./conformist-impure.nix
+            ./nix/linters/dewey-reposition.nix
+          ];
+          package = conformistBin;
+        };
       in
       {
         packages = gomod.packages // {
@@ -111,6 +124,9 @@
           # rather than searching upward for a nonexistent conformist.toml and
           # escalating to a stray ancestor (purse-first#159).
           conformist-config = conformistEval.config.build.configFile;
+          # The generated config for the impure (working-tree) self-checks,
+          # consumed by `just lint-worktree`. See ./conformist-impure.nix.
+          conformist-impure-config = conformistImpureEval.config.build.configFile;
         };
 
         apps.default = {
