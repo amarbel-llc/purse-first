@@ -193,13 +193,26 @@ func outputDirExists(outputPath string) (bool, error) {
 // untracked paths — including freshly generated facades and the temp dir used
 // by `export --check`. Anchoring the tree root at the output dir and walking
 // the filesystem formats every generated file regardless of git status.
+//
+// The exception is the Nix-generated conformist *wrapper* (purse-first#162):
+// it execs `conformist --config-file=<store> --tree-root-file=<projectRootFile>
+// "$@"`, baking a tree root that conformist treats as mutually exclusive with
+// our --tree-root ("if any flags in the group [tree-root tree-root-cmd
+// tree-root-file] are set none of the others can be"). When the resolved
+// conformist already bakes a tree root, we omit --tree-root and let the
+// wrapper's --tree-root-file stand; --walk filesystem and the positional
+// outputPath still scope the walk to the generated files.
 func runConformist(workDir, outputPath, configFile string) error {
 	conformistPath, err := exec.LookPath("conformist")
 	if err != nil {
 		return fmt.Errorf("conformist: %w", err)
 	}
 
-	args := []string{"--tree-root", outputPath, "--walk", "filesystem"}
+	var args []string
+	if !conformistBakesTreeRoot(conformistPath) {
+		args = append(args, "--tree-root", outputPath)
+	}
+	args = append(args, "--walk", "filesystem")
 	if configFile != "" {
 		args = append(args, "--config-file", configFile)
 	}
@@ -214,4 +227,37 @@ func runConformist(workDir, outputPath, configFile string) error {
 		return fmt.Errorf("conformist: %w", err)
 	}
 	return nil
+}
+
+// treeRootBakingFlags are the conformist tree-root flags whose presence in the
+// resolved conformist invocation means dagnabit must NOT add its own
+// --tree-root: conformist rejects setting more than one of the
+// [tree-root tree-root-cmd tree-root-file] group.
+var treeRootBakingFlags = []string{
+	"--tree-root-file",
+	"--tree-root-cmd",
+	"--tree-root",
+}
+
+// conformistBakesTreeRoot reports whether the resolved conformist is the
+// Nix-generated wrapper, which execs the raw binary with a tree-root flag
+// already baked in (purse-first#162). The wrapper is a `writeShellScriptBin`
+// shell script whose body contains a literal --tree-root-file=<projectRootFile>
+// (see conformist's nix/module-options.nix build.wrapper); the raw binary is an
+// ELF/Mach-O whose bytes won't carry the literal flag. Reading the resolved
+// path and scanning for a tree-root flag distinguishes the two without a new
+// env signal to plumb. A read error or absent flag falls back to the raw-binary
+// assumption (append --tree-root), preserving the pre-#162 behavior.
+func conformistBakesTreeRoot(conformistPath string) bool {
+	contents, err := os.ReadFile(conformistPath)
+	if err != nil {
+		return false
+	}
+	body := string(contents)
+	for _, flag := range treeRootBakingFlags {
+		if strings.Contains(body, flag) {
+			return true
+		}
+	}
+	return false
 }

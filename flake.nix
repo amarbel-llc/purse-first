@@ -101,8 +101,9 @@
         # IMPURE conformist config: whole-tree checks that need the live working
         # tree + host tools (the Go module cache / `go list` via the dewey
         # reposition linter) and so cannot run in the sandboxed checks.formatting.
-        # `just lint-worktree` builds this config and runs `conformist check`
-        # against the working tree. See ./conformist-impure.nix.
+        # `just lint-worktree` builds the impure WRAPPER (build.wrapper, exposed
+        # below as conformist-impure) and runs `conformist check` against the
+        # working tree. See ./conformist-impure.nix.
         conformistImpureEval = conformist.lib.evalModule pkgs {
           imports = [
             ./conformist-impure.nix
@@ -127,6 +128,18 @@
           # The generated config for the impure (working-tree) self-checks,
           # consumed by `just lint-worktree`. See ./conformist-impure.nix.
           conformist-impure-config = conformistImpureEval.config.build.configFile;
+          # The HERMETIC conformist wrapper for the impure lane: the conformist
+          # binary with the impure config + `--tree-root-file=flake.nix` baked in
+          # (build.wrapper). `just lint-worktree` builds this and runs it as
+          # `conformist-impure check`, so the lane runs on purse-first's pinned
+          # conformist toolchain rather than the home-manager profile binary that
+          # plain `conformist` would resolve to (purse-first#161 — the
+          # working-tree analogue of #155). Unlike conformist-config's sandboxed
+          # `conformistEval.config.build.check self`, the impure lane needs the
+          # LIVE worktree + host tools (`go list`, `dagnabit`), so it uses the
+          # wrapper (which locates the worktree via `--tree-root-file`) rather
+          # than a `/nix/store`-copy check derivation.
+          conformist-impure = conformistImpureEval.config.build.wrapper;
         };
 
         apps.default = {

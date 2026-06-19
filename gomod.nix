@@ -148,8 +148,12 @@ in
 
     dagnabit = mkGoModule {
       pname = "dagnabit";
-      version = "0.1.0";
+      version = purseFirstVersion;
       subPackages = [ "cmd/dagnabit" ];
+      # Burn the dewey buildinfo (version+commit) into the binary so
+      # `dagnabit version` and the generated-facade header report real
+      # provenance instead of dev+unknown (purse-first#164, #165).
+      ldflags = deweyLdflags;
       nativeBuildInputs = [ goPkgs.makeWrapper ];
       # Rust mode shells out to ast-grep for crate-rename source rewrites.
       # --suffix (not --prefix): a user-provided ast-grep on PATH wins; the

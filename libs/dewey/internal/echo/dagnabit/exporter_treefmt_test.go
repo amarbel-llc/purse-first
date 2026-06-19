@@ -336,6 +336,41 @@ func withFakeConformist(t test_ui.T, sentinelPath string) {
 	prependPath(t, binDir)
 }
 
+// withFakeWrapperConformist installs a fake `conformist` that models the
+// Nix-generated wrapper: its script body bakes a --tree-root-file flag (as
+// conformist's build.wrapper does), so conformistBakesTreeRoot detects it and
+// FormatOutput omits dagnabit's own --tree-root (purse-first#162). Like the
+// plain fake it records the argv it is actually invoked with into sentinelPath.
+func withFakeWrapperConformist(t test_ui.T, sentinelPath string) {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.T.Skip("PATH-injection fake binary not portable to Windows")
+	}
+
+	binDir := t.TempDir()
+	fake := filepath.Join(binDir, "conformist")
+	script := fmt.Sprintf(
+		"#!/bin/sh\n# --tree-root-file=/baked/flake.nix (wrapper-baked tree root)\n"+
+			"printf '%%s\\n' \"$@\" > %q\n",
+		sentinelPath,
+	)
+	if err := os.WriteFile(fake, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	prependPath(t, binDir)
+}
+
+// readSentinelArgs reads the newline-separated argv a fake formatter recorded.
+func readSentinelArgs(t test_ui.T, sentinelPath string) []string {
+	t.Helper()
+	body, err := os.ReadFile(sentinelPath)
+	if err != nil {
+		t.Fatalf("expected sentinel to be written by fake conformist: %v", err)
+	}
+	return strings.Split(strings.TrimSpace(string(body)), "\n")
+}
+
 // TestFindTreefmtConfig_CeilingStopsEscalation is the purse-first#159
 // regression: a config only in an ANCESTOR is NOT found when
 // DAGNABIT_CEILING_DIRECTORIES bounds the walk below that ancestor. Models the
@@ -480,5 +515,65 @@ func TestFormatOutput_InvokesConformist(t *testing.T) {
 	args := strings.Split(strings.TrimSpace(string(body)), "\n")
 	if len(args) == 0 || !strings.HasSuffix(args[len(args)-1], "pkgs") {
 		t.Errorf("expected fake conformist to be invoked with output dir as last arg, got args=%v", args)
+	}
+}
+
+// TestFormatOutput_PlainConformistGetsTreeRoot confirms the raw conformist
+// binary (no baked tree root) is still invoked with dagnabit's own
+// --tree-root, the pre-purse-first#162 behavior. Pairs with
+// TestFormatOutput_WrapperConformistOmitsTreeRoot below.
+func TestFormatOutput_PlainConformistGetsTreeRoot(t *testing.T) {
+	tt := test_ui.T{T: t}
+	tmpDir := t.TempDir()
+	mustMkdirAll(tt, filepath.Join(tmpDir, "pkgs"))
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "conformist.toml"), []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	sentinel := filepath.Join(tmpDir, "sentinel")
+	withFakeConformist(tt, sentinel)
+
+	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
+	if err := exporter.FormatOutput(); err != nil {
+		t.Fatalf("FormatOutput: %v", err)
+	}
+
+	args := readSentinelArgs(tt, sentinel)
+	if !slices.Contains(args, "--tree-root") {
+		t.Errorf("expected plain conformist to receive --tree-root, got args=%v", args)
+	}
+}
+
+// TestFormatOutput_WrapperConformistOmitsTreeRoot is the purse-first#162
+// regression: when the on-PATH conformist is the Nix-generated wrapper (which
+// bakes --tree-root-file), dagnabit must NOT append --tree-root, else conformist
+// rejects the mutually-exclusive tree-root flags.
+func TestFormatOutput_WrapperConformistOmitsTreeRoot(t *testing.T) {
+	tt := test_ui.T{T: t}
+	tmpDir := t.TempDir()
+	mustMkdirAll(tt, filepath.Join(tmpDir, "pkgs"))
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "conformist.toml"), []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	sentinel := filepath.Join(tmpDir, "sentinel")
+	withFakeWrapperConformist(tt, sentinel)
+
+	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
+	if err := exporter.FormatOutput(); err != nil {
+		t.Fatalf("FormatOutput: %v", err)
+	}
+
+	args := readSentinelArgs(tt, sentinel)
+	if slices.Contains(args, "--tree-root") {
+		t.Errorf("expected wrapper conformist NOT to receive --tree-root (collides with baked --tree-root-file), got args=%v", args)
+	}
+	if !slices.Contains(args, "--walk") {
+		t.Errorf("expected wrapper conformist to still receive --walk filesystem, got args=%v", args)
+	}
+	if len(args) == 0 || !strings.HasSuffix(args[len(args)-1], "pkgs") {
+		t.Errorf("expected wrapper conformist to still get the output dir as last arg, got args=%v", args)
 	}
 }

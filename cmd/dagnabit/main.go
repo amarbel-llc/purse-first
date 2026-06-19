@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/buildinfo"
 	cargo_metadata "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/cargo_metadata"
 	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/dagnabit"
 	dagnabit_rust "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/dagnabit_rust"
@@ -14,6 +15,11 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[0] != "-" && os.Args[1] == "version" {
+		buildinfo.Print(os.Stdout, os.Args[0])
+		return
+	}
+
 	if len(os.Args) > 1 && os.Args[0] != "-" && os.Args[1] == "export" {
 		os.Args = append(os.Args[:1], os.Args[2:]...)
 		runExport()

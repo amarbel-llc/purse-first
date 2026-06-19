@@ -13,11 +13,12 @@ var (
 	Commit  = "unknown"
 )
 
-// Print writes the eng-versioning(7) version-subcommand output:
-// a self-identification line, a blank line, then the component table
-// header. Dewey binaries pin no downstreams, so the table is empty.
+// Print writes the eng-versioning(7) version-subcommand output. Dewey
+// binaries pin no downstream components, so per the spec they emit only
+// the self-identification line — no blank line, no component table:
+//
+//	name VERSION+COMMIT
 func Print(w io.Writer, argv0 string) {
 	name := filepath.Base(argv0)
-	fmt.Fprintf(w, "%s %s+%s\n\n", name, Version, Commit)
-	fmt.Fprintln(w, "COMPONENT            VERSION      REV")
+	fmt.Fprintf(w, "%s %s+%s\n", name, Version, Commit)
 }

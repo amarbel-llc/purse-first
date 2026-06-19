@@ -31,16 +31,29 @@ lint: lint-go lint-dewey_pkgs_drift lint-conformist lint-dewey-self lint-worktre
 # Impure conformist lane (purse-first#160): the working-tree checks that can't
 # run in the sandboxed checks.formatting because they need host tools + the live
 # module graph — currently the dewey NATO-level reposition-drift check, which
-# shells out to `go list`. Builds the impure config (.#conformist-impure-config)
-# and runs `conformist check` against the working tree with `dagnabit` (built
-# into build/) and `go` on PATH. Mirrors conformist's own `lint-worktree`.
+# shells out to `go list`. Builds the HERMETIC impure wrapper
+# (.#conformist-impure, = conformistImpureEval.config.build.wrapper — the pinned
+# conformist binary with the impure config + `--tree-root-file=flake.nix` baked
+# in) and runs `conformist check` against the working tree with `dagnabit` (built
+# into build/) and `go` on PATH.
+#
+# purse-first#161 (working-tree analogue of #155): use the flake wrapper, NOT a
+# bare on-PATH `conformist`. Plain `conformist` resolves to the home-manager
+# profile binary with a fixed baked toolchain that can't see repo-local
+# conformist tools; the wrapper carries purse-first's own pinned toolchain, so a
+# future impure linter that depends on a repo-local tool stays self-contained.
+# This mirrors how the PURE lane's `lint-conformist` builds a flake output
+# (checks.<sys>.formatting) instead of invoking `conformist` directly. The
+# wrapper bakes `--tree-root-file=flake.nix`, locating the LIVE worktree from
+# cwd; we must NOT also pass `--tree-root` (mutually exclusive — cmd/root.go).
 [group('pre-build')]
 lint-worktree: build-dagnabit
     #!/usr/bin/env bash
     set -euo pipefail
-    cfg=$(nix build {{ justfile_directory() }}#conformist-impure-config --no-link --print-out-paths)
+    wrapper=$(nix build {{ justfile_directory() }}#conformist-impure --no-link --print-out-paths)
+    cd {{ justfile_directory() }}
     PATH="{{ justfile_directory() }}/build:$PATH" \
-      {{ cmd_nix_dev }} conformist check --config-file "$cfg" --tree-root {{ justfile_directory() }}
+      {{ cmd_nix_dev }} "$wrapper/bin/conformist" check
 
 # `go vet` across the workspace.
 [group('pre-build')]
