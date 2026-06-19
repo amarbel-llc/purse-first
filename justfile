@@ -40,9 +40,22 @@ lint-go:
 # missing — no more silent skip / phantom drift. Depends on `build-dagnabit` so
 # the binary under test is the one in the current working tree. Runs the binary
 # ambient (not via `nix develop`) so dewey's `-tags test` build env is honored.
+#
+# purse-first#159: purse-first has NO conformist.toml on disk (Nix-generated
+# config), so dagnabit is pointed at the generated config via
+# DAGNABIT_CONFORMIST_CONFIG (the .#conformist-config flake output) — it then
+# formats facades with purse-first's REAL config instead of searching upward
+# and escalating to a stray ancestor ~/eng/conformist.toml. The CEILING env var
+# is a belt-and-suspenders bound that stops any upward walk at the worktree root.
 [group('pre-build')]
 lint-dewey_pkgs_drift: build-dagnabit
-    cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit export --check --library
+    #!/usr/bin/env bash
+    set -euo pipefail
+    config=$(nix build {{ justfile_directory() }}#conformist-config --no-link --print-out-paths)
+    cd {{ justfile_directory() }}/libs/dewey && \
+      DAGNABIT_CONFORMIST_CONFIG="$config" \
+      DAGNABIT_CEILING_DIRECTORIES="{{ justfile_directory() }}" \
+      {{ justfile_directory() }}/build/dagnabit export --check --library
 
 # conformist check: read-only format + lint gate. Builds the flake's
 # `checks.<sys>.formatting` (conformistEval.config.build.check self) — the

@@ -104,6 +104,13 @@
           default = gomod.packages.purse-first;
           # The go-mcp manpage tree (formerly bundled into the marketplace).
           manpages = gomod.manpages;
+          # The generated conformist config (TOML) for ./conformist.nix +
+          # presets.eng. dagnabit's facade-format lane builds this and points
+          # `dagnabit export` at it via DAGNABIT_CONFORMIST_CONFIG, so dagnabit
+          # formats facades with purse-first's REAL (Nix-generated) config
+          # rather than searching upward for a nonexistent conformist.toml and
+          # escalating to a stray ancestor (purse-first#159).
+          conformist-config = conformistEval.config.build.configFile;
         };
 
         apps.default = {

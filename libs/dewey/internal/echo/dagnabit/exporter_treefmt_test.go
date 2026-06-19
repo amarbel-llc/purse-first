@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 
@@ -333,6 +334,104 @@ func withFakeConformist(t test_ui.T, sentinelPath string) {
 	}
 
 	prependPath(t, binDir)
+}
+
+// TestFindTreefmtConfig_CeilingStopsEscalation is the purse-first#159
+// regression: a config only in an ANCESTOR is NOT found when
+// DAGNABIT_CEILING_DIRECTORIES bounds the walk below that ancestor. Models the
+// real failure — a repo with a Nix-generated conformist config (none on disk)
+// must not escalate to a stray ancestor conformist.toml.
+func TestFindTreefmtConfig_CeilingStopsEscalation(t *testing.T) {
+	tt := test_ui.T{T: t}
+	root := t.TempDir()
+
+	// Config lives only at the ancestor root.
+	if err := os.WriteFile(filepath.Join(root, "conformist.toml"), []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// The "repo" is root/repo; the walk starts in a subdir of it.
+	repo := filepath.Join(root, "repo")
+	start := filepath.Join(repo, "libs", "dewey")
+	mustMkdirAll(tt, start)
+
+	// Ceiling at the repo so the walk checks repo and below but never ascends
+	// to root (where the stray config is).
+	t.Setenv("DAGNABIT_CEILING_DIRECTORIES", absForTest(tt, repo))
+
+	if dir, name, ok := findTreefmtConfig(start); ok {
+		t.Errorf("expected ceiling to stop escalation to ancestor config, but found %s at %s", name, dir)
+	}
+}
+
+// TestFindTreefmtConfig_CeilingAllowsInTreeConfig confirms the ceiling does not
+// block finding a config at or below the start: a config at the repo root is
+// still found with the ceiling set at the repo's parent.
+func TestFindTreefmtConfig_CeilingAllowsInTreeConfig(t *testing.T) {
+	tt := test_ui.T{T: t}
+	root := t.TempDir()
+	repo := filepath.Join(root, "repo")
+	start := filepath.Join(repo, "libs", "dewey")
+	mustMkdirAll(tt, start)
+
+	// In-tree config at the repo root.
+	if err := os.WriteFile(filepath.Join(repo, "conformist.toml"), []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Ceiling at root (repo's parent): the walk may still reach repo itself.
+	t.Setenv("DAGNABIT_CEILING_DIRECTORIES", absForTest(tt, root))
+
+	dir, name, ok := findTreefmtConfig(start)
+	if !ok {
+		t.Fatal("expected in-tree config to be found with ceiling at repo parent")
+	}
+	if name != "conformist.toml" {
+		t.Errorf("expected conformist.toml, got %q", name)
+	}
+	if dir != absForTest(tt, repo) {
+		t.Errorf("expected dir=%s, got %s", repo, dir)
+	}
+}
+
+// TestFormatOutput_ExplicitConfigPassesConfigFile confirms that
+// DAGNABIT_CONFORMIST_CONFIG short-circuits discovery and invokes conformist
+// with --config-file pointing at the explicit (e.g. Nix-generated) config —
+// the purse-first#159 escape hatch for a repo with no conformist.toml on disk.
+func TestFormatOutput_ExplicitConfigPassesConfigFile(t *testing.T) {
+	tt := test_ui.T{T: t}
+	tmpDir := t.TempDir()
+	mustMkdirAll(tt, filepath.Join(tmpDir, "pkgs"))
+
+	// No conformist.toml anywhere in-tree; a ceiling guarantees discovery would
+	// otherwise find nothing.
+	t.Setenv("DAGNABIT_CEILING_DIRECTORIES", absForTest(tt, tmpDir))
+
+	configFile := filepath.Join(tmpDir, "generated-conformist.toml")
+	if err := os.WriteFile(configFile, []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("DAGNABIT_CONFORMIST_CONFIG", configFile)
+
+	sentinel := filepath.Join(tmpDir, "sentinel")
+	withFakeConformist(tt, sentinel)
+
+	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
+	if err := exporter.FormatOutput(); err != nil {
+		t.Fatalf("FormatOutput with explicit config: %v", err)
+	}
+
+	body, err := os.ReadFile(sentinel)
+	if err != nil {
+		t.Fatalf("expected sentinel to be written by fake conformist: %v", err)
+	}
+	args := strings.Split(strings.TrimSpace(string(body)), "\n")
+	if !slices.Contains(args, "--config-file") {
+		t.Errorf("expected conformist to be invoked with --config-file, got args=%v", args)
+	}
+	if !slices.Contains(args, configFile) {
+		t.Errorf("expected conformist args to include the explicit config %q, got args=%v", configFile, args)
+	}
 }
 
 // TestFindTreefmtConfig_PrefersConformist confirms a conformist.toml is chosen

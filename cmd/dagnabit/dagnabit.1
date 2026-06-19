@@ -1,4 +1,4 @@
-.TH DAGNABIT 1 "2026-06-07" "dagnabit 0.1.0" "Developer Tools"
+.TH DAGNABIT 1 "2026-06-19" "dagnabit 0.1.0" "Developer Tools"
 .SH NAME
 dagnabit \- reposition Go packages and Rust crates by dependency depth and generate export facades
 .SH SYNOPSIS
@@ -288,17 +288,37 @@ In go mode this fails if any
 directives exist; in rust mode it exports every crate under
 .IR internal/ .
 .PP
-In go mode, after generation, if a
-.BR treefmt (1)
+In go mode, after generation,
+.B dagnabit
+runs the project formatter on the output directory. A
+.BR conformist (1)
 configuration
+.RB ( conformist.toml
+or
+.BR .conformist.toml )
+is preferred; plain
+.BR treefmt (1)
 .RB ( treefmt.toml ,
 .BR .treefmt.toml ,
 or
 .BR treefmt.nix )
-is found by walking up from the module root,
-.B dagnabit
-runs the formatter on the output directory. Resolution prefers the
-.B treefmt
+is the fallback. The config is found by walking up from the module root,
+bounded by
+.B DAGNABIT_CEILING_DIRECTORIES
+(see
+.BR ENVIRONMENT ):
+the walk never ascends into a ceiling directory, so a repo whose own config is
+.B Nix\-generated
+(no
+.B conformist.toml
+on disk) does not escalate to a stray ancestor config. For such a repo, set
+.B DAGNABIT_CONFORMIST_CONFIG
+to the generated config path; this short\-circuits the search and runs
+.B conformist \-\-config\-file
+with that config. Resolution prefers the
+.B conformist
+(or
+.BR treefmt )
 binary on
 .BR PATH ;
 if absent and the config is
@@ -656,6 +676,32 @@ When
 is run without arguments, it scans
 .I internal/
 for these markers.
+.SH ENVIRONMENT
+.TP
+.B DAGNABIT_CEILING_DIRECTORIES
+Colon\-separated list of absolute directories above which
+.B dagnabit
+will not walk when searching upward from the module root for a formatter
+configuration. Mirrors
+.BR GIT_CEILING_DIRECTORIES :
+a ceiling entry is the last directory not searched, so directories at and below
+the ceiling (including the module root) are still checked. Use it to stop a repo
+with a Nix\-generated conformist config from escalating to a stray ancestor
+.B conformist.toml
+(such as an eng\-root config).
+.TP
+.B DAGNABIT_CONFORMIST_CONFIG
+Absolute path to an explicit
+.B conformist
+config file. When set, the upward configuration search is skipped entirely and
+.B dagnabit
+runs
+.B conformist \-\-config\-file
+with this path. Intended for repositories whose conformist config is
+Nix\-generated and therefore not present on disk as a
+.B conformist.toml
+(see
+.BR DESCRIPTION ).
 .SH EXIT STATUS
 .TP
 .B 0
