@@ -66,6 +66,19 @@
           bats = import ./devenvs/bats { inherit pkgs; };
           rust = import ./devenvs/rust { inherit pkgs pkgs-master; };
         };
+
+      # Reusable conformist linter modules for dewey-layout repos (internal/ →
+      # pkgs/ facade-export drift + NATO reposition), published as the top-level
+      # `lib.conformistLinters` output (purse-first#163 Step 2) and dogfooded by
+      # conformistImpureEval below. The paths are system-independent; downstream
+      # repos (madder) import these and set deweyDir / library / dagnabitPackage /
+      # conformistConfig. dagnabit coupling lives here — in the repo that owns
+      # dewey+dagnabit — NOT upstream in conformist (which deliberately does not
+      # depend on purse-first).
+      conformistLinters = {
+        dewey-facade-export = ./nix/linters/dewey-facade-export.nix;
+        dewey-reposition = ./nix/linters/dewey-reposition.nix;
+      };
     in
     utils.lib.eachDefaultSystem (
       system:
@@ -107,8 +120,12 @@
         conformistImpureEval = conformist.lib.evalModule pkgs {
           imports = [
             ./conformist-impure.nix
-            ./nix/linters/dewey-reposition.nix
-            ./nix/linters/dewey-facade-export.nix
+            # Dogfood the published modules (same files as lib.conformistLinters);
+            # purse-first's own usage is the in-repo proof they compose. Defaults
+            # (deweyDir = libs/dewey, library = true, dagnabitPackage = null) match
+            # purse-first, so only conformistConfig is set below.
+            conformistLinters.dewey-reposition
+            conformistLinters.dewey-facade-export
           ];
           package = conformistBin;
           # The facade-export linter's scripts run dagnabit's facade-format pass,
@@ -197,5 +214,13 @@
         # tree path (self), mirroring conformist's own checks.formatting.
         checks.formatting = conformistEval.config.build.check self;
       }
-    );
+    )
+    // {
+      # System-independent reusable outputs. `lib.conformistLinters.<name>` are
+      # the dewey-layout conformist linter module paths (purse-first#163 Step 2),
+      # imported by downstream repos into their own `conformist.lib.evalModule`
+      # (e.g. madder: `imports = [ purse-first.lib.conformistLinters.dewey-facade-export ]`
+      # with `deweyDir = "go"; library = false; dagnabitPackage = …; conformistConfig = …`).
+      lib.conformistLinters = conformistLinters;
+    };
 }

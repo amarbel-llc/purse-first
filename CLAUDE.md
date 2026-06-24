@@ -72,6 +72,14 @@ nix build .#go-pkgs-test             # RFC 0001 test-only Go workspace source
 
 The default `nix build` (no attribute) builds the `purse-first` CLI.
 
+The flake also exposes a system-independent `lib.conformistLinters` output —
+reusable conformist linter module paths for dewey-layout repos
+(`dewey-facade-export`, `dewey-reposition`). Downstream repos (madder) import
+these into their own `conformist.lib.evalModule` and set `deweyDir` / `library`
+/ `dagnabitPackage` / `conformistConfig`; purse-first dogfoods them from its own
+`conformistImpureEval`. dagnabit coupling lives here (the repo that owns
+dewey+dagnabit), not upstream in conformist (purse-first#163).
+
 ## Terminology
 
 - **Package** (not "plugin") — the user-facing term. Three flavors:

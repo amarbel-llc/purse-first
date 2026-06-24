@@ -98,6 +98,41 @@ Manual escape hatch (unchanged):
     just debug-dewey-export-library          # regenerate all facades
     just debug-dewey-export internal/0/go_module   # one package
 
+## Reuse across repos (Step 2)
+
+Both modules are published from purse-first's flake as
+`lib.conformistLinters.dewey-facade-export` and
+`lib.conformistLinters.dewey-reposition` (the path-as-output pattern conformist
+uses for `presets.eng = ./presets/eng.nix`). A downstream dewey-layout repo
+imports them into its own `conformist.lib.evalModule` and parameterizes:
+
+- **`deweyDir`** — the internal/+pkgs/ root (`libs/dewey` for purse-first, `go`
+  for madder). Default `libs/dewey`.
+- **`library`** — `--library` export (purse-first, no `//go:generate dagnabit
+  export` directives) vs directive-scan (`dagnabit export --check`, madder).
+  Default `true`. (facade-export only)
+- **`dagnabitPackage`** — `null` ⇒ ambient-PATH dagnabit (purse-first self-tests
+  its working-tree build, placed on PATH by `just lint-worktree`); a pinned
+  package ⇒ hermetic, PATH-independent invocation
+  (`purse-first.packages.<sys>.dagnabit`, the madder case). Default `null`.
+- **`conformistConfig`** — the consumer's PURE formatter config. (facade-export only)
+
+**Decision: publish from purse-first, do NOT upstream into conformist.** The
+linters shell out to the `dagnabit` binary at runtime; putting them in conformist
+would either reintroduce the conformist→purse-first build dependency the two
+repos deliberately severed, or require the consumer to inject dagnabit anyway
+(= the published-module shape with extra indirection). purse-first owns
+dewey+dagnabit, so it is the natural distribution point; conformist's own
+tool-linters (`golangci-dewey`, `gomod2nix`) are config checks, not shells to
+purse-first-built binaries. No conformist extension point or ADR is needed.
+
+**Pilot consumer (follow-on, separate PR in the madder repo):** madder bumps its
+`purse-first` flake input, imports `lib.conformistLinters.dewey-facade-export`
+with `deweyDir = "go"; library = false; dagnabitPackage = …; conformistConfig =
+…`, and deletes its `dagnabitWrapped` shim + `codemod-facades`/`lint-facades`
+recipes (which carry a `# Interim until dagnabit is a first-class conformist
+module (purse-first#163)` comment today).
+
 ## Limitations
 
 - **Impure lane only.** Because facade export shells to `go`/`conformist`, the
@@ -112,9 +147,11 @@ Manual escape hatch (unchanged):
   than introducing a project-level/whole-tree fixer abstraction upstream. #153's
   "may warrant an ADR for a whole-tree hook" concern is resolved by *not* needing
   one — the existing linter surface suffices.
-- **`dagnabit` must be on PATH.** Both scripts require the working-tree
-  `dagnabit` (via `just build-dagnabit` into `build/`, or the dev shell); they
-  fail loud with a build hint if it is absent, matching `dewey-reposition`.
+- **`dagnabit` provenance.** With `dagnabitPackage = null` (the default, used by
+  purse-first to self-test its working-tree `build/dagnabit` on PATH) both scripts
+  require an ambient `dagnabit` and fail loud with a hint if it is absent. A
+  consumer wanting a PATH-independent invocation sets `dagnabitPackage` to a
+  pinned package (see *Reuse across repos*).
 - **Repair ordering vs reposition.** A `conformist` repair pass that triggers
   *both* reposition (which moves packages and rewrites facades) and facade-export
   could interact. In practice reposition already updates facades as part of its
