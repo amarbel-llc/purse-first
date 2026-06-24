@@ -1,4 +1,27 @@
 # vim: ft=toml
 
 [hooks]
+# Pre-merge gate: `just` runs the default recipe (validate lint build test).
 pre-merge = "just"
+
+# Per-commit repair (conformist#47/#51): format the index-staged content at
+# authoring time so every commit is conformant — this is what would have caught
+# the #163 Step 2 nixfmt miss at commit instead of the merge gate. Names
+# `conformist-pre-commit`, the CONFIG-SPECIFIC, TOOLCHAIN-HERMETIC wrapper
+# exposed from `conformistEval.config.build.preCommit` (flake.nix) and placed on
+# the devShell PATH under that name. It wraps `conformist --staged
+# --exit-zero-on-fix` with purse-first's generated store-path config, so the
+# staged repair formats *.nix/*.go/etc. with the SAME pinned formatters as
+# `nix fmt` (and exits 0 after applying fixes, letting the commit proceed).
+#
+# Do NOT use a bare `conformist --staged --exit-zero-on-fix` here: that resolves
+# formatters from PATH and silently skips filetypes whose formatter is missing
+# (conformist#51). spinclass installs this as a real git pre-commit hook (per-
+# worktree core.hooksPath) and runs it with the ambient PATH — so it requires
+# the devShell active (direnv) for `conformist-pre-commit` to resolve. Takes
+# effect on the next session start/resume after this lands.
+#
+# (Merge-time `repair = "conformist-repair"` is intentionally NOT set: the
+# build.repair output post-dates purse-first's pinned conformist 1b8e32d, and
+# with pre-commit active the tree is already conformant at merge time.)
+pre-commit = "conformist-pre-commit"

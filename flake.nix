@@ -165,6 +165,16 @@
           # wrapper (which locates the worktree via `--tree-root-file`) rather
           # than a `/nix/store`-copy check derivation.
           conformist-impure = conformistImpureEval.config.build.wrapper;
+          # The store-pinned per-commit repair hook: `conformist --staged
+          # --exit-zero-on-fix` with purse-first's PURE config + formatter
+          # toolchain baked in (build.preCommit, conformist#47). On the devShell
+          # PATH below as `conformist-pre-commit`; the sweatfile names it as the
+          # spinclass [hooks].pre-commit command so every commit auto-formats its
+          # staged *.nix/*.go/*.sh content at authoring time — what would have
+          # repaired the Step 2 nixfmt miss before it ever reached the merge gate.
+          # Hermetic (bundles the formatters), so it never silently skips a
+          # filetype whose formatter is missing from the bare PATH (conformist#51).
+          conformist-pre-commit = conformistEval.config.build.preCommit;
         };
 
         apps.default = {
@@ -187,6 +197,13 @@
               # here.
               conformistBin
               pkgs.nixfmt
+              # The per-commit conformist repair hook on PATH as
+              # `conformist-pre-commit` (= packages.conformist-pre-commit), so the
+              # spinclass git pre-commit hook (sweatfile [hooks].pre-commit, which
+              # runs the command with the ambient/devShell PATH — no nix-develop
+              # wrap) can resolve it. Takes effect after a session restart /
+              # direnv reload, when spinclass re-installs the hook.
+              conformistEval.config.build.preCommit
             ];
             inputsFrom = [
               devenvs.go.devShells.default

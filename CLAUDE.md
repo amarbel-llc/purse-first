@@ -223,6 +223,14 @@ same convention applies anywhere this code is reintroduced.
 ### Git
 
 - GPG signing is required for commits. If signing fails, ask user to unlock their agent rather than skipping signatures
+- A conformist per-commit repair hook is wired via the sweatfile
+  (`[hooks].pre-commit = "conformist-pre-commit"`): spinclass installs it as a
+  real git pre-commit hook, so each commit auto-formats its staged
+  `*.nix`/`*.go`/`*.sh` content (`conformist --staged --exit-zero-on-fix`) with
+  the same pinned formatters as `nix fmt`. `conformist-pre-commit` rides the
+  devShell PATH (`packages.conformist-pre-commit` = `build.preCommit`), so the
+  hook needs the devShell active (direnv) and takes effect after a session
+  restart. This is what keeps a `nix fmt` miss from reaching the merge gate.
 
 ## Protocol Specification
 
