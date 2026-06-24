@@ -16,4 +16,12 @@
   # this lane exists for the dewey reposition check; add presets.eng-impure
   # later if purse-first wants those too.
   linters.dewey-reposition.enable = true;
+
+  # dewey pkgs/ facade-export drift (purse-first#163): `dagnabit export --check
+  # --library` shells out to `go list` + `conformist`, so it's impure too. Its
+  # `conformistConfig` option (the store path to the PURE formatter config) is
+  # set from flake.nix, where conformistEval is in scope. Subsumes the standalone
+  # read-only facade-drift recipe (now the debug-dewey-pkgs-drift escape hatch)
+  # at the merge gate.
+  linters.dewey-facade-export.enable = true;
 }

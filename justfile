@@ -26,12 +26,13 @@ validate-purse-first-manifest:
 # Read-only style / convention / drift checks. Does not modify code.
 
 [group('pre-build')]
-lint: lint-go lint-dewey_pkgs_drift lint-conformist lint-dewey-self lint-worktree
+lint: lint-go lint-conformist lint-dewey-self lint-worktree
 
-# Impure conformist lane (purse-first#160): the working-tree checks that can't
-# run in the sandboxed checks.formatting because they need host tools + the live
-# module graph — currently the dewey NATO-level reposition-drift check, which
-# shells out to `go list`. Builds the HERMETIC impure wrapper
+# Impure conformist lane (purse-first#160, #163): the working-tree checks that
+# can't run in the sandboxed checks.formatting because they need host tools + the
+# live module graph — the dewey NATO-level reposition-drift check and the dewey
+# pkgs/ facade-export drift check, both of which shell out to `go list` (and
+# export also to `conformist`). Builds the HERMETIC impure wrapper
 # (.#conformist-impure, = conformistImpureEval.config.build.wrapper — the pinned
 # conformist binary with the impure config + `--tree-root-file=flake.nix` baked
 # in) and runs `conformist check` against the working tree with `dagnabit` (built
@@ -60,13 +61,21 @@ lint-worktree: build-dagnabit
 lint-go:
     {{ cmd_nix_dev }} go vet ./...
 
-# Drift lint: verify libs/dewey/pkgs/ matches a fresh `dagnabit export --library`
-# without mutating the tree. `--check` renders + formats facades into a temp dir
-# and compares against the committed ones; it exits nonzero (naming the
-# out-of-sync packages) on drift and fails loud if the formatter (conformist) is
-# missing — no more silent skip / phantom drift. Depends on `build-dagnabit` so
-# the binary under test is the one in the current working tree. Runs the binary
-# ambient (not via `nix develop`) so dewey's `-tags test` build env is honored.
+# Focused facade-drift escape hatch (purse-first#163): verify libs/dewey/pkgs/
+# matches a fresh `dagnabit export --library` without mutating the tree. `--check`
+# renders + formats facades into a temp dir and compares against the committed
+# ones; it exits nonzero (naming the out-of-sync packages) on drift and fails loud
+# if the formatter (conformist) is missing — no more silent skip / phantom drift.
+# Depends on `build-dagnabit` so the binary under test is the one in the current
+# working tree. Runs the binary ambient (not via `nix develop`) so dewey's
+# `-tags test` build env is honored.
+#
+# RETIRED from the `lint` aggregate (and renamed out of the `lint-` pipeline-verb
+# namespace, which conformist-justfile(7) TASK HIERARCHY requires to live in an
+# aggregate): `lint-worktree` now runs this same drift check via the
+# `dewey-facade-export` conformist module (nix/linters/), so the merge gate
+# covers it. This standalone debug recipe is kept as a focused escape hatch for
+# running just the facade check without the rest of the impure lane.
 #
 # purse-first#159: purse-first has NO conformist.toml on disk (Nix-generated
 # config), so dagnabit is pointed at the generated config via
@@ -74,8 +83,8 @@ lint-go:
 # formats facades with purse-first's REAL config instead of searching upward
 # and escalating to a stray ancestor ~/eng/conformist.toml. The CEILING env var
 # is a belt-and-suspenders bound that stops any upward walk at the worktree root.
-[group('pre-build')]
-lint-dewey_pkgs_drift: build-dagnabit
+[group('debug')]
+debug-dewey-pkgs-drift: build-dagnabit
     #!/usr/bin/env bash
     set -euo pipefail
     config=$(nix build {{ justfile_directory() }}#conformist-config --no-link --print-out-paths)
@@ -311,7 +320,7 @@ test-validate-mcp: build-purse-first-cli
 # Modifies source code.
 
 [group('codemod')]
-codemod-fmt: codemod-fmt-conformist codemod-fmt-go
+codemod-fmt: codemod-fmt-conformist codemod-fmt-go codemod-fmt-worktree
 
 # Repo-wide format via conformist: Go (goimports -> gofumpt), Nix (nixfmt), and
 # shell (shfmt -i 2 -s -ci), per ./conformist.nix. Runs the flake `formatter`
@@ -326,6 +335,27 @@ codemod-fmt-conformist:
 [group('codemod')]
 codemod-fmt-go:
     {{ cmd_nix_dev }} go fmt ./...
+
+# Impure-lane REPAIR (purse-first#163): the read-write counterpart of
+# `lint-worktree`. Runs the HERMETIC impure conformist wrapper in repair mode
+# (bare invocation, no `check`), which executes every enabled impure linter's
+# repair-command against the working tree:
+#   - dewey-facade-export → `dagnabit export --library` (regenerate libs/dewey/pkgs/)
+#   - dewey-reposition    → `dagnabit reposition` apply (MOVES packages under
+#                           libs/dewey/internal + rewrites imports)
+# The reposition apply is a real source mutation, not just a format — FDR 0013
+# anticipates both repair-commands running in one conformist pass (export is
+# idempotent after a reposition move). Needs `dagnabit` (build/) + `go` on PATH,
+# same as lint-worktree. Wired into `codemod-fmt` so one repo-wide format resyncs
+# facades; the conformist-impure wrapper bakes `--tree-root-file=flake.nix`.
+[group('codemod')]
+codemod-fmt-worktree: build-dagnabit
+    #!/usr/bin/env bash
+    set -euo pipefail
+    wrapper=$(nix build {{ justfile_directory() }}#conformist-impure --no-link --print-out-paths)
+    cd {{ justfile_directory() }}
+    PATH="{{ justfile_directory() }}/build:$PATH" \
+      {{ cmd_nix_dev }} "$wrapper/bin/conformist"
 
 # Dry-run a single-package rename: print the proposed move as NDJSON,
 # touch nothing on disk. `new_leaf` is optional; defaults to src's leaf.

@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: experimental
 date: 2026-06-19
 promotion-criteria: >
   proposed → experimental: `nix/linters/dewey-facade-export.nix` lands, is
@@ -44,7 +44,14 @@ the existing `nix/linters/dewey-reposition.nix`:
   regenerating the `pkgs/` facades in place. This is the half that does not
   exist today; it makes `conformist` repair (and therefore `nix fmt` /
   `just codemod-fmt-conformist`) resync facades.
-- **`includes`** — `libs/dewey/internal/**/*.go` as a *trigger gate* only.
+- **`includes`** — `libs/dewey/**/*.go` as a *trigger gate* only (matching the
+  sibling `dewey-reposition`). This deliberately covers **both** `internal/`
+  (the facade source) and `pkgs/` (the generated facades): conformist only runs
+  a `passes-files = false` whole-tree linter when a file matching `includes` is
+  in scope, so an `internal/`-only glob silently skips the check on a `pkgs/`-only
+  edit (a stale or hand-edited facade with `internal/` untouched). Verified: with
+  the narrower `internal/**` glob, perturbing a committed facade did not trip the
+  lane; broadening to `libs/dewey/**` does.
 - **`passes-files = false`** — whole-tree; the script reads the real
   `internal/ → pkgs/` relationship itself rather than per-file.
 

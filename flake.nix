@@ -100,16 +100,24 @@
 
         # IMPURE conformist config: whole-tree checks that need the live working
         # tree + host tools (the Go module cache / `go list` via the dewey
-        # reposition linter) and so cannot run in the sandboxed checks.formatting.
-        # `just lint-worktree` builds the impure WRAPPER (build.wrapper, exposed
-        # below as conformist-impure) and runs `conformist check` against the
-        # working tree. See ./conformist-impure.nix.
+        # reposition + facade-export linters) and so cannot run in the sandboxed
+        # checks.formatting. `just lint-worktree` builds the impure WRAPPER
+        # (build.wrapper, exposed below as conformist-impure) and runs
+        # `conformist check` against the working tree. See ./conformist-impure.nix.
         conformistImpureEval = conformist.lib.evalModule pkgs {
           imports = [
             ./conformist-impure.nix
             ./nix/linters/dewey-reposition.nix
+            ./nix/linters/dewey-facade-export.nix
           ];
           package = conformistBin;
+          # The facade-export linter's scripts run dagnabit's facade-format pass,
+          # which needs purse-first's PURE formatter config (goimports/gofumpt) —
+          # the same `.#conformist-config` the standalone facade-drift recipe
+          # (now debug-dewey-pkgs-drift) passes via DAGNABIT_CONFORMIST_CONFIG
+          # (purse-first#159). Baking the
+          # store path here removes the per-invocation env-var contract (#163).
+          linters.dewey-facade-export.conformistConfig = conformistEval.config.build.configFile;
         };
       in
       {
