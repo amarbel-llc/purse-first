@@ -20,10 +20,13 @@
     # FOD, so this input does not close a loop. purse-first consumes
     # conformist.lib.evalModule + presets.eng via ./conformist.nix; `just
     # lint-conformist` / `just codemod-fmt` drive the generated check / wrapper.
-    # The follows collapse the shared lock subtree. Pinned at 1b8e32d for the
-    # canonical fixed justfile-default and the programs.shfmt.caseIndent option.
+    # The follows collapse the shared lock subtree. Unpinned (tracks master;
+    # the nixpkgs cascade's `nix flake update` moves it each run) per Sasha's
+    # direction until the eng semver/release-branch FDR lands — the former
+    # 1b8e32d rev pin predated build.repair, which the tier-B convergence
+    # wires below.
     conformist = {
-      url = "github:amarbel-llc/conformist/1b8e32db0ee450601b0e70bb84b3b784e5f7cc3d";
+      url = "github:amarbel-llc/conformist";
       inputs.igloo.follows = "igloo";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";
@@ -175,6 +178,15 @@
           # Hermetic (bundles the formatters), so it never silently skips a
           # filetype whose formatter is missing from the bare PATH (conformist#51).
           conformist-pre-commit = conformistEval.config.build.preCommit;
+          # Its merge-repair sibling (build.repair): `conformist --commit
+          # --amend --exit-zero-on-fix` with the same baked config/toolchain.
+          # On the devShell PATH below as `conformist-repair`, so spinclass's
+          # merge-repair phase resolves the hermetic hook — a cascade bump
+          # commit whose store-pinned pre-commit driver predates the bump
+          # still self-heals at merge time against the rebuilt devshell (the
+          # eng tier-B convergence; eng's fallback wrapper is severed from
+          # child repos and would otherwise just skip).
+          conformist-repair = conformistEval.config.build.repair;
         };
 
         apps.default = {
@@ -204,6 +216,9 @@
               # wrap) can resolve it. Takes effect after a session restart /
               # direnv reload, when spinclass re-installs the hook.
               conformistEval.config.build.preCommit
+              # Its merge-repair sibling, on PATH as `conformist-repair` for
+              # spinclass's [hooks].repair (see packages.conformist-repair).
+              conformistEval.config.build.repair
             ];
             inputsFrom = [
               devenvs.go.devShells.default
