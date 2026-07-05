@@ -382,15 +382,31 @@ debug-dewey-reposition-apply:
 
 # Generate a public facade in libs/dewey/pkgs/ for a single internal
 # package. `pkg` is the path inside libs/dewey, e.g. `internal/0/go_module`.
+# Same #159 config threading as debug-dewey-pkgs-drift: without it the
+# facade-format pass walks upward past the (toml-less) repo root to a stray
+# ancestor conformist.toml and formats with the WRONG config.
 [group('debug')]
 debug-dewey-export pkg:
-    cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit export ./{{ pkg }}
+    #!/usr/bin/env bash
+    set -euo pipefail
+    config=$(nix build {{ justfile_directory() }}#conformist-config --no-link --print-out-paths)
+    cd {{ justfile_directory() }}/libs/dewey && \
+      DAGNABIT_CONFORMIST_CONFIG="$config" \
+      DAGNABIT_CEILING_DIRECTORIES="{{ justfile_directory() }}" \
+      {{ justfile_directory() }}/build/dagnabit export ./{{ pkg }}
 
 # Generate pkgs/ facades for every package under libs/dewey/internal/ (library mode).
 # Fails if any //go:generate dagnabit export directives are found.
+# Same #159 config threading as debug-dewey-pkgs-drift (see above).
 [group('debug')]
 debug-dewey-export-library *flags:
-    cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit export --library {{ flags }}
+    #!/usr/bin/env bash
+    set -euo pipefail
+    config=$(nix build {{ justfile_directory() }}#conformist-config --no-link --print-out-paths)
+    cd {{ justfile_directory() }}/libs/dewey && \
+      DAGNABIT_CONFORMIST_CONFIG="$config" \
+      DAGNABIT_CEILING_DIRECTORIES="{{ justfile_directory() }}" \
+      {{ justfile_directory() }}/build/dagnabit export --library {{ flags }}
 
 # ──── maintenance ───────────────────────────────────────────────────
 # Refresh dependencies, bump versions, tag/release, clean.
