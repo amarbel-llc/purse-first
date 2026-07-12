@@ -112,11 +112,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1783336640,
-        "narHash": "sha256-DsK5yYg7r7ULCY5QcbaOtLEkZlgO9Ozt54ffeIYr+CM=",
+        "lastModified": 1783872533,
+        "narHash": "sha256-ox9+6hg/q4YAwfbiVc/29UW7/UjvmVyawtbojoXfnIU=",
         "owner": "amarbel-llc",
         "repo": "igloo",
-        "rev": "d1c081d49ca722064e090131e1cf927215b1b227",
+        "rev": "0dab67443b30e15aa314c1c72a2cd22b6d1f2a23",
         "type": "github"
       },
       "original": {
