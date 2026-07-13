@@ -46,11 +46,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1783437992,
-        "narHash": "sha256-ZxAbtQ+x3/6W9sIlP4eepVZ0Gkncdm71ODMx2RTi7Hk=",
+        "lastModified": 1783949730,
+        "narHash": "sha256-ilEJ9Wp+yrc1/3CK7NRQDdmJ0PTB+xJoS8Grslo7itg=",
         "owner": "amarbel-llc",
         "repo": "conformist",
-        "rev": "726b745ddb5280f33eac7a5df84efe0491b0899f",
+        "rev": "1985c0c5fd4197ae944526ea9700caed259e1fe8",
         "type": "github"
       },
       "original": {
@@ -112,11 +112,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1783872533,
-        "narHash": "sha256-ox9+6hg/q4YAwfbiVc/29UW7/UjvmVyawtbojoXfnIU=",
+        "lastModified": 1783896868,
+        "narHash": "sha256-pN9WzpM9sBz6DmQIlALLhAKIC9yrbY9rLa+qrYr8Ph8=",
         "owner": "amarbel-llc",
         "repo": "igloo",
-        "rev": "0dab67443b30e15aa314c1c72a2cd22b6d1f2a23",
+        "rev": "e04bba9f87552e4161ebec00c528361316d36d3c",
         "type": "github"
       },
       "original": {
