@@ -31,6 +31,8 @@
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";
     };
+    utils.inputs.systems.follows = "igloo/systems";
+    igloo.inputs.nixpkgs-master.follows = "nixpkgs-master";
   };
 
   outputs =
