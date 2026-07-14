@@ -2,14 +2,14 @@
   description = "Package framework for bundling CLIs, MCP servers, and skills";
 
   inputs = {
-    igloo.url = "github:amarbel-llc/igloo";
+    igloo.url = "git+https://code.linenisgreat.com/igloo.git";
     nixpkgs-master.url = "github:NixOS/nixpkgs/567a49d1913ce81ac6e9582e3553dd90a955875f";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
 
     gomod2nix = {
       # Fork: adds go.work support and a build cache fix for large projects.
       # Upstream PR: https://github.com/nix-community/gomod2nix (no go.work tracking issue yet).
-      url = "github:amarbel-llc/gomod2nix";
+      url = "git+https://code.linenisgreat.com/gomod2nix.git";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.flake-utils.follows = "utils";
     };
@@ -26,7 +26,7 @@
     # 1b8e32d rev pin predated build.repair, which the tier-B convergence
     # wires below.
     conformist = {
-      url = "github:amarbel-llc/conformist";
+      url = "git+https://code.linenisgreat.com/conformist.git";
       inputs.igloo.follows = "igloo";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
       inputs.utils.follows = "utils";

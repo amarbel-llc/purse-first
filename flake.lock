@@ -46,17 +46,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1783949730,
-        "narHash": "sha256-ilEJ9Wp+yrc1/3CK7NRQDdmJ0PTB+xJoS8Grslo7itg=",
-        "owner": "amarbel-llc",
-        "repo": "conformist",
-        "rev": "1985c0c5fd4197ae944526ea9700caed259e1fe8",
-        "type": "github"
+        "lastModified": 1784038233,
+        "narHash": "sha256-S/zksNggY2sHwNWQUJ7zqATCXnWSClhDt4LYdsPv+lg=",
+        "ref": "refs/heads/master",
+        "rev": "ffaed59c883667056c2f5fa9a3f0d3077e89347d",
+        "revCount": 154,
+        "type": "git",
+        "url": "https://code.linenisgreat.com/conformist.git"
       },
       "original": {
-        "owner": "amarbel-llc",
-        "repo": "conformist",
-        "type": "github"
+        "type": "git",
+        "url": "https://code.linenisgreat.com/conformist.git"
       }
     },
     "flake-parts": {
@@ -92,15 +92,15 @@
       "locked": {
         "lastModified": 1782656014,
         "narHash": "sha256-/JTvDNbl9p6rK7XfFib9cbYJB6a3Td0nLW33tGOZMmI=",
-        "owner": "amarbel-llc",
-        "repo": "gomod2nix",
+        "ref": "refs/heads/master",
         "rev": "f2530333078779ff6565f2312ad891e82b233076",
-        "type": "github"
+        "revCount": 372,
+        "type": "git",
+        "url": "https://code.linenisgreat.com/gomod2nix.git"
       },
       "original": {
-        "owner": "amarbel-llc",
-        "repo": "gomod2nix",
-        "type": "github"
+        "type": "git",
+        "url": "https://code.linenisgreat.com/gomod2nix.git"
       }
     },
     "igloo": {
@@ -116,15 +116,15 @@
       "locked": {
         "lastModified": 1783896868,
         "narHash": "sha256-pN9WzpM9sBz6DmQIlALLhAKIC9yrbY9rLa+qrYr8Ph8=",
-        "owner": "amarbel-llc",
-        "repo": "igloo",
+        "ref": "refs/heads/master",
         "rev": "e04bba9f87552e4161ebec00c528361316d36d3c",
-        "type": "github"
+        "revCount": 73,
+        "type": "git",
+        "url": "https://code.linenisgreat.com/igloo.git"
       },
       "original": {
-        "owner": "amarbel-llc",
-        "repo": "igloo",
-        "type": "github"
+        "type": "git",
+        "url": "https://code.linenisgreat.com/igloo.git"
       }
     },
     "nixpkgs-master": {
