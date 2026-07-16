@@ -52,11 +52,11 @@
         "rev": "2099b7b546aa25709146736d2adaac4f374fb711",
         "revCount": 155,
         "type": "git",
-        "url": "https://github.com/amarbel-llc/conformist.git"
+        "url": "https://code.linenisgreat.com/conformist.git"
       },
       "original": {
         "type": "git",
-        "url": "https://github.com/amarbel-llc/conformist.git"
+        "url": "https://code.linenisgreat.com/conformist.git"
       }
     },
     "flake-parts": {
@@ -120,11 +120,11 @@
         "rev": "e04bba9f87552e4161ebec00c528361316d36d3c",
         "revCount": 73,
         "type": "git",
-        "url": "https://github.com/amarbel-llc/igloo.git"
+        "url": "https://code.linenisgreat.com/igloo.git"
       },
       "original": {
         "type": "git",
-        "url": "https://github.com/amarbel-llc/igloo.git"
+        "url": "https://code.linenisgreat.com/igloo.git"
       }
     },
     "nixpkgs-master": {
