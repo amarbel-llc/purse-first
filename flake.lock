@@ -46,17 +46,14 @@
         ]
       },
       "locked": {
-        "lastModified": 1784111484,
-        "narHash": "sha256-ZXTFMIipgpc3WI4NRQe6pR0OJjw8RlB4mTU52s7/GCw=",
-        "ref": "refs/heads/master",
-        "rev": "2099b7b546aa25709146736d2adaac4f374fb711",
-        "revCount": 155,
-        "type": "git",
-        "url": "https://code.linenisgreat.com/conformist.git"
+        "lastModified": 1784252369,
+        "narHash": "sha256-2Sjoir0SEdW1iw8x7N3KO7uOi7Jc/71P5ajCVFfgbts=",
+        "type": "tarball",
+        "url": "https://code.linenisgreat.com/conformist/archive/255ce4249a043da02e57accb01f651b27f749978.tar.gz"
       },
       "original": {
-        "type": "git",
-        "url": "https://code.linenisgreat.com/conformist.git"
+        "type": "tarball",
+        "url": "https://code.linenisgreat.com/conformist/archive/master.tar.gz"
       }
     },
     "flake-parts": {
@@ -92,15 +89,12 @@
       "locked": {
         "lastModified": 1782656014,
         "narHash": "sha256-/JTvDNbl9p6rK7XfFib9cbYJB6a3Td0nLW33tGOZMmI=",
-        "ref": "refs/heads/master",
-        "rev": "f2530333078779ff6565f2312ad891e82b233076",
-        "revCount": 372,
-        "type": "git",
-        "url": "https://code.linenisgreat.com/gomod2nix.git"
+        "type": "tarball",
+        "url": "https://code.linenisgreat.com/gomod2nix/archive/f2530333078779ff6565f2312ad891e82b233076.tar.gz"
       },
       "original": {
-        "type": "git",
-        "url": "https://code.linenisgreat.com/gomod2nix.git"
+        "type": "tarball",
+        "url": "https://code.linenisgreat.com/gomod2nix/archive/master.tar.gz"
       }
     },
     "igloo": {
@@ -116,15 +110,12 @@
       "locked": {
         "lastModified": 1783896868,
         "narHash": "sha256-pN9WzpM9sBz6DmQIlALLhAKIC9yrbY9rLa+qrYr8Ph8=",
-        "ref": "refs/heads/master",
-        "rev": "e04bba9f87552e4161ebec00c528361316d36d3c",
-        "revCount": 73,
-        "type": "git",
-        "url": "https://code.linenisgreat.com/igloo.git"
+        "type": "tarball",
+        "url": "https://code.linenisgreat.com/igloo/archive/e04bba9f87552e4161ebec00c528361316d36d3c.tar.gz"
       },
       "original": {
-        "type": "git",
-        "url": "https://code.linenisgreat.com/igloo.git"
+        "type": "tarball",
+        "url": "https://code.linenisgreat.com/igloo/archive/master.tar.gz"
       }
     },
     "nixpkgs-master": {
