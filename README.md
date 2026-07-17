@@ -208,7 +208,7 @@ The `maintenance` recipe group exposes one triple:
 ```sh
 just bump-version <sem>  # rewrite PURSE_FIRST_VERSION (pure mutation)
 just tag <message>       # create the signed tag set: v<sem>, libs/dewey/v<sem>, libs/go-mcp/v<sem>
-just release <sem>       # master-only: changelog → bump → commit → tag set → gh release
+just release <sem>       # master-only: changelog → bump → commit → tag set → fj release
 ```
 
 The path-prefixed tags are required by the Go module proxy to resolve the

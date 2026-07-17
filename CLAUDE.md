@@ -286,7 +286,7 @@ The `maintenance` group exposes one recipe triple:
   path-prefixed tags are required by the Go module proxy to resolve the
   sub-directory modules (eng-versioning(7) → TAG NAMING).
 - `just release <sem>` — master-only: repo-wide changelog → bump → commit →
-  tag set → `gh release create` against the primary `v<sem>` tag, with notes
+  tag set → `fj release create` against the primary `v<sem>` tag, with notes
   enumerating the sibling sub-module tags.
 
 Pre-1.0: MINOR bumps may include breaking changes. Post-1.0: semver is strict.

@@ -481,7 +481,7 @@ tag $message:
     done
 
 # Full release flow versioning all artifacts together: repo-wide changelog →
-# bump → commit → tag set → gh release. The GitHub release points at the
+# bump → commit → tag set → fj release. The Forgejo release points at the
 # primary v<sem> tag; its notes enumerate the sibling sub-module tags.
 [group('maintenance')]
 release new_version:
@@ -507,7 +507,7 @@ release new_version:
     git add version.env
     git commit -m "$header"
     just tag "$msg"
-    gh release create "v{{ new_version }}" --title "$header" --notes "$msg"
+    fj release create "$header" --tag "v{{ new_version }}" --body "$msg"
 
 # ──── explore ───────────────────────────────────────────────────────
 # Discovery / one-off experiments. Promoted to debug-* if they outlive
