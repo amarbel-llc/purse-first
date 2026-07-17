@@ -292,19 +292,13 @@ directives exist; in rust mode it exports every crate under
 .PP
 In go mode, after generation,
 .B dagnabit
-runs the project formatter on the output directory. A
+runs the project formatter on the output directory when a
 .BR conformist (1)
 configuration
 .RB ( conformist.toml
 or
 .BR .conformist.toml )
-is preferred; plain
-.BR treefmt (1)
-.RB ( treefmt.toml ,
-.BR .treefmt.toml ,
-or
-.BR treefmt.nix )
-is the fallback. The config is found by walking up from the module root,
+is present. The config is found by walking up from the module root,
 bounded by
 .B DAGNABIT_CEILING_DIRECTORIES
 (see
@@ -317,19 +311,15 @@ on disk) does not escalate to a stray ancestor config. For such a repo, set
 .B DAGNABIT_CONFORMIST_CONFIG
 to the generated config path; this short\-circuits the search and runs
 .B conformist \-\-config\-file
-with that config. Resolution prefers the
+with that config. When a config is found but
 .B conformist
-(or
-.BR treefmt )
-binary on
-.BR PATH ;
-if absent and the config is
-.BR treefmt.nix ,
-falls back to
-.B nix fmt
-with the output dir as a positional argument. This is skipped under
+is not on
+.BR PATH ,
+.B dagnabit
+fails rather than silently emitting unformatted facades. This is skipped
+under
 .B \-\-dry\-run
-and when neither tool is available.
+and when no config is found.
 .PP
 In rust mode, facades are glob re-export crates: for an internal crate
 at
@@ -742,7 +732,7 @@ generation failure, failed cargo gate, etc.).
 .SH SEE ALSO
 .BR go-generate (1),
 .BR go-list (1),
-.BR treefmt (1),
+.BR conformist (1),
 .BR cargo (1),
 .BR cargo-metadata (1),
 .BR cargo-check (1),

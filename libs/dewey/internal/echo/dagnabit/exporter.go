@@ -119,8 +119,8 @@ func (exporter *Exporter) CheckScan() error {
 // on-disk facades as drift.
 func (exporter *Exporter) checkExport(run func(*Exporter) error, reportStale bool) error {
 	// Render the comparison copy into a temp dir UNDER the module root, not the
-	// system temp dir. FormatOutput runs the project formatter (treefmt / nix
-	// fmt) with its tree root anchored at the config/module root, and a
+	// system temp dir. FormatOutput runs the project formatter (conformist)
+	// with its tree root anchored at the config/module root, and a
 	// formatter invoked on a path OUTSIDE that tree root formats nothing. A
 	// system-temp output dir is in-tree only when $TMPDIR happens to sit inside
 	// the repo; when it does not (the usual /tmp), the comparison copy is left

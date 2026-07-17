@@ -12,46 +12,45 @@ import (
 	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
-func TestFindTreefmtConfig_TomlAtRoot(t *testing.T) {
+func TestFindConformistConfig_TomlAtRoot(t *testing.T) {
 	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
-	tomlPath := filepath.Join(tmpDir, "treefmt.toml")
+	tomlPath := filepath.Join(tmpDir, "conformist.toml")
 	if err := os.WriteFile(tomlPath, []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	dir, name, ok := findTreefmtConfig(tmpDir)
+	dir, name, ok := findConformistConfig(tmpDir)
 	if !ok {
 		t.Fatal("expected config to be found")
 	}
-	if name != "treefmt.toml" {
-		t.Errorf("expected name=treefmt.toml, got %q", name)
+	if name != "conformist.toml" {
+		t.Errorf("expected name=conformist.toml, got %q", name)
 	}
 	if dir != absForTest(tt, tmpDir) {
 		t.Errorf("expected dir=%s, got %s", tmpDir, dir)
 	}
 }
 
-func TestFindTreefmtConfig_NixAtRoot(t *testing.T) {
+func TestFindConformistConfig_HiddenTomlAtRoot(t *testing.T) {
 	tmpDir := t.TempDir()
-	nixPath := filepath.Join(tmpDir, "treefmt.nix")
-	if err := os.WriteFile(nixPath, []byte(""), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, ".conformist.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	_, name, ok := findTreefmtConfig(tmpDir)
+	_, name, ok := findConformistConfig(tmpDir)
 	if !ok {
 		t.Fatal("expected config to be found")
 	}
-	if name != "treefmt.nix" {
-		t.Errorf("expected name=treefmt.nix, got %q", name)
+	if name != ".conformist.toml" {
+		t.Errorf("expected name=.conformist.toml, got %q", name)
 	}
 }
 
-func TestFindTreefmtConfig_WalksUp(t *testing.T) {
+func TestFindConformistConfig_WalksUp(t *testing.T) {
 	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
-	rootConfig := filepath.Join(tmpDir, "treefmt.toml")
+	rootConfig := filepath.Join(tmpDir, "conformist.toml")
 	if err := os.WriteFile(rootConfig, []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +60,7 @@ func TestFindTreefmtConfig_WalksUp(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	dir, _, ok := findTreefmtConfig(deep)
+	dir, _, ok := findConformistConfig(deep)
 	if !ok {
 		t.Fatal("expected config to be found by walking up")
 	}
@@ -70,39 +69,40 @@ func TestFindTreefmtConfig_WalksUp(t *testing.T) {
 	}
 }
 
-func TestFindTreefmtConfig_PrefersFirstInList(t *testing.T) {
+func TestFindConformistConfig_PrefersFirstInList(t *testing.T) {
 	tmpDir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "conformist.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.nix"), []byte(""), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, ".conformist.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	_, name, ok := findTreefmtConfig(tmpDir)
+	_, name, ok := findConformistConfig(tmpDir)
 	if !ok {
 		t.Fatal("expected config to be found")
 	}
-	if name != "treefmt.toml" {
-		t.Errorf("expected treefmt.toml to win over treefmt.nix, got %q", name)
+	if name != "conformist.toml" {
+		t.Errorf("expected conformist.toml to win over .conformist.toml, got %q", name)
 	}
 }
 
-func TestFindTreefmtConfig_NotFound(t *testing.T) {
+func TestFindConformistConfig_NotFound(t *testing.T) {
 	// Use a path under tmpDir to guarantee nothing above happens to have
-	// a treefmt config (avoid a flake where the test machine has /treefmt.toml).
+	// a conformist config (avoid a flake where the test machine has
+	// /conformist.toml).
 	tmpDir := t.TempDir()
 	deep := filepath.Join(tmpDir, "deep")
 	if err := os.MkdirAll(deep, 0o755); err != nil {
 		t.Fatal(err)
 	}
 
-	// findTreefmtConfig walks all the way to /, so we need to ensure
-	// the ancestor chain has no treefmt configs. Since we just created
+	// findConformistConfig walks all the way to /, so we need to ensure
+	// the ancestor chain has no conformist configs. Since we just created
 	// these directories, that's true for everything under tmpDir, but
 	// the parents above tmpDir are outside our control. Skip if any
 	// ancestor happens to have a config — vanishingly rare in CI.
-	if dir, name, ok := findTreefmtConfig(deep); ok {
+	if dir, name, ok := findConformistConfig(deep); ok {
 		t.Skipf("test environment has %s at %s (ancestor of %s)", name, dir, deep)
 	}
 }
@@ -112,8 +112,8 @@ func TestFormatOutput_NoConfigIsNoop(t *testing.T) {
 	tmpDir := t.TempDir()
 	mustMkdirAll(tt, filepath.Join(tmpDir, "pkgs"))
 
-	if _, _, ok := findTreefmtConfig(tmpDir); ok {
-		t.Skip("test environment has a treefmt config in an ancestor directory")
+	if _, _, ok := findConformistConfig(tmpDir); ok {
+		t.Skip("test environment has a conformist config in an ancestor directory")
 	}
 
 	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
@@ -127,12 +127,12 @@ func TestFormatOutput_DryRunIsNoop(t *testing.T) {
 	tmpDir := t.TempDir()
 	mustMkdirAll(tt, filepath.Join(tmpDir, "pkgs"))
 
-	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "conformist.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	sentinel := filepath.Join(tmpDir, "sentinel")
-	withFakeTreefmt(tt, sentinel)
+	withFakeConformist(tt, sentinel)
 
 	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs", DryRun: true}
 	if err := exporter.FormatOutput(); err != nil {
@@ -140,7 +140,7 @@ func TestFormatOutput_DryRunIsNoop(t *testing.T) {
 	}
 
 	if _, err := os.Stat(sentinel); err == nil {
-		t.Error("expected sentinel not to exist in dry-run mode; treefmt should not have been invoked")
+		t.Error("expected sentinel not to exist in dry-run mode; conformist should not have been invoked")
 	}
 }
 
@@ -148,12 +148,12 @@ func TestFormatOutput_MissingOutputDirIsNoop(t *testing.T) {
 	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 
-	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "conformist.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	sentinel := filepath.Join(tmpDir, "sentinel")
-	withFakeTreefmt(tt, sentinel)
+	withFakeConformist(tt, sentinel)
 
 	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
 	if err := exporter.FormatOutput(); err != nil {
@@ -165,52 +165,24 @@ func TestFormatOutput_MissingOutputDirIsNoop(t *testing.T) {
 	}
 }
 
-func TestFormatOutput_InvokesTreefmt(t *testing.T) {
-	tt := test_ui.T{T: t}
-	tmpDir := t.TempDir()
-	outDir := filepath.Join(tmpDir, "pkgs")
-	mustMkdirAll(tt, outDir)
-
-	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	sentinel := filepath.Join(tmpDir, "sentinel")
-	withFakeTreefmt(tt, sentinel)
-
-	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
-	if err := exporter.FormatOutput(); err != nil {
-		t.Fatalf("FormatOutput: %v", err)
-	}
-
-	body, err := os.ReadFile(sentinel)
-	if err != nil {
-		t.Fatalf("expected sentinel to be written by fake treefmt: %v", err)
-	}
-	args := strings.Split(strings.TrimSpace(string(body)), "\n")
-	if len(args) == 0 || !strings.HasSuffix(args[len(args)-1], filepath.Join("pkgs")) {
-		t.Errorf("expected fake treefmt to be invoked with output dir as last arg, got args=%v", args)
-	}
-}
-
-func TestFormatOutput_PropagatesTreefmtFailure(t *testing.T) {
+func TestFormatOutput_PropagatesConformistFailure(t *testing.T) {
 	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 	mustMkdirAll(tt, filepath.Join(tmpDir, "pkgs"))
 
-	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "conformist.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	withFailingFakeTreefmt(tt)
+	withFailingFakeConformist(tt)
 
 	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
 	err := exporter.FormatOutput()
 	if err == nil {
-		t.Fatal("expected FormatOutput to surface treefmt failure")
+		t.Fatal("expected FormatOutput to surface conformist failure")
 	}
-	if !strings.Contains(err.Error(), "treefmt") {
-		t.Errorf("expected error to mention treefmt, got: %v", err)
+	if !strings.Contains(err.Error(), "conformist") {
+		t.Errorf("expected error to mention conformist, got: %v", err)
 	}
 }
 
@@ -231,19 +203,16 @@ func mustMkdirAll(t test_ui.T, path string) {
 	}
 }
 
-// withFakeTreefmt writes a stub shell script named `treefmt` into a
-// fresh directory, prepends that directory to PATH, and registers a
-// cleanup that restores PATH at the end of the test. The fake
-// records its argv into sentinelPath.
-func withFakeTreefmt(t test_ui.T, sentinelPath string) {
+// withFailingFakeConformist installs a fake conformist that exits non-zero.
+func withFailingFakeConformist(t test_ui.T) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
 		t.T.Skip("PATH-injection fake binary not portable to Windows")
 	}
 
 	binDir := t.TempDir()
-	fake := filepath.Join(binDir, "treefmt")
-	script := fmt.Sprintf("#!/bin/sh\nprintf '%%s\\n' \"$@\" > %q\n", sentinelPath)
+	fake := filepath.Join(binDir, "conformist")
+	script := "#!/bin/sh\nexit 7\n"
 	if err := os.WriteFile(fake, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -251,21 +220,25 @@ func withFakeTreefmt(t test_ui.T, sentinelPath string) {
 	prependPath(t, binDir)
 }
 
-// withTreeRootAwareFakeTreefmt installs a fake `treefmt` that models real
-// treefmt's tree-root anchoring: it only "formats" .go files located within its
-// working directory (FormatOutput sets that to the config/module root) and is a
-// no-op for any path outside it. Formatting appends a sentinel line, so a file
-// the fake skipped is detectably different from one it processed. Used to
-// reproduce #125, where the comparison copy lived outside the tree root and was
-// silently left unformatted.
-func withTreeRootAwareFakeTreefmt(t test_ui.T) {
+// withTreeRootAwareFakeConformist installs a fake `conformist` that models
+// tree-root anchoring: it only "formats" .go files located within its working
+// directory (FormatOutput sets that to the config/module root) and is a no-op
+// for any path outside it. Formatting appends a sentinel line, so a file the
+// fake skipped is detectably different from one it processed. Used to
+// reproduce #125, where the comparison copy lived outside the tree root and
+// was silently left unformatted.
+//
+// The script body deliberately avoids the literal tree-root flag names:
+// conformistBakesTreeRoot scans the resolved binary for them and would
+// otherwise misclassify this fake as the Nix wrapper (purse-first#162).
+func withTreeRootAwareFakeConformist(t test_ui.T) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
 		t.T.Skip("PATH-injection fake binary not portable to Windows")
 	}
 
 	binDir := t.TempDir()
-	fake := filepath.Join(binDir, "treefmt")
+	fake := filepath.Join(binDir, "conformist")
 	script := `#!/bin/sh
 root=$PWD
 for arg in "$@"; do
@@ -277,28 +250,11 @@ for arg in "$@"; do
     *) continue ;;
   esac
   find "$arg" -name '*.go' -type f | while IFS= read -r f; do
-    grep -q '//treefmt-formatted' "$f" || printf '//treefmt-formatted\n' >>"$f"
+    grep -q '//conformist-formatted' "$f" || printf '//conformist-formatted\n' >>"$f"
   done
 done
 exit 0
 `
-	if err := os.WriteFile(fake, []byte(script), 0o755); err != nil {
-		t.Fatal(err)
-	}
-
-	prependPath(t, binDir)
-}
-
-// withFailingFakeTreefmt installs a fake treefmt that exits non-zero.
-func withFailingFakeTreefmt(t test_ui.T) {
-	t.Helper()
-	if runtime.GOOS == "windows" {
-		t.T.Skip("PATH-injection fake binary not portable to Windows")
-	}
-
-	binDir := t.TempDir()
-	fake := filepath.Join(binDir, "treefmt")
-	script := "#!/bin/sh\nexit 7\n"
 	if err := os.WriteFile(fake, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -318,8 +274,8 @@ func prependPath(t test_ui.T, dir string) {
 }
 
 // withFakeConformist writes a stub shell script named `conformist` into a fresh
-// directory and prepends it to PATH, mirroring withFakeTreefmt. The fake
-// records its argv into sentinelPath.
+// directory and prepends it to PATH. The fake records its argv into
+// sentinelPath.
 func withFakeConformist(t test_ui.T, sentinelPath string) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
@@ -371,12 +327,12 @@ func readSentinelArgs(t test_ui.T, sentinelPath string) []string {
 	return strings.Split(strings.TrimSpace(string(body)), "\n")
 }
 
-// TestFindTreefmtConfig_CeilingStopsEscalation is the purse-first#159
+// TestFindConformistConfig_CeilingStopsEscalation is the purse-first#159
 // regression: a config only in an ANCESTOR is NOT found when
 // DAGNABIT_CEILING_DIRECTORIES bounds the walk below that ancestor. Models the
 // real failure — a repo with a Nix-generated conformist config (none on disk)
 // must not escalate to a stray ancestor conformist.toml.
-func TestFindTreefmtConfig_CeilingStopsEscalation(t *testing.T) {
+func TestFindConformistConfig_CeilingStopsEscalation(t *testing.T) {
 	tt := test_ui.T{T: t}
 	root := t.TempDir()
 
@@ -394,15 +350,15 @@ func TestFindTreefmtConfig_CeilingStopsEscalation(t *testing.T) {
 	// to root (where the stray config is).
 	t.Setenv("DAGNABIT_CEILING_DIRECTORIES", absForTest(tt, repo))
 
-	if dir, name, ok := findTreefmtConfig(start); ok {
+	if dir, name, ok := findConformistConfig(start); ok {
 		t.Errorf("expected ceiling to stop escalation to ancestor config, but found %s at %s", name, dir)
 	}
 }
 
-// TestFindTreefmtConfig_CeilingAllowsInTreeConfig confirms the ceiling does not
-// block finding a config at or below the start: a config at the repo root is
-// still found with the ceiling set at the repo's parent.
-func TestFindTreefmtConfig_CeilingAllowsInTreeConfig(t *testing.T) {
+// TestFindConformistConfig_CeilingAllowsInTreeConfig confirms the ceiling does
+// not block finding a config at or below the start: a config at the repo root
+// is still found with the ceiling set at the repo's parent.
+func TestFindConformistConfig_CeilingAllowsInTreeConfig(t *testing.T) {
 	tt := test_ui.T{T: t}
 	root := t.TempDir()
 	repo := filepath.Join(root, "repo")
@@ -417,7 +373,7 @@ func TestFindTreefmtConfig_CeilingAllowsInTreeConfig(t *testing.T) {
 	// Ceiling at root (repo's parent): the walk may still reach repo itself.
 	t.Setenv("DAGNABIT_CEILING_DIRECTORIES", absForTest(tt, root))
 
-	dir, name, ok := findTreefmtConfig(start)
+	dir, name, ok := findConformistConfig(start)
 	if !ok {
 		t.Fatal("expected in-tree config to be found with ceiling at repo parent")
 	}
@@ -456,11 +412,7 @@ func TestFormatOutput_ExplicitConfigPassesConfigFile(t *testing.T) {
 		t.Fatalf("FormatOutput with explicit config: %v", err)
 	}
 
-	body, err := os.ReadFile(sentinel)
-	if err != nil {
-		t.Fatalf("expected sentinel to be written by fake conformist: %v", err)
-	}
-	args := strings.Split(strings.TrimSpace(string(body)), "\n")
+	args := readSentinelArgs(tt, sentinel)
 	if !slices.Contains(args, "--config-file") {
 		t.Errorf("expected conformist to be invoked with --config-file, got args=%v", args)
 	}
@@ -469,28 +421,8 @@ func TestFormatOutput_ExplicitConfigPassesConfigFile(t *testing.T) {
 	}
 }
 
-// TestFindTreefmtConfig_PrefersConformist confirms a conformist.toml is chosen
-// over a treefmt.toml in the same directory (conformist is the successor).
-func TestFindTreefmtConfig_PrefersConformist(t *testing.T) {
-	tmpDir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(tmpDir, "conformist.toml"), []byte(""), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	_, name, ok := findTreefmtConfig(tmpDir)
-	if !ok {
-		t.Fatal("expected to find a config")
-	}
-	if name != "conformist.toml" {
-		t.Errorf("expected conformist.toml to win over treefmt.toml, got %q", name)
-	}
-}
-
-// TestFormatOutput_InvokesConformist confirms a conformist.toml config drives the
-// `conformist` binary rather than `treefmt`.
+// TestFormatOutput_InvokesConformist confirms a conformist.toml config drives
+// the `conformist` binary with the output dir as the positional argument.
 func TestFormatOutput_InvokesConformist(t *testing.T) {
 	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
@@ -508,11 +440,7 @@ func TestFormatOutput_InvokesConformist(t *testing.T) {
 		t.Fatalf("FormatOutput: %v", err)
 	}
 
-	body, err := os.ReadFile(sentinel)
-	if err != nil {
-		t.Fatalf("expected sentinel to be written by fake conformist: %v", err)
-	}
-	args := strings.Split(strings.TrimSpace(string(body)), "\n")
+	args := readSentinelArgs(tt, sentinel)
 	if len(args) == 0 || !strings.HasSuffix(args[len(args)-1], "pkgs") {
 		t.Errorf("expected fake conformist to be invoked with output dir as last arg, got args=%v", args)
 	}

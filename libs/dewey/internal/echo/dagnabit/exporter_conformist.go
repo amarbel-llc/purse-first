@@ -11,7 +11,7 @@ import (
 )
 
 // ceilingEnvVar is the GIT_CEILING_DIRECTORIES-style env var that bounds
-// findTreefmtConfig's upward walk: a colon-separated list of absolute
+// findConformistConfig's upward walk: a colon-separated list of absolute
 // directories the walk will not ascend into. Without it, a repo that has
 // migrated to a Nix-generated conformist config (no conformist.toml on disk)
 // would escalate past its own root and pick up a stray ancestor config (e.g.
@@ -30,18 +30,16 @@ var ceilingEnvVar = xdg.CeilingEnvVarName("dagnabit")
 // config search entirely: the formatter is conformist and the config is known.
 const conformistConfigEnvVar = "DAGNABIT_CONFORMIST_CONFIG"
 
-// treefmtConfigNames are the config filenames that indicate a conformist or
-// treefmt setup, searched in order. conformist (the treefmt successor) is
-// preferred; plain treefmt and treefmt-nix remain as fallbacks.
-var treefmtConfigNames = []string{
+// conformistConfigNames are the config filenames that indicate a conformist
+// setup, searched in order. (The legacy treefmt fallback — treefmt.toml,
+// .treefmt.toml, treefmt.nix, and the `nix fmt` path — was removed once the
+// last treefmt-configured consumer repos migrated to conformist; eng#246.)
+var conformistConfigNames = []string{
 	"conformist.toml",
 	".conformist.toml",
-	"treefmt.toml",
-	".treefmt.toml",
-	"treefmt.nix",
 }
 
-// findTreefmtConfig walks up from start looking for a treefmt config
+// findConformistConfig walks up from start looking for a conformist config
 // file. Returns the directory containing the config, the config
 // filename, and ok=true on success. Walking stops at the filesystem
 // root, or — when DAGNABIT_CEILING_DIRECTORIES is set — before ascending
@@ -53,7 +51,7 @@ var treefmtConfigNames = []string{
 // never the ceiling itself or anything above it. This is what keeps a
 // repo with a Nix-generated conformist config (no conformist.toml on disk)
 // from picking up a stray ancestor config (purse-first#159).
-func findTreefmtConfig(start string) (dir, name string, ok bool) {
+func findConformistConfig(start string) (dir, name string, ok bool) {
 	abs, err := filepath.Abs(start)
 	if err != nil {
 		return "", "", false
@@ -62,7 +60,7 @@ func findTreefmtConfig(start string) (dir, name string, ok bool) {
 	ceilings := xdg.ParseCeilingDirectories(os.Getenv(ceilingEnvVar))
 
 	for {
-		for _, candidate := range treefmtConfigNames {
+		for _, candidate := range conformistConfigNames {
 			if _, err := os.Stat(filepath.Join(abs, candidate)); err == nil {
 				return abs, candidate, true
 			}
@@ -81,9 +79,9 @@ func findTreefmtConfig(start string) (dir, name string, ok bool) {
 	}
 }
 
-// FormatOutput runs the project's formatter on the output directory if a
-// conformist or treefmt configuration is present in the module's directory
-// tree. No-op when no config is found or when DryRun is set.
+// FormatOutput runs conformist on the output directory if a conformist
+// configuration is present in the module's directory tree. No-op when no
+// config is found or when DryRun is set.
 //
 // Resolution order:
 //  0. If DAGNABIT_CONFORMIST_CONFIG names an explicit conformist config, run
@@ -91,13 +89,10 @@ func findTreefmtConfig(start string) (dir, name string, ok bool) {
 //     entirely. This is how a Nix-generated conformist config (no
 //     conformist.toml on disk) is honored (purse-first#159).
 //  1. Otherwise search upward (bounded by DAGNABIT_CEILING_DIRECTORIES) for a
-//     config and run `<formatter> <output-dir>` where <formatter> is
-//     `conformist` for a conformist.toml/.conformist.toml config and `treefmt`
-//     for a treefmt.toml/.treefmt.toml/treefmt.nix config, if that binary is on
-//     PATH.
-//  2. `nix fmt -- <output-dir>` if config is `treefmt.nix` and `nix` is on
-//     PATH.
-//  3. Otherwise emit a warning to stderr and skip.
+//     conformist.toml/.conformist.toml and run `conformist` on the output
+//     dir, if that binary is on PATH.
+//  2. Otherwise emit an error: a config-present tree with no conformist on
+//     PATH must fail loud rather than silently skip formatting.
 //
 // Invocation runs with cwd set to the directory containing the config so
 // the formatter resolves project-relative paths the same way the user's
@@ -119,57 +114,26 @@ func (exporter *Exporter) FormatOutput() error {
 		return runConformist(exporter.Dir, outputPath, configFile)
 	}
 
-	configDir, configName, ok := findTreefmtConfig(exporter.Dir)
+	configDir, configName, ok := findConformistConfig(exporter.Dir)
 	if !ok {
 		return nil
 	}
 
-	formatter := "treefmt"
-	if strings.Contains(configName, "conformist") {
-		formatter = "conformist"
+	if _, err := exec.LookPath("conformist"); err != nil {
+		// Fail loud rather than silently emitting unformatted facades: a
+		// missing formatter in a config-present tree means generated output
+		// would diff against the committed (formatted) facades for the wrong
+		// reason. Callers must run inside an environment where conformist is
+		// on PATH (e.g. the dev shell).
+		return fmt.Errorf(
+			"formatter config %s found at %s, but `conformist` is not on PATH;"+
+				" refusing to skip formatting — run inside the dev shell so"+
+				" `conformist` is available",
+			configName, configDir,
+		)
 	}
 
-	if formatter == "conformist" {
-		if _, err := exec.LookPath("conformist"); err == nil {
-			return runConformist(configDir, outputPath, "")
-		}
-	} else if formatterPath, err := exec.LookPath(formatter); err == nil {
-		cmd := exec.Command(formatterPath, outputPath)
-		cmd.Dir = configDir
-		cmd.Stdout = os.Stderr
-		cmd.Stderr = os.Stderr
-
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("%s: %w", formatter, err)
-		}
-		return nil
-	}
-
-	if configName == "treefmt.nix" {
-		if nixPath, err := exec.LookPath("nix"); err == nil {
-			cmd := exec.Command(nixPath, "fmt", "--", outputPath)
-			cmd.Dir = configDir
-			cmd.Stdout = os.Stderr
-			cmd.Stderr = os.Stderr
-
-			if err := cmd.Run(); err != nil {
-				return fmt.Errorf("nix fmt: %w", err)
-			}
-			return nil
-		}
-	}
-
-	// Fail loud rather than silently emitting unformatted facades: a missing
-	// formatter in a config-present tree means generated output would diff
-	// against the committed (formatted) facades for the wrong reason. Callers
-	// must run inside an environment where the configured formatter is on PATH
-	// (e.g. the dev shell).
-	return fmt.Errorf(
-		"formatter config %s found at %s, but `%s` is not on PATH"+
-			" (and no `nix fmt` fallback); refusing to skip formatting"+
-			" — run inside the dev shell so `%s` is available",
-		configName, configDir, formatter, formatter,
-	)
+	return runConformist(configDir, outputPath, "")
 }
 
 // outputDirExists reports whether the export output directory is present.

@@ -204,7 +204,7 @@
               pkgs.openssh
               pkgs-master.claude-code
               # conformist itself, pinned via the flake input — on PATH so
-              # dagnabit's FormatOutput() (libs/dewey/.../exporter_treefmt.go)
+              # dagnabit's FormatOutput() (libs/dewey/.../exporter_conformist.go)
               # resolves `conformist` for facade formatting, and for interactive
               # use. The formatter binaries it drives still come from the
               # devenvs: gofumpt/goimports/shfmt/shellcheck via go/shell, nixfmt

@@ -42,7 +42,8 @@ func TestDiagHelperReportsCallSiteLine(t *testing.T) {
 	root.Run("step", func(ctx Context) error {
 		// runtime.Caller(0) and helperThatFails(ctx) MUST stay on the same
 		// source line so expectedLine matches the diagnostic's reported
-		// line. See note in the file header about treefmt exclusion.
+		// line. This file is excluded from goimports/gofumpt for this
+		// reason — see the per-file formatter excludes in conformist.nix.
 		_, _, expectedLine, _ = runtime.Caller(0); helperThatFails(ctx)
 		return nil
 	})

@@ -13,24 +13,24 @@ import (
 // (relPath under internal/ → main.go source) and returns an Exporter rooted
 // there. Mirrors the fixtures in exporter_test.go.
 //
-// It plants its own treefmt.toml at the module root and installs a no-op fake
-// `treefmt` on PATH so the FormatOutput pass inside CheckAll/CheckPackage runs
-// deterministically (and as a no-op on the facade bytes) regardless of where
-// $TMPDIR lives. This helper previously skipped whenever an ancestor carried a
-// treefmt/conformist config — always the case when $TMPDIR sits inside a repo
-// that has one (e.g. this worktree's .tmp/ under the root conformist.toml),
-// which left these tests unexecuted in-repo (#127). The fixture's own config is
-// the nearest ancestor, so findTreefmtConfig resolves to it (formatter
-// "treefmt") rather than any real config further up.
+// It plants its own conformist.toml at the module root and installs a no-op
+// fake `conformist` on PATH so the FormatOutput pass inside
+// CheckAll/CheckPackage runs deterministically (and as a no-op on the facade
+// bytes) regardless of where $TMPDIR lives. This helper previously skipped
+// whenever an ancestor carried a formatter config — always the case when
+// $TMPDIR sits inside a repo that has one (e.g. this worktree's .tmp/ under
+// the root conformist.toml), which left these tests unexecuted in-repo (#127).
+// The fixture's own config is the nearest ancestor, so findConformistConfig
+// resolves to it rather than any real config further up.
 func writeCheckFixture(t test_ui.T, pkgs map[string]string) *Exporter {
 	t.Helper()
 
 	tmpDir := t.TempDir()
 
-	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "conformist.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	withFakeTreefmt(t, filepath.Join(t.TempDir(), "sentinel"))
+	withFakeConformist(t, filepath.Join(t.TempDir(), "sentinel"))
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
 		[]byte("module example.com/mod\n\ngo 1.22\n"), 0o644); err != nil {
@@ -187,7 +187,7 @@ func TestFormatOutputFailsLoudWhenFormatterMissing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Scrub PATH so neither `conformist` nor `nix` is resolvable.
+	// Scrub PATH so `conformist` is not resolvable.
 	t.Setenv("PATH", t.TempDir())
 
 	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
@@ -208,18 +208,18 @@ func TestFormatOutputFailsLoudWhenFormatterMissing(t *testing.T) {
 // was compared unformatted against the committed (formatted) facades and
 // reported phantom drift. The fix renders the copy in-tree (under exporter.Dir).
 //
-// Unlike the other check tests, this one provides its own treefmt.toml so it
-// does NOT skip on an ancestor config — it must actually run FormatOutput. The
-// fake treefmt models real treefmt's tree-root behavior (see
-// withTreeRootAwareFakeTreefmt): only files under its working directory are
+// Unlike the other check tests, this one provides its own conformist.toml so
+// it does NOT skip on an ancestor config — it must actually run FormatOutput.
+// The fake conformist models tree-root anchoring (see
+// withTreeRootAwareFakeConformist): only files under its working directory are
 // formatted.
 func TestCheckAllReproducesFormatterAcrossTempDir(t *testing.T) {
 	tt := test_ui.T{T: t}
 	tmpDir := t.TempDir()
 
-	// Force the treefmt branch with our own config. findTreefmtConfig finds this
-	// before any ancestor conformist/treefmt config.
-	if err := os.WriteFile(filepath.Join(tmpDir, "treefmt.toml"), []byte(""), 0o644); err != nil {
+	// Provide our own config. findConformistConfig finds this before any
+	// ancestor conformist config.
+	if err := os.WriteFile(filepath.Join(tmpDir, "conformist.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"),
@@ -233,7 +233,7 @@ func TestCheckAllReproducesFormatterAcrossTempDir(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	withTreeRootAwareFakeTreefmt(tt)
+	withTreeRootAwareFakeConformist(tt)
 
 	e := &Exporter{
 		ModulePath:          "example.com/mod",
