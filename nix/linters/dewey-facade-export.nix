@@ -37,6 +37,15 @@
 # DAGNABIT_CEILING_DIRECTORIES is a belt-and-suspenders bound, set at runtime to
 # the tree root conformist runs from (captured before the `cd` into deweyDir).
 #
+# The config fed to dagnabit's nested pass has any `working-dir` line stripped
+# first (sanitizeConfigForNestedPass): that pass's tree root is already
+# deweyDir (both scripts `cd` there before invoking dagnabit), so a
+# `working-dir` matching deweyDir — the common case when the SAME config also
+# drives the consumer's own repo-root-scoped `nix fmt` / `lint-fmt` — would
+# double the descent (deweyDir/deweyDir, a nonexistent chdir target). Found
+# and fixed via madder + chrest, both of which fed their outer conformistEval
+# straight through and hit `chdir .../go/go: no such file or directory`.
+#
 # writeShellScriptBin (not writeShellApplication) so the script inherits the
 # caller's PATH, where an ambient `dagnabit`/`go` resolve when dagnabitPackage is
 # null (mirrors dewey-reposition).
@@ -71,6 +80,26 @@ let
       fi
     '';
 
+  # dagnabit's facade-format pass runs with its tree root ALREADY at deweyDir
+  # (both scripts `cd "${deweyDir}"` below before invoking it). A formatter in
+  # `cfg.conformistConfig` may carry a `working-dir` key scoping it from the
+  # OUTER, repo-root-relative case — e.g. a consumer's own `nix fmt` /
+  # `lint-fmt`, which needs `working-dir = "<deweyDir>"` to descend from the
+  # tree root into deweyDir (madder, chrest: both set
+  # `programs.goimports.workingDir = "go"` to match `deweyDir = "go"`, and
+  # both fed the SAME config here). Composed with a tree root that is already
+  # deweyDir, that descends TWICE: deweyDir + working-dir(deweyDir) =
+  # "<deweyDir>/<deweyDir>", a nonexistent chdir target (confirmed
+  # `chdir .../go/go: no such file or directory` in both repos). Strip any
+  # `working-dir` line before feeding the config to dagnabit — the scoping it
+  # provided is already accounted for by the `cd` below, so its absence here
+  # correctly defaults the nested pass's tree root to deweyDir (cwd).
+  sanitizeConfigForNestedPass = ''
+    facadeConfig="$(mktemp)"
+    trap 'rm -f "$facadeConfig"' EXIT
+    sed '/^working-dir = /d' "${cfg.conformistConfig}" >"$facadeConfig"
+  '';
+
   check = pkgs.writeShellScriptBin "conformist-dewey-facade-export" ''
     set -eu
     # cwd is the tree root; this whole-tree check takes no file arguments.
@@ -83,13 +112,15 @@ let
     # Capture the tree root before descending; it bounds dagnabit's upward
     # config walk (belt-and-suspenders alongside the explicit config below).
     root="$PWD"
+    ${sanitizeConfigForNestedPass}
     cd "${deweyDir}"
 
     # `export --check [--library]` re-exports every facade and compares it to the
     # committed pkgs/ without writing; it exits nonzero and names the out-of-sync
     # packages on drift. DAGNABIT_CONFORMIST_CONFIG points the facade-format pass
-    # at the repo's real (Nix-generated) config (purse-first#159).
-    if ! DAGNABIT_CONFORMIST_CONFIG="${cfg.conformistConfig}" \
+    # at the repo's real (Nix-generated) config (purse-first#159), sanitized
+    # above so an outer-scoped working-dir does not double-apply.
+    if ! DAGNABIT_CONFORMIST_CONFIG="$facadeConfig" \
          DAGNABIT_CEILING_DIRECTORIES="$root" \
          ${dagnabitBin} export --check${libraryFlag}; then
       echo "dewey-facade-export: ${deweyDir}/pkgs/ is out of sync with internal/; regenerate (\`dagnabit export${libraryFlag}\` / your facade-repair recipe) and commit" >&2
@@ -105,11 +136,13 @@ let
 
     ${ambientGuard "dagnabit not on PATH; cannot repair"}
     root="$PWD"
+    ${sanitizeConfigForNestedPass}
     cd "${deweyDir}"
 
     # Regenerate the facades in place (no --check). Same config threading as the
-    # check half so the regenerated facades are formatted identically.
-    DAGNABIT_CONFORMIST_CONFIG="${cfg.conformistConfig}" \
+    # check half (including the working-dir sanitization) so the regenerated
+    # facades are formatted identically.
+    DAGNABIT_CONFORMIST_CONFIG="$facadeConfig" \
       DAGNABIT_CEILING_DIRECTORIES="$root" \
       ${dagnabitBin} export${libraryFlag}
     echo "dewey-facade-export: regenerated ${deweyDir}/pkgs/ facades"
@@ -164,7 +197,14 @@ in
         ancestor conformist.toml (purse-first#159). Set to the consumer's
         `.#conformist-config` output (conformistEval.config.build.configFile) —
         the PURE formatter config (goimports/gofumpt), not the impure
-        self-check config.
+        self-check config. It is safe to pass that config even when its
+        formatters carry a `working-dir` matching deweyDir (the common case
+        when the SAME config also drives the consumer's own `nix fmt` /
+        `lint-fmt`, which needs that working-dir to descend from the tree
+        root): the check/repair scripts strip any `working-dir` line before
+        feeding the config to dagnabit's nested pass, since that pass's tree
+        root is already deweyDir (they `cd` there first) — a passed-through
+        working-dir would otherwise double-apply the descent.
       '';
     };
   };
