@@ -22,7 +22,7 @@ purse-first has three layers:
 
 purse-first was slimmed to the framework itself. The concrete MCP-server
 packages (grit, get-hubbed, chix, …) moved to
-[amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) as **moxins**; `lux` was
+[amarbel-llc/moxy](https://code.linenisgreat.com/moxy) as **moxins**; `lux` was
 pulled out and is currently **dormant** (not published in moxy or any other
 active repo). What remains here:
 
@@ -38,7 +38,7 @@ active repo). What remains here:
 ## Package flavors
 
 The protocol defines three package flavors. Concrete MCP packages now live in
-[amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) as moxins; the in-tree
+[amarbel-llc/moxy](https://code.linenisgreat.com/moxy) as moxins; the in-tree
 skill packages are `claude-plugins` and `mcp`.
 
 | Flavor | Description | Examples |

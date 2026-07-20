@@ -8,7 +8,7 @@ Package framework for producing per-package Claude Code plugins (CLIs, MCP serve
 
 Note: marketplace *aggregation* was removed in #110 — purse-first is now a per-package plugin *producer* toolkit plus libraries, not a marketplace assembler/installer.
 
-Most concrete MCP-server packages (grit, get-hubbed, chix, etc.) have moved out of this repo — see [amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) for those as moxins. (`lux` was also pulled out of this repo, but is currently **dormant** in its entirety — it is not published in moxy or any other active repo.) This repo now contains the framework itself plus a few co-located libraries and tools (purse-first CLI, go-mcp, dewey, dagnabit).
+Most concrete MCP-server packages (grit, get-hubbed, chix, etc.) have moved out of this repo — see [amarbel-llc/moxy](https://code.linenisgreat.com/moxy) for those as moxins. (`lux` was also pulled out of this repo, but is currently **dormant** in its entirety — it is not published in moxy or any other active repo.) This repo now contains the framework itself plus a few co-located libraries and tools (purse-first CLI, go-mcp, dewey, dagnabit).
 
 ## Build & Test Commands
 
@@ -86,7 +86,7 @@ dewey+dagnabit), not upstream in conformist (purse-first#163).
   - **MCP package** — MCP server only
   - **Skill package** — Skill only
   - **MCP + Skill package** — Both
-- **moxin** — a `purse-first`-protocol package consumed by a separate aggregator (`moxy`). The concrete MCP packages (grit, get-hubbed, chix, etc.) now live in [amarbel-llc/moxy](https://github.com/amarbel-llc/moxy) as moxins; this repo only defines the protocol and ships the framework, libraries, and a small set of in-tree skills. (`lux` is currently dormant — see the Overview.)
+- **moxin** — a `purse-first`-protocol package consumed by a separate aggregator (`moxy`). The concrete MCP packages (grit, get-hubbed, chix, etc.) now live in [amarbel-llc/moxy](https://code.linenisgreat.com/moxy) as moxins; this repo only defines the protocol and ships the framework, libraries, and a small set of in-tree skills. (`lux` is currently dormant — see the Overview.)
 
 ## Architecture
 
@@ -104,7 +104,7 @@ The `libs/go-mcp` `command.App` abstraction expects every consuming Go MCP packa
 2. **`hook`** — Claude Code PreToolUse handler: `app.HandleHook(stdin, stdout)` reads hook input and denies built-in tools when an MCP tool should be used instead
 3. **no args** — runtime: starts the MCP server via `server.New(...).Run(ctx)`
 
-The downstream packages that live this lifecycle (grit, get-hubbed, chix, etc.) now ship out of [amarbel-llc/moxy](https://github.com/amarbel-llc/moxy); this repo defines and tests the framework that supports them.
+The downstream packages that live this lifecycle (grit, get-hubbed, chix, etc.) now ship out of [amarbel-llc/moxy](https://code.linenisgreat.com/moxy); this repo defines and tests the framework that supports them.
 
 ### command.App Pattern (libs/go-mcp)
 

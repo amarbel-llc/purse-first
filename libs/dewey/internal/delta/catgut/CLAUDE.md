@@ -45,4 +45,4 @@ that future contributors should look at before touching `noescape`.
 [i7921]:    https://github.com/golang/go/issues/7921
 [i58625]:   https://github.com/golang/go/issues/58625
 [i70471]:   https://github.com/golang/go/issues/70471
-[issue89]:  https://github.com/amarbel-llc/purse-first/issues/89
+[issue89]:  https://code.linenisgreat.com/purse-first/issues/89
