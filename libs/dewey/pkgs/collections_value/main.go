@@ -3,8 +3,8 @@
 package collections_value
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/collections_value"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/collections_value"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 type (

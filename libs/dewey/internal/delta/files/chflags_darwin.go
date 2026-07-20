@@ -4,7 +4,7 @@ import (
 	"io/fs"
 	"os/exec"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
 )
 
 func setUserChanges(paths []string, options userChangesOptions) (err error) {

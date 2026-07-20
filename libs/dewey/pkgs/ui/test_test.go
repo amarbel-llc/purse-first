@@ -5,7 +5,7 @@ package ui_test
 import (
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/ui"
 )
 
 // Compile test: verify test-tagged symbols are re-exported from pkgs/ui.

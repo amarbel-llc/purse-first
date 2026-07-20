@@ -2,7 +2,7 @@
 
 package compression_type
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/compression_type"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/compression_type"
 
 type (
 	CompressionType           = internal.CompressionType

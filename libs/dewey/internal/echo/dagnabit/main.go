@@ -1,7 +1,7 @@
 package dagnabit
 
 import (
-	topological_sort "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/topological_sort"
+	topological_sort "code.linenisgreat.com/purse-first/libs/dewey/internal/0/topological_sort"
 )
 
 // DependencyReader produces directed edges from a codebase,

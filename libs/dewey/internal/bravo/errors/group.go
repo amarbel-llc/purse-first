@@ -3,7 +3,7 @@ package errors
 import (
 	"fmt"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/pool"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/pool"
 )
 
 type Group []error

@@ -2,7 +2,7 @@
 
 package files
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/files"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/files"
 
 type (
 	ErrNotDirectory        = internal.ErrNotDirectory

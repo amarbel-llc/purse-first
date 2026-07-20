@@ -3,8 +3,8 @@ package pool_test
 import (
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/pool"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/pool"
 )
 
 type resetable struct{ v string }

@@ -1,6 +1,6 @@
 package xdg
 
-import "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/env_vars"
+import "code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/env_vars"
 
 type DefaultEnvVar struct {
 	Name                 string

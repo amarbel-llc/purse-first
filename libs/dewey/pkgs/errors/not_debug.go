@@ -3,6 +3,6 @@
 
 package errors
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
 
 var PrintStackTracerIfNecessary = internal.PrintStackTracerIfNecessary

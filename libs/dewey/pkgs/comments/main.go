@@ -2,7 +2,7 @@
 
 package comments
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/comments"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/comments"
 
 var (
 	Change      = internal.Change

@@ -5,8 +5,8 @@ package cmp
 import (
 	"cmp"
 
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/cmp"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/cmp"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 type (

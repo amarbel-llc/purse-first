@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/pool"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/pool"
 )
 
 var poolMatchBuilder = pool.Make(

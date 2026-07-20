@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ui"
 )
 
 func Base(p string) string {

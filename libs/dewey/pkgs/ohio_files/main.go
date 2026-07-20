@@ -2,7 +2,7 @@
 
 package ohio_files
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/ohio_files"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/echo/ohio_files"
 
 var (
 	CopyFileLines         = internal.CopyFileLines

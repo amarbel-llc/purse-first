@@ -2,6 +2,6 @@
 
 package analyzer_actx
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/analyzer_actx"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/analyzer_actx"
 
 var Analyzer = internal.Analyzer

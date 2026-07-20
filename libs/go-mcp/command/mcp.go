@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/protocol"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/server"
 )
 
 // RegisterMCPTools registers all non-hidden commands as MCP tools

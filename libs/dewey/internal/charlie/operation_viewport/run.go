@@ -6,9 +6,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/primordial"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/primordial"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
 )
 
 // Op describes a single subprocess to run under the viewport.

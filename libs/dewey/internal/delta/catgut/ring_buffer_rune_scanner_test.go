@@ -3,8 +3,8 @@ package catgut
 import (
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/pool"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/pool"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ui"
 	"github.com/google/go-cmp/cmp"
 )
 

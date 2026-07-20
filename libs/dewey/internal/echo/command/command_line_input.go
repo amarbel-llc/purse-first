@@ -3,7 +3,7 @@ package command
 import (
 	"fmt"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/collections_slice"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/collections_slice"
 )
 
 // TODO complete merging Args, consumed and FlagsOrArgs for use by Run/Complete

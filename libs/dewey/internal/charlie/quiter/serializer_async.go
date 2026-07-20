@@ -1,6 +1,6 @@
 package quiter
 
-import "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+import "code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
 
 type AsyncSerializer[T any] struct {
 	chError <-chan error

@@ -12,9 +12,9 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	cargo_manifest "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/cargo_manifest"
-	topological_sort "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/topological_sort"
-	cargo_metadata "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/cargo_metadata"
+	cargo_manifest "code.linenisgreat.com/purse-first/libs/dewey/internal/0/cargo_manifest"
+	topological_sort "code.linenisgreat.com/purse-first/libs/dewey/internal/0/topological_sort"
+	cargo_metadata "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/cargo_metadata"
 )
 
 // Options mirrors dagnabit.MoveOptions for the rust renamer.

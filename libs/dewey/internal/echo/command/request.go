@@ -3,12 +3,12 @@ package command
 import (
 	"slices"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/collections_slice"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/flags"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/quiter"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/collections_value"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/collections_slice"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/flags"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/quiter"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/delta/collections_value"
 )
 
 // TODO refactor this to have a generic config field and for the commands_madder

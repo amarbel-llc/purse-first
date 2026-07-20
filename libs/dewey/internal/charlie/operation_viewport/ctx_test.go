@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
 )
 
 // TestPropagateCancel_InterruptedReturnsSignal verifies the Ctrl-C

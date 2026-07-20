@@ -3,9 +3,9 @@ package ohio
 import (
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/values"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/values"
 )
 
 func TestReaderIterateOneHappy(t1 *testing.T) {

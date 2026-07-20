@@ -24,7 +24,7 @@ import (
 	"github.com/golangci/golangci-lint/v2/pkg/commands"
 	"github.com/golangci/golangci-lint/v2/pkg/exitcodes"
 
-	_ "github.com/amarbel-llc/purse-first/libs/dewey/gclplugin"
+	_ "code.linenisgreat.com/purse-first/libs/dewey/gclplugin"
 )
 
 // Populated at build time via -ldflags (see gomod.nix).

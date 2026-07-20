@@ -3,9 +3,9 @@
 package collections_slice
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/collections_slice"
-	cmp "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/cmp"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/collections_slice"
+	cmp "code.linenisgreat.com/purse-first/libs/dewey/pkgs/cmp"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 type (

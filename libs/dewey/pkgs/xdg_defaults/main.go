@@ -2,7 +2,7 @@
 
 package xdg_defaults
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/xdg_defaults"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/xdg_defaults"
 
 type DefaultEnvVar = internal.DefaultEnvVar
 

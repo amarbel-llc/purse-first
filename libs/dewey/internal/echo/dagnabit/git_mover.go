@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
 )
 
 // GitMover moves packages by running git mv and rewriting Go import paths.

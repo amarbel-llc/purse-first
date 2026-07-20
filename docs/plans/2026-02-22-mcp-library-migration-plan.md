@@ -29,11 +29,11 @@ module github.com/friedenberg/get-hubbed
 go 1.25.6
 
 require (
-	github.com/amarbel-llc/purse-first/libs/go-mcp v0.0.3
-	github.com/amarbel-llc/purse-first v0.0.0-20260216133354-540c1e5ba995
+	code.linenisgreat.com/purse-first/libs/go-mcp v0.0.3
+	code.linenisgreat.com/purse-first v0.0.0-20260216133354-540c1e5ba995
 )
 
-replace github.com/amarbel-llc/purse-first => ./deps/purse-first
+replace code.linenisgreat.com/purse-first => ./deps/purse-first
 ```
 
 **Step 2: Update go.work**
@@ -72,7 +72,7 @@ git commit -m "chore(get-hubbed): update go.mod to depend on go-mcp"
 ```go
 package tools
 
-import "github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+import "code.linenisgreat.com/purse-first/libs/go-mcp/command"
 
 func RegisterAll() *command.App {
 	app := command.NewApp("get-hubbed", "GitHub MCP server wrapping the gh CLI")
@@ -121,7 +121,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/command"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
@@ -315,8 +315,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/command"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/server"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
@@ -416,8 +416,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/protocol"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/server"
 	"github.com/friedenberg/get-hubbed/internal/gh"
 )
 
@@ -435,8 +435,8 @@ Then `registry.go` passes both the App and a ToolRegistry:
 package tools
 
 import (
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/command"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/command"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/server"
 )
 
 func RegisterAll() *command.App {
@@ -554,8 +554,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/server"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/transport"
 	"github.com/friedenberg/get-hubbed/internal/tools"
 )
 

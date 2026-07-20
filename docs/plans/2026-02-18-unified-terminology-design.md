@@ -100,7 +100,7 @@ Add `// TODO(terminology): rename X → Y when breaking change lands` to:
 **Library names (breaking change):**
 - `libs/go-mcp/` → TBD (e.g., `go-purse`)
 - `libs/rust-mcp/` → TBD
-- Go module path `github.com/amarbel-llc/purse-first/libs/go-mcp`
+- Go module path `code.linenisgreat.com/purse-first/libs/go-mcp`
 
 ### Not changing
 

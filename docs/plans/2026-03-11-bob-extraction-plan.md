@@ -41,7 +41,7 @@ git push origin libs/go-mcp/v0.0.3 libs/go-mcp/command/huh/v0.0.3
 **Step 3: Verify Go proxy picks up the tag**
 
 ```bash
-GOPROXY=https://proxy.golang.org go list -m github.com/amarbel-llc/purse-first/libs/go-mcp@v0.0.3
+GOPROXY=https://proxy.golang.org go list -m code.linenisgreat.com/purse-first/libs/go-mcp@v0.0.3
 ```
 
 Expected: resolves to v0.0.3
@@ -601,7 +601,7 @@ versions. Also update `dummies/go`.
 
 For each Go module that has a `replace` directive pointing to `../../libs/go-mcp`:
 
-1. Remove the `replace github.com/amarbel-llc/purse-first/libs/go-mcp => ...` line
+1. Remove the `replace code.linenisgreat.com/purse-first/libs/go-mcp => ...` line
 2. Update the `require` version to `v0.0.3` (the tag from Task 1)
 
 For spinclass, also remove the `replace` for `tap-dancer/go` and update to use
@@ -614,7 +614,7 @@ module github.com/friedenberg/grit
 
 go 1.25.6
 
-require github.com/amarbel-llc/purse-first/libs/go-mcp v0.0.3
+require code.linenisgreat.com/purse-first/libs/go-mcp v0.0.3
 
 require mvdan.cc/sh/v3 v3.12.0 // indirect
 ```
@@ -666,7 +666,7 @@ mcp-server = { path = "../../libs/rust-mcp", features = ["tools", "resources", "
 ```
 To:
 ```toml
-mcp-server = { git = "https://github.com/amarbel-llc/purse-first", path = "libs/rust-mcp", features = ["tools", "resources", "command"] }
+mcp-server = { git = "https://code.linenisgreat.com/purse-first", path = "libs/rust-mcp", features = ["tools", "resources", "command"] }
 ```
 
 **Step 2: Update tap-dancer/rust Cargo.toml similarly**

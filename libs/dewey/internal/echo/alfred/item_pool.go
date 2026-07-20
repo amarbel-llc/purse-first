@@ -3,7 +3,7 @@ package alfred
 import (
 	"sync"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/catgut"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/delta/catgut"
 )
 
 type ItemPool struct {

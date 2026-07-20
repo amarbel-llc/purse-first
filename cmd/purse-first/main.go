@@ -9,8 +9,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/amarbel-llc/purse-first/internal/packagetoml"
-	"github.com/amarbel-llc/purse-first/internal/validate"
+	"code.linenisgreat.com/purse-first/internal/packagetoml"
+	"code.linenisgreat.com/purse-first/internal/validate"
 )
 
 func main() {

@@ -2,7 +2,7 @@
 
 package protocol
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/protocol"
 
 // BlobResourceContents holds base64-encoded binary content for an EmbeddedResource content block.
 // Per MCP spec: required uri + blob, optional mimeType.

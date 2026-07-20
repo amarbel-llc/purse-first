@@ -13,8 +13,8 @@
 //
 //	version: v2.5.0
 //	plugins:
-//	  - module: github.com/amarbel-llc/purse-first/libs/dewey
-//	    import: github.com/amarbel-llc/purse-first/libs/dewey/gclplugin
+//	  - module: code.linenisgreat.com/purse-first/libs/dewey
+//	    import: code.linenisgreat.com/purse-first/libs/dewey/gclplugin
 //	    version: latest
 //
 // Build a custom binary with `golangci-lint custom` — or skip that and
@@ -58,12 +58,12 @@ import (
 	"github.com/golangci/plugin-module-register/register"
 	"golang.org/x/tools/go/analysis"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/analyzer_actx"
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/analyzer_defererr"
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/analyzer_paramobj"
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/analyzer_repool"
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/analyzer_seqerror"
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/analyzer_testui"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/analyzer_actx"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/analyzer_defererr"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/analyzer_paramobj"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/analyzer_repool"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/analyzer_seqerror"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/analyzer_testui"
 )
 
 func init() {

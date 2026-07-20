@@ -25,7 +25,7 @@ This library handles the protocol details, letting you focus on implementing you
 ## Installation
 
 ```bash
-go get github.com/amarbel-llc/purse-first/libs/go-mcp
+go get code.linenisgreat.com/purse-first/libs/go-mcp
 ```
 
 ## Quick Start
@@ -42,9 +42,9 @@ import (
     "log"
     "os"
 
-    "github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
-    "github.com/amarbel-llc/purse-first/libs/go-mcp/server"
-    "github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
+    "code.linenisgreat.com/purse-first/libs/go-mcp/protocol"
+    "code.linenisgreat.com/purse-first/libs/go-mcp/server"
+    "code.linenisgreat.com/purse-first/libs/go-mcp/transport"
 )
 
 func main() {
@@ -269,7 +269,7 @@ stream := jsonrpc.NewStream(reader, writer)
 The optional `executor` package helps manage subprocesses:
 
 ```go
-import "github.com/amarbel-llc/purse-first/libs/go-mcp/executor/nix"
+import "code.linenisgreat.com/purse-first/libs/go-mcp/executor/nix"
 
 exec := nix.New()
 

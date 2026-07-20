@@ -3,8 +3,8 @@
 package pool
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/pool"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/pool"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 type (

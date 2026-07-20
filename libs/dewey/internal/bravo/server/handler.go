@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/jsonrpc"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/protocol"
 )
 
 // Handler handles MCP protocol method calls.

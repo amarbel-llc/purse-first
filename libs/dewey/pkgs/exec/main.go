@@ -2,6 +2,6 @@
 
 package exec
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/exec"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/exec"
 
 var ExecCommand = internal.ExecCommand

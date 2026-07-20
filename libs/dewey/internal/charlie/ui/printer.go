@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/primordial"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/stack_frame"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/primordial"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/stack_frame"
 )
 
 func MakePrinter(file *os.File) printer {

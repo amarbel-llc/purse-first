@@ -2,7 +2,7 @@
 
 package server
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/server"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/server"
 
 // CompletionProvider provides argument completion suggestions.
 type CompletionProvider = internal.CompletionProvider

@@ -3,9 +3,9 @@
 package expansion
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/expansion"
-	collectionsslice "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/collections_slice"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/expansion"
+	collectionsslice "code.linenisgreat.com/purse-first/libs/dewey/pkgs/collections_slice"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 type Expander = internal.Expander

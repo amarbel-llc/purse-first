@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/collections_slice"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/flags"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/protocol"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/collections_slice"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/flags"
 )
 
 // Utility holds the command registry and top-level metadata for a CLI/MCP application.

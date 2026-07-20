@@ -2,7 +2,7 @@
 
 package go_module
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/go_module"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/go_module"
 
 // ReadModulePath parses the `module <path>` directive from the file at
 // goModPath and returns the path value.

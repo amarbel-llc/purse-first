@@ -3,7 +3,7 @@ package script_config
 import (
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ui"
 )
 
 func TestToml(t1 *testing.T) {

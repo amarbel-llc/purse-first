@@ -3,8 +3,8 @@ package ohio
 import (
 	"io"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/pool"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/pool"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
 )
 
 func CopyBuffered(dst io.Writer, src io.Reader) (written int64, err error) {

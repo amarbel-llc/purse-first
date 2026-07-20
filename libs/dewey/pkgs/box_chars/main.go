@@ -2,7 +2,7 @@
 
 package box_chars
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/box_chars"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/box_chars"
 
 const (
 	ElbowBottomRight = internal.ElbowBottomRight

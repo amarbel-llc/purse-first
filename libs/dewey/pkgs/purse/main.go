@@ -2,7 +2,7 @@
 
 package purse
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/purse"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/golf/purse"
 
 // HTTPPostAction describes the HTTP POST to send.
 type HTTPPostAction = internal.HTTPPostAction

@@ -2,7 +2,7 @@
 
 package go_list
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/go_list"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/go_list"
 
 // Reader reads Go package dependencies by shelling out to `go list`.
 // ModulePath is the Go module path (e.g., "code.linenisgreat.com/dodder/go").

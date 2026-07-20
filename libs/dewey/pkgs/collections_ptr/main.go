@@ -3,8 +3,8 @@
 package collections_ptr
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/collections_ptr"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/collections_ptr"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 // TODO-P2 add Resetter2 and Pool

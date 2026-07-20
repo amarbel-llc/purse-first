@@ -1,8 +1,8 @@
 package command
 
 import (
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/values"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/values"
 )
 
 // Completer is an iterator that yields Completion values for shell

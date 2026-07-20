@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/buildinfo"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/analyzer_repool"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/buildinfo"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/analyzer_repool"
 	"golang.org/x/tools/go/analysis/singlechecker"
 )
 

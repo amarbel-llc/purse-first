@@ -1,6 +1,6 @@
 package command
 
-import "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+import "code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
 
 type CommandComponentReader interface {
 	GetCLIFlags() []string

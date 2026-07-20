@@ -15,7 +15,7 @@ import (
 	"errors"
 	"testing"
 
-	hs "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/http_statuses"
+	hs "code.linenisgreat.com/purse-first/libs/dewey/internal/0/http_statuses"
 )
 
 // (1) The headline expectation: BadRequestf renders the user message, not

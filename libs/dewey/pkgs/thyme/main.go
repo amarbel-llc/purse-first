@@ -2,7 +2,7 @@
 
 package thyme
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/thyme"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/thyme"
 
 type Time = internal.Time
 

@@ -3,7 +3,7 @@ package errors
 import (
 	"fmt"
 
-	hs "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/http_statuses"
+	hs "code.linenisgreat.com/purse-first/libs/dewey/internal/0/http_statuses"
 )
 
 // BadRequest tags an existing error with HTTP 400. No-op if the chain

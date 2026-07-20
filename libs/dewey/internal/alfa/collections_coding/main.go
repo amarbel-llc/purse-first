@@ -1,6 +1,6 @@
 package collections_coding
 
-import "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+import "code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
 
 type EncoderLike[T any] interface {
 	Encode(*T) (int64, error)

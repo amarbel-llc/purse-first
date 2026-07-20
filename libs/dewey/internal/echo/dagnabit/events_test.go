@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 // captureStdout runs fn with os.Stdout redirected to a pipe and returns the

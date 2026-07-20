@@ -2,7 +2,7 @@
 
 package cli
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/cli"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/cli"
 
 // TODO add support for comma-separated values
 type (

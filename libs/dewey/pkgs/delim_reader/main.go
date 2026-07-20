@@ -2,7 +2,7 @@
 
 package delim_reader
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/delim_reader"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/delim_reader"
 
 // Not safe for parallel use
 type DelimReader = internal.DelimReader

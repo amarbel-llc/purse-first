@@ -15,8 +15,8 @@ import (
 	"sort"
 	"strings"
 
-	cargo_manifest "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/cargo_manifest"
-	cargo_workspace "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/cargo_workspace"
+	cargo_manifest "code.linenisgreat.com/purse-first/libs/dewey/internal/0/cargo_manifest"
+	cargo_workspace "code.linenisgreat.com/purse-first/libs/dewey/internal/0/cargo_workspace"
 )
 
 // pathDepRE finds candidate `path = "…"` values anywhere in a manifest.

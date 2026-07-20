@@ -1,6 +1,6 @@
 package pool
 
-import "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+import "code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
 
 type Bespoke[T any] struct {
 	FuncGet func() T

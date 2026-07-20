@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"io/fs"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/protocol"
 )
 
 // EnvVar declares an environment variable that an app or command reads,

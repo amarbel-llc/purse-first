@@ -6,8 +6,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/protocol"
 )
 
 // chanTransport is an in-memory transport backed by channels, suitable for

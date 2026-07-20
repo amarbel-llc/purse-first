@@ -1,4 +1,4 @@
-module github.com/amarbel-llc/purse-first/libs/go-mcp
+module code.linenisgreat.com/purse-first/libs/go-mcp
 
 // TODO(terminology): rename module from go-mcp when breaking change lands.
 

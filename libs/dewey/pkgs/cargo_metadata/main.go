@@ -2,7 +2,7 @@
 
 package cargo_metadata
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/cargo_metadata"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/cargo_metadata"
 
 // Reader reads cargo workspace-member dependencies by shelling out to
 // `cargo metadata`. Dir is the working directory to run `cargo metadata`

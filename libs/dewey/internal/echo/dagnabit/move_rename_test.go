@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 // initModuleRepo creates a git-initialized module at t.TempDir() with a local

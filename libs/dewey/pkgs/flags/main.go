@@ -3,8 +3,8 @@
 package flags
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/flags"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/flags"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 type (

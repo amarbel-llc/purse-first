@@ -2,7 +2,7 @@
 
 package ohio_buffer
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ohio_buffer"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ohio_buffer"
 
 var (
 	Copy          = internal.Copy

@@ -12,8 +12,8 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	buildinfo "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/buildinfo"
-	cargo_manifest "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/cargo_manifest"
+	buildinfo "code.linenisgreat.com/purse-first/libs/dewey/internal/0/buildinfo"
+	cargo_manifest "code.linenisgreat.com/purse-first/libs/dewey/internal/0/cargo_manifest"
 )
 
 // generatedHeader is the first line of every generated lib.rs. It carries

@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ui"
 )
 
 type testCaseOverlap struct {

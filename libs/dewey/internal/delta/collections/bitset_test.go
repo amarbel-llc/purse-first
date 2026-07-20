@@ -3,8 +3,8 @@ package collections
 import (
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ui"
 )
 
 func TestBitset0CapGreaterAdd(t1 *testing.T) {

@@ -1,7 +1,7 @@
 package xdg_defaults
 
 import (
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/env_vars"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/env_vars"
 )
 
 const (

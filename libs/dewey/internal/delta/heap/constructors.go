@@ -3,7 +3,7 @@ package heap
 import (
 	"sort"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
 )
 
 func Make[ELEMENT Element, ELEMENT_PTR ElementPtr[ELEMENT]](

@@ -3,9 +3,9 @@ package flags
 import (
 	"strings"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/flag_policy"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/flag_policy"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
 )
 
 func MakeWithPolicy(

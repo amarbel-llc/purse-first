@@ -3,10 +3,10 @@
 package quiter
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/quiter"
-	cmp "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/cmp"
-	errors "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/errors"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/quiter"
+	cmp "code.linenisgreat.com/purse-first/libs/dewey/pkgs/cmp"
+	errors "code.linenisgreat.com/purse-first/libs/dewey/pkgs/errors"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 type (

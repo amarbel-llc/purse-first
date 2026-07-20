@@ -25,7 +25,7 @@ package command
 import (
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/server"
 )
 
 func TestRegisterMCPToolsV1(t *testing.T) {

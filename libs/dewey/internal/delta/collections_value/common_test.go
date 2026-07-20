@@ -5,11 +5,11 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/quiter"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/quiter_set"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/values"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/quiter"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/quiter_set"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/values"
 )
 
 func makeStringValues(vs ...string) (out []values.String) {

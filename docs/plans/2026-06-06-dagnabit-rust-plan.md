@@ -517,7 +517,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	topological_sort "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/topological_sort"
+	topological_sort "code.linenisgreat.com/purse-first/libs/dewey/internal/0/topological_sort"
 )
 
 // goldenMetadata is a trimmed real `cargo metadata --format-version 1

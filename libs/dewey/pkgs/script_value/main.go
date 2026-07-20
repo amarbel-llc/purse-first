@@ -2,7 +2,7 @@
 
 package script_value
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/script_value"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/echo/script_value"
 
 type (
 	ScriptValue = internal.ScriptValue

@@ -1,12 +1,12 @@
-module github.com/amarbel-llc/purse-first/libs/dewey
+module code.linenisgreat.com/purse-first/libs/dewey
 
 go 1.26
 
 require (
+	code.linenisgreat.com/tommy v0.5.0
 	filippo.io/age v1.3.1
 	github.com/BurntSushi/toml v1.6.0
 	github.com/DataDog/zstd v1.5.7
-	github.com/amarbel-llc/tommy v0.0.0-20260405143331-87255e87bf37
 	github.com/brandondube/tai v0.1.0
 	github.com/charmbracelet/bubbles v1.0.0
 	github.com/charmbracelet/bubbletea v1.3.10

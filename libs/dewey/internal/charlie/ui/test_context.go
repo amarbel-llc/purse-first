@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/stack_frame"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/stack_frame"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/test_ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
 )
 
 type t = T

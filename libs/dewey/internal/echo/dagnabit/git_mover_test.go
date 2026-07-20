@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 func initTestRepo(t test_ui.T) string {

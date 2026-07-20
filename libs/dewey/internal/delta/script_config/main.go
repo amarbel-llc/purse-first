@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/equality"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/reset"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/equality"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/reset"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ui"
 )
 
 //go:generate tommy generate

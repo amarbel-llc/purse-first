@@ -3,7 +3,7 @@ package cmp
 import (
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
 )
 
 func TestLessorVerify(t1 *testing.T) {

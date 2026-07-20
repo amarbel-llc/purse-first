@@ -3,7 +3,7 @@ package command
 import (
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/values"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/values"
 )
 
 func TestFlagImplementsParam(t *testing.T) {

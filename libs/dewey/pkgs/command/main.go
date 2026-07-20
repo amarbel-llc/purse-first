@@ -3,8 +3,8 @@
 package command
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/command"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/echo/command"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 // Arg is a positional CLI argument, also an MCP schema property.

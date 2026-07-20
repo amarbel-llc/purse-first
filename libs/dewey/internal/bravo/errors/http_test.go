@@ -3,7 +3,7 @@ package errors
 import (
 	"testing"
 
-	hs "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/http_statuses"
+	hs "code.linenisgreat.com/purse-first/libs/dewey/internal/0/http_statuses"
 )
 
 type testErrDisamb struct{}

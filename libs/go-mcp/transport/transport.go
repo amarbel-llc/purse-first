@@ -10,7 +10,7 @@ package transport
 import (
 	"context"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
 )
 
 // Transport defines the interface for sending and receiving JSON-RPC messages.

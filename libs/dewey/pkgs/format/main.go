@@ -3,8 +3,8 @@
 package format
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/format"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/format"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 type LineWriter = internal.LineWriter

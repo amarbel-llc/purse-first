@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/pool"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ohio"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/values"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/pool"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ohio"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/values"
 )
 
 func TestLineReaderOneReaderHappy(t1 *testing.T) {

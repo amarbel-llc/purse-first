@@ -3,7 +3,7 @@ package pool
 import (
 	"sync"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
 )
 
 type Slice[SWIMMER any, SWIMMER_SLICE ~[]SWIMMER] struct {

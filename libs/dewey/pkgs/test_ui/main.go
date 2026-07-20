@@ -2,7 +2,7 @@
 
 package test_ui
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/test_ui"
 
 type (
 	TestCase[BLOB any] = internal.TestCase[BLOB]

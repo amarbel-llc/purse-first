@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/values"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/values"
 )
 
 func TestReset(t1 *testing.T) {

@@ -2,7 +2,7 @@
 
 package cargo_manifest
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/cargo_manifest"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/cargo_manifest"
 
 // AddMember appends rel to the [workspace] members array if absent
 // (idempotent: a second add returns the input unchanged with

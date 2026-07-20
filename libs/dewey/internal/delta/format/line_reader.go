@@ -5,9 +5,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ohio"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ohio"
 )
 
 type lineReader struct {

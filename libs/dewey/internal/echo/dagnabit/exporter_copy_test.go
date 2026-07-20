@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/tools/go/packages"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 // TestExportCopySourceFiles verifies the --copy mode: instead of

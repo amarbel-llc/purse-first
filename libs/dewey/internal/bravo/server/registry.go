@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/protocol"
 )
 
 // ToolRegistry is a helper for building tool providers.

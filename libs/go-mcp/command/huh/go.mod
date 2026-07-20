@@ -1,13 +1,13 @@
-module github.com/amarbel-llc/purse-first/libs/go-mcp/command/huh
+module code.linenisgreat.com/purse-first/libs/go-mcp/command/huh
 
 go 1.26
 
 require (
-	github.com/amarbel-llc/purse-first/libs/go-mcp v0.0.0
+	code.linenisgreat.com/purse-first/libs/go-mcp v0.0.0
 	github.com/charmbracelet/huh v0.8.0
 )
 
-replace github.com/amarbel-llc/purse-first/libs/go-mcp => ../..
+replace code.linenisgreat.com/purse-first/libs/go-mcp => ../..
 
 require (
 	github.com/atotto/clipboard v0.1.4 // indirect

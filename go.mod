@@ -1,4 +1,4 @@
-module github.com/amarbel-llc/purse-first
+module code.linenisgreat.com/purse-first
 
 go 1.26
 

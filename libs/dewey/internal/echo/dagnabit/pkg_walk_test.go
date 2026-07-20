@@ -7,7 +7,7 @@ import (
 )
 
 func TestBranchLeafNode(t *testing.T) {
-	const modulePath = "github.com/amarbel-llc/purse-first/libs/dewey"
+	const modulePath = "code.linenisgreat.com/purse-first/libs/dewey"
 
 	cases := []struct {
 		name     string

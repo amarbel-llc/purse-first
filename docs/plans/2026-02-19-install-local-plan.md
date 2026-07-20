@@ -483,7 +483,7 @@ Add to `internal/localplugin/generate.go`:
 // "fmt"
 // "path/filepath"
 // tap "github.com/amarbel-llc/tap-dancer/go"
-// "github.com/amarbel-llc/purse-first/internal/hook"
+// "code.linenisgreat.com/purse-first/internal/hook"
 
 // InstallLocal sets up the local development environment: discovers skills,
 // installs MCP servers, and registers hooks in project-scoped settings.

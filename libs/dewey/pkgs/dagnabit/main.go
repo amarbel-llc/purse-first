@@ -2,7 +2,7 @@
 
 package dagnabit
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/dagnabit"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/echo/dagnabit"
 
 // DependencyReader produces directed edges from a codebase,
 // grouped by tree prefix (e.g., "lib", "internal").

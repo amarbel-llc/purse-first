@@ -1,8 +1,8 @@
 package xdg
 
 import (
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/env_vars"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/xdg_defaults"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/env_vars"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/delta/xdg_defaults"
 )
 
 type initElement struct {

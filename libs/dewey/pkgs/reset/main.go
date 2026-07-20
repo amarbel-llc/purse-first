@@ -3,7 +3,7 @@
 package reset
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/reset"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/reset"
 	constraints "golang.org/x/exp/constraints"
 )
 

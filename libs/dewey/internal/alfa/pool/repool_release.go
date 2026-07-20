@@ -2,7 +2,7 @@
 
 package pool
 
-import "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+import "code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
 
 func wrapRepoolDebug(repool interfaces.FuncRepool) interfaces.FuncRepool {
 	return repool

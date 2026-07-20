@@ -2,7 +2,7 @@
 
 package delim_io
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/delim_io"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/delim_io"
 
 // Not safe for parallel use
 type Reader = internal.Reader

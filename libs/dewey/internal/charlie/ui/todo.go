@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/stack_frame"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/stack_frame"
 )
 
 // TODO rename to comment printer

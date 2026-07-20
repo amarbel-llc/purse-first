@@ -538,7 +538,7 @@ package service
 import (
 	"sync"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
 	"github.com/amarbel-llc/lux/internal/config"
 	"github.com/amarbel-llc/lux/internal/config/filetype"
 	"github.com/amarbel-llc/lux/internal/server"
@@ -690,7 +690,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
 )
 
 func TestHandler_SessionRegister(t *testing.T) {
@@ -796,7 +796,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
 )
 
 // Handler dispatches incoming service protocol messages.
@@ -1041,7 +1041,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
 )
 
 func TestDaemon_AcceptAndRegister(t *testing.T) {
@@ -1123,7 +1123,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
 	"github.com/amarbel-llc/lux/internal/config"
 )
 
@@ -1324,7 +1324,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
 )
 
 // LSPClient proxies LSP JSON-RPC from stdin/stdout to the service socket.
@@ -1823,7 +1823,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
 )
 
 func TestIntegration_FullRoundTrip(t *testing.T) {

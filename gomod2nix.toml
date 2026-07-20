@@ -6,6 +6,17 @@ schema = 3
     hash = 'sha256-Ykf7JWhXxXhLMUz7Yo5lavzTW3bX/QEMLOp1rMfqHUk='
     goVersion = '1.24rc2'
 
+  [mod.'code.linenisgreat.com/tommy']
+    version = 'v0.5.0'
+    hash = 'sha256-Stc6rRy+e/nVDkH7Ykww3NxBR/KeAy+UXDt13peknDg='
+    goVersion = '1.26'
+    vendorPackages = [
+      'code.linenisgreat.com/tommy/internal/lexer',
+      'code.linenisgreat.com/tommy/internal/ringbuf',
+      'code.linenisgreat.com/tommy/pkg/cst',
+      'code.linenisgreat.com/tommy/pkg/document'
+    ]
+
   [mod.'filippo.io/age']
     version = 'v1.3.1'
     hash = 'sha256-Qs/q3zQYV0PukABBPf/aU5V1oOhw95NG6K301VYJk8A='
@@ -59,17 +70,6 @@ schema = 3
     version = 'v1.0.0'
     hash = 'sha256-8hKERAVV1Pew84kc9GkW23dcO8uIUx/+tJQLi+oPwqE='
     goVersion = '1.12'
-
-  [mod.'github.com/amarbel-llc/tommy']
-    version = 'v0.0.0-20260405143331-87255e87bf37'
-    hash = 'sha256-ElzACYuPmWpNk7bm4V8de18P+PqG+92X9aSxJg8gRUI='
-    goVersion = '1.26'
-    vendorPackages = [
-      'github.com/amarbel-llc/tommy/internal/lexer',
-      'github.com/amarbel-llc/tommy/internal/ringbuf',
-      'github.com/amarbel-llc/tommy/pkg/cst',
-      'github.com/amarbel-llc/tommy/pkg/document'
-    ]
 
   [mod.'github.com/atotto/clipboard']
     version = 'v0.1.4'
@@ -656,6 +656,11 @@ schema = 3
     version = 'v0.3.0'
     hash = 'sha256-f1lLYq6WP5bKH1VFDoFSZFI5+g2BD2uxsBWpYsnSIxc='
     goVersion = '1.21'
+
+  [mod.'mvdan.cc/gofumpt']
+    version = 'v0.10.0'
+    hash = 'sha256-HPMtCqdfgOupeuLPgiU7UBszA3MQOP/W2KSwOSGFzs4='
+    goVersion = '1.25.0'
 
   [mod.'mvdan.cc/sh/v3']
     version = 'v3.13.1'

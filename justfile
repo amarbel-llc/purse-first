@@ -177,7 +177,7 @@ build-dewey:
     set -euo pipefail
     . version.env
     commit=$(git rev-parse --short HEAD 2>/dev/null || echo dirty)
-    bi=github.com/amarbel-llc/purse-first/libs/dewey/internal/0/buildinfo
+    bi=code.linenisgreat.com/purse-first/libs/dewey/internal/0/buildinfo
     {{ cmd_nix_dev }} go build \
       -ldflags "-X $bi.Version=$PURSE_FIRST_VERSION -X $bi.Commit=$commit" \
       ./libs/dewey/...
@@ -555,9 +555,9 @@ explore-dagnabit-export:
       mkdir -p /tmp/dagnabit-mvp/{internal/0/reset,pkgs/reset}
       cp internal/0/reset/main.go /tmp/dagnabit-mvp/internal/0/reset/
       cp pkgs/reset/main.go /tmp/dagnabit-mvp/pkgs/reset/
-      sed -i "s|github.com/amarbel-llc/purse-first/libs/dewey|dagnabit-mvp|g" /tmp/dagnabit-mvp/pkgs/reset/main.go /tmp/dagnabit-mvp/internal/0/reset/main.go
+      sed -i "s|code.linenisgreat.com/purse-first/libs/dewey|dagnabit-mvp|g" /tmp/dagnabit-mvp/pkgs/reset/main.go /tmp/dagnabit-mvp/internal/0/reset/main.go
       cp go.mod /tmp/dagnabit-mvp/go.mod
-      sed -i "s|github.com/amarbel-llc/purse-first/libs/dewey|dagnabit-mvp|g" /tmp/dagnabit-mvp/go.mod
+      sed -i "s|code.linenisgreat.com/purse-first/libs/dewey|dagnabit-mvp|g" /tmp/dagnabit-mvp/go.mod
       cp go.sum /tmp/dagnabit-mvp/go.sum
       cd /tmp/dagnabit-mvp
       # Strip toolchain directive to test if that's the cause

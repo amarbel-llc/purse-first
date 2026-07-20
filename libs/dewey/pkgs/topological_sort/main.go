@@ -2,7 +2,7 @@
 
 package topological_sort
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/topological_sort"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/topological_sort"
 
 // Edge is a directed dependency: Source depends on Target.
 type Edge = internal.Edge

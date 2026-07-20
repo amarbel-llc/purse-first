@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
 )
 
 // RunCLI parses CLI arguments, dispatches to the matched command handler,

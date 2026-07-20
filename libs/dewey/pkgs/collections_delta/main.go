@@ -3,8 +3,8 @@
 package collections_delta
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/collections_delta"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/echo/collections_delta"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 // Generic function wrappers — Go does not support assigning

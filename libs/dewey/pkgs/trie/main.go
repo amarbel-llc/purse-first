@@ -2,7 +2,7 @@
 
 package trie
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/trie"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/trie"
 
 type Trie = internal.Trie
 

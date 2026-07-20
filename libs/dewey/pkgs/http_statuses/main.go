@@ -2,7 +2,7 @@
 
 package http_statuses
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/http_statuses"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/http_statuses"
 
 type Code = internal.Code
 

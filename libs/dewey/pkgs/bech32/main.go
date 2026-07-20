@@ -2,7 +2,7 @@
 
 package bech32
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/bech32"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/bech32"
 
 // Decode decodes a Bech32 string. If the string is uppercase, the HRP will be uppercase.
 var Decode = internal.Decode

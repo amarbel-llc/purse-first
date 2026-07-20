@@ -185,8 +185,8 @@ A capture-style command — flags from receiver fields, a repeating heterogeneou
 package capture
 
 import (
-    "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/futility"
-    "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+    "code.linenisgreat.com/purse-first/libs/dewey/pkgs/futility"
+    "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 // Capture ingests blobs into one or more stores.

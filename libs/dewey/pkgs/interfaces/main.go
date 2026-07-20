@@ -2,7 +2,7 @@
 
 package interfaces
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
 
 type (
 	ActiveContext       = internal.ActiveContext

@@ -14,7 +14,7 @@ import (
 	jen "github.com/dave/jennifer/jen"
 	"golang.org/x/tools/go/packages"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/files"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/delta/files"
 )
 
 const exportDirective = "//go:generate dagnabit export"

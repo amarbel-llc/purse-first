@@ -2,7 +2,7 @@
 
 package nato_levels
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/nato_levels"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/nato_levels"
 
 type NATOLevelMapper = internal.NATOLevelMapper
 

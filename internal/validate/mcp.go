@@ -12,9 +12,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/jsonrpc"
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/protocol"
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/transport"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/protocol"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/transport"
 )
 
 const mcpValidationTimeout = 10 * time.Second

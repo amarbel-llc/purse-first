@@ -2,7 +2,7 @@
 
 package script_config
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/script_config"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/script_config"
 
 type (
 	RemoteScript             = internal.RemoteScript

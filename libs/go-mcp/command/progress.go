@@ -3,7 +3,7 @@ package command
 import (
 	"context"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/server"
 )
 
 // ProgressFunc emits a notifications/progress message for the in-flight

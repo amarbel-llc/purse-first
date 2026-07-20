@@ -3,8 +3,8 @@ package heap
 import (
 	"sort"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/cmp"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/cmp"
 )
 
 func MakeNew[ELEMENT Element, ELEMENT_PTR ElementPtr[ELEMENT]](

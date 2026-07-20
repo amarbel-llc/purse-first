@@ -13,11 +13,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport/streamablehttp"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/protocol"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/server"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/transport"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/transport/streamablehttp"
 )
 
 type stubToolProvider struct{}

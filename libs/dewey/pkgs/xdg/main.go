@@ -2,7 +2,7 @@
 
 package xdg
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/xdg"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/echo/xdg"
 
 type DefaultEnvVar = internal.DefaultEnvVar
 

@@ -3,7 +3,7 @@ package errors
 import (
 	"fmt"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
 )
 
 // Stop iteration sentinel

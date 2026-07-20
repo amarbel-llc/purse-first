@@ -2,7 +2,7 @@
 
 package primordial
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/primordial"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/primordial"
 
 var IsTTY = internal.IsTTY
 

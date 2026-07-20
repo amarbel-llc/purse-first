@@ -7,9 +7,9 @@ import (
 	"testing"
 	"unicode"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/pool"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/unicorn"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/pool"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/unicorn"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ui"
 )
 
 func TestRingBufferReader(t1 *testing.T) {

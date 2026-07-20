@@ -2,7 +2,7 @@
 
 package transport
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/transport"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/transport"
 
 // Stdio implements MCP stdio transport using newline-delimited JSON.
 // This differs from LSP which uses Content-Length headers.

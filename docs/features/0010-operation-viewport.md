@@ -213,7 +213,7 @@ callers override; lipgloss styles are first-class fields on the
 ### Single op
 
 ```go
-import "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/operation_viewport"
+import "code.linenisgreat.com/purse-first/libs/dewey/pkgs/operation_viewport"
 
 err := operation_viewport.Run(ctx, operation_viewport.Op{
     Title: "Loading tent image…",

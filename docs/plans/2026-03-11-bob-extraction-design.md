@@ -123,11 +123,11 @@ All Go packages remove `replace` directives and use published module versions:
 
 ```go
 // Before (in purse-first workspace):
-require github.com/amarbel-llc/purse-first/libs/go-mcp v0.0.3-...
-replace github.com/amarbel-llc/purse-first/libs/go-mcp => ../../libs/go-mcp
+require code.linenisgreat.com/purse-first/libs/go-mcp v0.0.3-...
+replace code.linenisgreat.com/purse-first/libs/go-mcp => ../../libs/go-mcp
 
 // After (in bob repo):
-require github.com/amarbel-llc/purse-first/libs/go-mcp v0.x.x
+require code.linenisgreat.com/purse-first/libs/go-mcp v0.x.x
 // No replace directive — uses published module
 ```
 
@@ -144,7 +144,7 @@ chix and tap-dancer/rust switch from path to git dependencies:
 mcp-server = { path = "../../libs/rust-mcp", features = [...] }
 
 # After:
-mcp-server = { git = "https://github.com/amarbel-llc/purse-first", path = "libs/rust-mcp", features = [...] }
+mcp-server = { git = "https://code.linenisgreat.com/purse-first", path = "libs/rust-mcp", features = [...] }
 ```
 
 ### Nix
@@ -220,7 +220,7 @@ independently discoverable when assembled into any marketplace.
 ## Open Questions
 
 1. **go-mcp module publishing:** The Go packages need a published version of
-   `github.com/amarbel-llc/purse-first/libs/go-mcp`. Is there a tagged release
+   `code.linenisgreat.com/purse-first/libs/go-mcp`. Is there a tagged release
    available, or do we need to create one first?
 2. **Transitive flake inputs:** Does bob declare its own nixpkgs/crane/etc., or
    does mkMarketplace pass them through from purse-first? Current mkMarketplace

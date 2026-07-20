@@ -2,7 +2,7 @@
 
 package operation_viewport
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/operation_viewport"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/operation_viewport"
 
 // Batch describes a many-op run. The Run callback is the work loop;
 // it receives the inner [interfaces.ActiveContext] plus an [Emitter]

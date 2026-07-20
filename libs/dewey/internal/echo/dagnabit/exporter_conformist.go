@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/xdg"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/xdg"
 )
 
 // ceilingEnvVar is the GIT_CEILING_DIRECTORIES-style env var that bounds

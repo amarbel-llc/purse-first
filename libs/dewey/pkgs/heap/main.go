@@ -3,9 +3,9 @@
 package heap
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/heap"
-	cmp "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/cmp"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/heap"
+	cmp "code.linenisgreat.com/purse-first/libs/dewey/pkgs/cmp"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 type (

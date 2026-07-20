@@ -3,7 +3,7 @@
 package equality
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/equality"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/equality"
 	constraints "golang.org/x/exp/constraints"
 )
 

@@ -1,6 +1,6 @@
 package script_config
 
-import "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/equality"
+import "code.linenisgreat.com/purse-first/libs/dewey/internal/0/equality"
 
 //go:generate tommy generate
 type WithOutputFormat struct {

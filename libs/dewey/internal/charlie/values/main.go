@@ -1,7 +1,7 @@
 package values
 
 import (
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
 )
 
 func Equals[T interfaces.Equatable[T]](a T, b any) bool {

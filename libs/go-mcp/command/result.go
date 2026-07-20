@@ -1,6 +1,6 @@
 package command
 
-import "github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
+import "code.linenisgreat.com/purse-first/libs/go-mcp/protocol"
 
 // Result holds the output of a command handler, used by both CLI and MCP runners.
 //

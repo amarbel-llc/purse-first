@@ -2,7 +2,7 @@
 
 package debug
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/debug"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/echo/debug"
 
 type (
 	Context = internal.Context

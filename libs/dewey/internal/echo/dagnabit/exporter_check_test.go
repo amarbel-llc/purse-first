@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 // writeCheckFixture creates a temp module with the given internal packages

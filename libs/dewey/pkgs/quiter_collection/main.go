@@ -3,8 +3,8 @@
 package quiter_collection
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/quiter_collection"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/quiter_collection"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 // Generic function wrappers — Go does not support assigning

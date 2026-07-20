@@ -2,7 +2,7 @@
 
 package dagnabit_rust
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/dagnabit_rust"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/dagnabit_rust"
 
 // Exporter generates <OutputDir>/ glob-facade crates (`pub use
 // <internal>::*;`) from internal crates. Rust analog of dagnabit's

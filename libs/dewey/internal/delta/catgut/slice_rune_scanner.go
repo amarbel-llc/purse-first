@@ -4,7 +4,7 @@ import (
 	"io"
 	"unicode/utf8"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
 )
 
 func MakeSliceRuneScanner(slice Slice) (s *SliceRuneScanner) {

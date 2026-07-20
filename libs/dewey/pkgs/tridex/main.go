@@ -2,7 +2,7 @@
 
 package tridex
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/tridex"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/tridex"
 
 // TODO-P4 make generic
 // TODO-P4 recycle nodes

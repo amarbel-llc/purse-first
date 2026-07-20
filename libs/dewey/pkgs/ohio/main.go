@@ -5,8 +5,8 @@ package ohio
 import (
 	"io"
 
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ohio"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ohio"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 type (

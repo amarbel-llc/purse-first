@@ -2,7 +2,7 @@
 
 package pivy
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/pivy"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/pivy"
 
 // ECDHFunc performs ECDH given an ephemeral public key and returns the shared
 // secret. For software keys this is a local operation. For agent-backed keys

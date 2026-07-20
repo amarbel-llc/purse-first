@@ -2,7 +2,7 @@
 
 package tommy_util
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/tommy_util"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/tommy_util"
 
 var (
 	BytesToMap    = internal.BytesToMap

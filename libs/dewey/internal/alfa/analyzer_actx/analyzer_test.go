@@ -3,7 +3,7 @@ package analyzer_actx_test
 import (
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/analyzer_actx"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/analyzer_actx"
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 

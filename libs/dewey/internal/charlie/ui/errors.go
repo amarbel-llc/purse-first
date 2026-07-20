@@ -1,6 +1,6 @@
 package ui
 
-import "github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
+import "code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
 
 type (
 	pkgErrDisamb struct{}

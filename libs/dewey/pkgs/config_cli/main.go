@@ -2,7 +2,7 @@
 
 package config_cli
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/foxtrot/config_cli"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/foxtrot/config_cli"
 
 type Config = internal.Config
 

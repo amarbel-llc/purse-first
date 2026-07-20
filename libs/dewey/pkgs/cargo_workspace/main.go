@@ -2,7 +2,7 @@
 
 package cargo_workspace
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/cargo_workspace"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/cargo_workspace"
 
 // Workspace is a located cargo workspace.
 type Workspace = internal.Workspace

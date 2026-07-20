@@ -2,7 +2,7 @@
 
 package hecks
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/hecks"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/hecks"
 
 // Decode decodes src into DecodedLen(len(src)) bytes,
 // returning the actual number of bytes written to dst.

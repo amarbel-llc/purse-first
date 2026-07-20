@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/cmp"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/collections_slice"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/cmp"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/collections_slice"
 )
 
 // Deprecated: use collections_slice.SortedValuesBy

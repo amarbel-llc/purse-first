@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 type TestCaseInfo = test_ui.TestCaseInfo

@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/tools/go/packages"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 func identity(s string) string { return s }

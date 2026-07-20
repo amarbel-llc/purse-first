@@ -3,7 +3,7 @@ package analyzer_seqerror_test
 import (
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/analyzer_seqerror"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/analyzer_seqerror"
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 

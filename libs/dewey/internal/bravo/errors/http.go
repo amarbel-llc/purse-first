@@ -3,7 +3,7 @@ package errors
 import (
 	"fmt"
 
-	hs "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/http_statuses"
+	hs "code.linenisgreat.com/purse-first/libs/dewey/internal/0/http_statuses"
 )
 
 // HTTPStatusCarrier is the semantic tag attached to errors that carry an

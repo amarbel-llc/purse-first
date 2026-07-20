@@ -1256,7 +1256,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/operation"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/operation"
 )
 
 func TestOperationWriterLeafSuccess(t *testing.T) {
@@ -1418,7 +1418,7 @@ Expected: FAIL — `NewOperationWriter` undefined
 package tap
 
 import (
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/operation"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/operation"
 )
 
 // OperationWriter adapts operation.Writer to tap-dancer's Writer.
@@ -1575,7 +1575,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/operation"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/operation"
 	tap "github.com/amarbel-llc/tap-dancer/go"
 )
 

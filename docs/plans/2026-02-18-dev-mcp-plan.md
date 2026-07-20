@@ -874,7 +874,7 @@ The transformation is mechanical: add `Replaces: "Bash"` and rename `Prefixes` t
 
 **Step 2: Update grit's go.mod to point to local purse-first**
 
-Run: `cd /Users/sfriedenberg/eng/repos/grit && go mod edit -replace github.com/amarbel-llc/purse-first=/Users/sfriedenberg/eng/repos/purse-first`
+Run: `cd /Users/sfriedenberg/eng/repos/grit && go mod edit -replace code.linenisgreat.com/purse-first=/Users/sfriedenberg/eng/repos/purse-first`
 
 **Step 3: Build and test**
 

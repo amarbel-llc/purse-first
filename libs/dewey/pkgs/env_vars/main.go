@@ -2,7 +2,7 @@
 
 package env_vars
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/env_vars"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/env_vars"
 
 type (
 	BufferedCoderDotenv       = internal.BufferedCoderDotenv

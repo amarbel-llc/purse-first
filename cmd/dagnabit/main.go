@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/buildinfo"
-	cargo_metadata "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/cargo_metadata"
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/dagnabit"
-	dagnabit_rust "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/dagnabit_rust"
-	go_list "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/go_list"
-	go_module "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/go_module"
-	nato_levels "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/nato_levels"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/buildinfo"
+	cargo_metadata "code.linenisgreat.com/purse-first/libs/dewey/pkgs/cargo_metadata"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/dagnabit"
+	dagnabit_rust "code.linenisgreat.com/purse-first/libs/dewey/pkgs/dagnabit_rust"
+	go_list "code.linenisgreat.com/purse-first/libs/dewey/pkgs/go_list"
+	go_module "code.linenisgreat.com/purse-first/libs/dewey/pkgs/go_module"
+	nato_levels "code.linenisgreat.com/purse-first/libs/dewey/pkgs/nato_levels"
 )
 
 func main() {

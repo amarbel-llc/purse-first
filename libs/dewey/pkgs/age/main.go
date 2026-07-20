@@ -2,7 +2,7 @@
 
 package age
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/age"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/echo/age"
 
 type (
 	Identity             = internal.Identity

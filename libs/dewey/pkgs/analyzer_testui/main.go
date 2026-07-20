@@ -2,6 +2,6 @@
 
 package analyzer_testui
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/analyzer_testui"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/analyzer_testui"
 
 var Analyzer = internal.Analyzer

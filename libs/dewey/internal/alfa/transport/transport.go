@@ -5,7 +5,7 @@
 package transport
 
 import (
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/jsonrpc"
 )
 
 // Transport defines the interface for sending and receiving JSON-RPC messages.

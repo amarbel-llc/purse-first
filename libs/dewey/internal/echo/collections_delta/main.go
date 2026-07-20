@@ -1,9 +1,9 @@
 package collections_delta
 
 import (
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/quiter_set"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/collections_value"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/quiter_set"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/delta/collections_value"
 )
 
 type delta[ELEMENT interfaces.Stringer] struct {

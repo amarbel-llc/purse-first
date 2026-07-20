@@ -1253,7 +1253,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/amarbel-llc/purse-first/internal/marketplace"
+	"code.linenisgreat.com/purse-first/internal/marketplace"
 )
 
 type RunOptions struct {
@@ -1507,7 +1507,7 @@ git commit -m "feat(packagebrew): add run orchestrator"
 
 **Step 1: Add the `package brew` command to main.go**
 
-Add import for `"github.com/amarbel-llc/purse-first/internal/packagebrew"` to the imports block.
+Add import for `"code.linenisgreat.com/purse-first/internal/packagebrew"` to the imports block.
 
 Add the following before the `root.AddCommand(...)` line (line 218):
 

@@ -3,7 +3,7 @@ package quiter_seq
 import (
 	"slices"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
 )
 
 func Seq[ELEMENT any](elements ...ELEMENT) interfaces.Seq[ELEMENT] {

@@ -3,7 +3,7 @@ package analyzer_paramobj_test
 import (
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/analyzer_paramobj"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/analyzer_paramobj"
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 

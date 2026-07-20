@@ -6,8 +6,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/jsonrpc"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/protocol"
 )
 
 // chanTransport is an in-memory transport backed by channels, suitable for

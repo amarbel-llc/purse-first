@@ -9,12 +9,12 @@
 // nix vendor env materializes the dewey replace as a symlink of the
 // whole libs/dewey tree, so a nested module in there would see itself
 // twice (ambiguous import). See purse-first#134.
-module github.com/amarbel-llc/purse-first/cmd/golangci-lint-dewey
+module code.linenisgreat.com/purse-first/cmd/golangci-lint-dewey
 
 go 1.26
 
 require (
-	github.com/amarbel-llc/purse-first/libs/dewey v0.0.0
+	code.linenisgreat.com/purse-first/libs/dewey v0.0.0
 	github.com/golangci/golangci-lint/v2 v2.12.2
 )
 
@@ -232,4 +232,4 @@ require (
 	mvdan.cc/unparam v0.0.0-20251027182757-5beb8c8f8f15 // indirect
 )
 
-replace github.com/amarbel-llc/purse-first/libs/dewey => ../../libs/dewey
+replace code.linenisgreat.com/purse-first/libs/dewey => ../../libs/dewey

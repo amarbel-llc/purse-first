@@ -1023,7 +1023,7 @@ genPluginCmd.Flags().StringVar(&genPluginOutput, "output", "", "output directory
 genPluginCmd.Flags().StringVar(&genPluginSkillsDir, "skills-dir", "", "directory containing skills to discover and copy")
 ```
 
-Add `"github.com/amarbel-llc/purse-first/internal/packagetoml"` to imports.
+Add `"code.linenisgreat.com/purse-first/internal/packagetoml"` to imports.
 
 Register with `rootCmd.AddCommand(genPluginCmd)`.
 

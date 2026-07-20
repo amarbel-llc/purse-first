@@ -12,7 +12,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/pkgs/command"
+	"code.linenisgreat.com/purse-first/libs/dewey/pkgs/command"
 )
 
 func main() {

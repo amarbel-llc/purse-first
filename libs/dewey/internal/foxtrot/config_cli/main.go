@@ -3,9 +3,9 @@ package config_cli
 import (
 	"io"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/cli"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/debug"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/delta/cli"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/echo/debug"
 )
 
 type Config struct {

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	topological_sort "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/topological_sort"
+	topological_sort "code.linenisgreat.com/purse-first/libs/dewey/internal/0/topological_sort"
 )
 
 type stubReader struct {

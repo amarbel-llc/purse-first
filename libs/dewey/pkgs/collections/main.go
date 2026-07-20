@@ -2,7 +2,7 @@
 
 package collections
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/collections"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/delta/collections"
 
 type (
 	Bitset         = internal.Bitset

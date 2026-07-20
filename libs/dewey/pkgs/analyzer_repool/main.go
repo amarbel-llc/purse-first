@@ -2,6 +2,6 @@
 
 package analyzer_repool
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/analyzer_repool"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/analyzer_repool"
 
 var Analyzer = internal.Analyzer

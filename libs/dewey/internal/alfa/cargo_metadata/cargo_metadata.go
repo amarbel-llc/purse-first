@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	topological_sort "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/topological_sort"
+	topological_sort "code.linenisgreat.com/purse-first/libs/dewey/internal/0/topological_sort"
 )
 
 // Reader reads cargo workspace-member dependencies by shelling out to

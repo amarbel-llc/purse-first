@@ -2,7 +2,7 @@
 
 package unicorn
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/unicorn"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/unicorn"
 
 var (
 	AllRunes                = internal.AllRunes

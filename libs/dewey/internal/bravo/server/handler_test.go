@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/jsonrpc"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/test_ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/protocol"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/test_ui"
 )
 
 // stubToolProvider is a minimal V0 tool provider for tests.

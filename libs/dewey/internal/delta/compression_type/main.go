@@ -7,9 +7,9 @@ import (
 	"io"
 	"strings"
 
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ohio"
 	"github.com/DataDog/zstd"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ohio"
 )
 
 type ErrUnsupportedCompression string

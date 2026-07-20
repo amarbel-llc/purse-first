@@ -2,7 +2,7 @@
 
 package stack_frame
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/stack_frame"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/stack_frame"
 
 type (
 	ErrorAndFrame         = internal.ErrorAndFrame

@@ -17,7 +17,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/buildinfo"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/buildinfo"
 	"golang.org/x/tools/go/packages"
 )
 

@@ -3,9 +3,9 @@ package expansion
 import (
 	"slices"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/quiter_seq"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/collections_slice"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/quiter_seq"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/collections_slice"
 )
 
 var (

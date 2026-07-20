@@ -2,7 +2,7 @@
 
 package lua
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/lua"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/lua"
 
 type (
 	FunctionProto = internal.FunctionProto

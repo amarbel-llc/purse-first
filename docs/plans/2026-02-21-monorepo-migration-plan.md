@@ -106,10 +106,10 @@ get-hubbed currently has a `replace` directive pointing to `./deps/purse-first`.
 
 In `packages/get-hubbed/go.mod`, remove the line:
 ```
-replace github.com/amarbel-llc/purse-first => ./deps/purse-first
+replace code.linenisgreat.com/purse-first => ./deps/purse-first
 ```
 
-Also update the require to reference the purse module correctly. get-hubbed currently imports `github.com/amarbel-llc/purse-first` (the main module) for the `purse` package. This should be updated to import `github.com/amarbel-llc/purse-first/purse` if needed, or the go.work will resolve it.
+Also update the require to reference the purse module correctly. get-hubbed currently imports `code.linenisgreat.com/purse-first` (the main module) for the `purse` package. This should be updated to import `code.linenisgreat.com/purse-first/purse` if needed, or the go.work will resolve it.
 
 **Step 5: Run tests for each Go package**
 
@@ -266,7 +266,7 @@ Note: get-hubbed's `go.mod` has a `replace` directive for purse-first. In Task 2
 - (a) Re-add the replace directive in the Nix build source prep, or
 - (b) Keep the replace directive in go.mod and have go.work override it locally
 
-Option (b) is simpler — keep the replace directive in `packages/get-hubbed/go.mod` as `replace github.com/amarbel-llc/purse-first => ./deps/purse-first` and the Nix build copies purse-first source there. go.work overrides it for local dev. **Revise Task 2 Step 4**: do NOT remove the replace directive.
+Option (b) is simpler — keep the replace directive in `packages/get-hubbed/go.mod` as `replace code.linenisgreat.com/purse-first => ./deps/purse-first` and the Nix build copies purse-first source there. go.work overrides it for local dev. **Revise Task 2 Step 4**: do NOT remove the replace directive.
 
 **Step 3: Write lib/packages/lux.nix**
 

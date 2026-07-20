@@ -2,7 +2,7 @@
 
 package output
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/golf/output"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/golf/output"
 
 // ArrayLimits controls pagination of array results.
 // Zero values mean unlimited (Limit) or no offset (Offset).

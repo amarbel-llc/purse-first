@@ -282,7 +282,7 @@ Add `Resources: resources` to the `server.Options` struct (alongside `Tools: reg
 Add the `protocol` import to the import block:
 
 ```go
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/protocol"
 ```
 
 **Step 2: Verify it compiles**

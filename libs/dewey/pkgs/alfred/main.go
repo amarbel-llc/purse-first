@@ -2,7 +2,7 @@
 
 package alfred
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/alfred"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/echo/alfred"
 
 type (
 	Item         = internal.Item

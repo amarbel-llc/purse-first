@@ -5,7 +5,7 @@ package errors
 import (
 	"io"
 
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
 )
 
 type (

@@ -2,7 +2,7 @@
 
 package vim_cli_options_builder
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/vim_cli_options_builder"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/vim_cli_options_builder"
 
 type Builder = internal.Builder
 

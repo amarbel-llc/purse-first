@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/protocol"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/server"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/protocol"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/server"
 )
 
 // RegisterMCPTools registers all non-hidden commands as MCP tools

@@ -2,7 +2,7 @@
 
 package flag_policy
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/flag_policy"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/flag_policy"
 
 type FlagPolicy = internal.FlagPolicy
 

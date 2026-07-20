@@ -35,7 +35,7 @@ let
 
   commit = self.shortRev or self.dirtyShortRev or "dirty";
 
-  deweyBuildinfo = "github.com/amarbel-llc/purse-first/libs/dewey/internal/0/buildinfo";
+  deweyBuildinfo = "code.linenisgreat.com/purse-first/libs/dewey/internal/0/buildinfo";
 
   deweyLdflags = [
     "-X ${deweyBuildinfo}.Version=${purseFirstVersion}"

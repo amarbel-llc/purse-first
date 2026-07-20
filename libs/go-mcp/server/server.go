@@ -6,8 +6,8 @@ import (
 	"io"
 	"sync"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/transport"
 )
 
 // Server is an MCP server that handles protocol messages.

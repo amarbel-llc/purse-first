@@ -212,7 +212,7 @@ import (
 	"io"
 
 	"github.com/amarbel-llc/lux/internal/subprocess"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
 )
 
 // fakeExecutor implements subprocess.Executor using in-process pipes.

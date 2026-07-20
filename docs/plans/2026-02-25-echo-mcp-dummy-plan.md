@@ -6,7 +6,7 @@
 
 **Architecture:** Raw go-mcp server layer (no `command.App`). A logging transport wraps `transport.NewStdio` to intercept all JSON-RPC messages. A single `echo` tool returns arguments plus metadata.
 
-**Tech Stack:** Go, `github.com/amarbel-llc/purse-first/libs/go-mcp` (server, transport, protocol, jsonrpc packages)
+**Tech Stack:** Go, `code.linenisgreat.com/purse-first/libs/go-mcp` (server, transport, protocol, jsonrpc packages)
 
 ---
 
@@ -21,13 +21,13 @@
 Create `dummies/go/go.mod`:
 
 ```go
-module github.com/amarbel-llc/purse-first/dummies/go
+module code.linenisgreat.com/purse-first/dummies/go
 
 go 1.25.6
 
-require github.com/amarbel-llc/purse-first/libs/go-mcp v0.0.3-0.20260222205500-74480472530e
+require code.linenisgreat.com/purse-first/libs/go-mcp v0.0.3-0.20260222205500-74480472530e
 
-replace github.com/amarbel-llc/purse-first/libs/go-mcp => ../../libs/go-mcp
+replace code.linenisgreat.com/purse-first/libs/go-mcp => ../../libs/go-mcp
 ```
 
 **Step 2: Add to go.work**
@@ -78,10 +78,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/jsonrpc"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/protocol"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/server"
-	"github.com/amarbel-llc/purse-first/libs/go-mcp/transport"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/protocol"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/server"
+	"code.linenisgreat.com/purse-first/libs/go-mcp/transport"
 )
 
 type logEntry struct {

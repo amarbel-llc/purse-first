@@ -4,11 +4,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/cmp"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/quiter"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/ui"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/values"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/cmp"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/quiter"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/ui"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/values"
 )
 
 func makeTestFuncCmp(_ ui.T) cmp.Func[*values.Int] {

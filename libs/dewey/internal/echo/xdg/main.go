@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/0/interfaces"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/bravo/errors"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/env_vars"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/files"
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/delta/xdg_defaults"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/interfaces"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/bravo/errors"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/env_vars"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/delta/files"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/delta/xdg_defaults"
 )
 
 type XDG struct {

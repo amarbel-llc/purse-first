@@ -3,8 +3,8 @@
 package values
 
 import (
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/charlie/values"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/charlie/values"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 type (

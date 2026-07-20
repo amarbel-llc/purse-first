@@ -3,7 +3,7 @@ package analyzer_repool_test
 import (
 	"testing"
 
-	"github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/analyzer_repool"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/analyzer_repool"
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 

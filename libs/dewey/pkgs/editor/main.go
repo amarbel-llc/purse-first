@@ -2,7 +2,7 @@
 
 package editor
 
-import internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/echo/editor"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/echo/editor"
 
 type (
 	Editor = internal.Editor

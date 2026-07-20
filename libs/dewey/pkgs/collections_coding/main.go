@@ -5,8 +5,8 @@ package collections_coding
 import (
 	"io"
 
-	internal "github.com/amarbel-llc/purse-first/libs/dewey/internal/alfa/collections_coding"
-	interfaces "github.com/amarbel-llc/purse-first/libs/dewey/pkgs/interfaces"
+	internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/collections_coding"
+	interfaces "code.linenisgreat.com/purse-first/libs/dewey/pkgs/interfaces"
 )
 
 type (
