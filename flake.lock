@@ -46,10 +46,10 @@
         ]
       },
       "locked": {
-        "lastModified": 1784310418,
-        "narHash": "sha256-XqxuDSgy6rZSvQOprEQeLGqzI/d/2evH1cf9Wc+D5i8=",
+        "lastModified": 1784649683,
+        "narHash": "sha256-q3/pXh1iyYqb3TCkZfMLYgY3bFMLP+X0h6CrraWdZCA=",
         "type": "tarball",
-        "url": "https://code.linenisgreat.com/conformist/archive/9abf54eeb6df0d544de7602e6007391d3c28f0dc.tar.gz"
+        "url": "https://code.linenisgreat.com/conformist/archive/e04044f7f9df19e9df18156f800165bc9e28881a.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -87,10 +87,10 @@
         ]
       },
       "locked": {
-        "lastModified": 1782656014,
-        "narHash": "sha256-/JTvDNbl9p6rK7XfFib9cbYJB6a3Td0nLW33tGOZMmI=",
+        "lastModified": 1784579654,
+        "narHash": "sha256-vaw+hPvOopq4vquCEjMprARNruHUg1r4SpAa3TPmCbg=",
         "type": "tarball",
-        "url": "https://code.linenisgreat.com/gomod2nix/archive/f2530333078779ff6565f2312ad891e82b233076.tar.gz"
+        "url": "https://code.linenisgreat.com/gomod2nix/archive/9d7c339010c6e915463a50fd938686d278f79f15.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -108,10 +108,10 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1783896868,
-        "narHash": "sha256-pN9WzpM9sBz6DmQIlALLhAKIC9yrbY9rLa+qrYr8Ph8=",
+        "lastModified": 1784650356,
+        "narHash": "sha256-1t7KRC4W/Z6XW92QMbfi9CBPatFAAADKLJbAePiE+AA=",
         "type": "tarball",
-        "url": "https://code.linenisgreat.com/igloo/archive/e04bba9f87552e4161ebec00c528361316d36d3c.tar.gz"
+        "url": "https://code.linenisgreat.com/igloo/archive/b33e4110475773b342a44570b8912c7c684d065e.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -166,11 +166,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780220602,
-        "narHash": "sha256-eynAfOmbmxJnkp7YewvCEbShNnnYJ9gLLqkzsYtBPeM=",
+        "lastModified": 1784369104,
+        "narHash": "sha256-47cxbcZODibHv3rELFQ9vZly0vUNkND/atn/U7HLeb0=",
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "rev": "db947814a175b7ca6ded66e21383d938df01c227",
+        "rev": "df3c0640565d04a0261253cdd89fce78ec50168a",
         "type": "github"
       },
       "original": {
