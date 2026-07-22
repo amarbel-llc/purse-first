@@ -296,7 +296,7 @@ func (e *Exporter) checkExport(run func(*Exporter) error, reportStale bool) erro
 	want := filepath.Join(e.WorkspaceRoot, e.outputDir())
 	got := filepath.Join(tmp, e.outputDir())
 
-	drift, err := diffFacadeTrees(want, got, e.outputDir(), reportStale)
+	drift, checked, err := diffFacadeTrees(want, got, e.outputDir(), reportStale)
 	if err != nil {
 		return err
 	}
@@ -309,6 +309,10 @@ func (e *Exporter) checkExport(run func(*Exporter) error, reportStale bool) erro
 		)
 	}
 
+	// Mirror of the Go exporter's clean-check verdict (purse-first#171):
+	// green output must be distinguishable from a compare that never ran.
+	fmt.Printf("%s/ in sync (%d facade files checked)\n", e.outputDir(), checked)
+
 	return nil
 }
 
@@ -318,15 +322,15 @@ func (e *Exporter) checkExport(run func(*Exporter) error, reportStale bool) erro
 // compared at constructed paths — never resolved path strings — so
 // symlinked temp dirs (macOS /var → /private/var) cannot produce
 // phantom drift.
-func diffFacadeTrees(want, got, outputDir string, reportStale bool) ([]string, error) {
+func diffFacadeTrees(want, got, outputDir string, reportStale bool) ([]string, int, error) {
 	wantFiles, err := readTree(want)
 	if err != nil {
-		return nil, fmt.Errorf("reading %s: %w", want, err)
+		return nil, 0, fmt.Errorf("reading %s: %w", want, err)
 	}
 
 	gotFiles, err := readTree(got)
 	if err != nil {
-		return nil, fmt.Errorf("reading %s: %w", got, err)
+		return nil, 0, fmt.Errorf("reading %s: %w", got, err)
 	}
 
 	var drift []string
@@ -354,7 +358,7 @@ func diffFacadeTrees(want, got, outputDir string, reportStale bool) ([]string, e
 
 	sort.Strings(drift)
 
-	return drift, nil
+	return drift, len(gotFiles), nil
 }
 
 // readTree maps each regular file under root to its contents, keyed by

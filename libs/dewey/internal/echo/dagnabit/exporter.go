@@ -150,7 +150,7 @@ func (exporter *Exporter) checkExport(run func(*Exporter) error, reportStale boo
 	want := filepath.Join(exporter.Dir, exporter.outputDir())
 	got := filepath.Join(tmp, exporter.outputDir())
 
-	drift, err := diffFacadeTrees(want, got, reportStale)
+	drift, checked, err := diffFacadeTrees(want, got, reportStale)
 	if err != nil {
 		return err
 	}
@@ -162,21 +162,29 @@ func (exporter *Exporter) checkExport(run func(*Exporter) error, reportStale boo
 		)
 	}
 
+	// A clean check says so explicitly: without this line, green output is
+	// indistinguishable from a check that silently never compared (the
+	// masked-skip suspicion that forced eng's #44 mutation test —
+	// purse-first#171).
+	fmt.Printf("%s/ in sync with internal/ (%d facade files checked)\n",
+		exporter.outputDir(), checked)
+
 	return nil
 }
 
 // diffFacadeTrees compares the committed facade tree (want) against a freshly
 // generated one (got), returning a sorted list of human-readable drift
-// entries: files that differ or are missing from want, plus (when reportStale
-// is set) files present in want but not regenerated.
-func diffFacadeTrees(want, got string, reportStale bool) ([]string, error) {
+// entries — files that differ or are missing from want, plus (when
+// reportStale is set) files present in want but not regenerated — and the
+// number of generated files compared (for the clean-check verdict line).
+func diffFacadeTrees(want, got string, reportStale bool) ([]string, int, error) {
 	wantFiles, err := readTree(want)
 	if err != nil {
-		return nil, fmt.Errorf("reading %s: %w", want, err)
+		return nil, 0, fmt.Errorf("reading %s: %w", want, err)
 	}
 	gotFiles, err := readTree(got)
 	if err != nil {
-		return nil, fmt.Errorf("reading %s: %w", got, err)
+		return nil, 0, fmt.Errorf("reading %s: %w", got, err)
 	}
 
 	seen := make(map[string]struct{}, len(gotFiles))
@@ -207,7 +215,7 @@ func diffFacadeTrees(want, got string, reportStale bool) ([]string, error) {
 	}
 
 	sort.Strings(drift)
-	return drift, nil
+	return drift, len(gotFiles), nil
 }
 
 // readTree maps each regular file under root to its contents, keyed by path
@@ -618,7 +626,11 @@ func (exporter *Exporter) exportTaggedFacades(
 	if err := os.WriteFile(mainPath, mainCode, 0o644); err != nil {
 		return fmt.Errorf("writing %s: %w", mainPath, err)
 	}
-	fmt.Printf("generated: %s\n", mainPath)
+	// Distinct wording from the base "generated:" line: a build-tagged
+	// package's main.go is written twice (base pass, then this tag-filtered
+	// rewrite), and two identical log lines for one file read as a bug
+	// (purse-first#171).
+	fmt.Printf("regenerated (tag-filtered): %s\n", mainPath)
 
 	// Generate per-expression tagged facade files.
 	for _, load := range loads {
