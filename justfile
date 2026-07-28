@@ -19,7 +19,7 @@ validate: validate-nix validate-purse-first-manifest
 validate-nix:
     nix flake check
 
-# Validate the repo's own plugin.json manifest.
+# validate the repo's own plugin.json manifest
 [group('pre-build')]
 validate-purse-first-manifest:
     {{ cmd_nix_dev }} go run ./cmd/purse-first validate .claude-plugin/plugin.json
@@ -60,7 +60,7 @@ lint-worktree: build-dagnabit
     PATH="{{ justfile_directory() }}/build:$PATH" \
       {{ cmd_nix_dev }} "$wrapper/bin/conformist" check
 
-# `go vet` across the workspace.
+# `go vet` across the workspace
 [group('pre-build')]
 lint-go:
     {{ cmd_nix_dev }} go vet ./...
@@ -113,12 +113,12 @@ lint-conformist:
 [group('pre-build')]
 lint-dewey-extra: lint-dewey lint-dewey-analyzers
 
-# go vet -tags test across the dewey library.
+# go vet -tags test across the dewey library
 [group('pre-build')]
 lint-dewey:
     {{ cmd_nix_dev }} go vet -tags test ./libs/dewey/...
 
-# Build one dewey analyzer (defererr|repool|seqerror) and run it via -vettool.
+# build one dewey analyzer (defererr|repool|seqerror) and run it via -vettool
 [group('pre-build')]
 lint-dewey-analyzer name:
     {{ cmd_nix_dev }} go build -o build/{{ name }} ./libs/dewey/cmd/{{ name }}
@@ -152,17 +152,17 @@ build-dev: build-go build-dewey build-dagnabit build-go-gcl
 [group('build')]
 build-artifacts: build-purse-first build-purse-first-cli build-golangci-dewey build-nix-gomod2nix-gcl
 
-# Build the default Nix output (the purse-first CLI).
+# build the default Nix output (the purse-first CLI)
 [group('build')]
 build-nix:
     nix build
 
-# Nix-build the purse-first CLI package (result symlink).
+# Nix-build the purse-first CLI package (result symlink)
 [group('build')]
 build-purse-first:
     nix build .#purse-first
 
-# Nix-build the purse-first CLI to result-cli (for the bats integration lane).
+# Nix-build the purse-first CLI to result-cli (for the bats integration lane)
 [group('build')]
 build-purse-first-cli:
     nix build .#purse-first -o result-cli
@@ -175,7 +175,7 @@ build-purse-first-cli:
 build-golangci-dewey:
     nix build .#golangci-lint-dewey -o result-gcl
 
-# Go-build the purse-first CLI into build/ for the dev loop (no nix).
+# Go-build the purse-first CLI into build/ for the dev loop (no nix)
 [group('build')]
 build-go:
     {{ cmd_nix_dev }} go build -o build/purse-first ./cmd/purse-first
@@ -275,39 +275,39 @@ test: \
 [group('post-build')]
 test-extra: test-v test-race test-validate test-validate-mcp
 
-# Run Go tests.
+# run Go tests
 [group('post-build')]
 test-go:
     {{ cmd_nix_dev }} go test ./...
 
-# Run Go tests with verbose output.
+# run Go tests with verbose output
 [group('post-build')]
 test-v:
     {{ cmd_nix_dev }} go test -v ./...
 
-# Run Go tests with race detector.
+# run Go tests with race detector
 [group('post-build')]
 test-race:
     {{ cmd_nix_dev }} go test -race ./...
 
-# Test go-mcp library.
+# test go-mcp library
 [group('post-build')]
 test-go-mcp:
     {{ cmd_nix_dev }} go test -v ./libs/go-mcp/...
 
-# Test dewey library (all layers including build-tag-gated test helpers).
+# test dewey library (all layers including build-tag-gated test helpers)
 [group('post-build')]
 test-dewey:
     {{ cmd_nix_dev }} go test -tags test ./libs/dewey/...
 
-# Run BATS integration tests.
+# run BATS integration tests
 [group('post-build')]
 test-integration: build-purse-first-cli
     PURSE_FIRST_BIN={{ justfile_directory() }}/result-cli/bin/purse-first {{ cmd_nix_dev }} bats --tap --jobs {{ num_cpus() }} \
       zz-tests_bats/validate_documents.bats \
       zz-tests_bats/validate_mcp.bats
 
-# Run validate-specific BATS tests.
+# run validate-specific BATS tests
 [group('post-build')]
 test-validate: build-purse-first-cli
     nix build
@@ -339,7 +339,7 @@ explore-test-golangci-dewey-dev: build-go-gcl
 test-dagnabit-rust: build-dagnabit
     {{ cmd_nix_dev }} bats --tap zz-tests_bats/dagnabit_rust.bats
 
-# Run MCP validation tests.
+# run MCP validation tests
 [group('post-build')]
 test-validate-mcp: build-purse-first-cli
     PURSE_FIRST_BIN={{ justfile_directory() }}/result-cli/bin/purse-first {{ cmd_nix_dev }} bats --tap zz-tests_bats/validate_mcp.bats
@@ -399,7 +399,9 @@ codemod-fmt-worktree: build-dagnabit
 debug-dewey-rename pkg new_leaf="":
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit rename -n {{ pkg }} {{ new_leaf }}
 
-# Apply a single-package rename. Emits an NDJSON `move` event on success.
+# Emits an NDJSON `move` event on success.
+#
+# apply a single-package rename
 [group('debug')]
 debug-dewey-rename-apply pkg new_leaf="":
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit rename {{ pkg }} {{ new_leaf }}
@@ -458,7 +460,7 @@ debug-dewey-export-library *flags:
 [group('maintenance')]
 update: update-nix update-go
 
-# Refresh the flake.lock inputs.
+# refresh the flake.lock inputs
 [group('maintenance')]
 update-nix:
     nix flake update
@@ -473,7 +475,7 @@ update-nix:
 update-go:
     just build-nix-gomod2nix
 
-# Clean build artifacts.
+# clean build artifacts
 [group('maintenance')]
 clean-build:
     rm -f purse-first
