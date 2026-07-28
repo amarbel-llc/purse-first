@@ -13,6 +13,8 @@ validate: validate-nix validate-purse-first-manifest
 # `checks.formatting` (the conformist read-only gate: formatter drift across the
 # whole tree + shellcheck + the eng-convention linters) and the per-package
 # builds the flake exposes.
+#
+# run nix flake check
 [group('pre-build')]
 validate-nix:
     nix flake check
@@ -47,6 +49,8 @@ lint: lint-go lint-conformist lint-dewey-self lint-worktree
 # (checks.<sys>.formatting) instead of invoking `conformist` directly. The
 # wrapper bakes `--tree-root-file=flake.nix`, locating the LIVE worktree from
 # cwd; we must NOT also pass `--tree-root` (mutually exclusive — cmd/root.go).
+#
+# run the impure conformist lane against the working tree
 [group('pre-build')]
 lint-worktree: build-dagnabit
     #!/usr/bin/env bash
@@ -83,6 +87,8 @@ lint-go:
 # formats facades with purse-first's REAL config instead of searching upward
 # and escalating to a stray ancestor ~/eng/conformist.toml. The CEILING env var
 # is a belt-and-suspenders bound that stops any upward walk at the worktree root.
+#
+# check libs/dewey/pkgs/ facades for export drift without mutating the tree
 [group('debug')]
 debug-dewey-pkgs-drift: build-dagnabit
     #!/usr/bin/env bash
@@ -98,6 +104,8 @@ debug-dewey-pkgs-drift: build-dagnabit
 # sandboxed `conformist check` over the whole tree (Go/Nix/shell formatter drift
 # + shellcheck + the eng-convention linters from presets.eng), driven by
 # ./conformist.nix. The read-write counterpart is `codemod-fmt-conformist`.
+#
+# run the read-only conformist format + lint gate over the whole tree
 [group('pre-build')]
 lint-conformist:
     nix build {{ justfile_directory() }}#checks.$(nix eval --impure --raw --expr builtins.currentSystem).formatting --no-link
@@ -126,6 +134,8 @@ lint-dewey-analyzers: (lint-dewey-analyzer "defererr") (lint-dewey-analyzer "rep
 # .golangci.yml (found by walk-up) carries build-tags=test and the level-0/
 # alfa testui exclusion. Scoped to libs/dewey for now (go-mcp + root are a
 # tracked follow-up).
+#
+# run the dewey analyzers over dewey's own source via golangci-lint-dewey
 [group('pre-build')]
 lint-dewey-self: build-go-gcl
     cd {{ justfile_directory() }}/libs/dewey && {{ cmd_nix_dev }} env GOWORK=off {{ justfile_directory() }}/build/golangci-lint-dewey run ./...
@@ -159,6 +169,8 @@ build-purse-first-cli:
 
 # Nix-build the dewey custom golangci-lint binary (gclplugin linked in,
 # purse-first#134) for the bats acceptance lane and downstream consumers.
+#
+# nix-build the dewey custom golangci-lint binary into result-gcl
 [group('build')]
 build-golangci-dewey:
     nix build .#golangci-lint-dewey -o result-gcl
@@ -171,6 +183,8 @@ build-go:
 # Build dewey library (all layers + CLI tools). Injects PURSE_FIRST_VERSION
 # and the short commit into the buildinfo package via -ldflags, matching
 # what the Nix derivations do for dev parity.
+#
+# build the dewey library (all layers + CLI tools) with version ldflags
 [group('build')]
 build-dewey:
     #!/usr/bin/env bash
@@ -192,6 +206,8 @@ build-dewey:
 # did not actually make discovery work in that environment. Tracking
 # the underlying issue separately; keep this list aligned with the
 # matrix systems built by CI.
+#
+# sync go.work and regenerate gomod2nix.toml
 [group('build')]
 build-nix-gomod2nix:
     {{ cmd_nix_dev }} go work sync
@@ -206,6 +222,8 @@ build-nix-gomod2nix:
 # dev loop. It is not in go.work, so `go build ./...` never touches it;
 # this is the cheap compile gate (and local smoke-test binary) before the
 # nix build. GOWORK=off for the same reason as build-nix-gomod2nix-gcl.
+#
+# compile golangci-lint-dewey into build/ for the dev loop
 [group('build')]
 build-go-gcl:
     cd {{ justfile_directory() }}/cmd/golangci-lint-dewey && \
@@ -219,6 +237,8 @@ build-go-gcl:
 # keeps go in module mode despite the workspace above it; without it go
 # refuses to run in a module that the surrounding go.work doesn't list.
 # Run after changing the golangci-lint pin or the module's go.mod.
+#
+# regenerate the golangci-lint-dewey lockfiles (go.sum + gomod2nix.toml)
 [group('build')]
 build-nix-gomod2nix-gcl:
     cd {{ justfile_directory() }}/cmd/golangci-lint-dewey && \
@@ -234,6 +254,8 @@ build-nix-gomod2nix-gcl:
 # because those need to work mid-bootstrap when cmd/dagnabit's imports
 # may temporarily reference paths that don't compile yet. Run this
 # manually when you've changed dagnabit's source.
+#
+# rebuild build/dagnabit from source
 [group('build')]
 build-dagnabit:
     {{ cmd_nix_dev }} go build -o {{ justfile_directory() }}/build/dagnabit ./cmd/dagnabit
@@ -293,6 +315,8 @@ test-validate: build-purse-first-cli
 
 # Run the golangci-lint-dewey BATS lane against the nix-built custom
 # binary — the purse-first#134 acceptance test (plugin loads, analyzers fire).
+#
+# run the golangci-lint-dewey BATS lane against the Nix-built binary
 [group('post-build')]
 test-golangci-dewey: build-golangci-dewey
     GOLANGCI_LINT_DEWEY_BIN={{ justfile_directory() }}/result-gcl/bin/golangci-lint-dewey {{ cmd_nix_dev }} bats --tap zz-tests_bats/golangci_lint_dewey.bats
@@ -300,6 +324,8 @@ test-golangci-dewey: build-golangci-dewey
 # Dev-loop variant of test-golangci-dewey: run the bats lane against the
 # go-built binary in build/ (no nix build). The version-suffix assertion
 # self-skips here — the "dewey" suffix is injected by nix ldflags only.
+#
+# run the golangci-lint-dewey BATS lane against the build/ binary
 [group('explore')]
 explore-test-golangci-dewey-dev: build-go-gcl
     GOLANGCI_LINT_DEWEY_BIN={{ justfile_directory() }}/build/golangci-lint-dewey {{ cmd_nix_dev }} bats --tap zz-tests_bats/golangci_lint_dewey.bats
@@ -307,6 +333,8 @@ explore-test-golangci-dewey-dev: build-go-gcl
 # BATS lane for dagnabit rust mode (reposition / export / rename against
 # cargo fixture workspaces). Tests skip gracefully when cargo/ast-grep
 # are not on PATH, so the CI gate stays green without the rust devshell.
+#
+# run the dagnabit rust-mode BATS lane
 [group('post-build')]
 test-dagnabit-rust: build-dagnabit
     {{ cmd_nix_dev }} bats --tap zz-tests_bats/dagnabit_rust.bats
@@ -326,12 +354,16 @@ codemod-fmt: codemod-fmt-conformist codemod-fmt-go codemod-fmt-worktree
 # shell (shfmt -i 2 -s -ci), per ./conformist.nix. Runs the flake `formatter`
 # output (conformistEval.config.build.wrapper, repair mode). The read-only
 # counterpart is `lint-conformist`.
+#
+# format the whole repo via conformist (Go, Nix, shell)
 [group('codemod')]
 codemod-fmt-conformist:
     nix fmt
 
 # `go fmt ./...` for a quick Go-only reformat. The canonical repo-wide
 # formatter is `codemod-fmt-conformist`.
+#
+# run go fmt across the workspace
 [group('codemod')]
 codemod-fmt-go:
     {{ cmd_nix_dev }} go fmt ./...
@@ -348,6 +380,8 @@ codemod-fmt-go:
 # idempotent after a reposition move). Needs `dagnabit` (build/) + `go` on PATH,
 # same as lint-worktree. Wired into `codemod-fmt` so one repo-wide format resyncs
 # facades; the conformist-impure wrapper bakes `--tree-root-file=flake.nix`.
+#
+# run the impure conformist lane in repair mode against the working tree
 [group('codemod')]
 codemod-fmt-worktree: build-dagnabit
     #!/usr/bin/env bash
@@ -359,6 +393,8 @@ codemod-fmt-worktree: build-dagnabit
 
 # Dry-run a single-package rename: print the proposed move as NDJSON,
 # touch nothing on disk. `new_leaf` is optional; defaults to src's leaf.
+#
+# dry-run a single-package rename
 [group('debug')]
 debug-dewey-rename pkg new_leaf="":
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit rename -n {{ pkg }} {{ new_leaf }}
@@ -370,12 +406,16 @@ debug-dewey-rename-apply pkg new_leaf="":
 
 # Dry-run a full reposition of libs/dewey/internal/. Prints NDJSON
 # `would-move` events for each package that needs repositioning.
+#
+# dry-run a full reposition of libs/dewey/internal/
 [group('debug')]
 debug-dewey-reposition:
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit -n internal
 
 # Apply a full reposition of libs/dewey/internal/. Real moves print
 # NDJSON `move` events as they happen.
+#
+# apply a full reposition of libs/dewey/internal/
 [group('debug')]
 debug-dewey-reposition-apply:
     cd {{ justfile_directory() }}/libs/dewey && {{ justfile_directory() }}/build/dagnabit internal
@@ -385,6 +425,8 @@ debug-dewey-reposition-apply:
 # Same #159 config threading as debug-dewey-pkgs-drift: without it the
 # facade-format pass walks upward past the (toml-less) repo root to a stray
 # ancestor conformist.toml and formats with the WRONG config.
+#
+# generate the pkgs/ facade for a single internal dewey package
 [group('debug')]
 debug-dewey-export pkg:
     #!/usr/bin/env bash
@@ -398,6 +440,8 @@ debug-dewey-export pkg:
 # Generate pkgs/ facades for every package under libs/dewey/internal/ (library mode).
 # Fails if any //go:generate dagnabit export directives are found.
 # Same #159 config threading as debug-dewey-pkgs-drift (see above).
+#
+# generate pkgs/ facades for every package under libs/dewey/internal/
 [group('debug')]
 debug-dewey-export-library *flags:
     #!/usr/bin/env bash
@@ -423,6 +467,8 @@ update-nix:
 # the current go.mod / go.sum / go.work; does not bump pins.) Delegates to
 # build-nix-gomod2nix via a body call rather than a dependency so that recipe
 # stays owned by exactly one aggregate (build) per the task-hierarchy rule.
+#
+# resync go.work and refresh gomod2nix.toml
 [group('maintenance')]
 update-go:
     just build-nix-gomod2nix
@@ -446,6 +492,8 @@ release_tag_prefixes := "v libs/dewey/v libs/go-mcp/v"
 
 # Rewrite PURSE_FIRST_VERSION in version.env. Pure mutation — release owns
 # the commit and tag steps.
+#
+# rewrite PURSE_FIRST_VERSION in version.env
 [group('maintenance')]
 bump-version new_version:
     sed -E -i 's/^(export PURSE_FIRST_VERSION)=.*/\1={{ new_version }}/' version.env
@@ -458,6 +506,8 @@ bump-version new_version:
 # containing backticks or $(...) (e.g. a commit titled `export --check`) would
 # be evaluated as a command. The $-prefixed parameter is passed via the
 # environment, so git sees it as inert data. Do NOT revert to {{ message }}.
+#
+# create, push, and verify the full signed release tag set
 [group('maintenance')]
 tag $message:
     #!/usr/bin/env bash
@@ -483,6 +533,8 @@ tag $message:
 # Full release flow versioning all artifacts together: repo-wide changelog →
 # bump → commit → tag set → fj release. The Forgejo release points at the
 # primary v<sem> tag; its notes enumerate the sibling sub-module tags.
+#
+# run the full release flow: changelog, bump, commit, tag set, fj release
 [group('maintenance')]
 release new_version:
     #!/usr/bin/env bash
@@ -517,6 +569,8 @@ release new_version:
 # internal/, run dagnabit export, and isolate a single facade build on failure.
 # Scratch reproduction for the dagnabit export/reposition bootstrap; delete once
 # its question is answered.
+#
+# probe the dagnabit export/reposition bootstrap in a temp copy of dewey
 [group('explore')]
 explore-dagnabit-export:
     #!/usr/bin/env bash
