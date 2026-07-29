@@ -27,11 +27,10 @@ import (
 // open once this package's init() functions had run.
 //
 // The go tool presents files to the compiler in sorted filename order and runs
-// init() functions in that same order, so "printer_null.go" < "printer_null_
-// test.go" means an eager open reintroduced where the bug originally lived is
-// observed here. This does not catch an eager open added to a file sorting
-// after this one, which is why it supplements the wasm run rather than
-// replacing it.
+// init() functions in that same order. This file sorts after printer_null.go,
+// so an eager open reintroduced where the bug originally lived is observed
+// here. It does not catch one added to a file sorting after this one, which is
+// why it supplements the wasm run rather than replacing it.
 var nullFileAfterPackageInit *os.File
 
 func init() {
@@ -49,8 +48,8 @@ func TestNullDevNullIsNotOpenedDuringPackageInit(t *testing.T) {
 }
 
 func TestNullDiscardsWithoutTheDevNullHandle(t *testing.T) {
-	// The text surface must never depend on the file handle: on js there is
-	// none to depend on.
+	// The text surface must never depend on the file handle, so that it keeps
+	// working on hosts where the handle could not be opened at all.
 	n, err := Null.Write([]byte("discarded"))
 	if err != nil {
 		t.Errorf("Null.Write returned an error: %s", err)
