@@ -405,9 +405,61 @@ codemod-fmt-worktree: build-dagnabit
 #
 # cross-build wasm-portable libs/dewey for GOOS=js|wasip1 GOARCH=wasm
 [group('debug')]
-debug-build-wasm goos="js" pkgs="./internal/bravo/errors/... ./pkgs/errors/... ./internal/delta/files/... ./pkgs/files/...":
+debug-build-wasm goos="js" pkgs="./internal/bravo/errors/... ./pkgs/errors/... ./internal/delta/files/... ./pkgs/files/... ./internal/charlie/ui/... ./pkgs/ui/...":
     cd {{ justfile_directory() }}/libs/dewey && \
       {{ cmd_nix_dev }} env GOOS={{ goos }} GOARCH=wasm go build {{ pkgs }}
+
+# Run the wasm-portable libs/dewey tests under an actual wasm host, rather
+# than merely cross-building them. purse-first#177 was invisible to
+# `debug-build-wasm`: a package init() that opens /dev/null compiles clean for
+# GOOS=js and only panics when the module is INSTANTIATED, so a build-only
+# lane cannot see it. Instantiating the test binary is the check.
+#
+# `goos` is js (hosted by node) or wasip1 (hosted by wasmtime). Neither host
+# is in the devshell, so both are pulled from the nixpkgs flake registry at
+# run time — impure, and the reason this stays in the `debug` group. When
+# purse-first#174 promotes a wasm lane into the default gate, pin the host
+# through the flake's own nixpkgs input instead of `nix shell nixpkgs#...`.
+#
+# run wasm-portable libs/dewey tests on a real wasm host (GOOS=js|wasip1)
+[group('debug')]
+debug-test-wasm goos="js" pkgs="./internal/charlie/ui/...":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{ goos }}" in
+      js) host_pkg=nodejs ;;
+      wasip1) host_pkg=wasmtime ;;
+      *) echo "unsupported goos: {{ goos }} (want js or wasip1)" >&2; exit 2 ;;
+    esac
+    cd {{ justfile_directory() }}/libs/dewey
+    # `nix shell` is nested INSIDE `nix develop` deliberately: it prepends the
+    # host to PATH additively, whereas the reverse order would let the devshell
+    # rebuild PATH and drop the host again.
+    {{ cmd_nix_dev }} nix shell "nixpkgs#$host_pkg" --command bash -c '
+      set -euo pipefail
+      case "{{ goos }}" in
+        js) host_bin=node; wrapper_name=go_js_wasm_exec ;;
+        wasip1) host_bin=wasmtime; wrapper_name=go_wasip1_wasm_exec ;;
+      esac
+      goroot=$(go env GOROOT)
+      # Go moved the exec wrappers from misc/wasm to lib/wasm in 1.21.
+      wrapper="$goroot/lib/wasm/$wrapper_name"
+      [[ -x "$wrapper" ]] || wrapper="$goroot/misc/wasm/$wrapper_name"
+      [[ -x "$wrapper" ]] || {
+        echo "no $wrapper_name under $goroot (lib/wasm or misc/wasm)" >&2
+        exit 1
+      }
+      # wasm_exec_node.js hands the ENTIRE ambient environment to the module,
+      # and Go.run rejects an argv+env payload over its size cap — which the
+      # devshell environment alone exceeds ("total length of command line and
+      # environment variables exceeds limit"). Scrub the environment down at
+      # the exec boundary. coreutils has to stay on the scrubbed PATH because
+      # the wrapper script itself shells out to dirname/readlink.
+      host_dir=$(dirname "$(command -v "$host_bin")")
+      core_dir=$(dirname "$(command -v dirname)")
+      GOOS={{ goos }} GOARCH=wasm go test -tags test \
+        -exec="env -i PATH=$host_dir:$core_dir $wrapper" {{ pkgs }}
+    '
 
 # Dry-run a single-package rename: print the proposed move as NDJSON,
 # touch nothing on disk. `new_leaf` is optional; defaults to src's leaf.
