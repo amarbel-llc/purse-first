@@ -334,9 +334,10 @@ func ContextSetCancelOnSIGINT(ctx Context) {
 	ctx.SetCancelOnSignals(syscall.SIGINT)
 }
 
-func ContextSetCancelOnSIGHUP(ctx Context) {
-	ctx.SetCancelOnSignals(syscall.SIGHUP)
-}
+// ContextSetCancelOnSIGHUP lives in signal_cancel.go / signal_cancel_js.go:
+// GOOS=js does not define syscall.SIGHUP, so it needs a build-constrained
+// stub. SIGTERM and SIGINT above are defined on every supported platform and
+// stay here.
 
 //    ____                     _
 //   / ___|__ _ _ __   ___ ___| |___

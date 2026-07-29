@@ -391,6 +391,24 @@ codemod-fmt-worktree: build-dagnabit
     PATH="{{ justfile_directory() }}/build:$PATH" \
       {{ cmd_nix_dev }} "$wrapper/bin/conformist"
 
+# Cross-build the wasm-portable subset of libs/dewey to catch portability
+# regressions (undefined syscall constants, missing platform stubs).
+# `goos` is js or wasip1. Neither target is covered by the default gate,
+# which builds host-native only — see purse-first#172 (wasip1 chflags
+# stub) and purse-first#173 (js SIGHUP) for the two breakages this lane
+# exists to catch. Consumed by papi#62.
+#
+# `pkgs` is an explicit path list rather than `./...` deliberately: the full
+# tree pulls in os/user, runtime/cgo and creack/pty, none of which build for
+# GOARCH=wasm under any GOOS. Widen the default as more of dewey is made
+# portable.
+#
+# cross-build wasm-portable libs/dewey for GOOS=js|wasip1 GOARCH=wasm
+[group('debug')]
+debug-build-wasm goos="js" pkgs="./internal/bravo/errors/... ./pkgs/errors/...":
+    cd {{ justfile_directory() }}/libs/dewey && \
+      {{ cmd_nix_dev }} env GOOS={{ goos }} GOARCH=wasm go build {{ pkgs }}
+
 # Dry-run a single-package rename: print the proposed move as NDJSON,
 # touch nothing on disk. `new_leaf` is optional; defaults to src's leaf.
 #
