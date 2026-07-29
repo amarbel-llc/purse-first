@@ -405,7 +405,7 @@ codemod-fmt-worktree: build-dagnabit
 #
 # cross-build wasm-portable libs/dewey for GOOS=js|wasip1 GOARCH=wasm
 [group('debug')]
-debug-build-wasm goos="js" pkgs="./internal/bravo/errors/... ./pkgs/errors/...":
+debug-build-wasm goos="js" pkgs="./internal/bravo/errors/... ./pkgs/errors/... ./internal/delta/files/... ./pkgs/files/...":
     cd {{ justfile_directory() }}/libs/dewey && \
       {{ cmd_nix_dev }} env GOOS={{ goos }} GOARCH=wasm go build {{ pkgs }}
 
