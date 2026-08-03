@@ -270,7 +270,8 @@ test: \
     test-dewey \
     test-integration \
     test-golangci-dewey \
-    test-dagnabit-rust
+    test-dagnabit-rust \
+    test-initsmoke
 
 [group('post-build')]
 test-extra: test-v test-race test-validate test-validate-mcp
@@ -338,6 +339,20 @@ explore-test-golangci-dewey-dev: build-go-gcl
 [group('post-build')]
 test-dagnabit-rust: build-dagnabit
     {{ cmd_nix_dev }} bats --tap zz-tests_bats/dagnabit_rust.bats
+
+# init-smoke run lane (purse-first#180): build + instantiate the generated
+# libs/dewey/initsmoke/ per-arch tests under their strict loaders (js/wasm =
+# bun + generic wasm_exec.js stub FS; wasip1/wasm = wasmtime, no preopens), so a
+# package init() that fails on an arch is caught at load time. Uses the
+# flake-pinned bun + wasmtime on the devshell PATH (purse-first#174); the
+# debug-dewey-initsmoke-run escape hatch pulls them via `nix shell` for a
+# devshell without the pins.
+#
+# run libs/dewey/initsmoke/ per-arch tests under their strict loaders
+[group('post-build')]
+test-initsmoke: build-dagnabit
+    cd {{ justfile_directory() }}/libs/dewey && \
+      {{ cmd_nix_dev }} {{ justfile_directory() }}/build/dagnabit init-smoke run
 
 # run MCP validation tests
 [group('post-build')]
@@ -558,6 +573,25 @@ debug-dewey-initsmoke-drift: build-dagnabit
       DAGNABIT_CONFORMIST_CONFIG="$config" \
       DAGNABIT_CEILING_DIRECTORIES="{{ justfile_directory() }}" \
       {{ justfile_directory() }}/build/dagnabit init-smoke --check
+
+# Run the init-smoke tests: build + instantiate each generated per-arch test
+# under its declared loader (js/wasm strict = bun + generic wasm_exec.js stub FS;
+# wasip1/wasm strict = wasmtime, no preopens), so a package init() that fails on
+# an arch surfaces as a load-time panic naming the offender (purse-first#180).
+#
+# This is the IMPURE escape hatch: bun + wasmtime are pulled from the nixpkgs
+# flake registry at run time (nested `nix shell` inside `nix develop`, prepended
+# additively to PATH), so it works WITHOUT a devshell that pins them. The default
+# gate lane (`validate-init-smoke`) instead uses flake-pinned runtimes on the
+# devshell PATH (purse-first#174). When that lane lands, this stays as the
+# no-devshell-bump escape hatch, mirroring debug-test-wasm.
+#
+# run libs/dewey/initsmoke/ per-arch tests under their strict loaders (impure)
+[group('debug')]
+debug-dewey-initsmoke-run: build-dagnabit
+    cd {{ justfile_directory() }}/libs/dewey && \
+      {{ cmd_nix_dev }} nix shell nixpkgs#bun nixpkgs#wasmtime --command \
+        {{ justfile_directory() }}/build/dagnabit init-smoke run
 
 # ──── maintenance ───────────────────────────────────────────────────
 # Refresh dependencies, bump versions, tag/release, clean.

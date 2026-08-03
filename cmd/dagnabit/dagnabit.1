@@ -56,6 +56,11 @@ dagnabit \- reposition Go packages and Rust crates by dependency depth and gener
 .RB [ \-module
 .IR path ]
 .PP
+.B dagnabit init-smoke run
+.RB [ \-n ]
+.RB [ \-module
+.IR path ]
+.PP
 .B dagnabit version
 .SH DESCRIPTION
 .B dagnabit
@@ -412,6 +417,32 @@ and
 regenerates into a temporary directory and byte-compares against the
 committed files, exiting nonzero and naming the out-of-sync arch files on
 drift.
+.PP
+.B "dagnabit init-smoke run"
+builds and instantiates each generated test under its arch's declared
+.BR loader ,
+so a package
+.B init()
+that fails on the arch surfaces as a load-time panic naming the offender.
+Loader values are goos-dependent.
+.B strict
+(the default) for js/wasm is Go's generic
+.B wasm_exec.js
+run under
+.B bun
+(stub filesystem, so filesystem ops fail with ENOSYS \(em the browser-strict
+behavior that catches the hazard), and for wasip1/wasm is
+.B wasmtime
+with no directory preopens.
+.B node
+(js only) is Go's stock
+.B go_js_wasm_exec
+(real filesystem \(em the false-confidence path, opt-in only). A repo-relative
+or absolute path names a repo-provided executable loader taking the test binary
+as its first argument. The required runtime
+.RB ( bun ", " wasmtime )
+must be on
+.BR PATH .
 .SS "version"
 Print the build identity \(em version and commit \(em of the
 .B dagnabit

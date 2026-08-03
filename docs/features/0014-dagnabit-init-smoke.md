@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: experimental
 date: 2026-08-03
 promotion-criteria: >
   proposed → experimental: `dagnabit init-smoke` (generate / --check / run)
@@ -147,6 +147,17 @@ coreutils on `PATH` (the wrapper scripts shell out to `dirname`/`readlink`).
 This reuses the exact trick proven in the `debug-test-wasm` recipe — but under
 the **strict** loader, which that recipe (node loader) is not.
 
+The strict js harness is embedded in the `dagnabit` binary (`go:embed`) and
+written to a temp file at run time; it `eval`s Go's generic `wasm_exec.js` from
+`GOROOT` and instantiates the test binary without wiring a real `fs`, so the
+module sees the stub filesystem (and the harness captures the module's exit code,
+which the generic browser shim otherwise only warns about, so a failing test or
+init panic becomes a nonzero status `go test -exec` keys off). A repo-path loader
+(`loader = "<path>"`, relative to the module root or absolute) must be an
+executable that takes the compiled test binary as its first argument (followed by
+test flags); it runs under the same `env -i` scrub, so a shim needing a runtime
+beyond coreutils must be self-contained.
+
 ### Gate wiring
 
 Mirroring the two existing dagnabit whole-tree concerns, the two halves land in
@@ -161,12 +172,16 @@ two lanes:
   from purse-first's flake as `lib.conformistLinters.dewey-init-smoke`
   (alongside `dewey-facade-export` / `dewey-reposition`), parameterized by
   `deweyDir` and `dagnabitPackage`, so downstream repos import it.
-- **Run** → a justfile leaf (e.g. `validate-init-smoke`) that calls
-  `dagnabit init-smoke run`, wired into the default gate. The wasm runtimes
-  (bun, wasmtime) are **flake-pinned** and put on `PATH` via the devshell — NOT
-  pulled with `nix shell nixpkgs#…` at run time — so the lane is reproducible in
-  the merge gate (purse-first#174's explicit requirement for promoting a wasm
-  lane).
+- **Run** → the `test-initsmoke` justfile leaf (in the default `test`
+  aggregate) calls `dagnabit init-smoke run`. bun + wasmtime are **flake-pinned**
+  in the `go` devenv (stable nixpkgs) and reach the lane via `nix develop
+  --command` — NOT `nix shell nixpkgs#…` at run time — so the merge gate is
+  reproducible (purse-first#174). Because the recipes re-evaluate the flake, the
+  pins are picked up without a session restart; a restart only matters for
+  running `dagnabit init-smoke run` bare in an interactive (direnv-cached) shell.
+  The `debug-dewey-initsmoke-run` recipe is the impure escape hatch that pulls
+  the runtimes via `nix shell` for a devshell without the pins (mirrors
+  `debug-test-wasm`).
 
 ## Examples
 
@@ -245,6 +260,14 @@ Exercise the repo's own shipped shim instead of the built-in strict harness:
 
 ## More Information
 
+- **Implementation.** Landed in two increments: the generate + drift-check half
+  (`dagnabit init-smoke [--check]`, the `dewey-init-smoke` conformist module,
+  dogfooded on dewey) then the run half (`dagnabit init-smoke run`, the embedded
+  strict bun harness, flake-pinned bun/wasmtime, the `test-initsmoke` gate lane).
+  The run was validated GREEN on clean dewey under both strict loaders and RED
+  against a reintroduced #177-style `/dev/null` init open (js/wasm: `open
+  /dev/null: not implemented on js`; wasip1/wasm: `Bad file number`), naming the
+  offending package — meeting the proposed→experimental promotion criteria.
 - **Subsumes** purse-first#179 (the per-repo generated "import every package"
   test) — implemented here as a dagnabit capability instead of a bespoke
   per-repo script. #179 closes on this landing.

@@ -170,10 +170,13 @@ func runInitSmoke() {
 	initSmokeFlags.BoolVar(&dryRun, "dry-run", false, "show what would be generated without writing files")
 	initSmokeFlags.StringVar(&modulePath, "module", "", "Go module path (read from go.mod if empty)")
 	initSmokeFlags.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: dagnabit init-smoke [--check] [-n]\n\n")
+		fmt.Fprintf(os.Stderr, "Usage: dagnabit init-smoke [--check] [-n]\n")
+		fmt.Fprintf(os.Stderr, "       dagnabit init-smoke run [-n]\n\n")
 		fmt.Fprintf(os.Stderr, "Generates per-arch blank-import tests that instantiate every buildable\n")
 		fmt.Fprintf(os.Stderr, "package for each arch declared in dagnabit.toml, so a package init()\n")
-		fmt.Fprintf(os.Stderr, "that fails on a target arch is caught at load time (purse-first#180).\n\n")
+		fmt.Fprintf(os.Stderr, "that fails on a target arch is caught at load time (purse-first#180).\n")
+		fmt.Fprintf(os.Stderr, "The `run` subcommand builds and instantiates each generated test under\n")
+		fmt.Fprintf(os.Stderr, "its declared loader.\n\n")
 		fmt.Fprintf(os.Stderr, "Go-only. Reads [[init-smoke.arch]] entries from <module-root>/dagnabit.toml.\n\n")
 		fmt.Fprintf(os.Stderr, "Flags:\n")
 		initSmokeFlags.PrintDefaults()
@@ -181,16 +184,18 @@ func runInitSmoke() {
 
 	initSmokeFlags.Parse(os.Args[1:])
 
+	runMode := false
 	if args := initSmokeFlags.Args(); len(args) > 0 {
-		if args[0] == "run" {
-			// The run lane (execute each generated test under its declared
-			// loader) lands separately; see purse-first#180 / FDR 0014.
-			fmt.Fprintf(os.Stderr, "error: `init-smoke run` is not yet implemented\n")
+		if len(args) == 1 && args[0] == "run" {
+			runMode = true
+		} else {
+			fmt.Fprintf(os.Stderr, "error: unexpected argument(s): %v\n\n", args)
+			initSmokeFlags.Usage()
 			os.Exit(1)
 		}
-
-		fmt.Fprintf(os.Stderr, "error: unexpected argument(s): %v\n\n", args)
-		initSmokeFlags.Usage()
+	}
+	if runMode && check {
+		fmt.Fprintf(os.Stderr, "error: `run` and --check are mutually exclusive\n")
 		os.Exit(1)
 	}
 
@@ -228,6 +233,15 @@ func runInitSmoke() {
 		ModulePath: modulePath,
 		Dir:        rootDir,
 		DryRun:     dryRun,
+	}
+
+	if runMode {
+		if err := is.Run(cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+		return
 	}
 
 	if check {
