@@ -168,7 +168,7 @@ external tools (e.g. clown), not by purse-first.
 | Directory | Purpose |
 |-----------|---------|
 | `cmd/purse-first/` | CLI entrypoint |
-| `cmd/dagnabit/` | dewey-aware rename/export tool for Go packages and cargo workspace crates (rust mode); used by `dewey-*` justfile recipes |
+| `cmd/dagnabit/` | dewey-aware rename/export tool for Go packages and cargo workspace crates (rust mode), plus `init-smoke` per-arch blank-import test generation (purse-first#180, go-only); used by `dewey-*` justfile recipes |
 | `cmd/go-mcp-docs/` | Generates the `go-mcp` manpage tree (built via `gomod.nix`) |
 | `cmd/golangci-lint-dewey/` | Standalone Go module (own go.mod + gomod2nix.toml, NOT in go.work): golangci-lint with dewey's `gclplugin` linked in. Regen lockfiles with `just build-nix-gomod2nix-gcl` after changing its go.mod |
 | `internal/` | Go internal packages (`validate`, `packagetoml`) |

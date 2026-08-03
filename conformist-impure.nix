@@ -24,4 +24,12 @@
   # read-only facade-drift recipe (now the debug-dewey-pkgs-drift escape hatch)
   # at the merge gate.
   linters.dewey-facade-export.enable = true;
+
+  # dewey per-arch init-smoke drift (purse-first#180 / FDR 0014): `dagnabit
+  # init-smoke --check` type-checks the package graph under each declared arch
+  # (golang.org/x/tools/go/packages) and shells to `conformist`, so it's impure
+  # too. Its `conformistConfig` option is set from flake.nix, where
+  # conformistEval is in scope. Catches a new/changed package silently
+  # staleness-ing the committed per-arch import list at the merge gate.
+  linters.dewey-init-smoke.enable = true;
 }

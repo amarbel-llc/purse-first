@@ -50,15 +50,24 @@ dagnabit \- reposition Go packages and Rust crates by dependency depth and gener
 .IR src
 .RI [ new\-leaf ]
 .PP
+.B dagnabit init-smoke
+.RB [ \-\-check ]
+.RB [ \-n ]
+.RB [ \-module
+.IR path ]
+.PP
 .B dagnabit version
 .SH DESCRIPTION
 .B dagnabit
 is a code organization tool for Go modules and cargo (Rust) workspaces
-with four subcommands: repositioning, export facade generation, package
+with five subcommands: repositioning, export facade generation, package
 relocation
 .RB ( move ),
-and single-package repositioning
-.RB ( rename ).
+single-package repositioning
+.RB ( rename ),
+and per-arch init-smoke test generation
+.RB ( init-smoke ,
+go-only).
 The operating language is auto-detected; see
 .BR LANGUAGES .
 .PP
@@ -349,6 +358,60 @@ byte-canonical (rustfmt-clean) by construction, keeping
 and
 .B \-\-check
 environment-independent.
+.SS "init-smoke"
+Generate per-arch blank-import tests that catch package
+.B init()
+functions which fail on a particular
+.IR GOOS / GOARCH .
+Such an init compiles clean on every arch and detonates only at module
+.I instantiation
+on the arch that cannot satisfy it (e.g. a
+.I /dev/null
+open under the js/wasm strict filesystem), so it is invisible to
+.B go build
+and caught only by running the module. Go-only.
+.PP
+Target arches are declared in
+.I dagnabit.toml
+at the module root, as
+.B [[init-smoke.arch]]
+entries with
+.BR goos ", " goarch ", " loader ", and " skip
+keys. For each arch,
+.B dagnabit
+type-checks the module's package graph under that
+.IR GOOS / GOARCH
+(via
+.BR golang.org/x/tools/go/packages )
+and writes
+.IB initsmoke/ initsmoke_ goos _ goarch _test.go\fR,\fP
+a
+.BR //go:build \-constrained
+file that blank-imports every package which
+.I builds
+for the arch. Packages that do not build for the arch are auto-excluded;
+.B skip
+lists packages that build but should be excluded anyway (a
+.B skip
+entry matching no package is an error). Instantiating the generated test
+binary runs every imported package's
+.BR init() ,
+so a per-arch init hazard surfaces as a load-time panic naming the offender.
+.PP
+Like
+.BR export ,
+.B init-smoke
+runs the project formatter on the generated files (honoring
+.B DAGNABIT_CONFORMIST_CONFIG
+/
+.BR DAGNABIT_CEILING_DIRECTORIES ;
+see
+.BR ENVIRONMENT ),
+and
+.B \-\-check
+regenerates into a temporary directory and byte-compares against the
+committed files, exiting nonzero and naming the out-of-sync arch files on
+drift.
 .SS "version"
 Print the build identity \(em version and commit \(em of the
 .B dagnabit
@@ -494,6 +557,22 @@ Operating language. Auto-detected when empty (see
 Go module path. Read from
 .I go.mod
 if empty. Go-only.
+.SS "Init-smoke options"
+.TP
+.BR \-c ", " \-\-check
+Verify the committed init-smoke tests match a fresh generation without
+writing: regenerate into a temporary directory, byte-compare against the
+committed
+.I initsmoke/
+files, and exit nonzero (naming the out-of-sync arch files) on drift.
+.TP
+.BR \-n ", " \-\-dry\-run
+Enumerate and render without writing files.
+.TP
+.BI \-module " path"
+Go module path. Read from
+.I go.mod
+if empty.
 .SH EXAMPLES
 Reposition packages in a repo with
 .I lib/
@@ -609,6 +688,15 @@ Verify the committed rust facades are in sync without writing:
 .RS
 .nf
 dagnabit export --check --library
+.fi
+.RE
+.PP
+Regenerate the per-arch init-smoke tests, then verify they are in sync:
+.PP
+.RS
+.nf
+dagnabit init-smoke
+dagnabit init-smoke --check   # exit 1 + arch file list on drift
 .fi
 .RE
 .SH GENERATED OUTPUT

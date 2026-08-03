@@ -82,6 +82,7 @@
       # depend on purse-first).
       conformistLinters = {
         dewey-facade-export = ./nix/linters/dewey-facade-export.nix;
+        dewey-init-smoke = ./nix/linters/dewey-init-smoke.nix;
         dewey-reposition = ./nix/linters/dewey-reposition.nix;
       };
     in
@@ -131,6 +132,7 @@
             # purse-first, so only conformistConfig is set below.
             conformistLinters.dewey-reposition
             conformistLinters.dewey-facade-export
+            conformistLinters.dewey-init-smoke
           ];
           package = conformistBin;
           # The facade-export linter's scripts run dagnabit's facade-format pass,
@@ -140,6 +142,10 @@
           # (purse-first#159). Baking the
           # store path here removes the per-invocation env-var contract (#163).
           linters.dewey-facade-export.conformistConfig = conformistEval.config.build.configFile;
+          # The init-smoke linter's generate/check both run dagnabit's format
+          # pass over the generated tests, so it needs the same PURE config
+          # (purse-first#180 / FDR 0014).
+          linters.dewey-init-smoke.conformistConfig = conformistEval.config.build.configFile;
         };
       in
       {

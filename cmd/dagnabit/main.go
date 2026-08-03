@@ -38,6 +38,12 @@ func main() {
 		return
 	}
 
+	if len(os.Args) > 1 && os.Args[0] != "-" && os.Args[1] == "init-smoke" {
+		os.Args = append(os.Args[:1], os.Args[2:]...)
+		runInitSmoke()
+		return
+	}
+
 	runReposition()
 }
 
@@ -147,6 +153,94 @@ func runRename() {
 		// detectLanguage never returns langUnknown with a nil error;
 		// fail fast if a future language breaks that invariant.
 		fmt.Fprintf(os.Stderr, "error: internal: unhandled language %d\n", detected)
+		os.Exit(1)
+	}
+}
+
+func runInitSmoke() {
+	initSmokeFlags := flag.NewFlagSet("init-smoke", flag.ExitOnError)
+
+	var check bool
+	var dryRun bool
+	var modulePath string
+
+	initSmokeFlags.BoolVar(&check, "check", false, "verify the committed init-smoke tests match a fresh generation; exit nonzero on drift")
+	initSmokeFlags.BoolVar(&check, "c", false, "alias for --check")
+	initSmokeFlags.BoolVar(&dryRun, "n", false, "show what would be generated without writing files")
+	initSmokeFlags.BoolVar(&dryRun, "dry-run", false, "show what would be generated without writing files")
+	initSmokeFlags.StringVar(&modulePath, "module", "", "Go module path (read from go.mod if empty)")
+	initSmokeFlags.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: dagnabit init-smoke [--check] [-n]\n\n")
+		fmt.Fprintf(os.Stderr, "Generates per-arch blank-import tests that instantiate every buildable\n")
+		fmt.Fprintf(os.Stderr, "package for each arch declared in dagnabit.toml, so a package init()\n")
+		fmt.Fprintf(os.Stderr, "that fails on a target arch is caught at load time (purse-first#180).\n\n")
+		fmt.Fprintf(os.Stderr, "Go-only. Reads [[init-smoke.arch]] entries from <module-root>/dagnabit.toml.\n\n")
+		fmt.Fprintf(os.Stderr, "Flags:\n")
+		initSmokeFlags.PrintDefaults()
+	}
+
+	initSmokeFlags.Parse(os.Args[1:])
+
+	if args := initSmokeFlags.Args(); len(args) > 0 {
+		if args[0] == "run" {
+			// The run lane (execute each generated test under its declared
+			// loader) lands separately; see purse-first#180 / FDR 0014.
+			fmt.Fprintf(os.Stderr, "error: `init-smoke run` is not yet implemented\n")
+			os.Exit(1)
+		}
+
+		fmt.Fprintf(os.Stderr, "error: unexpected argument(s): %v\n\n", args)
+		initSmokeFlags.Usage()
+		os.Exit(1)
+	}
+
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+
+	// init-smoke is go-only; force go detection so the module root is found
+	// even from a subdirectory.
+	_, rootDir, err := detectLanguage(dir, "go")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+
+	modulePath, err = go_module.ResolveModulePath(rootDir, modulePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+
+	cfg, ok, err := dagnabit.LoadInitSmokeConfig(rootDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+	if !ok || len(cfg.Arch) == 0 {
+		fmt.Fprintf(os.Stderr, "no [[init-smoke.arch]] entries in %s; nothing to do\n", rootDir)
+		return
+	}
+
+	is := &dagnabit.InitSmoke{
+		ModulePath: modulePath,
+		Dir:        rootDir,
+		DryRun:     dryRun,
+	}
+
+	if check {
+		if err := is.Check(cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+		return
+	}
+
+	if err := is.Generate(cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 }

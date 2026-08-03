@@ -524,6 +524,41 @@ debug-dewey-export-library *flags:
       DAGNABIT_CEILING_DIRECTORIES="{{ justfile_directory() }}" \
       {{ justfile_directory() }}/build/dagnabit export --library {{ flags }}
 
+# Regenerate the per-arch init-smoke blank-import tests in libs/dewey/initsmoke/
+# (purse-first#180 / FDR 0014). Reads target arches from libs/dewey/dagnabit.toml,
+# enumerates each arch's buildable packages via `go list`, and writes one
+# initsmoke_<goos>_<goarch>_test.go per arch. Same #159 config threading as
+# debug-dewey-export-library: without DAGNABIT_CONFORMIST_CONFIG the generated
+# files' format pass walks up past the (toml-less) repo root to a stray ancestor
+# conformist.toml and formats with the wrong config.
+#
+# regenerate libs/dewey/initsmoke/ per-arch blank-import tests
+[group('debug')]
+debug-dewey-initsmoke: build-dagnabit
+    #!/usr/bin/env bash
+    set -euo pipefail
+    config=$(nix build {{ justfile_directory() }}#conformist-config --no-link --print-out-paths)
+    cd {{ justfile_directory() }}/libs/dewey && \
+      DAGNABIT_CONFORMIST_CONFIG="$config" \
+      DAGNABIT_CEILING_DIRECTORIES="{{ justfile_directory() }}" \
+      {{ justfile_directory() }}/build/dagnabit init-smoke
+
+# Check libs/dewey/initsmoke/ for drift against a fresh generation without
+# mutating the tree (purse-first#180). Exits nonzero and names the out-of-sync
+# arch files on drift. The merge gate covers this via lint-worktree's
+# dewey-init-smoke conformist module; this is the focused escape hatch.
+#
+# check libs/dewey/initsmoke/ for init-smoke drift without mutating the tree
+[group('debug')]
+debug-dewey-initsmoke-drift: build-dagnabit
+    #!/usr/bin/env bash
+    set -euo pipefail
+    config=$(nix build {{ justfile_directory() }}#conformist-config --no-link --print-out-paths)
+    cd {{ justfile_directory() }}/libs/dewey && \
+      DAGNABIT_CONFORMIST_CONFIG="$config" \
+      DAGNABIT_CEILING_DIRECTORIES="{{ justfile_directory() }}" \
+      {{ justfile_directory() }}/build/dagnabit init-smoke --check
+
 # ──── maintenance ───────────────────────────────────────────────────
 # Refresh dependencies, bump versions, tag/release, clean.
 

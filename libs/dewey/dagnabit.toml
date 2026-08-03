@@ -1,0 +1,23 @@
+# dagnabit init-smoke targets for the dewey library (purse-first#180 / FDR 0014).
+#
+# Each [[init-smoke.arch]] declares a GOOS/GOARCH whose every buildable package
+# is blank-imported by a generated initsmoke/initsmoke_<goos>_<goarch>_test.go,
+# so a package init() that fails on that arch is caught when the test binary is
+# instantiated under the arch's loader (rather than only when some downstream
+# wasm binary panics at load — the purse-first#177 failure mode).
+#
+# skip is usually empty: packages that do not build for the arch are
+# auto-excluded. List a package here only if it BUILDS for the arch but must be
+# excluded from init-smoke anyway. A skip entry that matches no package errors.
+
+[[init-smoke.arch]]
+goos = "js"
+goarch = "wasm"
+loader = "strict" # built-in bun + generic wasm_exec.js (stub FS, ENOSYS)
+skip = []
+
+[[init-smoke.arch]]
+goos = "wasip1"
+goarch = "wasm"
+loader = "strict" # wasmtime, no preopens
+skip = []

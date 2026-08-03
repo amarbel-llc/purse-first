@@ -16,6 +16,19 @@ type Exporter = internal.Exporter
 // path used to construct fully-qualified import paths from src/dst.
 type GitMover = internal.GitMover
 
+// InitSmoke generates and drift-checks per-arch blank-import init tests. Each
+// generated file blank-imports every buildable, non-skipped package for its
+// arch, so instantiating the test binary runs every package's init() and a
+// per-arch init hazard (e.g. a /dev/null open that fails on the js/wasm strict
+// filesystem, purse-first#177) surfaces as a load-time panic.
+type InitSmoke = internal.InitSmoke
+
+// InitSmokeArch declares one (arch, loader, skiplist) init-smoke target.
+type InitSmokeArch = internal.InitSmokeArch
+
+// InitSmokeConfig is the [init-smoke] table of dagnabit.toml.
+type InitSmokeConfig = internal.InitSmokeConfig
+
 // LevelMapper assigns names to topological heights and vice versa.
 // Height 0 is the lowest level (no internal dependencies).
 type LevelMapper = internal.LevelMapper
@@ -46,6 +59,11 @@ type PackageMover = internal.PackageMover
 // In ModeInitial, ComponentDepth MUST be 2 and nodes are interpreted as
 // <prefix>/<pkg>, producing <prefix>/<newLevel>/<pkg>.
 type Repositioner = internal.Repositioner
+
+// LoadInitSmokeConfig reads dir/dagnabit.toml and returns its [init-smoke]
+// table. A missing file yields ok=false with no error, so callers can tell
+// "no config" apart from "config with zero arches".
+var LoadInitSmokeConfig = internal.LoadInitSmokeConfig
 
 // ValidateTwoLayerLayout loads every package in the module and reports an
 // error if any package's path within the module has more than two
