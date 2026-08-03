@@ -45,9 +45,17 @@ let
   inherit
     (goPkgs.mkGoPkgs {
       src = self;
+      # extras are non-.go files the published (RFC 0001) go-pkgs source must
+      # still carry: manpages, plus any go:embed target. wasm_exec_strict.js is
+      # embedded by libs/dewey/internal/echo/dagnabit/init_smoke_run.go, so it
+      # must survive into go-pkgs-test or `nix build .#dagnabit` (built from that
+      # source) fails "pattern wasm_exec_strict.js: no matching files found"
+      # (purse-first#180). It is the only .js in the tree; the broad pattern
+      # matches the .1/.7 style and covers future go:embed .js.
       extras = [
         ".*\\.1$"
         ".*\\.7$"
+        ".*\\.js$"
       ];
     })
     go-pkgs

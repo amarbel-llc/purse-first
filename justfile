@@ -144,7 +144,7 @@ lint-dewey-self: build-go-gcl
 # Compile / generate artifacts.
 
 [group('build')]
-build: build-nix-gomod2nix build-nix
+build: build-nix-gomod2nix build-nix build-nix-dagnabit
 
 [group('build')]
 build-dev: build-go build-dewey build-dagnabit build-go-gcl
@@ -156,6 +156,18 @@ build-artifacts: build-purse-first build-purse-first-cli build-golangci-dewey bu
 [group('build')]
 build-nix:
     nix build
+
+# Build .#dagnabit from the RFC 0001 go-pkgs-test PUBLISHED source (mkGoModule
+# wires its src to go-pkgs-test), exercising cmd/dagnabit's `go:embed
+# wasm_exec_strict.js` against the published tree — the gap that let #180's embed
+# ship broken: a devshell `go build` sees the file on disk, but the published
+# source only carries it if gomod.nix's mkGoPkgs `extras` allowlists it. Cheap
+# when cached; catches a stray go:embed target missing from `extras`.
+#
+# nix-build dagnabit from the published go-pkgs-test source (embed guard)
+[group('build')]
+build-nix-dagnabit:
+    nix build {{ justfile_directory() }}#dagnabit --no-link
 
 # Nix-build the purse-first CLI package (result symlink)
 [group('build')]
