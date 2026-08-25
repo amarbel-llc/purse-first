@@ -177,6 +177,8 @@ in
 
     golangci-lint-dewey = golangciLintDewey;
 
+    dewey = mkDeweyBin "dewey";
+
     actx = mkDeweyBin "actx";
     defererr = mkDeweyBin "defererr";
     paramobj = mkDeweyBin "paramobj";
