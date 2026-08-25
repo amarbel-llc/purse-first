@@ -182,7 +182,7 @@ in
       };
     };
 
-    dagnabit = mkGoModule {
+    dagnabit = withManPage "dagnabit" (mkGoModule {
       pname = "dagnabit";
       version = purseFirstVersion;
       subPackages = [ "cmd/dagnabit" ];
@@ -195,13 +195,13 @@ in
       # --suffix (not --prefix): a user-provided ast-grep on PATH wins; the
       # wrapped store path is the fallback. cargo is intentionally NOT
       # wrapped — plain runtime-PATH expectation, like go. ast-grep comes
-      # from pkgs-master to match devenvs/rust.
+      # from pkgs-master to match devenvs/rust. The man page is compiled
+      # from doc/dagnabit.1.scd by withManPage (eng-manpages(7)).
       postInstall = ''
-        install -Dm644 $src/cmd/dagnabit/dagnabit.1 $out/share/man/man1/dagnabit.1
         wrapProgram $out/bin/dagnabit \
           --suffix PATH : ${goPkgs.lib.makeBinPath [ pkgs-master.ast-grep ]}
       '';
-    };
+    });
 
     golangci-lint-dewey = golangciLintDewey;
 
