@@ -105,19 +105,21 @@ a deliberate, purely cosmetic change in the name of one consistent look.
 
 ## Examples
 
-Go consumer, in-process (rows are positional against the declared columns):
+Go consumer, in-process (rows are positional against the declared columns).
+The renderer ships as the dewey package `mesa`
+(`code.linenisgreat.com/purse-first/libs/dewey/pkgs/mesa`):
 
-    t := deweytable.New().
-        Col("ID", deweytable.Flex).
-        Col("STATUS", deweytable.Pin).
-        Col("AGE", deweytable.Pin).
-        Legend(deweytable.Entry(deweytable.OK, "●", "attached")).
+    t := mesa.New().
+        Col("ID", mesa.Flex).
+        Col("STATUS", mesa.Pin).
+        Col("AGE", mesa.Pin, mesa.WithAlign(mesa.Right)).
+        Legend(mesa.Entry(mesa.OK, "●", "attached")).
         Empty("No sessions.")
     for _, s := range sessions {
         t.Row(
-            deweytable.Text(s.Key),
-            deweytable.Status(deweytable.OK, "attached", deweytable.WithBadge("🤡")),
-            deweytable.Text(s.Age),
+            mesa.Text(s.Key),
+            mesa.Status(mesa.OK, "attached", mesa.WithBadge("🤡")),
+            mesa.Text(s.Age),
         )
     }
     t.Render(os.Stdout)   // styled on TTY, plain on pipe
