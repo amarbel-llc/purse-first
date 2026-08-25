@@ -77,6 +77,34 @@ let
       ldflags = deweyLdflags;
     };
 
+  # Compile a tool's scdoc source (doc/<name>.1.scd) into a derivation
+  # carrying share/man/man1/<name>.1, per eng-manpages(7).
+  mkManPage =
+    name:
+    goPkgs.stdenvNoCC.mkDerivation {
+      pname = "${name}-doc";
+      version = purseFirstVersion;
+      src = ./doc;
+      nativeBuildInputs = [ goPkgs.scdoc ];
+      dontUnpack = true;
+      dontBuild = true;
+      installPhase = ''
+        mkdir -p $out/share/man/man1
+        scdoc < $src/${name}.1.scd > $out/share/man/man1/${name}.1
+      '';
+    };
+
+  # Join a binary with its man page so `nix build .#<name>` ships both.
+  withManPage =
+    name: bin:
+    goPkgs.symlinkJoin {
+      name = "${name}-${purseFirstVersion}";
+      paths = [
+        bin
+        (mkManPage name)
+      ];
+    };
+
   # The dewey custom golangci-lint binary: stock golangci-lint with
   # libs/dewey/gclplugin (module plugin) linked in — the pure-nix
   # replacement for `golangci-lint custom` (purse-first#134). The module
@@ -177,7 +205,7 @@ in
 
     golangci-lint-dewey = golangciLintDewey;
 
-    mesa = mkDeweyBin "mesa";
+    mesa = withManPage "mesa" (mkDeweyBin "mesa");
 
     actx = mkDeweyBin "actx";
     defererr = mkDeweyBin "defererr";
