@@ -10,7 +10,7 @@ date: 2026-08-25
 This specification defines an NDJSON stream that describes a tabular listing —
 its columns, styled rows, legend, and empty-state — independently of any
 rendering. A producer (in any language) emits the stream; a conformant renderer
-(the dewey table engine, reachable in-process in Go or as the `dewey table` CLI)
+(the mesa engine, reachable in-process in Go or as the `mesa` CLI)
 consumes it and produces a styled table on a TTY or plain tab-separated text on a
 pipe. Styling is carried semantically (a fixed severity vocabulary the renderer
 colors) rather than as terminal escapes, so layout, width negotiation, and color
@@ -248,13 +248,13 @@ through the compiler exists precisely so untrusted text cannot smuggle styling.
 ## Conformance Testing
 
 Conformance tests for this specification live in
-`zz-tests_bats/mesa_table.bats` and exercise the `dewey table` CLI, which reads
-a stream on stdin and renders to stdout. Run them with `just test-mesa` (part of
-the `just test` gate).
+`zz-tests_bats/mesa_table.bats` and exercise the `mesa` CLI, which reads a stream
+on stdin and renders to stdout. Run them with `just test-mesa` (part of the `just
+test` gate).
 
-The binary under test is injected via the `DEWEY_BIN` environment variable,
-falling back to `build/dewey` (`just build-dewey-cli`), so a re-implementation
-can point `DEWEY_BIN` at its own binary and run the identical suite.
+The binary under test is injected via the `MESA_BIN` environment variable,
+falling back to `build/mesa` (`just build-mesa-cli`), so a re-implementation can
+point `MESA_BIN` at its own binary and run the identical suite.
 
 ### Covered Requirements
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env bats
 #
-# RFC 0003 (List-Table NDJSON Protocol) conformance tests for the
-# `dewey table` renderer.
+# RFC 0003 (List-Table NDJSON Protocol) conformance tests for the `mesa`
+# renderer CLI.
 #
 # Deliberately does not load common.bash: that helper hard-requires
-# PURSE_FIRST_BIN at source time, and this lane only needs the dewey
+# PURSE_FIRST_BIN at source time, and this lane only needs the mesa
 # binary. Binary injection (RFC 0003 Conformance Testing): resolve the
-# binary from DEWEY_BIN, falling back to build/dewey (`just
-# build-dewey-cli`), so a future re-implementation runs the same suite.
+# binary from MESA_BIN, falling back to build/mesa (`just
+# build-mesa-cli`), so a future re-implementation runs the same suite.
 
 setup() {
   bats_load_library "bats-support"
@@ -17,9 +17,9 @@ setup() {
   # (SC2154), matching the other bats files in this directory.
   export output
 
-  DEWEY_BIN="${DEWEY_BIN:-$BATS_TEST_DIRNAME/../build/dewey}"
-  if [[ ! -x $DEWEY_BIN ]]; then
-    echo "error: $DEWEY_BIN is not built (run \`just build-dewey-cli\` or set DEWEY_BIN)" >&2
+  MESA_BIN="${MESA_BIN:-$BATS_TEST_DIRNAME/../build/mesa}"
+  if [[ ! -x $MESA_BIN ]]; then
+    echo "error: $MESA_BIN is not built (run \`just build-mesa-cli\` or set MESA_BIN)" >&2
     return 1
   fi
 
@@ -36,25 +36,25 @@ TAB=$'\t'
 
 @test "§8: a first record lacking columns is a protocol error" {
   mk '{"cells":["x"]}'
-  run "$DEWEY_BIN" table --plain <"$infile"
+  run "$MESA_BIN" --plain <"$infile"
   assert_failure
 }
 
 @test "§8: an empty columns list is a protocol error" {
   mk '{"columns":[]}'
-  run "$DEWEY_BIN" table --plain <"$infile"
+  run "$MESA_BIN" --plain <"$infile"
   assert_failure
 }
 
 @test "§3: a role that is not pin/flex is a protocol error" {
   mk '{"columns":[{"name":"A","role":"bogus"}]}'
-  run "$DEWEY_BIN" table --plain <"$infile"
+  run "$MESA_BIN" --plain <"$infile"
   assert_failure
 }
 
 @test "§4: a row whose cell count differs from the column count is a protocol error" {
   mk '{"columns":[{"name":"A","role":"pin"}]}' '{"cells":["a","b"]}'
-  run "$DEWEY_BIN" table --plain <"$infile"
+  run "$MESA_BIN" --plain <"$infile"
   assert_failure
 }
 
@@ -62,7 +62,7 @@ TAB=$'\t'
   mk '{"columns":[{"name":"ID","role":"pin"},{"name":"AGE","role":"pin"}]}' \
     '{"cells":["api","2m"]}'
   # No flag: stdout is a pipe under `run`, so mode selection picks plain.
-  run "$DEWEY_BIN" table <"$infile"
+  run "$MESA_BIN" <"$infile"
   assert_success
   assert_line --index 0 "ID${TAB}AGE"
   assert_line --index 1 "api${TAB}2m"
@@ -72,7 +72,7 @@ TAB=$'\t'
 
 @test "§7.1/§7.2: --force-style emits ANSI and a border to a pipe" {
   mk '{"columns":[{"name":"ID","role":"pin"}]}' '{"cells":["api"]}'
-  run "$DEWEY_BIN" table --force-style <"$infile"
+  run "$MESA_BIN" --force-style <"$infile"
   assert_success
   assert_output --partial "$ESC["
   assert_output --partial "╭"
@@ -80,7 +80,7 @@ TAB=$'\t'
 
 @test "§7.4: an empty table prints its empty text and exits 0" {
   mk '{"columns":[{"name":"ID","role":"pin"}],"empty":"no sessions"}'
-  run "$DEWEY_BIN" table --plain <"$infile"
+  run "$MESA_BIN" --plain <"$infile"
   assert_success
   assert_output "no sessions"
 }
@@ -88,7 +88,7 @@ TAB=$'\t'
 @test "§5: an unknown severity degrades to neutral without aborting" {
   mk '{"columns":[{"name":"A","role":"pin"}]}' \
     '{"cells":[{"spans":[{"text":"hi","sev":"wat"}]}]}'
-  run "$DEWEY_BIN" table --plain <"$infile"
+  run "$MESA_BIN" --plain <"$infile"
   assert_success
   assert_output --partial "hi"
 }
@@ -96,7 +96,7 @@ TAB=$'\t'
 @test "Security: an embedded escape in cell text is stripped from plain output" {
   # \u001b[31m is an ESC + SGR sequence encoded in the JSON string.
   mk '{"columns":[{"name":"A","role":"pin"}]}' '{"cells":["a\u001b[31mb"]}'
-  run "$DEWEY_BIN" table --plain <"$infile"
+  run "$MESA_BIN" --plain <"$infile"
   assert_success
   refute_output --partial "$ESC"
   assert_output --partial "a[31mb"

@@ -58,7 +58,7 @@ this file.
   RFC 0003). Builds a `Table` of styled cells and renders it (plain
   TAB-separated on a pipe, styled lipgloss on a TTY), or (de)serializes
   it over an NDJSON stream so non-Go producers can feed the renderer
-  out-of-process. New; the `dewey table` CLI, the flex shrink/ellipsize
+  out-of-process. New; the `mesa` CLI, the flex shrink/ellipsize
   width algorithm, and consumer migrations are still pending.
 
 ## cmd/

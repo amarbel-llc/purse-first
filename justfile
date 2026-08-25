@@ -147,7 +147,7 @@ lint-dewey-self: build-go-gcl
 build: build-nix-gomod2nix build-nix build-nix-dagnabit
 
 [group('build')]
-build-dev: build-go build-dewey build-dagnabit build-go-gcl
+build-dev: build-go build-dewey build-dagnabit build-mesa-cli build-go-gcl
 
 [group('build')]
 build-artifacts: build-purse-first build-purse-first-cli build-golangci-dewey build-nix-gomod2nix-gcl
@@ -272,13 +272,13 @@ build-nix-gomod2nix-gcl:
 build-dagnabit:
     {{ cmd_nix_dev }} go build -o {{ justfile_directory() }}/build/dagnabit ./cmd/dagnabit
 
-# Build the dewey CLI (`dewey table`) into build/ for the mesa BATS
-# conformance lane (RFC 0003). Mirrors build-dagnabit.
+# Build the mesa CLI into build/ for the mesa BATS conformance lane
+# (RFC 0003). Mirrors build-dagnabit.
 #
-# build the dewey CLI into build/dewey
+# build the mesa CLI into build/mesa
 [group('build')]
-build-dewey-cli:
-    {{ cmd_nix_dev }} go build -o {{ justfile_directory() }}/build/dewey ./libs/dewey/cmd/dewey
+build-mesa-cli:
+    {{ cmd_nix_dev }} go build -o {{ justfile_directory() }}/build/mesa ./libs/dewey/cmd/mesa
 
 # ──── test ──────────────────────────────────────────────────────────
 # Post-build: run test suites against built artifacts and source.
@@ -365,10 +365,10 @@ test-dagnabit-rust: build-dagnabit
 # `dewey table` renderer (mesa). Uses the go-built build/dewey binary,
 # injected via DEWEY_BIN so a re-implementation can run the same suite.
 #
-# run the mesa / dewey-table BATS conformance lane
+# run the mesa BATS conformance lane
 [group('post-build')]
-test-mesa: build-dewey-cli
-    DEWEY_BIN={{ justfile_directory() }}/build/dewey {{ cmd_nix_dev }} bats --tap zz-tests_bats/mesa_table.bats
+test-mesa: build-mesa-cli
+    MESA_BIN={{ justfile_directory() }}/build/mesa {{ cmd_nix_dev }} bats --tap zz-tests_bats/mesa_table.bats
 
 # init-smoke run lane (purse-first#180): build + instantiate the generated
 # libs/dewey/initsmoke/ per-arch tests under their strict loaders (js/wasm =

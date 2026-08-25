@@ -1,7 +1,7 @@
 ---
 status: proposed
 date: 2026-08-25
-promotion-criteria: one Go consumer (e.g. `clown list` or `ringmaster ls`) and one Rust consumer (e.g. `posh list` or `piggy list`) both render through the dewey table renderer over the shared row protocol, replacing their in-tree table code; NDJSON is the single `--json` framing across the Go and Rust consumers; `sc list`'s rich surface (composite status cell, one flex column, legend footer) is reproduced by the renderer with no `sc`-local table code remaining.
+promotion-criteria: one Go consumer (e.g. `clown list` or `ringmaster ls`) and one Rust consumer (e.g. `posh list` or `piggy list`) both render through the mesa renderer over the shared row protocol, replacing their in-tree table code; NDJSON is the single `--json` framing across the Go and Rust consumers; `sc list`'s rich surface (composite status cell, one flex column, legend footer) is reproduced by the renderer with no `sc`-local table code remaining.
 ---
 
 # List-table renderer + NDJSON row protocol (dewey)
@@ -128,7 +128,7 @@ Rust consumer, out-of-process — emit NDJSON, pipe to the dewey formatter. The
 first record is the header, then one record per row; a bare string cell is
 shorthand for a neutral span (see RFC 0003 §4):
 
-    posh list --format ndjson | dewey table
+    posh list --format ndjson | mesa
 
     {"columns":[{"name":"NAME","role":"flex"},{"name":"STATUS","role":"pin"}],"empty":"no sessions"}
     {"cells":["api",{"spans":[{"text":"●","sev":"ok"},{"text":" attached"},{"text":" (current)","sev":"muted"}]}]}
