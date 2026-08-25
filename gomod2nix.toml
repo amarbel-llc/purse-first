@@ -169,7 +169,8 @@ schema = 3
     hash = 'sha256-RHsRT2EZ1nDOElxAK+6/DC9XAaGVjDTgPvRh3pyCfY4='
     goVersion = '1.18'
     vendorPackages = [
-      'github.com/charmbracelet/lipgloss'
+      'github.com/charmbracelet/lipgloss',
+      'github.com/charmbracelet/lipgloss/table'
     ]
 
   [mod.'github.com/charmbracelet/x/ansi']

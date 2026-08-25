@@ -69,6 +69,24 @@ func TestRenderStyledHasBorderAndContent(t *testing.T) {
 	}
 }
 
+func TestRenderStyledForcedEmitsANSI(t *testing.T) {
+	tbl := New().
+		Col("ID", Pin).
+		Col("STATUS", Pin).
+		Row(Text("api"), Status(OK, "attached"))
+
+	var buf bytes.Buffer
+	if err := tbl.Render(&buf, ForceStyle()); err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	// Forcing style over a non-terminal buffer must still emit ANSI (the
+	// bold header alone guarantees an escape), otherwise `--force-style`
+	// through a pipe would silently produce plain text.
+	if !strings.Contains(buf.String(), "\x1b[") {
+		t.Errorf("forced-style output has no ANSI escape:\n%q", buf.String())
+	}
+}
+
 func TestRenderRejectsNoColumns(t *testing.T) {
 	tbl := New()
 	if err := tbl.Render(&bytes.Buffer{}, ForcePlain()); err == nil {

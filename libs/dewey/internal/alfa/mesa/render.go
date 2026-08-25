@@ -9,6 +9,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
+	"github.com/muesli/termenv"
 
 	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/primordial"
 )
@@ -103,36 +104,51 @@ func writeTabRow(w io.Writer, cells []string) error {
 	return err
 }
 
+// newRenderer builds a lipgloss renderer bound to w. When style is forced
+// (e.g. `--force-style` piped to a file) the writer is not a terminal, so
+// lipgloss's own detection would strip color; we pin an explicit ANSI256
+// profile then so severity colors still reach the output (RFC 0003 §7.2).
+// On the auto path w is already a terminal, so plain detection is correct.
+func newRenderer(w io.Writer, forced bool) *lipgloss.Renderer {
+	r := lipgloss.NewRenderer(w)
+	if forced {
+		r.SetColorProfile(termenv.ANSI256)
+	}
+	return r
+}
+
 func (t *Table) renderStyled(w io.Writer, cfg renderConfig) error {
+	r := newRenderer(w, cfg.forceStyle)
+
 	if len(t.Rows) == 0 {
 		if t.EmptyText == "" {
 			return nil
 		}
-		out := lipgloss.NewStyle().Foreground(mutedColor).Render(sanitize(t.EmptyText))
+		out := r.NewStyle().Foreground(mutedColor).Render(sanitize(t.EmptyText))
 		_, err := fmt.Fprintln(w, out)
 		return err
 	}
 
 	tbl := table.New().
 		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(borderColor)).
+		BorderStyle(r.NewStyle().Foreground(borderColor)).
 		Headers(t.columnNames()...)
 
 	for _, row := range t.Rows {
 		cells := make([]string, len(row.Cells))
 		for i, c := range row.Cells {
-			cells[i] = t.renderCell(c)
+			cells[i] = t.renderCell(r, c)
 		}
 		tbl.Row(cells...)
 	}
 
 	columns := t.Columns
-	tbl = tbl.StyleFunc(func(r, c int) lipgloss.Style {
-		st := lipgloss.NewStyle().Padding(0, 1)
-		if r == table.HeaderRow {
+	tbl = tbl.StyleFunc(func(row, col int) lipgloss.Style {
+		st := r.NewStyle().Padding(0, 1)
+		if row == table.HeaderRow {
 			return st.Bold(true)
 		}
-		if c >= 0 && c < len(columns) && columns[c].Align == Right {
+		if col >= 0 && col < len(columns) && columns[col].Align == Right {
 			st = st.Align(lipgloss.Right)
 		}
 		return st
@@ -145,21 +161,21 @@ func (t *Table) renderStyled(w io.Writer, cfg renderConfig) error {
 		return err
 	}
 	if len(t.Legends) > 0 {
-		return t.renderLegend(w)
+		return t.renderLegend(r, w)
 	}
 	return nil
 }
 
-func (t *Table) renderCell(c Cell) string {
+func (t *Table) renderCell(r *lipgloss.Renderer, c Cell) string {
 	var sb strings.Builder
 	for _, sp := range c.Spans {
-		sb.WriteString(t.styleSpan(sp))
+		sb.WriteString(t.styleSpan(r, sp))
 	}
 	return sb.String()
 }
 
-func (t *Table) styleSpan(sp Span) string {
-	st := lipgloss.NewStyle()
+func (t *Table) styleSpan(r *lipgloss.Renderer, sp Span) string {
+	st := r.NewStyle()
 	if color := t.colorFor(sp.Sev); color != nil {
 		st = st.Foreground(color)
 	}
@@ -186,10 +202,10 @@ func (t *Table) colorFor(sev Severity) lipgloss.TerminalColor {
 	return sev.defaultColor()
 }
 
-func (t *Table) renderLegend(w io.Writer) error {
+func (t *Table) renderLegend(r *lipgloss.Renderer, w io.Writer) error {
 	parts := make([]string, len(t.Legends))
 	for i, e := range t.Legends {
-		glyph := t.styleSpan(Span{Text: e.Glyph, Sev: e.Sev})
+		glyph := t.styleSpan(r, Span{Text: e.Glyph, Sev: e.Sev})
 		parts[i] = glyph + " " + sanitize(e.Label)
 	}
 	_, err := fmt.Fprintln(w, strings.Join(parts, "  "))
