@@ -248,25 +248,27 @@ through the compiler exists precisely so untrusted text cannot smuggle styling.
 ## Conformance Testing
 
 Conformance tests for this specification live in
-`libs/dewey/zz-tests_bats/` and exercise the `dewey table` CLI, which reads a
-stream on stdin and renders to stdout.
+`zz-tests_bats/mesa_table.bats` and exercise the `dewey table` CLI, which reads
+a stream on stdin and renders to stdout. Run them with `just test-mesa` (part of
+the `just test` gate).
 
-Tests use binary injection via `bats-emo`:
-
-    require_bin DEWEY_TABLE dewey
+The binary under test is injected via the `DEWEY_BIN` environment variable,
+falling back to `build/dewey` (`just build-dewey-cli`), so a re-implementation
+can point `DEWEY_BIN` at its own binary and run the identical suite.
 
 ### Covered Requirements
 
-| Requirement | Test File | Description |
-|-------------|-----------|-------------|
-| §1, header MUST be first | `table_protocol.bats` | first record lacking `columns` exits non-zero |
-| §3, `role` MUST be pin/flex | `table_protocol.bats` | invalid role is a protocol error |
-| §4, `cells` length MUST equal columns | `table_protocol.bats` | row length mismatch exits non-zero |
-| §7.1, mode selection | `table_render.bats` | piped output has no ANSI; forced-style has ANSI |
-| §7.3, plain is TAB-separated | `table_render.bats` | piped rows are `\t`-joined cell texts, no border |
-| §7.4, empty exit 0 | `table_render.bats` | header-only stream prints `empty` and exits 0 |
-| §5, unknown severity degrades | `table_render.bats` | unknown `sev` renders without aborting |
-| Security, escape sanitization | `table_security.bats` | a span with an embedded ESC does not emit a raw escape to a TTY |
+| Requirement | Description |
+|-------------|-------------|
+| §8, header MUST be first | a first record lacking `columns` exits non-zero |
+| §8, columns MUST be non-empty | an empty `columns` list exits non-zero |
+| §3, `role` MUST be pin/flex | an invalid role is a protocol error |
+| §4, `cells` length MUST equal columns | a row-length mismatch exits non-zero |
+| §7.1/§7.3, mode selection + plain form | piped output is TAB-separated with no border and no ANSI |
+| §7.1/§7.2, forced style | `--force-style` emits ANSI and a border to a pipe |
+| §7.4, empty exit 0 | a header-only stream prints `empty` and exits 0 |
+| §5, unknown severity degrades | an unknown `sev` renders without aborting |
+| Security, escape sanitization | an embedded ESC in cell text is stripped from output |
 
 ## Compatibility
 
