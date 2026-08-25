@@ -66,16 +66,25 @@ surveyed table without the emitter styling anything:
 - **Column specs** — name, alignment, and a role flag: `pin-to-content` vs
   `flex`, plus a shrink-priority ordering among flex columns (posh shrinks
   ACTIVITY → ECHO → STARTED IN).
-- **Semantic cell styling** — a *state token* (e.g. `active` / `detached` /
-  `stale`), never an ANSI code. The renderer owns the token → color mapping, so
-  Rust emitters and plain-tabwriter Go emitters stay colorless.
-- **Composite status cell** — glyph + count + optional marker (`(current)`,
-  `main`, `tombstone`). `sc list` and `posh list` both fold multiple signals into
-  one status column, so a cell must be more than a plain string.
+- **Semantic cell styling** — a *severity* from a fixed vocabulary
+  (`neutral` / `muted` / `ok` / `accent` / `warn` / `error` / `special`), never an
+  ANSI code. The renderer owns the severity → color mapping, so Rust emitters and
+  plain-tabwriter Go emitters stay colorless; a consumer maps its domain states
+  onto the vocabulary (`active` → `ok`, `stale` → `error`, remote rows → `special`).
+  A per-table `palette` override is the escape hatch when a tool needs a color the
+  vocabulary doesn't cover.
+- **Composite status cell** — glyph + count/badge + optional marker (`(current)`,
+  `main`, `tombstone`), built from ordinary styled spans so the wire keeps a single
+  cell shape. `sc list` and `posh list` both fold multiple signals into one status
+  column, so a cell is a sequence of spans, not a plain string.
 - **Footer / legend** — an optional status-key legend row (both `sc` and `posh`
   render one).
 - **Empty-state string** — supplied per table; the surveyed commands all differ
   ("No sessions." / "no jobs" / "no sessions found in {dir}" / silent).
+
+The normative wire schema — field names, types, MUST/SHOULD rules, and rendering
+conformance — is specified in [RFC 0003](../rfcs/0003-list-table-ndjson-protocol.md).
+This section describes the shape and intent; that RFC is the contract.
 
 ### Width and glyph correctness
 
@@ -86,38 +95,42 @@ declared priority down to a per-column minimum.
 
 ### TTY switching and machine output
 
-The renderer detects a TTY and renders the styled table for a terminal, a plain
-tab-separated form for a pipe. **NDJSON is the single machine-output framing**
-for `--json` across every consumer — replacing `ringmaster ls`'s array framing
-and matching `clown list` / `piggy list`, so downstream tools parse one shape.
+The renderer detects a TTY and renders the styled table for a terminal (bold
+header, severity colors, and a rounded border by default), a plain tab-separated
+form for a pipe. **NDJSON is the single machine-output framing** for `--json`
+across every consumer — replacing `ringmaster ls`'s array framing and matching
+`clown list` / `piggy list`, so downstream tools parse one shape. The default
+rounded border gives `clown list` / `ringmaster ls` a border they lack today —
+a deliberate, purely cosmetic change in the name of one consistent look.
 
 ## Examples
 
-Go consumer, in-process:
+Go consumer, in-process (rows are positional against the declared columns):
 
-    tbl := deweytable.New().
+    t := deweytable.New().
         Col("ID", deweytable.Flex).
-        Col("STATUS", deweytable.PinContent).
-        Col("AGE", deweytable.PinContent).
-        Col("DESCRIPTION", deweytable.Flex).
+        Col("STATUS", deweytable.Pin).
+        Col("AGE", deweytable.Pin).
+        Legend(deweytable.Entry(deweytable.OK, "●", "attached")).
         Empty("No sessions.")
     for _, s := range sessions {
-        tbl.Row(deweytable.Cells{
-            "ID":     deweytable.Text(s.Key),
-            "STATUS": deweytable.Status(s.StateToken, s.ClownCount),
-            "AGE":    deweytable.Text(s.Age),
-        })
+        t.Row(
+            deweytable.Text(s.Key),
+            deweytable.Status(deweytable.OK, "attached", deweytable.WithBadge("🤡")),
+            deweytable.Text(s.Age),
+        )
     }
-    fmt.Fprint(os.Stdout, tbl.Render())   // styled on TTY, plain on pipe
+    t.Render(os.Stdout)   // styled on TTY, plain on pipe
 
-Rust consumer, out-of-process — emit NDJSON, pipe to the dewey formatter:
+Rust consumer, out-of-process — emit NDJSON, pipe to the dewey formatter. The
+first record is the header, then one record per row; a bare string cell is
+shorthand for a neutral span (see RFC 0003 §4):
 
-    # header record, then one row record per session
     posh list --format ndjson | dewey table
 
-    {"cols":[{"name":"NAME","role":"flex"},{"name":"STATUS","role":"pin"}]}
-    {"NAME":"api","STATUS":{"state":"attached","marker":"(current)"}}
-    {"NAME":"web","STATUS":{"state":"stale"}}
+    {"columns":[{"name":"NAME","role":"flex"},{"name":"STATUS","role":"pin"}],"empty":"no sessions"}
+    {"cells":["api",{"spans":[{"text":"●","sev":"ok"},{"text":" attached"},{"text":" (current)","sev":"muted"}]}]}
+    {"cells":["web",{"spans":[{"text":"●","sev":"error"},{"text":" stale"}]}]}
 
 The same NDJSON stream is what `posh list --json` returns directly to a caller
 that wants data rather than a table.
@@ -128,13 +141,14 @@ that wants data rather than a table.
   renders a filesystem tree of the password store (via `tree(1)` or a custom
   Rust tree renderer), not a row/column table. Tree rendering is a separate
   concern; forcing it through a tabular row protocol would be a mis-fit.
-- **`--watch` ownership is unresolved.** `sc list`'s bubbletea alt-screen loop is
-  the one surveyed behavior that is not a stateless NDJSON → table transform. If
-  the renderer stays one-shot, `sc` keeps its own watch harness and calls the
-  renderer per frame; if the renderer owns watch, the NDJSON source must become
-  repeatable or streaming. This decision changes whether "Rust emits NDJSON once
-  to a formatter" is sufficient or the formatter must be long-lived, so it is
-  called out rather than assumed.
+- **`--watch` is deferred, not owned by the renderer yet.** `sc list`'s bubbletea
+  alt-screen loop is the one surveyed behavior that is not a stateless
+  NDJSON → table transform. Decision: the renderer ships **one-shot first** —
+  `Render` stays a pure `(Table, width) → output` transform — and `sc` keeps its
+  own watch harness, calling the renderer per frame. A renderer-owned watch mode
+  (repeatedly pulling a repeatable/streaming NDJSON source and repainting the
+  alt-screen) is a planned follow-on; the one-shot API is deliberately shaped so
+  that mode can wrap it without changing the core.
 - **Rust row structs are not yet serializable.** `posh`'s row data and piggy-ids'
   `Classification` build their JSON by hand today; the NDJSON path presumes real
   `serde::Serialize` row types feeding the stream, which is prerequisite work on
@@ -150,6 +164,10 @@ that wants data rather than a table.
 
 ## More Information
 
+- [RFC 0003 — List-Table NDJSON Protocol](../rfcs/0003-list-table-ndjson-protocol.md):
+  the normative wire contract for this feature — record schema, severity
+  vocabulary, markup sugar, and rendering conformance. This FDR is the feature
+  record; that RFC is the interface spec.
 - [FDR 0010 — Operation Viewport](0010-operation-viewport.md): the sibling
   dewey-side Charmbracelet primitive; same consolidation pattern for progress
   UX. This FDR is the tabular-listing counterpart.
