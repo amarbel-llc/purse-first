@@ -54,6 +54,12 @@ this file.
   (Cargo.toml-only moves gated by `cargo metadata`), glob-facade
   exporter (`pub use <name>_internal::*;`), and renamer (ast-grep
   source rewrites gated by `cargo check`).
+- `*/mesa` — list-table renderer + NDJSON row protocol (FDR 0015 /
+  RFC 0003). Builds a `Table` of styled cells and renders it (plain
+  TAB-separated on a pipe, styled lipgloss on a TTY), or (de)serializes
+  it over an NDJSON stream so non-Go producers can feed the renderer
+  out-of-process. New; the `dewey table` CLI, the flex shrink/ellipsize
+  width algorithm, and consumer migrations are still pending.
 
 ## cmd/
 
