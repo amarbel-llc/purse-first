@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/muesli/termenv"
+	"golang.org/x/term"
 
 	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/primordial"
 )
@@ -117,6 +118,21 @@ func newRenderer(w io.Writer, forced bool) *lipgloss.Renderer {
 	return r
 }
 
+// resolveWidth is the total width the styled table is allowed. An explicit
+// Width() wins; otherwise, if the writer is a terminal, its detected width
+// is used; otherwise 0 (unconstrained → content-sized).
+func (t *Table) resolveWidth(w io.Writer, cfg renderConfig) int {
+	if cfg.width > 0 {
+		return cfg.width
+	}
+	if f, ok := w.(*os.File); ok && primordial.IsTTY(f) {
+		if tw, _, err := term.GetSize(int(f.Fd())); err == nil && tw > 0 {
+			return tw
+		}
+	}
+	return 0
+}
+
 func (t *Table) renderStyled(w io.Writer, cfg renderConfig) error {
 	r := newRenderer(w, cfg.forceStyle)
 
@@ -129,15 +145,31 @@ func (t *Table) renderStyled(w io.Writer, cfg renderConfig) error {
 		return err
 	}
 
+	// Width negotiation (RFC 0003 §7.2): size columns to content, then
+	// shrink Flex columns to fit the available width and truncate the
+	// overflow. lipgloss then content-sizes each column to the width we
+	// leave it, so we do not set an overall table width.
+	natural := t.naturalWidths()
+	target := t.targetWidths(natural, t.resolveWidth(w, cfg))
+
+	headers := make([]string, len(t.Columns))
+	for c := range t.Columns {
+		headers[c] = truncateHeader(t.Columns[c].Name, target[c])
+	}
+
 	tbl := table.New().
 		Border(lipgloss.RoundedBorder()).
 		BorderStyle(r.NewStyle().Foreground(borderColor)).
-		Headers(t.columnNames()...)
+		Headers(headers...)
 
 	for _, row := range t.Rows {
 		cells := make([]string, len(row.Cells))
-		for i, c := range row.Cells {
-			cells[i] = t.renderCell(r, c)
+		for c, cell := range row.Cells {
+			spans := cell.Spans
+			if target[c] < natural[c] {
+				spans = truncateSpansToWidth(spans, target[c])
+			}
+			cells[c] = t.renderCell(r, Cell{Spans: spans})
 		}
 		tbl.Row(cells...)
 	}
@@ -153,9 +185,6 @@ func (t *Table) renderStyled(w io.Writer, cfg renderConfig) error {
 		}
 		return st
 	})
-	if cfg.width > 0 {
-		tbl = tbl.Width(cfg.width)
-	}
 
 	if _, err := fmt.Fprintln(w, tbl.String()); err != nil {
 		return err
