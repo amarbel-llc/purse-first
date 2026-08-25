@@ -57,6 +57,7 @@ The flake exposes these `packages.<system>` outputs (see `nix flake show`):
 ```sh
 nix build .#purse-first              # the purse-first CLI
 nix build .#dagnabit                 # libs/dewey rename/export tool
+nix build .#dewey                    # dewey CLI (`dewey table`: mesa list-table renderer)
 nix build .#actx                     # dewey static analyzer
 nix build .#defererr                 # dewey static analyzer
 nix build .#paramobj                 # dewey static analyzer
