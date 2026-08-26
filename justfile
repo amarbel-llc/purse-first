@@ -280,6 +280,31 @@ build-dagnabit:
 build-mesa-cli:
     {{ cmd_nix_dev }} go build -o {{ justfile_directory() }}/build/mesa ./libs/dewey/cmd/mesa
 
+# Demo mesa's flex-column wrap-vs-truncate at the AUTOMATIC terminal
+# width: mesa reads your terminal size (and auto-styles on a tty), so run
+# this in a real terminal — resize the window and re-run to watch the
+# DESCRIPTION column reflow. Builds a fresh mesa first.
+#
+# demo mesa flex-column wrap vs truncate at the terminal width
+[group('explore')]
+explore-mesa-wrap-demo: build-mesa-cli
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mesa={{ justfile_directory() }}/build/mesa
+    desc='migrate the list renderer onto mesa, verify the styled output wraps cleanly across multiple lines, and confirm the border spans the full multi-line row height without artifacts'
+    row1="{\"cells\":[\"keen-aspen\",\"$desc\"]}"
+    row2='{"cells":["firm-poplar","short one"]}'
+    trunc='{"columns":[{"name":"SESSION","role":"pin"},{"name":"DESCRIPTION","role":"flex"}]}'
+    wrap='{"columns":[{"name":"SESSION","role":"pin"},{"name":"DESCRIPTION","role":"flex","wrap":true}]}'
+    cols=$(tput cols 2>/dev/null || echo '?')
+    echo "(rendering at your terminal width: ${cols} columns — resize and re-run to see it reflow)"
+    echo
+    echo '=== TRUNCATE (current default) ==='
+    printf '%s\n' "$trunc" "$row1" "$row2" | "$mesa"
+    echo
+    echo '=== WRAP ("wrap": true on the flex column) ==='
+    printf '%s\n' "$wrap" "$row1" "$row2" | "$mesa"
+
 # ──── test ──────────────────────────────────────────────────────────
 # Post-build: run test suites against built artifacts and source.
 

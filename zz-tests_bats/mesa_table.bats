@@ -101,3 +101,13 @@ TAB=$'\t'
   refute_output --partial "$ESC"
   assert_output --partial "a[31mb"
 }
+
+@test "§7.2: a flex column with wrap:true wraps overflow instead of ellipsizing" {
+  mk '{"columns":[{"name":"A","role":"pin"},{"name":"B","role":"flex","wrap":true}]}' \
+    '{"cells":["x","alpha bravo charlie delta echo foxtrot golf hotel"]}'
+  run "$MESA_BIN" --force-style --width 30 <"$infile"
+  assert_success
+  # the tail word survives (not truncated) and no ellipsis is emitted
+  assert_output --partial "hotel"
+  refute_output --partial "…"
+}

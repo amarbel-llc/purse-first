@@ -23,8 +23,9 @@ type Column struct {
 	Name           string
 	Role           Role
 	Align          Align
-	ShrinkPriority int // among Flex columns: lower shrinks first
-	MinWidth       int // Flex floor before ellipsizing (0 = renderer default)
+	ShrinkPriority int  // among Flex columns: lower shrinks first
+	MinWidth       int  // Flex floor before ellipsizing (0 = renderer default)
+	Wrap           bool // Flex: wrap content across lines instead of ellipsizing
 }
 
 // LegendEntry is one status-key row rendered in the footer.
@@ -67,6 +68,11 @@ func Shrink(priority int) ColOpt { return func(c *Column) { c.ShrinkPriority = p
 
 // MinWidth sets a Flex column's minimum width before ellipsizing.
 func MinWidth(n int) ColOpt { return func(c *Column) { c.MinWidth = n } }
+
+// Wrap makes a Flex column wrap its content across multiple lines to fit its
+// width, instead of ellipsizing the overflow. The row grows as tall as its
+// tallest wrapped cell.
+func Wrap() ColOpt { return func(c *Column) { c.Wrap = true } }
 
 // Col appends a column.
 func (t *Table) Col(name string, role Role, opts ...ColOpt) *Table {

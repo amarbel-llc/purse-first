@@ -87,6 +87,37 @@ func TestRenderStyledForcedEmitsANSI(t *testing.T) {
 	}
 }
 
+func TestRenderStyledWrapVsTruncate(t *testing.T) {
+	long := "alpha bravo charlie delta echo foxtrot golf hotel india juliet"
+
+	wrapT := New().Col("ID", Pin).Col("DESC", Flex, Wrap()).Row(Text("x"), Text(long))
+	var wbuf bytes.Buffer
+	if err := wrapT.Render(&wbuf, ForceStyle(), Width(30)); err != nil {
+		t.Fatalf("wrap render: %v", err)
+	}
+	wout := wbuf.String()
+	if !strings.Contains(wout, "juliet") {
+		t.Errorf("wrap dropped the tail (should keep full text):\n%s", wout)
+	}
+	if strings.Contains(wout, "…") {
+		t.Errorf("wrap should not ellipsize:\n%s", wout)
+	}
+
+	truncT := New().Col("ID", Pin).Col("DESC", Flex).Row(Text("x"), Text(long))
+	var tbuf bytes.Buffer
+	if err := truncT.Render(&tbuf, ForceStyle(), Width(30)); err != nil {
+		t.Fatalf("truncate render: %v", err)
+	}
+	tout := tbuf.String()
+	if !strings.Contains(tout, "…") {
+		t.Errorf("truncate should ellipsize:\n%s", tout)
+	}
+	if strings.Count(wout, "\n") <= strings.Count(tout, "\n") {
+		t.Errorf("wrap (%d lines) should be taller than truncate (%d lines)",
+			strings.Count(wout, "\n"), strings.Count(tout, "\n"))
+	}
+}
+
 func TestRenderRejectsNoColumns(t *testing.T) {
 	tbl := New()
 	if err := tbl.Render(&bytes.Buffer{}, ForcePlain()); err == nil {

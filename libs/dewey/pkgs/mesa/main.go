@@ -129,6 +129,11 @@ var WithGlyph = internal.WithGlyph
 // WithMarker appends a dim marker after the label (e.g. "(current)").
 var WithMarker = internal.WithMarker
 
+// Wrap makes a Flex column wrap its content across multiple lines to fit its
+// width, instead of ellipsizing the overflow. The row grows as tall as its
+// tallest wrapped cell.
+var Wrap = internal.Wrap
+
 const (
 	Accent  = internal.Accent
 	Error   = internal.Error

@@ -63,6 +63,27 @@ func TestEncodeDisablesHTMLEscaping(t *testing.T) {
 	}
 }
 
+func TestWrapColumnRoundTrips(t *testing.T) {
+	orig := New().Col("A", Pin).Col("B", Flex, Wrap()).Row(Text("x"), Text("y"))
+	var buf bytes.Buffer
+	if err := EncodeStream(&buf, orig); err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+	if !strings.Contains(buf.String(), `"wrap":true`) {
+		t.Errorf("wrap flag not encoded:\n%s", buf.String())
+	}
+	dec, err := DecodeStream(strings.NewReader(buf.String()))
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if !dec.Columns[1].Wrap {
+		t.Errorf("wrap column did not round-trip")
+	}
+	if dec.Columns[0].Wrap {
+		t.Errorf("non-wrap column gained wrap")
+	}
+}
+
 func TestDecodeStringCellShorthand(t *testing.T) {
 	in := `{"columns":[{"name":"A","role":"pin"}]}
 {"cells":["hi"]}

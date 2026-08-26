@@ -85,6 +85,9 @@ The header record is distinguished from a row record by the presence of
 - `min` (integer ≥ 0, OPTIONAL) — minimum width a `flex` column shrinks to before
   ellipsizing. When omitted the renderer's default floor applies. Ignored for
   `pin` columns.
+- `wrap` (boolean, OPTIONAL, default `false`) — when true, a `flex` column whose
+  content overflows its width wraps across multiple lines instead of ellipsizing
+  (§7.2). Ignored for `pin` columns.
 
 ### 4. Row record
 
@@ -174,10 +177,12 @@ On a TTY the renderer MUST:
 Width negotiation SHOULD proceed as: `pin` columns sized to the wcwidth of their
 widest cell (header included); remaining terminal width distributed to `flex`
 columns; when width is insufficient, `flex` columns shrink in ascending `shrink`
-order down to `min`, and content exceeding a column's width is truncated with a
-trailing U+2026 (`…`). All width measurement MUST be wcwidth-aware (East-Asian
-width and zero-width combining marks) so that composed glyphs and CJK text stay
-column-aligned.
+order down to `min`. Content that still exceeds a column's width is, by default,
+truncated with a trailing U+2026 (`…`); a `flex` column with `wrap: true` (§3)
+instead wraps its content across multiple lines to fit, and the row grows to the
+height of its tallest cell (other cells top-align). All width measurement MUST be
+wcwidth-aware (East-Asian width and zero-width combining marks) so that composed
+glyphs and CJK text stay column-aligned.
 
 #### 7.3 Plain output
 

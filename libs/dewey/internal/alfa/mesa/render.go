@@ -165,6 +165,13 @@ func (t *Table) renderStyled(w io.Writer, cfg renderConfig) error {
 	for _, row := range t.Rows {
 		cells := make([]string, len(row.Cells))
 		for c, cell := range row.Cells {
+			if target[c] < natural[c] && t.Columns[c].Wrap {
+				// Wrap the styled cell across lines to fit the column;
+				// lipgloss grows the row to the tallest wrapped cell.
+				styled := t.renderCell(r, cell)
+				cells[c] = r.NewStyle().Width(target[c]).Render(styled)
+				continue
+			}
 			spans := cell.Spans
 			if target[c] < natural[c] {
 				spans = truncateSpansToWidth(spans, target[c])

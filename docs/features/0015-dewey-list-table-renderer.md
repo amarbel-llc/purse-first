@@ -91,7 +91,10 @@ This section describes the shape and intent; that RFC is the contract.
 The renderer measures widths **wcwidth-aware** (posh already depends on this;
 naive byte or rune length misaligns CJK/emoji), pins narrow columns to content
 width, and lets flex column(s) absorb remaining terminal width, shrinking by
-declared priority down to a per-column minimum.
+declared priority down to a per-column minimum. A flex column overflowing its
+width ellipsizes by default, or, when it opts in with `Wrap()` / `"wrap": true`,
+**wraps across multiple lines** (the row grows to its tallest cell) — so a long
+description keeps all its text instead of losing the tail.
 
 ### TTY switching and machine output
 

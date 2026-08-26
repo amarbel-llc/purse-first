@@ -17,6 +17,7 @@ type wireColumn struct {
 	Align  string `json:"align,omitempty"`
 	Shrink int    `json:"shrink,omitempty"`
 	Min    int    `json:"min,omitempty"`
+	Wrap   bool   `json:"wrap,omitempty"`
 }
 
 type wireLegend struct {
@@ -105,6 +106,7 @@ func (t *Table) header() wireHeader {
 			Align:  alignName(c.Align),
 			Shrink: c.ShrinkPriority,
 			Min:    c.MinWidth,
+			Wrap:   c.Wrap,
 		}
 	}
 	if len(t.Legends) > 0 {
@@ -225,6 +227,7 @@ func headerToTable(h wireHeader) (*Table, error) {
 			Align:          align,
 			ShrinkPriority: wc.Shrink,
 			MinWidth:       wc.Min,
+			Wrap:           wc.Wrap,
 		})
 	}
 	for _, wl := range h.Legend {
