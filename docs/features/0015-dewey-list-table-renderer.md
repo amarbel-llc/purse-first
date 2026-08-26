@@ -1,6 +1,6 @@
 ---
-status: proposed
-date: 2026-08-25
+status: accepted
+date: 2026-08-26
 promotion-criteria: one Go consumer (e.g. `clown list` or `ringmaster ls`) and one Rust consumer (e.g. `posh list` or `piggy list`) both render through the mesa renderer over the shared row protocol, replacing their in-tree table code; NDJSON is the single `--json` framing across the Go and Rust consumers; `sc list`'s rich surface (composite status cell, one flex column, legend footer) is reproduced by the renderer with no `sc`-local table code remaining.
 ---
 
@@ -155,6 +155,24 @@ that wants data rather than a table.
   `Classification` build their JSON by hand today; the NDJSON path presumes real
   `serde::Serialize` row types feeding the stream, which is prerequisite work on
   each Rust consumer.
+
+## Adoption
+
+`accepted` as of 2026-08-26: the renderer ships as `mesa`
+(`libs/dewey/pkgs/mesa`) plus the `mesa` CLI, with a bats conformance lane, and
+the promotion criteria are met — both a Go and a Rust consumer render through it
+with their hand-rolled table code deleted:
+
+- `clown list` (Go, in-process) — clown master `ecfd336`; `--json` converged onto
+  the mesa NDJSON framing.
+- `sc list` (Go, in-process) — spinclass master `a4a1eb8`+; all human modes
+  (pretty/plain/`--watch`) render through mesa, `--format json` deliberately kept
+  as its richer structured `session.ListRow` data API.
+- `posh list` (Rust, out-of-process) — posh master `74b6e36`; emits mesa NDJSON to
+  the `mesa` binary (a runtime dep via `wrapProgram`), `list_table.rs` deleted.
+
+Not yet migrated (optional follow-ons): `ringmaster ls` (Go) and `piggy list`
+(Rust). `piggy pass list` remains out of scope (a `tree(1)` filesystem view).
 
 ## Tuning Levers
 
