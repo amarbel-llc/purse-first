@@ -46,11 +46,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788269685,
-        "narHash": "sha256-apB5MVOzChVQTuUY5VOH2h5yzGNRzN60cyw2YEXk4BU=",
-        "rev": "d2a1f71d8dd0e64360e4e0417b973d01ada69fa8",
+        "lastModified": 1788535431,
+        "narHash": "sha256-658PAYw8pPuRpBIRDhaXE1i/rv7QVmWXCopPCx4IcfY=",
+        "rev": "639a495562c983eccbb60f718f391b23b2ed2579",
         "type": "tarball",
-        "url": "https://code.linenisgreat.com/conformist/archive/d2a1f71d8dd0e64360e4e0417b973d01ada69fa8.tar.gz"
+        "url": "https://code.linenisgreat.com/conformist/archive/639a495562c983eccbb60f718f391b23b2ed2579.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -65,11 +65,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1787559586,
-        "narHash": "sha256-onL0VLf9vPllmT0H/OlURIU5r5t5WIEl7t4tVNKT0Nw=",
+        "lastModified": 1788450739,
+        "narHash": "sha256-glZLQlzIn1fXH6PazR2iUmTo7kzzyYSshrWhLS9TqCU=",
         "owner": "hercules-ci",
         "repo": "flake-parts",
-        "rev": "9d0d87172c374f89da73c1cfe6d81ae62feac1f1",
+        "rev": "31729ca8cbdb4fa927b34e5f4353e6a83f39e993",
         "type": "github"
       },
       "original": {
@@ -110,11 +110,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1788097095,
-        "narHash": "sha256-yHYSxTPLPW4MlWoklKN1bcoZsQ7z0ySSFzNVea+ZH+E=",
-        "rev": "a25cf631db65cb99554a619744bc8baa223c1278",
+        "lastModified": 1788535345,
+        "narHash": "sha256-NxbTMcQtNxE/wMbOpDNbsqKG5QAZEDiHWCtG9vieEBQ=",
+        "rev": "2c8ca7354b2bba467b0602277f5d621d7d688dd4",
         "type": "tarball",
-        "url": "https://code.linenisgreat.com/igloo/archive/a25cf631db65cb99554a619744bc8baa223c1278.tar.gz"
+        "url": "https://code.linenisgreat.com/igloo/archive/2c8ca7354b2bba467b0602277f5d621d7d688dd4.tar.gz"
       },
       "original": {
         "type": "tarball",
