@@ -26,10 +26,13 @@ type wireLegend struct {
 	Label string `json:"label"`
 }
 
+// Footer lines share the Cell encoding of §4: each is a bare JSON string or
+// a {"spans":[...]} object, so a key can color its glyphs.
 type wireHeader struct {
 	V       int               `json:"v,omitempty"`
 	Columns []wireColumn      `json:"columns"`
 	Legend  []wireLegend      `json:"legend,omitempty"`
+	Footer  []json.RawMessage `json:"footer,omitempty"`
 	Empty   string            `json:"empty,omitempty"`
 	Palette map[string]string `json:"palette,omitempty"`
 }
@@ -74,7 +77,11 @@ func EncodeStream(w io.Writer, t *Table) error {
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
 
-	if err := enc.Encode(t.header()); err != nil {
+	h, err := t.header()
+	if err != nil {
+		return err
+	}
+	if err := enc.Encode(h); err != nil {
 		return err
 	}
 	for _, row := range t.Rows {
@@ -93,7 +100,7 @@ func EncodeStream(w io.Writer, t *Table) error {
 	return nil
 }
 
-func (t *Table) header() wireHeader {
+func (t *Table) header() (wireHeader, error) {
 	h := wireHeader{Empty: t.EmptyText}
 	if t.Version > 1 {
 		h.V = t.Version
@@ -115,13 +122,23 @@ func (t *Table) header() wireHeader {
 			h.Legend[i] = wireLegend{Sev: e.Sev.String(), Glyph: e.Glyph, Label: e.Label}
 		}
 	}
+	if len(t.Footers) > 0 {
+		h.Footer = make([]json.RawMessage, len(t.Footers))
+		for i, line := range t.Footers {
+			raw, err := cellToWire(line)
+			if err != nil {
+				return wireHeader{}, fmt.Errorf("mesa: footer line %d: %w", i, err)
+			}
+			h.Footer[i] = raw
+		}
+	}
 	if len(t.PaletteOverride) > 0 {
 		h.Palette = make(map[string]string, len(t.PaletteOverride))
 		for sev, color := range t.PaletteOverride {
 			h.Palette[sev.String()] = color
 		}
 	}
-	return h
+	return h, nil
 }
 
 // marshalNoEscape marshals v to compact JSON without escaping '<', '>', or
@@ -233,6 +250,13 @@ func headerToTable(h wireHeader) (*Table, error) {
 	for _, wl := range h.Legend {
 		sev, _ := ParseSeverity(wl.Sev) // unknown degrades to Neutral
 		t.Legends = append(t.Legends, LegendEntry{Sev: sev, Glyph: wl.Glyph, Label: wl.Label})
+	}
+	for i, raw := range h.Footer {
+		line, err := wireToCell(raw)
+		if err != nil {
+			return nil, fmt.Errorf("mesa: footer line %d: %w", i, err)
+		}
+		t.Footers = append(t.Footers, line)
 	}
 	if len(h.Palette) > 0 {
 		t.PaletteOverride = make(map[Severity]string, len(h.Palette))

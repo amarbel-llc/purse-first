@@ -37,10 +37,32 @@ language can feed *mesa* the same way.
 # INPUT
 
 Standard input is a newline-delimited JSON stream: one header record that
-describes the columns (and an optional legend, empty-state text, and palette
-override), then one record per row. A row cell is a bare JSON string (a plain
-neutral value) or an object carrying styled spans. See *RFC 0003* for the full
-schema and the rendering rules.
+describes the columns (and an optional legend, footer, empty-state text, and
+palette override), then one record per row. A row cell is a bare JSON string (a
+plain neutral value) or an object carrying styled spans. See *RFC 0003* for the
+full schema and the rendering rules.
+
+# FOOTER
+
+The header's _footer_ field is an array of free-text lines rendered below the
+table, and below the legend when both are present -- a prose key for whatever
+the legend's glyph-and-label shape cannot express. Each line uses the same shape
+as a row cell: a bare JSON string, or an object carrying styled spans, so a key
+can color its own glyphs.
+
+On a terminal a footer span that declares no severity is drawn dim, while a span
+carrying one keeps that severity's color.
+
+On a pipe, footer lines are emitted verbatim after the last data row -- one line
+each, unstyled and without the TAB separator that joins row cells. This matches
+the empty-state text rather than the legend, which is dropped entirely: both the
+footer and the empty text are prose a producer means a reader to see in either
+mode. A consumer parsing the plain output as records must therefore expect
+trailing lines that are not TAB-separated whenever the producer sets a footer;
+read the NDJSON stream directly if you need machine-parseable output.
+
+An empty table (a header with no rows) prints only its empty text -- no legend
+and no footer.
 
 # EXIT STATUS
 

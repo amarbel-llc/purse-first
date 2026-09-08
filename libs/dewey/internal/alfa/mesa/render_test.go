@@ -35,6 +35,127 @@ func TestRenderPlainEmpty(t *testing.T) {
 	}
 }
 
+func TestRenderPlainFooter(t *testing.T) {
+	tbl := New().
+		Col("ID", Pin).
+		Row(Text("api")).
+		Footer(
+			Text("self= this daemon's build"),
+			Spans(Span{Text: "●", Sev: Warn}, Span{Text: " stale"}),
+		)
+
+	var buf bytes.Buffer
+	if err := tbl.Render(&buf, ForcePlain()); err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	// Footer lines follow the rows verbatim, one per line, with no styling
+	// and no TAB — the same treatment the empty-state text gets on a pipe.
+	want := "ID\napi\nself= this daemon's build\n● stale\n"
+	if buf.String() != want {
+		t.Errorf("plain footer render = %q, want %q", buf.String(), want)
+	}
+}
+
+func TestRenderPlainFooterBlankLineSeparatesParagraphs(t *testing.T) {
+	tbl := New().
+		Col("ID", Pin).
+		Row(Text("api")).
+		Footer(Text("first"), Spans(), Text("second"))
+
+	var buf bytes.Buffer
+	if err := tbl.Render(&buf, ForcePlain()); err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	want := "ID\napi\nfirst\n\nsecond\n"
+	if buf.String() != want {
+		t.Errorf("blank footer line = %q, want %q", buf.String(), want)
+	}
+}
+
+func TestRenderPlainEmptySuppressesFooter(t *testing.T) {
+	tbl := New().Col("ID", Pin).Empty("no sessions").Footer(Text("a key"))
+
+	var buf bytes.Buffer
+	if err := tbl.Render(&buf, ForcePlain()); err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	// RFC 0003 §7.4: an empty table renders the empty text and nothing
+	// beyond it — there are no glyphs left for a key to explain.
+	if buf.String() != "no sessions\n" {
+		t.Errorf("empty+footer render = %q, want %q", buf.String(), "no sessions\n")
+	}
+}
+
+func TestRenderStyledFooterFollowsLegend(t *testing.T) {
+	tbl := New().
+		Col("ID", Pin).
+		Legend(Entry(OK, "●", "attached")).
+		Footer(Text("self= this daemon's build")).
+		Row(Text("api"))
+
+	var buf bytes.Buffer
+	if err := tbl.Render(&buf, ForceStyle()); err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	out := buf.String()
+	legendAt := strings.Index(out, "attached")
+	footerAt := strings.Index(out, "self=")
+	if legendAt < 0 || footerAt < 0 {
+		t.Fatalf("styled render missing legend or footer:\n%s", out)
+	}
+	if footerAt < legendAt {
+		t.Errorf("footer rendered above the legend; want legend first:\n%s", out)
+	}
+	if gridAt := strings.Index(out, "╰"); gridAt < 0 || footerAt < gridAt {
+		t.Errorf("footer rendered above the grid:\n%s", out)
+	}
+}
+
+func TestRenderStyledFooterDimsNeutralSpans(t *testing.T) {
+	tbl := New().
+		Col("ID", Pin).
+		Footer(Spans(Span{Text: "self="}, Span{Text: "●", Sev: Warn})).
+		Row(Text("api"))
+
+	var buf bytes.Buffer
+	if err := tbl.Render(&buf, ForceStyle()); err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	var footer string
+	for _, line := range strings.Split(buf.String(), "\n") {
+		if strings.Contains(line, "self=") {
+			footer = line
+			break
+		}
+	}
+	if footer == "" {
+		t.Fatalf("styled render has no footer line:\n%s", buf.String())
+	}
+	// A neutral footer span is drawn Muted, so even prose carrying no
+	// explicit severity is colored — otherwise it would emit no escape.
+	if !strings.Contains(footer, "\x1b[") {
+		t.Errorf("neutral footer span not dimmed (no ANSI): %q", footer)
+	}
+	if !strings.Contains(footer, "●") {
+		t.Errorf("footer lost its styled glyph: %q", footer)
+	}
+}
+
+func TestRenderFooterSanitizesControlChars(t *testing.T) {
+	tbl := New().Col("A", Pin).Row(Text("a")).Footer(Text("k\x1b[31mey"))
+
+	var buf bytes.Buffer
+	if err := tbl.Render(&buf, ForcePlain()); err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	if strings.Contains(buf.String(), "\x1b") {
+		t.Errorf("footer leaked an escape sequence: %q", buf.String())
+	}
+	if !strings.Contains(buf.String(), "k[31mey") {
+		t.Errorf("footer text mangled beyond the stripped ESC: %q", buf.String())
+	}
+}
+
 func TestRenderPlainSanitizesControlChars(t *testing.T) {
 	tbl := New().Col("A", Pin).Row(Text("a\tb\x1bc"))
 

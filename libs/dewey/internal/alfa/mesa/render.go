@@ -97,7 +97,23 @@ func (t *Table) renderPlain(w io.Writer) error {
 			return err
 		}
 	}
+	if err := t.writePlainFooter(bw); err != nil {
+		return err
+	}
 	return bw.Flush()
+}
+
+// writePlainFooter emits each footer line verbatim below the rows, one per
+// line (RFC 0003 §7.3). The legend is suppressed in plain output because a
+// glyph key has no meaningful plain form; footer lines are producer-authored
+// prose, so they survive a pipe exactly as the empty-state text does (§7.4).
+func (t *Table) writePlainFooter(w io.Writer) error {
+	for _, line := range t.Footers {
+		if _, err := fmt.Fprintln(w, sanitize(line.plain())); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func writeTabRow(w io.Writer, cells []string) error {
@@ -197,9 +213,11 @@ func (t *Table) renderStyled(w io.Writer, cfg renderConfig) error {
 		return err
 	}
 	if len(t.Legends) > 0 {
-		return t.renderLegend(r, w)
+		if err := t.renderLegend(r, w); err != nil {
+			return err
+		}
 	}
-	return nil
+	return t.renderFooter(r, w)
 }
 
 func (t *Table) renderCell(r *lipgloss.Renderer, c Cell) string {
@@ -246,6 +264,27 @@ func (t *Table) renderLegend(r *lipgloss.Renderer, w io.Writer) error {
 	}
 	_, err := fmt.Fprintln(w, strings.Join(parts, "  "))
 	return err
+}
+
+// renderFooter writes the free-text footer lines beneath the grid and the
+// legend (RFC 0003 §6.1). A span left at Neutral is drawn Muted so plain
+// footer prose reads as secondary text, while a span carrying an explicit
+// severity keeps that severity's color — which is how a key colors its
+// glyphs.
+func (t *Table) renderFooter(r *lipgloss.Renderer, w io.Writer) error {
+	for _, line := range t.Footers {
+		var sb strings.Builder
+		for _, sp := range line.Spans {
+			if sp.Sev == Neutral {
+				sp.Sev = Muted
+			}
+			sb.WriteString(t.styleSpan(r, sp))
+		}
+		if _, err := fmt.Fprintln(w, sb.String()); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // sanitize strips control characters so untrusted cell text cannot inject

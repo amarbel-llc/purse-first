@@ -12,6 +12,10 @@ func sampleTable() *Table {
 		Col("STATUS", Pin).
 		Col("AGE", Pin, WithAlign(Right)).
 		Legend(Entry(OK, "●", "attached"), Entry(Error, "●", "stale")).
+		Footer(
+			Text("self= this daemon's build"),
+			Spans(Span{Text: "●", Sev: Warn}, Span{Text: " pre-upgrade daemon"}),
+		).
 		Empty("no sessions").
 		Palette(map[Severity]string{Special: "#c678dd"}).
 		Row(Text("api"), Status(OK, "attached", WithMarker("(current)")), Text("2m")).
@@ -81,6 +85,55 @@ func TestWrapColumnRoundTrips(t *testing.T) {
 	}
 	if dec.Columns[0].Wrap {
 		t.Errorf("non-wrap column gained wrap")
+	}
+}
+
+func TestFooterEncodesAfterLegendAsCells(t *testing.T) {
+	var buf bytes.Buffer
+	tbl := New().
+		Col("A", Pin).
+		Legend(Entry(OK, "●", "up")).
+		Footer(Text("a plain line"), Spans(Span{Text: "●", Sev: Warn}))
+	if err := EncodeStream(&buf, tbl); err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+	got := buf.String()
+	// A footer line uses the §4 Cell encoding: a bare string when unstyled,
+	// a spans object otherwise.
+	if !strings.Contains(got, `"footer":["a plain line",{"spans":[{"text":"●","sev":"warn"}]}]`) {
+		t.Errorf("footer not encoded as cells:\n%s", got)
+	}
+	if strings.Index(got, `"footer"`) < strings.Index(got, `"legend"`) {
+		t.Errorf("footer encoded before legend; want legend first:\n%s", got)
+	}
+}
+
+func TestDecodeFooterOmittedLeavesNone(t *testing.T) {
+	// An old producer that never learned about footers renders as before.
+	in := `{"columns":[{"name":"A","role":"pin"}]}
+{"cells":["hi"]}
+`
+	tbl, err := DecodeStream(strings.NewReader(in))
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(tbl.Footers) != 0 {
+		t.Errorf("absent footer decoded as %d lines, want 0", len(tbl.Footers))
+	}
+}
+
+func TestDecodeFooterUnknownSeverityDegradesToNeutral(t *testing.T) {
+	in := `{"columns":[{"name":"A","role":"pin"}],"footer":[{"spans":[{"text":"x","sev":"wat"}]}]}
+`
+	tbl, err := DecodeStream(strings.NewReader(in))
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(tbl.Footers) != 1 {
+		t.Fatalf("got %d footer lines, want 1", len(tbl.Footers))
+	}
+	if got := tbl.Footers[0].Spans[0].Sev; got != Neutral {
+		t.Errorf("unknown footer severity = %v, want Neutral", got)
 	}
 }
 

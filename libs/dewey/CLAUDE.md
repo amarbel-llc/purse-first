@@ -58,9 +58,11 @@ this file.
   RFC 0003). Builds a `Table` of styled cells and renders it (plain
   TAB-separated on a pipe, styled lipgloss on a TTY), or (de)serializes
   it over an NDJSON stream so non-Go producers can feed the renderer
-  out-of-process. The `mesa` CLI (`mesa < ndjson`) and the RFC 0003 §7.2
-  flex shrink/ellipsize width algorithm are implemented; consumer
-  migrations (clown/posh onto the renderer) are still pending.
+  out-of-process. The `mesa` CLI (`mesa < ndjson`), the RFC 0003 §7.2 flex
+  shrink/ellipsize/wrap width algorithm, and the §6.1 free-text footer are
+  implemented. Per FDR 0015's Adoption section the promotion criteria are
+  met (clown, sc, and posh all render through it); `ringmaster ls` and
+  `piggy list` remain optional follow-ons.
 
 ## cmd/
 

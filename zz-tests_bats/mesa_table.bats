@@ -85,6 +85,64 @@ TAB=$'\t'
   assert_output "no sessions"
 }
 
+@test "§6.1/§7.3: footer lines follow the rows verbatim on a pipe" {
+  # Two columns, so the rows carry a TAB the footer lines must not.
+  mk '{"columns":[{"name":"ID","role":"pin"},{"name":"AGE","role":"pin"}],"footer":["self= this daemon'"'"'s build",{"spans":[{"text":"●","sev":"warn"},{"text":" stale"}]}]}' \
+    '{"cells":["api","2m"]}'
+  run "$MESA_BIN" --plain <"$infile"
+  assert_success
+  assert_line --index 0 "ID${TAB}AGE"
+  assert_line --index 1 "api${TAB}2m"
+  # assert_line matches the whole line, so these also pin the absence of a
+  # trailing TAB and of any styling on the footer.
+  assert_line --index 2 "self= this daemon's build"
+  assert_line --index 3 "● stale"
+  refute_output --partial "$ESC["
+}
+
+@test "§6.1: a footer renders below the legend on a TTY" {
+  mk '{"columns":[{"name":"ID","role":"pin"}],"legend":[{"sev":"ok","glyph":"●","label":"attached"}],"footer":["self= this daemon'"'"'s build"]}' \
+    '{"cells":["api"]}'
+  run "$MESA_BIN" --force-style <"$infile"
+  assert_success
+  # Grid, then legend, then footer.
+  local grid legend footer
+  grid=$(printf '%s\n' "$output" | grep -n '╰' | head -1 | cut -d: -f1)
+  legend=$(printf '%s\n' "$output" | grep -n 'attached' | head -1 | cut -d: -f1)
+  footer=$(printf '%s\n' "$output" | grep -n 'self=' | head -1 | cut -d: -f1)
+  [[ -n $grid && -n $legend && -n $footer ]]
+  ((grid < legend))
+  ((legend < footer))
+}
+
+@test "§6.1: a neutral footer span is dimmed and a styled span keeps its color" {
+  mk '{"columns":[{"name":"ID","role":"pin"}],"footer":[{"spans":[{"text":"self="},{"text":"●","sev":"warn"}]}]}' \
+    '{"cells":["api"]}'
+  run "$MESA_BIN" --force-style <"$infile"
+  assert_success
+  local line
+  line=$(printf '%s\n' "$output" | grep 'self=')
+  # Both spans are colored, so the footer line carries ANSI even though its
+  # prose declares no severity.
+  [[ $line == *"$ESC["* ]]
+  [[ $line == *"●"* ]]
+}
+
+@test "§7.4: an empty table renders no footer" {
+  mk '{"columns":[{"name":"ID","role":"pin"}],"empty":"no sessions","footer":["a key"]}'
+  run "$MESA_BIN" --plain <"$infile"
+  assert_success
+  assert_output "no sessions"
+}
+
+@test "§2: a stream with no footer field renders exactly as before" {
+  mk '{"columns":[{"name":"ID","role":"pin"}]}' '{"cells":["api"]}'
+  run "$MESA_BIN" --plain <"$infile"
+  assert_success
+  assert_output "ID
+api"
+}
+
 @test "§5: an unknown severity degrades to neutral without aborting" {
   mk '{"columns":[{"name":"A","role":"pin"}]}' \
     '{"cells":[{"spans":[{"text":"hi","sev":"wat"}]}]}'

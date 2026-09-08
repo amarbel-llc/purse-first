@@ -78,7 +78,9 @@ surveyed table without the emitter styling anything:
   cell shape. `sc list` and `posh list` both fold multiple signals into one status
   column, so a cell is a sequence of spans, not a plain string.
 - **Footer / legend** — an optional status-key legend row (both `sc` and `posh`
-  render one).
+  render one), plus optional free-text footer lines beneath it for prose a
+  glyph/label legend cannot express (`posh mux ls`'s `self=` / `remote=` key).
+  Footer lines are ordinary styled cells, so a key can color its own glyphs.
 - **Empty-state string** — supplied per table; the surveyed commands all differ
   ("No sessions." / "no jobs" / "no sessions found in {dir}" / silent).
 

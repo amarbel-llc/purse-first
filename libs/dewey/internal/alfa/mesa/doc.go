@@ -10,6 +10,12 @@
 // then one record per row) via [EncodeStream] / [DecodeStream], which is
 // how non-Go producers feed the renderer out-of-process.
 //
+// Beneath the grid a table may carry a legend — the glyph key built from
+// [Entry] — and, below that, [Table.Footer] lines: free-text prose the
+// legend's glyph-and-label shape cannot express. Footer lines are ordinary
+// [Cell]s, so they carry styled spans too, and unlike the legend they
+// survive plain output the way the empty-state text does.
+//
 // The wire contract is specified normatively in RFC 0003
 // (docs/rfcs/0003-list-table-ndjson-protocol.md); the feature it serves is
 // FDR 0015 (docs/features/0015-dewey-list-table-renderer.md).

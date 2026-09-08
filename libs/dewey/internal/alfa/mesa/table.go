@@ -40,13 +40,15 @@ func Entry(sev Severity, glyph, label string) LegendEntry {
 	return LegendEntry{Sev: sev, Glyph: glyph, Label: label}
 }
 
-// Table is a listing: columns, rows, an optional legend, empty-state text,
-// and an optional per-severity palette override. Build it with the fluent
-// methods and hand it to [Table.Render] or [EncodeStream].
+// Table is a listing: columns, rows, an optional legend, optional footer
+// lines, empty-state text, and an optional per-severity palette override.
+// Build it with the fluent methods and hand it to [Table.Render] or
+// [EncodeStream].
 type Table struct {
 	Version         int
 	Columns         []Column
 	Legends         []LegendEntry
+	Footers         []Cell
 	EmptyText       string
 	PaletteOverride map[Severity]string
 	Rows            []Row
@@ -87,6 +89,17 @@ func (t *Table) Col(name string, role Role, opts ...ColOpt) *Table {
 // Legend appends legend entries rendered as a footer.
 func (t *Table) Legend(entries ...LegendEntry) *Table {
 	t.Legends = append(t.Legends, entries...)
+	return t
+}
+
+// Footer appends free-text lines rendered below the table, beneath the
+// legend when both are present. A line is an ordinary [Cell], so it accepts
+// anything that builds one — [Text], [Spans], [Styled], [Markup] — and a key
+// can color its own glyphs. A footer span left at [Neutral] renders dim, so
+// prose reads as secondary while explicitly styled spans keep their color.
+// See RFC 0003 §6.1.
+func (t *Table) Footer(lines ...Cell) *Table {
+	t.Footers = append(t.Footers, lines...)
 	return t
 }
 

@@ -42,9 +42,10 @@ type Span = internal.Span
 // StatusOpt configures a [Status] cell.
 type StatusOpt = internal.StatusOpt
 
-// Table is a listing: columns, rows, an optional legend, empty-state text,
-// and an optional per-severity palette override. Build it with the fluent
-// methods and hand it to [Table.Render] or [EncodeStream].
+// Table is a listing: columns, rows, an optional legend, optional footer
+// lines, empty-state text, and an optional per-severity palette override.
+// Build it with the fluent methods and hand it to [Table.Render] or
+// [EncodeStream].
 type Table = internal.Table
 
 // DecodeStream reads an NDJSON stream into a [Table], enforcing the protocol

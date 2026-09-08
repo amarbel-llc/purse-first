@@ -55,6 +55,7 @@ The header record MUST contain a `columns` field and MAY contain the others:
   "v": 1,
   "columns": [ /* Column, §3 */ ],
   "legend":  [ /* Legend entry, §6 */ ],
+  "footer":  [ /* Footer line, §6.1 */ ],
   "empty":   "No sessions.",
   "palette": { "special": "#c678dd" }
 }
@@ -63,12 +64,18 @@ The header record MUST contain a `columns` field and MAY contain the others:
 - `v` (integer, OPTIONAL, default `1`) — protocol version. A renderer encountering
   a `v` it does not support MUST fail with a protocol error (§8).
 - `columns` (array, REQUIRED) — MUST be non-empty. Defines column count and order.
-- `legend` (array, OPTIONAL) — status-key entries rendered as a footer (§6).
+- `legend` (array, OPTIONAL) — status-key entries rendered below the grid (§6).
+- `footer` (array, OPTIONAL) — free-text lines rendered below the grid and below
+  the legend (§6.1).
 - `empty` (string, OPTIONAL) — text rendered when the table has zero rows (§7.4).
 - `palette` (object, OPTIONAL) — per-severity color override (§5).
 
 The header record is distinguished from a row record by the presence of
 `columns`. A first record lacking `columns` is a protocol error (§8).
+
+A renderer MUST ignore a header field it does not recognize rather than fail: an
+unknown field is not among the protocol errors of §8. This is what lets the
+header grow additively without a `v` bump (§Compatibility).
 
 ### 3. Column object
 
@@ -155,6 +162,38 @@ reported to stderr.
 - `glyph` (string, REQUIRED) — the marker shown in the legend.
 - `label` (string, REQUIRED) — human meaning of the glyph.
 
+### 6.1 Footer line
+
+The `legend` is a glyph key: one severity-colored marker and its label per entry.
+Some tables also need *prose* beneath the grid — a key the legend's
+glyph/label shape cannot express, such as `self= this daemon's build · remote=
+the endpoint's build · a line without self= is a stale pre-upgrade daemon`. The
+`footer` field carries those lines.
+
+```json
+"footer": [
+  "self= this daemon's build · remote= the endpoint's build",
+  { "spans": [ {"text":"●","sev":"warn"}, {"text":" a line without self= is stale"} ] }
+]
+```
+
+- `footer` (array, OPTIONAL) — zero or more **footer lines**, rendered in order.
+
+Each element is a **Cell** in exactly the sense of §4: a JSON string (shorthand
+for a single span at severity `neutral`) or an object `{ "spans": [ /* §4.1 */ ] }`.
+Reusing the cell shape means a footer line can color its own glyphs with the
+same severity vocabulary the rows use, and a producer needs no second encoding.
+
+A renderer MUST render each footer line as one output line; it MUST NOT wrap,
+truncate, or reflow footer text to the table width, and MUST NOT align it to the
+grid's columns. Footer text is subject to the same sanitization as span text
+(§Security). A footer line that carries no text — an empty `spans` array, or the
+empty string — renders as a blank line, which is how a producer separates footer
+paragraphs.
+
+The `footer` field is OPTIONAL and additive: a stream that omits it MUST render
+exactly as it did before this field existed. It does not bump `v` (§Compatibility).
+
 ### 7. Rendering behavior
 
 #### 7.1 Output mode selection
@@ -172,7 +211,18 @@ On a TTY the renderer MUST:
 - render column headers in bold;
 - color each span per its severity (§5), applying any `palette` override;
 - apply bold to spans with `b: true`;
-- render the legend (§6) as a footer beneath the grid when `legend` is present.
+- render the legend (§6) beneath the grid when `legend` is present;
+- render the footer lines (§6.1) beneath the grid — and beneath the legend when
+  both are present — when `footer` is present.
+
+The legend precedes the footer because the legend decodes the glyphs *in* the
+grid, while footer prose is free to refer to those glyphs. Within a footer line,
+each span is colored per §5 with one exception: a span at severity `neutral`
+(including a string-shorthand line, and a span that omitted `sev`) MUST be
+rendered `muted`, so footer prose reads as secondary text by default. A span
+carrying any other severity MUST be rendered in that severity's color; that is
+how a key colors its own glyphs. A `palette` override for `muted` (§5)
+therefore also recolors default footer prose.
 
 Width negotiation SHOULD proceed as: `pin` columns sized to the wcwidth of their
 widest cell (header included); remaining terminal width distributed to `flex`
@@ -193,12 +243,24 @@ NOT contain ANSI escape sequences, a border, the legend, or width-based wrapping
 or truncation. A renderer MAY offer an additional aligned plain mode, but the
 TAB-separated form MUST be the default plain output.
 
+Footer lines (§6.1) **are** emitted in plain output, after the last data row: one
+line per footer line, carrying that line's concatenated span `text` verbatim,
+with no styling and no TAB separator. This is deliberately unlike the legend and
+deliberately like the `empty` string (§7.4): the legend is a structured glyph key
+with no meaningful plain form, whereas `empty` and `footer` are both
+producer-authored prose the producer intends a reader to see in either mode. A
+consumer parsing plain output as records therefore MUST expect trailing
+non-TAB-separated lines whenever the producer sets `footer`; a producer that
+needs machine-parseable output SHOULD have its consumer read the NDJSON stream
+directly rather than the renderer's plain form.
+
 #### 7.4 Empty table
 
 When zero row records follow the header, the renderer MUST render the `empty`
 string if one is present (styled `muted` on a TTY; verbatim on a pipe) and render
-nothing beyond it. An empty table MUST NOT be treated as an error: the process
-exit status MUST be `0`.
+nothing beyond it — neither the legend nor the footer, in either mode: with no
+rows there are no glyphs for a key to explain. An empty table MUST NOT be treated
+as an error: the process exit status MUST be `0`.
 
 ### 8. Error handling
 
@@ -272,6 +334,11 @@ point `MESA_BIN` at its own binary and run the identical suite.
 | §7.1/§7.3, mode selection + plain form | piped output is TAB-separated with no border and no ANSI |
 | §7.1/§7.2, forced style | `--force-style` emits ANSI and a border to a pipe |
 | §7.4, empty exit 0 | a header-only stream prints `empty` and exits 0 |
+| §6.1/§7.3, footer on a pipe | footer lines follow the rows verbatim, unstyled and un-TABbed |
+| §6.1, footer below the legend | on a TTY the order is grid, then legend, then footer |
+| §6.1, footer severities | a `neutral` footer span is dimmed; a styled span keeps its color |
+| §7.4, empty suppresses the footer | a header-only stream with a `footer` prints only `empty` |
+| §2, `footer` is additive | a stream omitting `footer` renders exactly as before |
 | §5, unknown severity degrades | an unknown `sev` renders without aborting |
 | Security, escape sanitization | an embedded ESC in cell text is stripped from output |
 
@@ -288,6 +355,15 @@ replacing the divergent `--json` shapes surveyed in [FDR 0015]:
 
 Future revisions bump the header `v` field (§2). A renderer MUST reject a `v` it
 does not implement rather than mis-render (§8), so a version bump fails safely.
+
+**Purely additive header fields do not bump `v`.** An unknown header field is
+already ignored by a conformant renderer, and a producer that omits an added
+field renders exactly as it did before, so both directions degrade safely without
+a version gate. `footer` (§6.1, added 2026-09-08) is such a field: an old renderer
+fed a stream carrying `footer` drops the footer and renders the same table it
+always did, and a new renderer fed an old stream sees no `footer` and renders no
+footer. `v` is reserved for changes that would *mis-render* — a changed meaning
+for an existing field, or a framing change (§1).
 
 ## References
 
