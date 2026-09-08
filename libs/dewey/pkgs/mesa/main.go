@@ -17,7 +17,9 @@ type ColOpt = internal.ColOpt
 // Column declares one column of the table.
 type Column = internal.Column
 
-// LegendEntry is one status-key row rendered in the footer.
+// LegendEntry is one status-key entry — a severity-colored glyph and the
+// label decoding it — rendered below the grid. It is a fixed shape; for
+// prose beneath the grid use [Table.Footer].
 type LegendEntry = internal.LegendEntry
 
 // RenderOpt configures a call to [Table.Render].

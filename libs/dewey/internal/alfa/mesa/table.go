@@ -28,7 +28,9 @@ type Column struct {
 	Wrap           bool // Flex: wrap content across lines instead of ellipsizing
 }
 
-// LegendEntry is one status-key row rendered in the footer.
+// LegendEntry is one status-key entry — a severity-colored glyph and the
+// label decoding it — rendered below the grid. It is a fixed shape; for
+// prose beneath the grid use [Table.Footer].
 type LegendEntry struct {
 	Sev   Severity
 	Glyph string
@@ -86,7 +88,8 @@ func (t *Table) Col(name string, role Role, opts ...ColOpt) *Table {
 	return t
 }
 
-// Legend appends legend entries rendered as a footer.
+// Legend appends status-key entries rendered below the grid, above any
+// [Table.Footer] lines.
 func (t *Table) Legend(entries ...LegendEntry) *Table {
 	t.Legends = append(t.Legends, entries...)
 	return t

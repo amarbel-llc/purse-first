@@ -111,33 +111,52 @@ func TestRenderStyledFooterFollowsLegend(t *testing.T) {
 	}
 }
 
-func TestRenderStyledFooterDimsNeutralSpans(t *testing.T) {
+// renderFooterLine renders a one-span footer at sev and returns just the
+// footer line, so a test can compare how two severities are drawn without
+// pinning the renderer's exact SGR codes.
+func renderFooterLine(t *testing.T, sev Severity) string {
+	t.Helper()
 	tbl := New().
 		Col("ID", Pin).
-		Footer(Spans(Span{Text: "self="}, Span{Text: "●", Sev: Warn})).
+		Footer(Spans(Span{Text: "marker", Sev: sev})).
 		Row(Text("api"))
 
 	var buf bytes.Buffer
 	if err := tbl.Render(&buf, ForceStyle()); err != nil {
 		t.Fatalf("render: %v", err)
 	}
-	var footer string
 	for _, line := range strings.Split(buf.String(), "\n") {
-		if strings.Contains(line, "self=") {
-			footer = line
-			break
+		if strings.Contains(line, "marker") {
+			return line
 		}
 	}
-	if footer == "" {
-		t.Fatalf("styled render has no footer line:\n%s", buf.String())
+	t.Fatalf("styled render has no footer line:\n%s", buf.String())
+	return ""
+}
+
+func TestRenderStyledFooterDimsNeutralSpans(t *testing.T) {
+	// The footer carries a single neutral span, so the only thing that can
+	// put an escape on this line is the Neutral -> Muted substitution: drop
+	// that rule and colorFor(Neutral) yields no color and no escape at all.
+	neutral := renderFooterLine(t, Neutral)
+	if !strings.Contains(neutral, "\x1b[") {
+		t.Errorf("neutral footer span not dimmed (no ANSI): %q", neutral)
 	}
-	// A neutral footer span is drawn Muted, so even prose carrying no
-	// explicit severity is colored — otherwise it would emit no escape.
-	if !strings.Contains(footer, "\x1b[") {
-		t.Errorf("neutral footer span not dimmed (no ANSI): %q", footer)
+	if got := renderFooterLine(t, Muted); got != neutral {
+		t.Errorf("neutral footer span not drawn as Muted:\n neutral %q\n muted   %q", neutral, got)
 	}
-	if !strings.Contains(footer, "●") {
-		t.Errorf("footer lost its styled glyph: %q", footer)
+}
+
+func TestRenderStyledFooterKeepsExplicitSeverity(t *testing.T) {
+	// Same text, different severity: an explicitly styled span must not be
+	// flattened into the muted default the neutral rule applies.
+	neutral := renderFooterLine(t, Neutral)
+	warn := renderFooterLine(t, Warn)
+	if !strings.Contains(warn, "marker") {
+		t.Errorf("footer lost its styled text: %q", warn)
+	}
+	if warn == neutral {
+		t.Errorf("warn footer span rendered identically to neutral: %q", warn)
 	}
 }
 

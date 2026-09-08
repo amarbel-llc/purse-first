@@ -115,17 +115,33 @@ TAB=$'\t'
   ((legend < footer))
 }
 
-@test "§6.1: a neutral footer span is dimmed and a styled span keeps its color" {
-  mk '{"columns":[{"name":"ID","role":"pin"}],"footer":[{"spans":[{"text":"self="},{"text":"●","sev":"warn"}]}]}' \
-    '{"cells":["api"]}'
-  run "$MESA_BIN" --force-style <"$infile"
-  assert_success
-  local line
-  line=$(printf '%s\n' "$output" | grep 'self=')
-  # Both spans are colored, so the footer line carries ANSI even though its
-  # prose declares no severity.
-  [[ $line == *"$ESC["* ]]
-  [[ $line == *"●"* ]]
+# footer_line renders a one-span footer at the given severity and echoes just
+# the footer line, so a test can compare two severities without pinning the
+# renderer's exact SGR codes. $1 is the "sev" JSON fragment ("" for none).
+footer_line() {
+  local sev="$1"
+  printf '%s\n' \
+    "{\"columns\":[{\"name\":\"ID\",\"role\":\"pin\"}],\"footer\":[{\"spans\":[{\"text\":\"marker\"$sev}]}]}" \
+    '{"cells":["api"]}' >"$infile"
+  "$MESA_BIN" --force-style <"$infile" | grep 'marker'
+}
+
+@test "§6.1: a footer span declaring no severity is dimmed" {
+  # The footer's only span is neutral, so the sole thing that can put an
+  # escape on this line is the neutral -> muted rule.
+  local neutral muted
+  neutral=$(footer_line "")
+  muted=$(footer_line ',"sev":"muted"')
+  [[ $neutral == *"$ESC["* ]]
+  [[ $neutral == "$muted" ]]
+}
+
+@test "§6.1: a footer span keeps its own severity color" {
+  local neutral warn
+  neutral=$(footer_line "")
+  warn=$(footer_line ',"sev":"warn"')
+  [[ $warn == *"marker"* ]]
+  [[ $warn != "$neutral" ]]
 }
 
 @test "§7.4: an empty table renders no footer" {
