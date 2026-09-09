@@ -273,7 +273,11 @@ func (a *App) emitBashPositionalCompletions(
 		if !e.param.Variadic {
 			continue
 		}
-		fmt.Fprintf(b, "                    if (( _pos >= %d )); then\n", e.index)
+		// The cur test is load-bearing, not defensive: a variadic at
+		// index 0 makes `_pos >= 0` unconditionally true, so without it
+		// the `return 0` below would make the flag fallback in the case
+		// block unreachable and `close --<TAB>` would offer targets.
+		fmt.Fprintf(b, "                    if [[ ${cur} != -* ]] && (( _pos >= %d )); then\n", e.index)
 		fmt.Fprintf(b, "                        COMPREPLY=( $(compgen -W \"$(%s __complete --command %s --param %s)\" -- \"${cur}\") )\n",
 			a.Name, cmdName, e.param.Name)
 		fmt.Fprintf(b, "                        return 0\n")

@@ -838,11 +838,20 @@ func TestGenerateCompletionsVariadicBash(t *testing.T) {
 	// A numeric `case "${_pos}"` arm matches one slot, so it would offer
 	// the completer only at the variadic's first position. A >= guard is
 	// what keeps `sc close a b <TAB>` completing.
-	if !strings.Contains(content, "if (( _pos >= 0 )); then") {
+	if !strings.Contains(content, "(( _pos >= 0 ))") {
 		t.Errorf("bash completion missing the variadic >= guard:\n%s", content)
 	}
 	if !strings.Contains(content, "sc __complete --command close --param target") {
 		t.Errorf("bash completion missing __complete for the variadic param:\n%s", content)
+	}
+	// A variadic at index 0 makes `_pos >= 0` always true, so without a
+	// test on the current word the guard's `return 0` makes the flag
+	// fallback below it unreachable and `close --<TAB>` offers targets.
+	if !strings.Contains(content, `if [[ ${cur} != -* ]] && (( _pos >= 0 )); then`) {
+		t.Errorf("variadic guard must not fire while completing a flag:\n%s", content)
+	}
+	if !strings.Contains(content, `--target --force`) {
+		t.Errorf("flag fallback missing from the variadic command's case block:\n%s", content)
 	}
 }
 

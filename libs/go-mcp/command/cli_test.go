@@ -370,6 +370,75 @@ func TestRunCLIVariadicEmptyMarshalsAsEmptyArray(t *testing.T) {
 	}
 }
 
+func TestRunCLIVariadicSetByFlagIsStillAnArray(t *testing.T) {
+	var targets []string
+	var nixGC, raw string
+	app := closeLikeApp(&targets, &nixGC, &raw)
+
+	// --target is advertised in usage and in the manpage OPTIONS section,
+	// so the flag form has to yield the array the schema promises rather
+	// than the bare string its element Type would otherwise produce.
+	err := app.RunCLI(context.Background(), []string{
+		"close", "--target", "smith/a", "--target", "madder/b",
+	}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if len(targets) != 2 || targets[0] != "smith/a" || targets[1] != "madder/b" {
+		t.Errorf("target = %v, want [smith/a madder/b]", targets)
+	}
+}
+
+func TestRunCLIVariadicMergesFlagAndPositionalForms(t *testing.T) {
+	var targets []string
+	var nixGC, raw string
+	app := closeLikeApp(&targets, &nixGC, &raw)
+
+	// Mixing the two forms must not drop either side: the flag value used
+	// to mark the param "set", which made the positionals vanish.
+	err := app.RunCLI(context.Background(), []string{
+		"close", "--target", "smith/a", "madder/b", "maneater/c",
+	}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	want := []string{"smith/a", "madder/b", "maneater/c"}
+	if len(targets) != len(want) {
+		t.Fatalf("target = %v, want %v", targets, want)
+	}
+	for i, w := range want {
+		if targets[i] != w {
+			t.Errorf("target[%d] = %q, want %q", i, targets[i], w)
+		}
+	}
+}
+
+func TestRunCLIVariadicAfterFixedParamIsEmptyArrayWhenUnused(t *testing.T) {
+	var raw string
+	app := NewApp("test", "test app")
+	app.AddCommand(&Command{
+		Name: "cp",
+		Params: []Param{
+			{Name: "source", Type: String, Description: "source"},
+			{Name: "dest", Type: String, Description: "destinations", Variadic: true},
+		},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			raw = string(args)
+			return TextResult(""), nil
+		},
+	})
+
+	// Positionals run out before the variadic is reached. It must still
+	// get its [] default, or the documented "safe to range over" promise
+	// only holds when the variadic happens to be declared first.
+	if err := app.RunCLI(context.Background(), []string{"cp"}, StubPrompter{}); err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if !strings.Contains(raw, `"dest":[]`) {
+		t.Errorf("trailing variadic absent instead of []: %s", raw)
+	}
+}
+
 func TestRunCLIVariadicFollowsAFixedPositional(t *testing.T) {
 	var src string
 	var rest []string

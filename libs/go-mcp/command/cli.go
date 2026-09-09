@@ -108,24 +108,31 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 	// param has nowhere to go and is dropped.
 	pi := 0
 	for _, param := range cmd.Params {
-		if _, set := cmdVals[param.Name]; set {
-			continue
-		}
 		if param.Type == Bool {
 			continue
 		}
 		if param.Variadic {
-			// Copy rather than reslice so the handler cannot alias (and
-			// mutate) the caller's argv, and so an exhausted variadic
-			// marshals as [] instead of null.
-			rest := make([]string, len(positional)-pi)
-			copy(rest, positional[pi:])
+			// Append rather than skip when the flag form already
+			// contributed values, so `--target a b c` keeps all three
+			// instead of dropping the positionals. Copy rather than
+			// reslice so the handler cannot alias (and mutate) the
+			// caller's argv, and so an exhausted variadic still marshals
+			// as [] rather than null.
+			prior, _ := cmdVals[param.Name].([]string)
+			rest := make([]string, 0, len(prior)+len(positional)-pi)
+			rest = append(rest, prior...)
+			rest = append(rest, positional[pi:]...)
 			cmdVals[param.Name] = rest
 			pi = len(positional)
 			break
 		}
+		if _, set := cmdVals[param.Name]; set {
+			continue
+		}
+		// Not break: a variadic declared after this one still needs to be
+		// reached so it gets its empty-slice default.
 		if pi >= len(positional) {
-			break
+			continue
 		}
 		cmdVals[param.Name] = positional[pi]
 		pi++
@@ -361,6 +368,24 @@ func parseFlags(args []string, params []Param, vals map[string]any) ([]string, e
 		}
 
 		label := flagLabel(arg, key)
+
+		// A Variadic param is an array on the wire however it is supplied,
+		// so the flag form accumulates like Array rather than taking the
+		// scalar branch its element Type would otherwise select. Without
+		// this, `--target a` would hand the handler a bare string while
+		// the schema advertises an array.
+		if p.Variadic && p.Type != Bool {
+			if !hasEquals {
+				i++
+				if i >= len(args) {
+					return nil, fmt.Errorf("flag %s requires a value", label)
+				}
+				value = args[i]
+			}
+			arr, _ := vals[key].([]string)
+			vals[key] = append(arr, value)
+			continue
+		}
 
 		switch p.Type {
 		case Bool:

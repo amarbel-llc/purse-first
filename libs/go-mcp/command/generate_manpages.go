@@ -113,7 +113,11 @@ func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Comman
 			if p.Variadic {
 				arg := strings.ToUpper(p.Name) + "..."
 				if p.Required {
-					fmt.Fprintf(&b, ".RI %s\n", arg)
+					// .I, not .RI: .RI alternates roman/italic starting
+					// roman, so a lone argument would typeset roman — the
+					// opposite of a placeholder. The optional form below
+					// works because the brackets take the roman slots.
+					fmt.Fprintf(&b, ".I %s\n", arg)
 				} else {
 					fmt.Fprintf(&b, ".RI [ %s ]\n", arg)
 				}

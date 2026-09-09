@@ -326,6 +326,37 @@ func TestGenerateManpageVariadicSynopsis(t *testing.T) {
 	}
 }
 
+func TestGenerateManpageRequiredVariadicIsItalic(t *testing.T) {
+	app := NewApp("myapp", "My app")
+	app.AddCommand(&Command{
+		Name:        "close",
+		Description: Description{Short: "Close sessions"},
+		Params: []Param{
+			{Name: "target", Type: String, Description: "sessions", Required: true, Variadic: true},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+	page, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "myapp-close.1"))
+	if err != nil {
+		t.Fatalf("read manpage: %v", err)
+	}
+	content := string(page)
+
+	// .RI alternates roman/italic starting roman, so a lone argument
+	// renders roman — a placeholder set in body text. .I is the one-arg
+	// italic macro.
+	if !strings.Contains(content, ".I TARGET...") {
+		t.Errorf("required variadic should use .I so the placeholder is italic:\n%s", content)
+	}
+	if strings.Contains(content, ".RI TARGET...") {
+		t.Errorf("required variadic used .RI, which renders the lone arg roman:\n%s", content)
+	}
+}
+
 func TestGenerateManpagePassthroughArgs(t *testing.T) {
 	app := NewApp("myapp", "My app")
 	app.AddCommand(&Command{
