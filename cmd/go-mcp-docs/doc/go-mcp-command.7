@@ -132,14 +132,29 @@ Returns a JSON Schema describing this command's parameters.
 .nf
 type Param struct {
     Name        string
-    Short       byte      // single-char flag alias
+    Short       rune      // single-char flag alias; 0 means none
     Type        ParamType
     Description string
     Required    bool
     Default     any
     Completer   func() map[string]string
+    Items       []Param   // item schema for Array params
+    Variadic    bool      // consumes every remaining positional
 }
 .fi
+.PP
+A
+.B Variadic
+param collects all remaining positional arguments instead of exactly one,
+and always reaches the handler as a JSON array of strings \(em empty rather
+than absent when none were given. Its
+.B Type
+is the element type and should be
+.BR String ,
+since positionals are strings; the MCP input schema reports the param as an
+array of strings regardless. At most one param per command may be variadic.
+Params declared after it are not unusable, they become flag-only, since the
+variadic has taken every positional.
 .SS ParamType
 .nf
 const (
