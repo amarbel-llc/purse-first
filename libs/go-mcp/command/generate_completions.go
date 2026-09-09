@@ -265,6 +265,22 @@ func (a *App) emitBashPositionalCompletions(
 		}
 	}
 
+	// A variadic param consumes every positional from its index onward, so
+	// its completions must keep firing past that index. The numeric case
+	// below matches one slot each, which would offer the completer only at
+	// the variadic's first position; a >= guard covers the rest.
+	for _, e := range entries {
+		if !e.param.Variadic {
+			continue
+		}
+		fmt.Fprintf(b, "                    if (( _pos >= %d )); then\n", e.index)
+		fmt.Fprintf(b, "                        COMPREPLY=( $(compgen -W \"$(%s __complete --command %s --param %s)\" -- \"${cur}\") )\n",
+			a.Name, cmdName, e.param.Name)
+		fmt.Fprintf(b, "                        return 0\n")
+		fmt.Fprintf(b, "                    fi\n")
+		break
+	}
+
 	fmt.Fprintf(b, "                    case \"${_pos}\" in\n")
 	for _, e := range entries {
 		fmt.Fprintf(b, "                        %d)\n", e.index)

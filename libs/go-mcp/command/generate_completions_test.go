@@ -810,6 +810,70 @@ func TestGenerateCompletionsPositionalMultipleParams(t *testing.T) {
 	}
 }
 
+func TestGenerateCompletionsVariadicBash(t *testing.T) {
+	app := NewApp("sc", "Worktree manager")
+	app.AddCommand(&Command{
+		Name:        "close",
+		Description: Description{Short: "Close sessions"},
+		Params: []Param{
+			{
+				Name: "target", Type: String, Description: "sessions to close",
+				Variadic:  true,
+				Completer: func() map[string]string { return nil },
+			},
+			{Name: "force", Type: Bool, Description: "force"},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateCompletions(dir); err != nil {
+		t.Fatalf("GenerateCompletions: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "share", "bash-completion", "completions", "sc"))
+	if err != nil {
+		t.Fatalf("read bash completion: %v", err)
+	}
+	content := string(data)
+
+	// A numeric `case "${_pos}"` arm matches one slot, so it would offer
+	// the completer only at the variadic's first position. A >= guard is
+	// what keeps `sc close a b <TAB>` completing.
+	if !strings.Contains(content, "if (( _pos >= 0 )); then") {
+		t.Errorf("bash completion missing the variadic >= guard:\n%s", content)
+	}
+	if !strings.Contains(content, "sc __complete --command close --param target") {
+		t.Errorf("bash completion missing __complete for the variadic param:\n%s", content)
+	}
+}
+
+func TestGenerateCompletionsNonVariadicHasNoGuard(t *testing.T) {
+	// The >= guard is variadic-only; an ordinary positional keeps the
+	// exact-index dispatch so it stops completing once consumed.
+	app := NewApp("myapp", "My app")
+	app.AddCommand(&Command{
+		Name:        "deploy",
+		Description: Description{Short: "Deploy"},
+		Params: []Param{
+			{
+				Name: "env", Type: String, Description: "Environment",
+				Completer: func() map[string]string { return nil },
+			},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateCompletions(dir); err != nil {
+		t.Fatalf("GenerateCompletions: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "share", "bash-completion", "completions", "myapp"))
+	if err != nil {
+		t.Fatalf("read bash completion: %v", err)
+	}
+	if strings.Contains(string(data), "_pos >=") {
+		t.Errorf("non-variadic param should not emit a >= guard:\n%s", data)
+	}
+}
+
 func TestGenerateCompletionsPositionalBoolSkipped(t *testing.T) {
 	app := NewApp("myapp", "My app")
 	app.AddCommand(&Command{

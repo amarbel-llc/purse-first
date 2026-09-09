@@ -287,6 +287,45 @@ func TestGenerateManpageShortFlags(t *testing.T) {
 	}
 }
 
+func TestGenerateManpageVariadicSynopsis(t *testing.T) {
+	app := NewApp("myapp", "My app")
+	app.AddCommand(&Command{
+		Name:        "close",
+		Description: Description{Short: "Close sessions"},
+		Params: []Param{
+			{Name: "target", Type: String, Description: "sessions to close", Variadic: true},
+			{Name: "nix-gc", Type: String, Description: "run nix gc"},
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+	page, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", "myapp-close.1"))
+	if err != nil {
+		t.Fatalf("read manpage: %v", err)
+	}
+	content := string(page)
+
+	// A variadic param is positional and repeatable — showing it as
+	// --target=STRING would document a form it is never given in.
+	if !strings.Contains(content, "TARGET...") {
+		t.Errorf("SYNOPSIS should render a variadic param as TARGET...:\n%s", content)
+	}
+	if strings.Contains(content, "--target = STRING") {
+		t.Errorf("SYNOPSIS should not render a variadic param as a flag:\n%s", content)
+	}
+	// The non-variadic param keeps its flag form, and OPTIONS still
+	// documents both (a variadic is settable by flag too).
+	if !strings.Contains(content, "--nix-gc") {
+		t.Errorf("SYNOPSIS/OPTIONS lost the non-variadic param:\n%s", content)
+	}
+	if !strings.Contains(content, ".SH OPTIONS") {
+		t.Errorf("variadic command should still have an OPTIONS section:\n%s", content)
+	}
+}
+
 func TestGenerateManpagePassthroughArgs(t *testing.T) {
 	app := NewApp("myapp", "My app")
 	app.AddCommand(&Command{

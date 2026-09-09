@@ -276,6 +276,166 @@ func TestRunCLIPositionalArg(t *testing.T) {
 	}
 }
 
+// closeLikeApp mirrors the spinclass `sc close` declaration from #190: a
+// variadic target followed by a Bool flag and a String flag. The String
+// flag is what used to swallow the second positional.
+func closeLikeApp(targets *[]string, nixGC *string, raw *string) *App {
+	app := NewApp("test", "test app")
+	app.AddCommand(&Command{
+		Name: "close",
+		Params: []Param{
+			{Name: "target", Type: String, Description: "sessions to close", Variadic: true},
+			{Name: "force", Type: Bool, Description: "force"},
+			{Name: "nix-gc", Type: String, Description: "run nix gc"},
+		},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			var params struct {
+				Target []string `json:"target"`
+				NixGC  string   `json:"nix-gc"`
+			}
+			if err := json.Unmarshal(args, &params); err != nil {
+				return nil, err
+			}
+			*targets = params.Target
+			*nixGC = params.NixGC
+			*raw = string(args)
+			return TextResult(""), nil
+		},
+	})
+	return app
+}
+
+func TestRunCLIVariadicCollectsEveryPositional(t *testing.T) {
+	var targets []string
+	var nixGC, raw string
+	app := closeLikeApp(&targets, &nixGC, &raw)
+
+	// The exact invocation from #190: before Variadic existed, the second
+	// positional landed in --nix-gc and the third and fourth were dropped.
+	err := app.RunCLI(context.Background(), []string{
+		"close", "smith/a", "madder/b", "maneater/c", "spinclass/d",
+	}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	want := []string{"smith/a", "madder/b", "maneater/c", "spinclass/d"}
+	if len(targets) != len(want) {
+		t.Fatalf("target = %v, want %v", targets, want)
+	}
+	for i, w := range want {
+		if targets[i] != w {
+			t.Errorf("target[%d] = %q, want %q", i, targets[i], w)
+		}
+	}
+	if nixGC != "" {
+		t.Errorf("nix-gc = %q, want empty — a positional leaked into a later param", nixGC)
+	}
+}
+
+func TestRunCLIVariadicLeavesLaterParamsToFlags(t *testing.T) {
+	var targets []string
+	var nixGC, raw string
+	app := closeLikeApp(&targets, &nixGC, &raw)
+
+	// A param declared after the variadic is flag-only, not dead.
+	err := app.RunCLI(context.Background(), []string{
+		"close", "smith/a", "madder/b", "--nix-gc", "true",
+	}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if len(targets) != 2 {
+		t.Fatalf("target = %v, want 2 entries", targets)
+	}
+	if nixGC != "true" {
+		t.Errorf("nix-gc = %q, want %q", nixGC, "true")
+	}
+}
+
+func TestRunCLIVariadicEmptyMarshalsAsEmptyArray(t *testing.T) {
+	var targets []string
+	var nixGC, raw string
+	app := closeLikeApp(&targets, &nixGC, &raw)
+
+	if err := app.RunCLI(context.Background(), []string{"close"}, StubPrompter{}); err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	// [] rather than null or absent, so a handler can range over the slice
+	// without a nil check.
+	if !strings.Contains(raw, `"target":[]`) {
+		t.Errorf("empty variadic did not marshal as []: %s", raw)
+	}
+	if targets == nil {
+		t.Errorf("target unmarshalled to nil, want an empty slice")
+	}
+}
+
+func TestRunCLIVariadicFollowsAFixedPositional(t *testing.T) {
+	var src string
+	var rest []string
+	app := NewApp("test", "test app")
+	app.AddCommand(&Command{
+		Name: "cp",
+		Params: []Param{
+			{Name: "source", Type: String, Description: "source"},
+			{Name: "dest", Type: String, Description: "destinations", Variadic: true},
+		},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			var params struct {
+				Source string   `json:"source"`
+				Dest   []string `json:"dest"`
+			}
+			if err := json.Unmarshal(args, &params); err != nil {
+				return nil, err
+			}
+			src, rest = params.Source, params.Dest
+			return TextResult(""), nil
+		},
+	})
+
+	err := app.RunCLI(context.Background(), []string{"cp", "a", "b", "c"}, StubPrompter{})
+	if err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if src != "a" {
+		t.Errorf("source = %q, want %q", src, "a")
+	}
+	if len(rest) != 2 || rest[0] != "b" || rest[1] != "c" {
+		t.Errorf("dest = %v, want [b c]", rest)
+	}
+}
+
+func TestRunCLINonVariadicStillTakesOneEach(t *testing.T) {
+	// The old one-per-param behavior is unchanged when nothing is Variadic.
+	var a, bParam string
+	app := NewApp("test", "test app")
+	app.AddCommand(&Command{
+		Name: "pair",
+		Params: []Param{
+			{Name: "first", Type: String, Description: "first"},
+			{Name: "second", Type: String, Description: "second"},
+		},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			var params struct {
+				First  string `json:"first"`
+				Second string `json:"second"`
+			}
+			if err := json.Unmarshal(args, &params); err != nil {
+				return nil, err
+			}
+			a, bParam = params.First, params.Second
+			return TextResult(""), nil
+		},
+	})
+
+	if err := app.RunCLI(context.Background(), []string{"pair", "x", "y"}, StubPrompter{}); err != nil {
+		t.Fatalf("RunCLI: %v", err)
+	}
+	if a != "x" || bParam != "y" {
+		t.Errorf("first, second = %q, %q, want x, y", a, bParam)
+	}
+}
+
 func TestRunCLIPositionalArgWithFlags(t *testing.T) {
 	var target, format string
 	app := NewApp("test", "test app")

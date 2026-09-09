@@ -35,7 +35,13 @@ func (c *Command) InputSchema() json.RawMessage {
 			Description: p.Description,
 			Default:     p.Default,
 		}
-		if p.Type == Array {
+		if p.Variadic {
+			// A variadic param collects raw positional strings, so it
+			// crosses the wire as an array of strings in both directions
+			// regardless of the element Type declared.
+			prop.Type = "array"
+			prop.Items = &schemaItems{Type: "string"}
+		} else if p.Type == Array {
 			if len(p.Items) > 0 {
 				items := &schemaItems{
 					Type:       "object",

@@ -108,6 +108,17 @@ func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Comman
 		fmt.Fprintf(&b, ".RI [ args... ]\n")
 	} else {
 		for _, p := range cmd.Params {
+			// A variadic param is positional and repeatable, so render it
+			// as ARG... rather than as a --flag=TYPE it is never given as.
+			if p.Variadic {
+				arg := strings.ToUpper(p.Name) + "..."
+				if p.Required {
+					fmt.Fprintf(&b, ".RI %s\n", arg)
+				} else {
+					fmt.Fprintf(&b, ".RI [ %s ]\n", arg)
+				}
+				continue
+			}
 			flagStr := fmt.Sprintf("--%s", p.Name)
 			if p.Short != 0 {
 				flagStr = fmt.Sprintf("-%c | --%s", p.Short, p.Name)

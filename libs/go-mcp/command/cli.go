@@ -103,22 +103,32 @@ func (a *App) RunCLI(ctx context.Context, args []string, p Prompter) error {
 	}
 
 	// Assign positional args to command params that weren't set by flags,
-	// in declaration order.
-	if len(positional) > 0 {
-		pi := 0
-		for _, param := range cmd.Params {
-			if pi >= len(positional) {
-				break
-			}
-			if _, set := cmdVals[param.Name]; set {
-				continue
-			}
-			if param.Type == Bool {
-				continue
-			}
-			cmdVals[param.Name] = positional[pi]
-			pi++
+	// in declaration order. A Variadic param takes every positional left
+	// and ends the assignment; without one, a positional past the last
+	// param has nowhere to go and is dropped.
+	pi := 0
+	for _, param := range cmd.Params {
+		if _, set := cmdVals[param.Name]; set {
+			continue
 		}
+		if param.Type == Bool {
+			continue
+		}
+		if param.Variadic {
+			// Copy rather than reslice so the handler cannot alias (and
+			// mutate) the caller's argv, and so an exhausted variadic
+			// marshals as [] instead of null.
+			rest := make([]string, len(positional)-pi)
+			copy(rest, positional[pi:])
+			cmdVals[param.Name] = rest
+			pi = len(positional)
+			break
+		}
+		if pi >= len(positional) {
+			break
+		}
+		cmdVals[param.Name] = positional[pi]
+		pi++
 	}
 
 	argsJSON, err := json.Marshal(cmdVals)

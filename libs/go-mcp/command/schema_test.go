@@ -91,6 +91,42 @@ func TestCommandInputSchemaArray(t *testing.T) {
 	}
 }
 
+func TestCommandInputSchemaVariadicIsStringArray(t *testing.T) {
+	// A variadic param is declared with its element Type (String) but
+	// always crosses the wire as an array, so an MCP client must be told
+	// "array of string" or it will send a bare string the handler can't
+	// unmarshal into []string.
+	cmd := &Command{
+		Name: "close",
+		Params: []Param{
+			{Name: "target", Type: String, Description: "sessions", Variadic: true},
+		},
+	}
+
+	var schema map[string]any
+	if err := json.Unmarshal(cmd.InputSchema(), &schema); err != nil {
+		t.Fatalf("unmarshal schema: %v", err)
+	}
+	props, ok := schema["properties"].(map[string]any)
+	if !ok {
+		t.Fatalf("schema has no properties: %v", schema)
+	}
+	target, ok := props["target"].(map[string]any)
+	if !ok {
+		t.Fatalf("schema has no target property: %v", props)
+	}
+	if target["type"] != "array" {
+		t.Errorf("variadic param type = %v, want array", target["type"])
+	}
+	items, ok := target["items"].(map[string]any)
+	if !ok {
+		t.Fatalf("variadic param has no items schema: %v", target)
+	}
+	if items["type"] != "string" {
+		t.Errorf("variadic items type = %v, want string", items["type"])
+	}
+}
+
 func TestCommandInputSchemaObject(t *testing.T) {
 	cmd := Command{
 		Name: "exec",

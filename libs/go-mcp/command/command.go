@@ -94,6 +94,24 @@ type Param struct {
 	Default     any
 	Completer   func() map[string]string
 	Items       []Param // item schema for Array params (generates object items with properties)
+
+	// Variadic makes this param consume every remaining positional
+	// argument instead of exactly one. At most one param per command may
+	// be Variadic; a second one never sees a positional.
+	//
+	// Because params here serve as both flags and positional slots, a
+	// param declared after a Variadic one is not useless — it simply
+	// becomes flag-only, since the Variadic param has taken every
+	// positional. That is usually what you want: `close <target>...`
+	// with a trailing --nix-gc flag declares target Variadic and leaves
+	// nix-gc after it.
+	//
+	// The handler always receives a JSON array of strings, empty rather
+	// than absent when none were supplied, so a `[]string` field is safe
+	// to range over without a nil check. CLI positionals are strings, so
+	// Type is the element type and should be String; the MCP input schema
+	// reports the param as an array of strings either way.
+	Variadic bool
 }
 
 // Example represents a single usage example for a command or app.
