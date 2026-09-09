@@ -151,6 +151,31 @@ footer_line() {
   assert_output "no sessions"
 }
 
+@test "§6.1: a footer is not wrapped or truncated to the table width" {
+  # The footer far exceeds --width 30; the lone pin column cannot shrink,
+  # so any ellipsis or line break in the output would be the footer's.
+  local long='self= this daemon build · remote= the endpoint build · no self= means stale'
+  mk "{\"columns\":[{\"name\":\"ID\",\"role\":\"pin\"}],\"footer\":[\"$long\"]}" \
+    '{"cells":["x"]}'
+  run "$MESA_BIN" --force-style --width 30 <"$infile"
+  assert_success
+  refute_output --partial "…"
+  # One neutral span renders as one contiguous run, so the whole text must
+  # sit on a single line.
+  printf '%s\n' "$output" | grep -qF "$long"
+}
+
+@test "§2: an unrecognized header field is ignored, not an error" {
+  # Additive header growth depends on this: a renderer that rejected an
+  # unknown field would make every future field a breaking change.
+  mk '{"columns":[{"name":"ID","role":"pin"}],"unheardOf":123,"alsoNew":{"deep":["x"]}}' \
+    '{"cells":["api"]}'
+  run "$MESA_BIN" --plain <"$infile"
+  assert_success
+  assert_output "ID
+api"
+}
+
 @test "§2: a stream with no footer field renders exactly as before" {
   mk '{"columns":[{"name":"ID","role":"pin"}]}' '{"cells":["api"]}'
   run "$MESA_BIN" --plain <"$infile"

@@ -160,6 +160,36 @@ func TestRenderStyledFooterKeepsExplicitSeverity(t *testing.T) {
 	}
 }
 
+func TestRenderStyledFooterIgnoresTableWidth(t *testing.T) {
+	// RFC 0003 §6.1: footer text MUST NOT be wrapped, truncated, or
+	// reflowed to the table width. The footer here is far wider than the
+	// 30-column target, and the single pin column means nothing else can
+	// ellipsize, so any "…" or line break would be the footer's.
+	long := "self= this daemon's build · remote= the endpoint's build · no self= means stale"
+	tbl := New().Col("ID", Pin).Footer(Text(long)).Row(Text("x"))
+
+	var buf bytes.Buffer
+	if err := tbl.Render(&buf, ForceStyle(), Width(30)); err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	out := buf.String()
+	if strings.Contains(out, "…") {
+		t.Errorf("footer was ellipsized at the table width:\n%s", out)
+	}
+	// A single neutral span renders as one contiguous run between one
+	// escape pair, so the whole text must sit on one line.
+	var found bool
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, long) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("footer was wrapped or reflowed to the table width:\n%s", out)
+	}
+}
+
 func TestRenderFooterSanitizesControlChars(t *testing.T) {
 	tbl := New().Col("A", Pin).Row(Text("a")).Footer(Text("k\x1b[31mey"))
 

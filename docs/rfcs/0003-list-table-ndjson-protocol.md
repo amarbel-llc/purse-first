@@ -337,6 +337,8 @@ point `MESA_BIN` at its own binary and run the identical suite.
 | §6.1/§7.3, footer on a pipe | footer lines follow the rows verbatim, unstyled and un-TABbed |
 | §6.1, footer below the legend | on a TTY the order is grid, then legend, then footer |
 | §6.1, footer severities | a `neutral` footer span is dimmed; a styled span keeps its color |
+| §6.1, footer ignores width | a footer wider than the table is neither wrapped nor ellipsized |
+| §2, unknown header field | an unrecognized header field is ignored rather than rejected |
 | §7.4, empty suppresses the footer | a header-only stream with a `footer` prints only `empty` |
 | §2, `footer` is additive | a stream omitting `footer` renders exactly as before |
 | §5, unknown severity degrades | an unknown `sev` renders without aborting |

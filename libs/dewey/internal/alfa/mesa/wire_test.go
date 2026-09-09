@@ -108,6 +108,30 @@ func TestFooterEncodesAfterLegendAsCells(t *testing.T) {
 	}
 }
 
+func TestDecodeIgnoresUnknownHeaderFields(t *testing.T) {
+	// RFC 0003 §2: an unknown header field is not among the §8 protocol
+	// errors, and a renderer MUST ignore it. This is what lets the header
+	// grow additively without a `v` bump — a renderer that rejected unknown
+	// fields would turn every future field into a breaking change.
+	in := `{"columns":[{"name":"A","role":"pin"}],"footer":["key"],"unheardOf":123,"alsoNew":{"deep":["x"]}}
+{"cells":["hi"]}
+`
+	tbl, err := DecodeStream(strings.NewReader(in))
+	if err != nil {
+		t.Fatalf("unknown header field rejected: %v", err)
+	}
+	// The recognized fields around it still decode.
+	if len(tbl.Columns) != 1 || tbl.Columns[0].Name != "A" {
+		t.Errorf("columns = %+v, want one column named A", tbl.Columns)
+	}
+	if len(tbl.Footers) != 1 || tbl.Footers[0].plain() != "key" {
+		t.Errorf("footer = %+v, want one line %q", tbl.Footers, "key")
+	}
+	if len(tbl.Rows) != 1 {
+		t.Errorf("got %d rows, want 1", len(tbl.Rows))
+	}
+}
+
 func TestDecodeFooterOmittedLeavesNone(t *testing.T) {
 	// An old producer that never learned about footers renders as before.
 	in := `{"columns":[{"name":"A","role":"pin"}]}
