@@ -99,6 +99,16 @@ debug-dewey-pkgs-drift: build-dagnabit
       DAGNABIT_CEILING_DIRECTORIES="{{ justfile_directory() }}" \
       {{ justfile_directory() }}/build/dagnabit export --check --library
 
+# The go-mcp .7 pages under cmd/go-mcp-docs/doc/ are hand-written roff embedded
+# into the go-mcp-docs binary, and nothing in `just` renders them — a broken
+# macro only shows up when someone runs `man`. mandoc is not in the devshell
+# (nothing else needs it), so this pulls it via `nix run`.
+#
+# lint the hand-written go-mcp .7 manpage sources for roff errors
+[group('debug')]
+debug-lint-go-mcp-manpages:
+    nix run nixpkgs#mandoc -- -T lint {{ justfile_directory() }}/cmd/go-mcp-docs/doc/*.7
+
 # conformist check: read-only format + lint gate. Builds the flake's
 # `checks.<sys>.formatting` (conformistEval.config.build.check self) — the
 # sandboxed `conformist check` over the whole tree (Go/Nix/shell formatter drift

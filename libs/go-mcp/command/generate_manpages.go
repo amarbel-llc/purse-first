@@ -7,7 +7,72 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
+
+// maxManNameDescription is the longest NAME-line description the fleet manpage
+// index renders as a single row. doppelgang's lint-man enforces the same budget
+// over rendered pages, so emitting past it only defers the failure to the gate.
+const maxManNameDescription = 72
+
+// manNameDescription picks the text following "name \- " on a page's NAME line.
+//
+// Description.Short is used verbatim whenever it can serve, so every page that
+// already satisfies the contract keeps rendering identically. Short is also the
+// MCP tool description though, and those run to paragraphs — so when it cannot
+// serve, Title is tried as an explicit override and then Short's opening
+// clause. MCP registration is untouched by any of this: it reads
+// Description.Short directly, and the full text still reaches the page body via
+// DESCRIPTION.
+func manNameDescription(page, short, title string) (string, error) {
+	for _, candidate := range []string{short, title, firstManNameClause(short)} {
+		if isManNameDescription(candidate) {
+			return candidate, nil
+		}
+	}
+
+	best := firstManNameClause(short)
+	if best == "" {
+		best = firstManNameClause(title)
+	}
+	if best == "" {
+		return "", fmt.Errorf(
+			"man page %s: NAME description is empty; set Description.Short or Title",
+			page,
+		)
+	}
+	return "", fmt.Errorf(
+		"man page %s: NAME description is %d chars, max %d: %q; set Title to a "+
+			"one-line summary (Description.Short stays the MCP tool description)",
+		page, utf8.RuneCountInString(best), maxManNameDescription, best,
+	)
+}
+
+func isManNameDescription(s string) bool {
+	return s != "" &&
+		!strings.ContainsAny(s, "\n\r") &&
+		utf8.RuneCountInString(s) <= maxManNameDescription
+}
+
+// firstManNameClause returns the leading clause of s: everything before the
+// first line break, or before the first '.', '!' or '?' that ends the string or
+// is followed by whitespace, so "and/or" and "feed/{id}" survive. Abbreviations
+// such as "e.g." are not special-cased — keep a description's opening clause
+// free of them, or set Title.
+func firstManNameClause(s string) string {
+	s = strings.TrimSpace(s)
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '\n', '\r':
+			return strings.TrimSpace(s[:i])
+		case '.', '!', '?':
+			if i+1 == len(s) || s[i+1] == ' ' || s[i+1] == '\t' || s[i+1] == '\n' {
+				return strings.TrimSpace(s[:i])
+			}
+		}
+	}
+	return s
+}
 
 // GenerateManpages writes roff-formatted manpages to {dir}/share/man/man1/.
 // One page per app ({name}.1) and one per non-hidden command ({name}-{cmd}.1).
@@ -38,9 +103,14 @@ func (a *App) writeAppManpage(dir string) error {
 	date := time.Now().Format("2006-01-02")
 	name := strings.ToUpper(a.Name)
 
+	nameDesc, err := manNameDescription(a.Name, a.Description.Short, "")
+	if err != nil {
+		return err
+	}
+
 	fmt.Fprintf(&b, ".TH %s 1 %q %q\n", name, date, a.Name+" "+a.Version)
 	fmt.Fprintf(&b, ".SH NAME\n")
-	fmt.Fprintf(&b, "%s \\- %s\n", a.Name, a.Description.Short)
+	fmt.Fprintf(&b, "%s \\- %s\n", a.Name, nameDesc)
 
 	// SYNOPSIS
 	fmt.Fprintf(&b, ".SH SYNOPSIS\n")
@@ -68,9 +138,17 @@ func (a *App) writeAppManpage(dir string) error {
 	if len(cmds) > 0 {
 		fmt.Fprintf(&b, ".SH COMMANDS\n")
 		for _, nc := range cmds {
+			// The COMMANDS list is the same one-line-summary role as a NAME
+			// line, so it takes the same derivation rather than a paragraph.
+			summary, err := manNameDescription(
+				a.Name+"-"+nc.name, nc.cmd.Description.Short, nc.cmd.Title,
+			)
+			if err != nil {
+				return err
+			}
 			fmt.Fprintf(&b, ".TP\n")
 			fmt.Fprintf(&b, ".BR %s (1)\n", nc.name)
-			fmt.Fprintf(&b, "%s\n", nc.cmd.Description.Short)
+			fmt.Fprintf(&b, "%s\n", summary)
 		}
 	}
 
@@ -97,9 +175,14 @@ func (a *App) writeCommandManpage(dir string, registeredName string, cmd *Comman
 	fullName := a.Name + "-" + registeredName
 	upperName := strings.ToUpper(fullName)
 
+	nameDesc, err := manNameDescription(fullName, cmd.Description.Short, cmd.Title)
+	if err != nil {
+		return err
+	}
+
 	fmt.Fprintf(&b, ".TH %s 1 %q %q\n", upperName, date, a.Name+" "+a.Version)
 	fmt.Fprintf(&b, ".SH NAME\n")
-	fmt.Fprintf(&b, "%s \\- %s\n", fullName, cmd.Description.Short)
+	fmt.Fprintf(&b, "%s \\- %s\n", fullName, nameDesc)
 
 	// SYNOPSIS
 	fmt.Fprintf(&b, ".SH SYNOPSIS\n")

@@ -69,6 +69,12 @@ func (pt ParamType) JSONSchemaType() string {
 }
 
 // Description holds short and long descriptions for a command.
+//
+// Short serves two audiences with opposing budgets: agents reading an MCP
+// tools/list want it thorough, while a manpage NAME line must stay one short
+// clause. Short is sent to MCP verbatim however long it grows; the NAME line
+// falls back to Title, then to Short's opening clause, when Short itself is
+// too long to serve. See Command.Title.
 type Description struct {
 	Short string // one-line: manpage NAME, completion tab text, MCP tool description
 	Long  string // paragraph: manpage DESCRIPTION, --help output
@@ -130,7 +136,9 @@ type Command struct {
 	Description Description
 	Hidden      bool
 
-	// Title is a human-readable display name for the MCP tool (V1).
+	// Title is a human-readable display name for the MCP tool (V1). It also
+	// serves as the manpage NAME-line description when Description.Short is
+	// too long for one — set it on any command whose Short is a paragraph.
 	Title string
 
 	// Annotations provides V1 behavior hints (readOnly, destructive, etc.).

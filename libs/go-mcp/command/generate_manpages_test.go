@@ -1,13 +1,214 @@
 package command
 
 import (
+	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 	"testing/fstest"
+
+	"code.linenisgreat.com/purse-first/libs/go-mcp/server"
 )
+
+// manNameLine returns the line following .SH NAME, which is the whole
+// "name \- description" entry the fleet index parses.
+func manNameLine(t *testing.T, content string) string {
+	t.Helper()
+	lines := strings.Split(content, "\n")
+	for i, line := range lines {
+		if line == ".SH NAME" && i+1 < len(lines) {
+			return lines[i+1]
+		}
+	}
+	t.Fatalf("no .SH NAME entry in:\n%s", content)
+	return ""
+}
+
+func readManpage(t *testing.T, dir, name string) string {
+	t.Helper()
+	page, err := os.ReadFile(filepath.Join(dir, "share", "man", "man1", name))
+	if err != nil {
+		t.Fatalf("read %s: %v", name, err)
+	}
+	return string(page)
+}
+
+// A paragraph-long Short is what MCP tools/list wants; the NAME line takes
+// Title instead, and the full Short still reaches DESCRIPTION.
+func TestGenerateManpageLongShortPrefersTitle(t *testing.T) {
+	longShort := "Spawn a detached worker session. " +
+		strings.Repeat("The brief is the worker's only context. ", 8)
+
+	app := NewApp("spinclass", "Worktree session manager")
+	app.AddCommand(&Command{
+		Name:        "spawn-session",
+		Title:       "Spawn a detached worker session in a sibling repo",
+		Description: Description{Short: longShort},
+		Run: func(ctx context.Context, args json.RawMessage, p Prompter) (*Result, error) {
+			return TextResult("ok"), nil
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	content := readManpage(t, dir, "spinclass-spawn-session.1")
+
+	want := "spinclass-spawn-session \\- Spawn a detached worker session in a sibling repo"
+	if got := manNameLine(t, content); got != want {
+		t.Errorf("NAME line = %q, want %q", got, want)
+	}
+	if !strings.Contains(content, longShort) {
+		t.Errorf("DESCRIPTION lost the full Short:\n%s", content)
+	}
+
+	registry := server.NewToolRegistryV1()
+	app.RegisterMCPToolsV1(registry)
+	result, err := registry.ListToolsV1(context.Background(), "")
+	if err != nil {
+		t.Fatalf("ListToolsV1: %v", err)
+	}
+	if len(result.Tools) != 1 {
+		t.Fatalf("tools len = %d, want 1", len(result.Tools))
+	}
+	if result.Tools[0].Description != longShort {
+		t.Errorf("MCP description was rewritten: %q", result.Tools[0].Description)
+	}
+}
+
+// Without a Title, the NAME line falls back to Short's opening clause rather
+// than emitting a paragraph.
+func TestGenerateManpageLongShortFallsBackToFirstClause(t *testing.T) {
+	app := NewApp("nebulous", "NewsBlur MCP server")
+	app.AddCommand(&Command{
+		Name: "story_query",
+		Description: Description{
+			Short: "Query stories with structured filters. " +
+				strings.Repeat("Start with the facets resource. ", 8),
+		},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	content := readManpage(t, dir, "nebulous-story_query.1")
+	want := "nebulous-story_query \\- Query stories with structured filters"
+	if got := manNameLine(t, content); got != want {
+		t.Errorf("NAME line = %q, want %q", got, want)
+	}
+}
+
+// When neither Title nor the opening clause fits, generation fails naming the
+// page — a new long-Short tool cannot silently regress the index.
+func TestGenerateManpageLongShortNoTitleFails(t *testing.T) {
+	app := NewApp("myapp", "My app")
+	app.AddCommand(&Command{
+		Name:        "sprawl",
+		Description: Description{Short: strings.Repeat("x", 200)},
+	})
+
+	err := app.GenerateManpages(t.TempDir())
+	if err == nil {
+		t.Fatal("expected an error for an over-long NAME description, got nil")
+	}
+	for _, want := range []string{"myapp-sprawl", "200 chars", "max 72", "set Title"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q missing %q", err.Error(), want)
+		}
+	}
+}
+
+func TestGenerateManpageAppLongShortFails(t *testing.T) {
+	app := NewApp("myapp", strings.Repeat("y", 100))
+	app.AddCommand(&Command{
+		Name:        "run",
+		Description: Description{Short: "Run it"},
+	})
+
+	err := app.GenerateManpages(t.TempDir())
+	if err == nil {
+		t.Fatal("expected an error for an over-long app NAME description, got nil")
+	}
+	if !strings.Contains(err.Error(), "man page myapp:") {
+		t.Errorf("error %q should name the app page", err.Error())
+	}
+}
+
+// A Short that already satisfies the contract is used verbatim even when Title
+// is set, so pages that pass lint today render byte-identically.
+func TestGenerateManpageShortShortWinsOverTitle(t *testing.T) {
+	app := NewApp("grit", "Git operations")
+	app.AddCommand(&Command{
+		Name:        "status",
+		Title:       "Status",
+		Description: Description{Short: "Show working tree status."},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	content := readManpage(t, dir, "grit-status.1")
+	want := "grit-status \\- Show working tree status."
+	if got := manNameLine(t, content); got != want {
+		t.Errorf("NAME line = %q, want %q", got, want)
+	}
+}
+
+// The app page's COMMANDS list is the same one-line-summary role as a NAME
+// line, so it carries the summary rather than the paragraph.
+func TestGenerateManpageCommandsListUsesSummary(t *testing.T) {
+	longShort := "Merge this session. " + strings.Repeat("It blocks on the gate. ", 8)
+
+	app := NewApp("spinclass", "Worktree session manager")
+	app.AddCommand(&Command{
+		Name:        "merge",
+		Description: Description{Short: longShort},
+	})
+
+	dir := t.TempDir()
+	if err := app.GenerateManpages(dir); err != nil {
+		t.Fatalf("GenerateManpages: %v", err)
+	}
+
+	content := readManpage(t, dir, "spinclass.1")
+	if !strings.Contains(content, ".BR merge (1)\nMerge this session\n") {
+		t.Errorf("COMMANDS entry should carry the summary:\n%s", content)
+	}
+	if strings.Contains(content, longShort) {
+		t.Errorf("COMMANDS entry carried the whole paragraph:\n%s", content)
+	}
+}
+
+func TestFirstManNameClause(t *testing.T) {
+	cases := []struct {
+		in, want string
+	}{
+		{"Show working tree status", "Show working tree status"},
+		{"Show status. And more.", "Show status"},
+		{"Show status.", "Show status"},
+		{"Really? Yes.", "Really"},
+		{"Stop! Now.", "Stop"},
+		{"Read and/or write a feed/{id} node", "Read and/or write a feed/{id} node"},
+		{"Version 1.2.3 of the thing", "Version 1.2.3 of the thing"},
+		{"First line\nSecond line", "First line"},
+		{"  padded.  ", "padded"},
+		{"", ""},
+	}
+	for _, tc := range cases {
+		if got := firstManNameClause(tc.in); got != tc.want {
+			t.Errorf("firstManNameClause(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}
 
 func TestGenerateManpageApp(t *testing.T) {
 	app := NewApp("grit", "Git operations MCP server")

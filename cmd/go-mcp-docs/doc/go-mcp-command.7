@@ -175,6 +175,16 @@ type Description struct {
     Long  string // manpage DESCRIPTION, --help output
 }
 .fi
+.PP
+.B Short
+serves two audiences with opposing budgets. Agents reading an MCP
+.I tools/list
+want it thorough, while a manpage NAME line must stay one short clause. MCP
+registration sends
+.B Short
+verbatim however long it grows; the NAME line is derived instead. See
+.B MANPAGE NAME LINES
+below.
 .SS ToolMapping
 Declares a tool interception: which Claude Code built-in tool to replace,
 and the conditions under which to intercept.
@@ -256,6 +266,64 @@ srv, _ := server.New(t, server.Options{
 })
 srv.Run(context.Background())
 .fi
+.SH MANPAGE NAME LINES
+A generated page's NAME line must survive the extraction
+.BR whatis (1)
+and
+.BR lexgrog (1)
+perform: one physical line, a non-empty description, at most 72 characters.
+Fleet tooling renders those lines into a manpage index, and
+.B doppelgang lint\-man
+fails a build that exceeds the budget.
+.PP
+.B Description.Short
+cannot always meet that, because the same field is the MCP tool description and
+those are deliberately thorough.
+.B GenerateManpages
+therefore derives the NAME description in this order, taking the first
+candidate that is non-empty, single-line, and within 72 characters:
+.RS
+.TP
+.B Description.Short
+Used verbatim whenever it fits, so a page that satisfies the contract today
+renders unchanged.
+.TP
+.B Title
+The explicit override. Set it on any command whose
+.B Short
+is a paragraph.
+.TP
+Opening clause of
+.B Description.Short
+Everything before the first line break, or before the first
+.RB ` . '
+.RB ` ! '
+or
+.RB ` ? '
+that ends the string or is followed by whitespace \(em so "and/or" and
+"feed/{id}" survive. Abbreviations such as "e.g." are not special\-cased.
+.RE
+.PP
+When no candidate fits,
+.B GenerateManpages
+returns an error naming the page and the over-long text rather than emitting a
+page that would fail the gate. A new tool with a paragraph-long
+.B Short
+cannot silently regress the index.
+.PP
+None of this alters MCP registration:
+.B RegisterMCPTools
+and
+.B RegisterMCPToolsV1
+send
+.B Description.Short
+unchanged. The full text still reaches the page body, since DESCRIPTION falls
+back to
+.B Short
+when
+.B Description.Long
+is empty. The app page's COMMANDS list takes the same derivation, being the
+same one-line-summary role.
 .SH SEE ALSO
 .BR go-mcp (7),
 .BR go-mcp-server (7),
