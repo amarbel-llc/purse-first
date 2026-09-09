@@ -257,8 +257,9 @@ directly rather than the renderer's plain form.
 #### 7.4 Empty table
 
 When zero row records follow the header, the renderer MUST render the `empty`
-string if one is present (styled `muted` on a TTY; verbatim on a pipe) and render
-nothing beyond it — neither the legend nor the footer, in either mode: with no
+string if one is present (styled `muted` on a TTY — including any `palette`
+override for `muted` (§5), which applies here exactly as it does to a row span;
+verbatim on a pipe) and render nothing beyond it — neither the legend nor the footer, in either mode: with no
 rows there are no glyphs for a key to explain. An empty table MUST NOT be treated
 as an error: the process exit status MUST be `0`.
 
@@ -339,6 +340,7 @@ point `MESA_BIN` at its own binary and run the identical suite.
 | §6.1, footer severities | a `neutral` footer span is dimmed; a styled span keeps its color |
 | §6.1, footer ignores width | a footer wider than the table is neither wrapped nor ellipsized |
 | §2, unknown header field | an unrecognized header field is ignored rather than rejected |
+| §5/§7.4, palette reaches `empty` | a `palette` override for `muted` recolors the empty-state text |
 | §7.4, empty suppresses the footer | a header-only stream with a `footer` prints only `empty` |
 | §2, `footer` is additive | a stream omitting `footer` renders exactly as before |
 | §5, unknown severity degrades | an unknown `sev` renders without aborting |

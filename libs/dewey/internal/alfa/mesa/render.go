@@ -156,7 +156,11 @@ func (t *Table) renderStyled(w io.Writer, cfg renderConfig) error {
 		if t.EmptyText == "" {
 			return nil
 		}
-		out := r.NewStyle().Foreground(mutedColor).Render(sanitize(t.EmptyText))
+		// colorFor, not the bare mutedColor: RFC 0003 §7.4 styles the empty
+		// text `muted`, and §5 lets `palette` override any severity — so the
+		// override has to reach here the way it reaches rows, the legend,
+		// and footer prose.
+		out := t.styleSpan(r, Span{Text: t.EmptyText, Sev: Muted})
 		_, err := fmt.Fprintln(w, out)
 		return err
 	}

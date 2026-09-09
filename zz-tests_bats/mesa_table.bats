@@ -85,6 +85,18 @@ TAB=$'\t'
   assert_output "no sessions"
 }
 
+@test "§5/§7.4: a palette override for muted recolors the empty-state text" {
+  # The empty text is styled `muted`, so a palette override for `muted`
+  # must reach it the same way it reaches a row span (purse-first#188).
+  local default_out overridden
+  mk '{"columns":[{"name":"ID","role":"pin"}],"empty":"no sessions"}'
+  default_out=$("$MESA_BIN" --force-style <"$infile")
+  mk '{"columns":[{"name":"ID","role":"pin"}],"empty":"no sessions","palette":{"muted":"#ff0000"}}'
+  overridden=$("$MESA_BIN" --force-style <"$infile")
+  [[ $overridden == *"no sessions"* ]]
+  [[ $overridden != "$default_out" ]]
+}
+
 @test "§6.1/§7.3: footer lines follow the rows verbatim on a pipe" {
   # Two columns, so the rows carry a TAB the footer lines must not.
   mk '{"columns":[{"name":"ID","role":"pin"},{"name":"AGE","role":"pin"}],"footer":["self= this daemon'"'"'s build",{"spans":[{"text":"●","sev":"warn"},{"text":" stale"}]}]}' \

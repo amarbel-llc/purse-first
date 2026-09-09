@@ -35,6 +35,47 @@ func TestRenderPlainEmpty(t *testing.T) {
 	}
 }
 
+func TestRenderStyledEmptyHonorsPaletteOverride(t *testing.T) {
+	// RFC 0003 §7.4 styles the empty text `muted`; §5 lets `palette`
+	// override any severity. The override therefore has to reach the empty
+	// text, as it does rows, the legend, and footer prose (purse-first#188).
+	render := func(palette map[Severity]string) string {
+		tbl := New().Col("ID", Pin).Empty("no sessions")
+		if palette != nil {
+			tbl = tbl.Palette(palette)
+		}
+		var buf bytes.Buffer
+		if err := tbl.Render(&buf, ForceStyle()); err != nil {
+			t.Fatalf("render: %v", err)
+		}
+		return buf.String()
+	}
+
+	plain := render(nil)
+	overridden := render(map[Severity]string{Muted: "#ff0000"})
+
+	if !strings.Contains(overridden, "no sessions") {
+		t.Errorf("empty text lost under a palette override: %q", overridden)
+	}
+	if overridden == plain {
+		t.Errorf("palette override for muted did not reach the empty text: %q", overridden)
+	}
+}
+
+func TestRenderStyledEmptySanitizesControlChars(t *testing.T) {
+	// The empty text now routes through styleSpan; make sure that kept the
+	// sanitization the old direct-Foreground path did.
+	tbl := New().Col("ID", Pin).Empty("no\x1b[31m sessions")
+
+	var buf bytes.Buffer
+	if err := tbl.Render(&buf, ForcePlain()); err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	if strings.Contains(buf.String(), "\x1b") {
+		t.Errorf("empty text leaked an escape sequence: %q", buf.String())
+	}
+}
+
 func TestRenderPlainFooter(t *testing.T) {
 	tbl := New().
 		Col("ID", Pin).
