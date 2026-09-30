@@ -104,6 +104,19 @@ debug-dewey-pkgs-drift: build-dagnabit
 # macro only shows up when someone runs `man`. mandoc is not in the devshell
 # (nothing else needs it), so this pulls it via `nix run`.
 #
+# Build a downstream consumer's flake check with its purse-first input
+# overridden to this worktree's committed HEAD (git+file, so uncommitted edits
+# are invisible — commit first). Verifies a dagnabit/dewey fix against a real
+# consumer before merging, e.g. purse-first#195:
+#   just debug-consumer-check ~/eng/repos/cutting-garden dagnabit-codegen
+#
+# build a consumer's checks.<system>.<check> against this worktree's purse-first
+[group('debug')]
+debug-consumer-check consumer check:
+    nix build --no-link -L \
+      "{{ consumer }}#checks.$(nix eval --raw --impure --expr builtins.currentSystem).{{ check }}" \
+      --override-input purse-first "git+file://{{ justfile_directory() }}"
+
 # lint the hand-written go-mcp .7 manpage sources for roff errors
 [group('debug')]
 debug-lint-go-mcp-manpages:
