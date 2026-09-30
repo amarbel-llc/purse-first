@@ -82,18 +82,19 @@ lint-go:
 # running just the facade check without the rest of the impure lane.
 #
 # purse-first#159: purse-first has NO conformist.toml on disk (Nix-generated
-# config), so dagnabit is pointed at the generated config via
-# DAGNABIT_CONFORMIST_CONFIG (the .#conformist-config flake output) — it then
-# formats facades with purse-first's REAL config instead of searching upward
-# and escalating to a stray ancestor ~/eng/conformist.toml. The CEILING env var
-# is a belt-and-suspenders bound that stops any upward walk at the worktree root.
+# config), so dagnabit is pointed at its formatters-only facade config via
+# DAGNABIT_CONFORMIST_CONFIG (the .#conformist-facade-config flake output, built
+# from lib.conformistModules.dagnabit-facade; see dagnabit(1)) instead of
+# searching upward and escalating to a stray ancestor ~/eng/conformist.toml. The
+# CEILING env var is a belt-and-suspenders bound that stops any upward walk at
+# the worktree root.
 #
 # check libs/dewey/pkgs/ facades for export drift without mutating the tree
 [group('debug')]
 debug-dewey-pkgs-drift: build-dagnabit
     #!/usr/bin/env bash
     set -euo pipefail
-    config=$(nix build {{ justfile_directory() }}#conformist-config --no-link --print-out-paths)
+    config=$(nix build {{ justfile_directory() }}#conformist-facade-config --no-link --print-out-paths)
     cd {{ justfile_directory() }}/libs/dewey && \
       DAGNABIT_CONFORMIST_CONFIG="$config" \
       DAGNABIT_CEILING_DIRECTORIES="{{ justfile_directory() }}" \
@@ -596,7 +597,7 @@ debug-dewey-reposition-apply:
 debug-dewey-export pkg:
     #!/usr/bin/env bash
     set -euo pipefail
-    config=$(nix build {{ justfile_directory() }}#conformist-config --no-link --print-out-paths)
+    config=$(nix build {{ justfile_directory() }}#conformist-facade-config --no-link --print-out-paths)
     cd {{ justfile_directory() }}/libs/dewey && \
       DAGNABIT_CONFORMIST_CONFIG="$config" \
       DAGNABIT_CEILING_DIRECTORIES="{{ justfile_directory() }}" \
@@ -611,7 +612,7 @@ debug-dewey-export pkg:
 debug-dewey-export-library *flags:
     #!/usr/bin/env bash
     set -euo pipefail
-    config=$(nix build {{ justfile_directory() }}#conformist-config --no-link --print-out-paths)
+    config=$(nix build {{ justfile_directory() }}#conformist-facade-config --no-link --print-out-paths)
     cd {{ justfile_directory() }}/libs/dewey && \
       DAGNABIT_CONFORMIST_CONFIG="$config" \
       DAGNABIT_CEILING_DIRECTORIES="{{ justfile_directory() }}" \
@@ -630,7 +631,7 @@ debug-dewey-export-library *flags:
 debug-dewey-initsmoke: build-dagnabit
     #!/usr/bin/env bash
     set -euo pipefail
-    config=$(nix build {{ justfile_directory() }}#conformist-config --no-link --print-out-paths)
+    config=$(nix build {{ justfile_directory() }}#conformist-facade-config --no-link --print-out-paths)
     cd {{ justfile_directory() }}/libs/dewey && \
       DAGNABIT_CONFORMIST_CONFIG="$config" \
       DAGNABIT_CEILING_DIRECTORIES="{{ justfile_directory() }}" \
@@ -646,7 +647,7 @@ debug-dewey-initsmoke: build-dagnabit
 debug-dewey-initsmoke-drift: build-dagnabit
     #!/usr/bin/env bash
     set -euo pipefail
-    config=$(nix build {{ justfile_directory() }}#conformist-config --no-link --print-out-paths)
+    config=$(nix build {{ justfile_directory() }}#conformist-facade-config --no-link --print-out-paths)
     cd {{ justfile_directory() }}/libs/dewey && \
       DAGNABIT_CONFORMIST_CONFIG="$config" \
       DAGNABIT_CEILING_DIRECTORIES="{{ justfile_directory() }}" \

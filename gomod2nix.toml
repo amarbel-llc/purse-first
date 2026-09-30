@@ -319,6 +319,20 @@ schema = 3
     hash = 'sha256-/dGNGhn9Jvdb6D95qbN1DLfS6H7ZS4G4AubU9zUDgdU='
     goVersion = '1.18'
 
+  [mod.'github.com/gobwas/glob']
+    version = 'v0.2.3'
+    hash = 'sha256-hYHMUdwxVkMOjSKjR7UWO0D0juHdI4wL8JEy5plu/Jc='
+    vendorPackages = [
+      'github.com/gobwas/glob',
+      'github.com/gobwas/glob/compiler',
+      'github.com/gobwas/glob/match',
+      'github.com/gobwas/glob/syntax',
+      'github.com/gobwas/glob/syntax/ast',
+      'github.com/gobwas/glob/syntax/lexer',
+      'github.com/gobwas/glob/util/runes',
+      'github.com/gobwas/glob/util/strings'
+    ]
+
   [mod.'github.com/golangci/plugin-module-register']
     version = 'v0.1.2'
     hash = 'sha256-1ynPByzfsjZtScZyxl36ARmva6rSIxIyDi6P7pQwl30='

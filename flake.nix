@@ -85,6 +85,13 @@
         dewey-init-smoke = ./nix/linters/dewey-init-smoke.nix;
         dewey-reposition = ./nix/linters/dewey-reposition.nix;
       };
+
+      # Reusable conformist config modules (not linters). dagnabit-facade is
+      # the formatters-only config dagnabit's facade/init-smoke format pass
+      # runs via DAGNABIT_CONFORMIST_CONFIG; see the module header.
+      conformistModules = {
+        dagnabit-facade = ./nix/conformist-modules/dagnabit-facade.nix;
+      };
     in
     utils.lib.eachDefaultSystem (
       system:
@@ -117,6 +124,15 @@
           package = conformistBin;
         };
 
+        # dagnabit's facade config (formatters only), dogfooding the published
+        # lib.conformistModules.dagnabit-facade. dagnabit formats the pkgs/
+        # facades and initsmoke/ tests with this; ./conformist.nix excludes
+        # them so the repo's own passes never touch generated files.
+        conformistFacadeEval = conformist.lib.evalModule pkgs {
+          imports = [ conformistModules.dagnabit-facade ];
+          package = conformistBin;
+        };
+
         # IMPURE conformist config: whole-tree checks that need the live working
         # tree + host tools (the Go module cache / `go list` via the dewey
         # reposition + facade-export linters) and so cannot run in the sandboxed
@@ -135,17 +151,13 @@
             conformistLinters.dewey-init-smoke
           ];
           package = conformistBin;
-          # The facade-export linter's scripts run dagnabit's facade-format pass,
-          # which needs purse-first's PURE formatter config (goimports/gofumpt) —
-          # the same `.#conformist-config` the standalone facade-drift recipe
-          # (now debug-dewey-pkgs-drift) passes via DAGNABIT_CONFORMIST_CONFIG
-          # (purse-first#159). Baking the
-          # store path here removes the per-invocation env-var contract (#163).
-          linters.dewey-facade-export.conformistConfig = conformistEval.config.build.configFile;
-          # The init-smoke linter's generate/check both run dagnabit's format
-          # pass over the generated tests, so it needs the same PURE config
-          # (purse-first#180 / FDR 0014).
-          linters.dewey-init-smoke.conformistConfig = conformistEval.config.build.configFile;
+          # The facade-export and init-smoke linters run dagnabit's format pass
+          # over generated files, with the formatters-only facade config (the
+          # same `.#conformist-facade-config` the debug-dewey-* recipes pass via
+          # DAGNABIT_CONFORMIST_CONFIG). Baking the store path here removes the
+          # per-invocation env-var contract (#163).
+          linters.dewey-facade-export.conformistConfig = conformistFacadeEval.config.build.configFile;
+          linters.dewey-init-smoke.conformistConfig = conformistFacadeEval.config.build.configFile;
         };
       in
       {
@@ -155,12 +167,13 @@
           # The go-mcp manpage tree (formerly bundled into the marketplace).
           manpages = gomod.manpages;
           # The generated conformist config (TOML) for ./conformist.nix +
-          # presets.eng. dagnabit's facade-format lane builds this and points
-          # `dagnabit export` at it via DAGNABIT_CONFORMIST_CONFIG, so dagnabit
-          # formats facades with purse-first's REAL (Nix-generated) config
-          # rather than searching upward for a nonexistent conformist.toml and
-          # escalating to a stray ancestor (purse-first#159).
+          # presets.eng — the repo's own formatting/lint config.
           conformist-config = conformistEval.config.build.configFile;
+          # dagnabit's formatters-only facade config (conformistFacadeEval).
+          # The debug-dewey-* recipes point dagnabit at it via
+          # DAGNABIT_CONFORMIST_CONFIG (purse-first#159: no conformist.toml on
+          # disk to discover).
+          conformist-facade-config = conformistFacadeEval.config.build.configFile;
           # The generated config for the impure (working-tree) self-checks,
           # consumed by `just lint-worktree`. See ./conformist-impure.nix.
           conformist-impure-config = conformistImpureEval.config.build.configFile;
@@ -262,5 +275,8 @@
       # (e.g. madder: `imports = [ purse-first.lib.conformistLinters.dewey-facade-export ]`
       # with `deweyDir = "go"; library = false; dagnabitPackage = …; conformistConfig = …`).
       lib.conformistLinters = conformistLinters;
+      # `lib.conformistModules.dagnabit-facade`: the formatters-only config
+      # module a consumer evaluates for DAGNABIT_CONFORMIST_CONFIG.
+      lib.conformistModules = conformistModules;
     };
 }

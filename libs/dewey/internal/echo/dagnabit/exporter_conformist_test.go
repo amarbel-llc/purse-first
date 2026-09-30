@@ -473,6 +473,218 @@ func TestFormatOutput_PlainConformistGetsTreeRoot(t *testing.T) {
 	}
 }
 
+// argAfter returns the argv element following flag, or "" when absent.
+func argAfter(args []string, flag string) string {
+	index := slices.Index(args, flag)
+	if index < 0 || index+1 >= len(args) {
+		return ""
+	}
+	return args[index+1]
+}
+
+// withFacadeConfig writes body as a facade config and points
+// DAGNABIT_CONFORMIST_CONFIG at it, with a ceiling at dir so discovery could
+// never find anything else.
+func withFacadeConfig(t test_ui.T, dir, body string) string {
+	t.Helper()
+	configFile := filepath.Join(dir, "facade-conformist.toml")
+	if err := os.WriteFile(configFile, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("DAGNABIT_CEILING_DIRECTORIES", absForTest(t, dir))
+	t.Setenv("DAGNABIT_CONFORMIST_CONFIG", configFile)
+	return configFile
+}
+
+// writeGeneratedFacade plants a generated file at <root>/pkgs/widget/main.go.
+func writeGeneratedFacade(t test_ui.T, root string) {
+	t.Helper()
+	dir := filepath.Join(root, "pkgs", "widget")
+	mustMkdirAll(t, dir)
+	if err := os.WriteFile(filepath.Join(dir, "main.go"), []byte("package widget\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestFormatOutput_TreeRootIsModuleRoot: the tree root is the module root, not
+// the pkgs/ output dir, so a config sees generated files as `pkgs/...`. With
+// the root at pkgs/ a formatter working-dir resolved to pkgs/<dir> and facade
+// excludes stopped matching (the chrest regression after purse-first#195).
+func TestFormatOutput_TreeRootIsModuleRoot(t *testing.T) {
+	tt := test_ui.T{T: t}
+	tmpDir := absForTest(tt, t.TempDir())
+	writeGeneratedFacade(tt, tmpDir)
+	withFacadeConfig(tt, tmpDir, "")
+
+	sentinel := filepath.Join(tmpDir, "sentinel")
+	withFakeConformist(tt, sentinel)
+
+	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
+	if err := exporter.FormatOutput(); err != nil {
+		t.Fatalf("FormatOutput: %v", err)
+	}
+
+	args := readSentinelArgs(tt, sentinel)
+	if got := argAfter(args, "--tree-root"); got != tmpDir {
+		t.Errorf("expected --tree-root %s (module root), got %q; args=%v", tmpDir, got, args)
+	}
+	if last := args[len(args)-1]; last != filepath.Join(tmpDir, "pkgs") {
+		t.Errorf("expected the pkgs/ output dir as the positional path, got %q", last)
+	}
+}
+
+// TestFormatOutput_TreeRootFollowsOutputRoot: under `export --check` the output
+// is rendered into an in-tree temp root, and the tree root moves with it so the
+// comparison copy is also seen as `pkgs/...`.
+func TestFormatOutput_TreeRootFollowsOutputRoot(t *testing.T) {
+	tt := test_ui.T{T: t}
+	tmpDir := absForTest(tt, t.TempDir())
+	checkRoot := filepath.Join(tmpDir, ".dagnabit-check-test")
+	writeGeneratedFacade(tt, checkRoot)
+	withFacadeConfig(tt, tmpDir, "")
+
+	sentinel := filepath.Join(tmpDir, "sentinel")
+	withFakeConformist(tt, sentinel)
+
+	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs", OutputRoot: checkRoot}
+	if err := exporter.FormatOutput(); err != nil {
+		t.Fatalf("FormatOutput: %v", err)
+	}
+
+	args := readSentinelArgs(tt, sentinel)
+	if got := argAfter(args, "--tree-root"); got != checkRoot {
+		t.Errorf("expected --tree-root %s (check temp root), got %q; args=%v", checkRoot, got, args)
+	}
+}
+
+// TestFormatOutput_StripsAmbientTreeRootEnv: an ambient CONFORMIST_TREE_ROOT_FILE
+// alongside dagnabit's explicit --tree-root is a hard error in conformist, so
+// the child env must not carry any tree-root variable.
+func TestFormatOutput_StripsAmbientTreeRootEnv(t *testing.T) {
+	tt := test_ui.T{T: t}
+	if runtime.GOOS == "windows" {
+		t.Skip("PATH-injection fake binary not portable to Windows")
+	}
+	tmpDir := t.TempDir()
+	writeGeneratedFacade(tt, tmpDir)
+	withFacadeConfig(tt, tmpDir, "")
+
+	for _, name := range conformistTreeRootEnvVars {
+		t.Setenv(name, "flake.nix")
+	}
+
+	envDump := filepath.Join(tmpDir, "env")
+	binDir := t.TempDir()
+	script := fmt.Sprintf("#!/bin/sh\nenv > %q\n", envDump)
+	if err := os.WriteFile(filepath.Join(binDir, "conformist"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	prependPath(tt, binDir)
+
+	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
+	if err := exporter.FormatOutput(); err != nil {
+		t.Fatalf("FormatOutput: %v", err)
+	}
+
+	env, err := os.ReadFile(envDump)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, line := range strings.Split(string(env), "\n") {
+		name, _, _ := strings.Cut(line, "=")
+		if slices.Contains(conformistTreeRootEnvVars, name) {
+			t.Errorf("conformist child env still carries %s", line)
+		}
+	}
+}
+
+// TestFormatOutput_FacadeConfigDefaultsPass: the excludes every generated
+// conformist config carries (global defaults, per-formatter vendor/*) do not
+// match generated files, so a config built from the dagnabit-facade module is
+// accepted.
+func TestFormatOutput_FacadeConfigDefaultsPass(t *testing.T) {
+	tt := test_ui.T{T: t}
+	tmpDir := t.TempDir()
+	writeGeneratedFacade(tt, tmpDir)
+	withFacadeConfig(tt, tmpDir, `excludes = ["*.lock", "*.patch", "go.mod", "go.sum", "LICENSE"]
+
+[formatter]
+[formatter.goimports]
+command = "goimports"
+excludes = ["vendor/*"]
+includes = ["*.go"]
+priority = 1
+`)
+	withFakeConformist(tt, filepath.Join(tmpDir, "sentinel"))
+
+	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
+	if err := exporter.FormatOutput(); err != nil {
+		t.Fatalf("expected a formatters-only facade config to pass, got: %v", err)
+	}
+}
+
+// TestFormatOutput_RejectsNonFacadeConfig: a repo's own config passed as the
+// facade config is refused before conformist runs, naming each offending key.
+// Each case is one of the breakages this contract exists to prevent.
+func TestFormatOutput_RejectsNonFacadeConfig(t *testing.T) {
+	for _, tc := range []struct {
+		name, body, want string
+	}{
+		{
+			name: "linter",
+			body: "[linter.codegen-repair]\ncommand = \"x\"\n",
+			want: `declares linter "codegen-repair"`,
+		},
+		{
+			name: "working-dir",
+			body: "[formatter.goimports]\ncommand = \"goimports\"\nworking-dir = \"go\"\n",
+			want: `formatter "goimports" sets working-dir "go"`,
+		},
+		{
+			name: "global exclude",
+			body: "excludes = [\"pkgs/**\"]\n",
+			want: `global exclude "pkgs/**" matches generated file pkgs/widget/main.go`,
+		},
+		{
+			name: "formatter exclude",
+			body: "[formatter.gofumpt]\ncommand = \"gofumpt\"\nexcludes = [\"**/main.go\"]\n",
+			want: `formatter "gofumpt" exclude "**/main.go" matches generated file pkgs/widget/main.go`,
+		},
+		{
+			name: "skip-generated",
+			body: "skip-generated = true\n",
+			want: "sets skip-generated",
+		},
+		{
+			name: "tree-root-file",
+			body: "tree-root-file = \"flake.nix\"\n",
+			want: "sets tree-root-file",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tt := test_ui.T{T: t}
+			tmpDir := t.TempDir()
+			writeGeneratedFacade(tt, tmpDir)
+			withFacadeConfig(tt, tmpDir, tc.body)
+
+			sentinel := filepath.Join(tmpDir, "sentinel")
+			withFakeConformist(tt, sentinel)
+
+			exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
+			err := exporter.FormatOutput()
+			if err == nil {
+				t.Fatal("expected the non-facade config to be rejected")
+			}
+			if !strings.Contains(err.Error(), tc.want) {
+				t.Errorf("expected error to contain %q, got: %v", tc.want, err)
+			}
+			if _, statErr := os.Stat(sentinel); statErr == nil {
+				t.Error("conformist ran despite the rejected config")
+			}
+		})
+	}
+}
+
 // TestConformistBakesTreeRoot_RawBinaryWithFlagLiteral is the purse-first#195
 // regression: the raw conformist binary carries the literal tree-root flag
 // names in its own help/warning strings ("pass --tree-root to override"), so a

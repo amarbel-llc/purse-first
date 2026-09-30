@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"sort"
@@ -352,43 +351,20 @@ func removeStaleArchFiles(dir string, generated map[string]struct{}) error {
 	return nil
 }
 
-// formatOutput runs conformist on the generated output directory, mirroring the
-// exporter's FormatOutput (same DAGNABIT_CONFORMIST_CONFIG / ceiling handling)
-// so generated init-smoke files are byte-identical to what the repo formatter
-// produces — keeping both the pure lint gate and the drift check green.
+// formatOutput formats the generated init-smoke tests exactly like the
+// exporter's facades (formatGeneratedOutput: the DAGNABIT_CONFORMIST_CONFIG
+// facade config, tree root at the module or check-temp root), so the drift
+// check compares like with like.
 func (is *InitSmoke) formatOutput() error {
 	if is.DryRun {
 		return nil
 	}
 
-	outputPath := filepath.Join(is.outputRoot(), is.outputDir())
-
-	if ok, err := outputDirExists(outputPath); err != nil {
-		return err
-	} else if !ok {
-		return nil
-	}
-
-	// Explicit Nix-generated config short-circuits discovery (purse-first#159).
-	if configFile := os.Getenv(conformistConfigEnvVar); configFile != "" {
-		return runConformist(is.Dir, outputPath, configFile)
-	}
-
-	configDir, configName, ok := findConformistConfig(is.Dir)
-	if !ok {
-		return nil
-	}
-
-	if _, err := exec.LookPath("conformist"); err != nil {
-		return fmt.Errorf(
-			"formatter config %s found at %s, but `conformist` is not on PATH;"+
-				" refusing to skip formatting — run inside the dev shell so"+
-				" `conformist` is available",
-			configName, configDir,
-		)
-	}
-
-	return runConformist(configDir, outputPath, "")
+	return formatGeneratedOutput(
+		is.Dir,
+		is.outputRoot(),
+		filepath.Join(is.outputRoot(), is.outputDir()),
+	)
 }
 
 // initSmokeSelfImport is the import path of the generated package itself, which

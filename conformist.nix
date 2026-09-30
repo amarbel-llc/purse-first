@@ -73,5 +73,12 @@
     # Templates ship as scaffolding for downstream `nix flake init`; formatting
     # them would invalidate nix-instantiate --parse test snapshots.
     "templates/**"
+    # dagnabit-generated files belong to the generator: dagnabit formats them
+    # itself with the facade config (.#conformist-facade-config), so this
+    # repo-wide pass must never touch them. pkgs/** also covers the hand-written
+    # pkgs/*/*_test.go, which go unformatted until this switches to
+    # conformist#133's skip-generated.
+    "libs/dewey/pkgs/**"
+    "libs/dewey/initsmoke/initsmoke_*_test.go"
   ];
 }

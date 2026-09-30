@@ -31,13 +31,10 @@
 # (nix/conformist-impure.nix), run via `just lint-worktree` — the same
 # constraint that puts dewey-reposition and dewey-facade-export there.
 #
-# CONFIG THREADING: identical to dewey-facade-export. A repo with NO
-# conformist.toml on disk (Nix-generated config) points dagnabit at the
-# generated config via DAGNABIT_CONFORMIST_CONFIG so its init-smoke format pass
-# does not walk up to a stray ancestor conformist.toml (purse-first#159); any
-# `working-dir` line is stripped first (sanitizeConfigForNestedPass), because
-# that pass's tree root is already deweyDir (both scripts `cd` there first) so a
-# working-dir matching deweyDir would double the descent.
+# CONFIG THREADING: identical to dewey-facade-export. dagnabit formats the
+# generated tests with the formatters-only facade config (`conformistConfig`,
+# from lib.conformistModules.dagnabit-facade) via DAGNABIT_CONFORMIST_CONFIG
+# (purse-first#159), and enforces its contract (see dagnabit(1)).
 #
 # writeShellScriptBin (not writeShellApplication) so the script inherits the
 # caller's PATH, where an ambient `dagnabit`/`go` resolve when dagnabitPackage is
@@ -65,15 +62,6 @@ let
       fi
     '';
 
-  # See dewey-facade-export.nix for the full rationale: dagnabit's format pass
-  # runs with its tree root ALREADY at deweyDir, so a working-dir key scoping a
-  # formatter from the repo-root case would descend twice. Strip it.
-  sanitizeConfigForNestedPass = ''
-    initSmokeConfig="$(mktemp)"
-    trap 'rm -f "$initSmokeConfig"' EXIT
-    sed '/^working-dir = /d' "${cfg.conformistConfig}" >"$initSmokeConfig"
-  '';
-
   check = pkgs.writeShellScriptBin "conformist-dewey-init-smoke" ''
     set -eu
     # cwd is the tree root; this whole-tree check takes no file arguments.
@@ -84,10 +72,9 @@ let
 
     ${ambientGuard "dagnabit not on PATH; run inside the dev shell (build dagnabit) or set dagnabitPackage"}
     root="$PWD"
-    ${sanitizeConfigForNestedPass}
     cd "${deweyDir}"
 
-    if ! DAGNABIT_CONFORMIST_CONFIG="$initSmokeConfig" \
+    if ! DAGNABIT_CONFORMIST_CONFIG="${cfg.conformistConfig}" \
          DAGNABIT_CEILING_DIRECTORIES="$root" \
          ${dagnabitBin} init-smoke --check; then
       echo "dewey-init-smoke: ${deweyDir}/initsmoke/ is out of sync with the package graph; regenerate (\`dagnabit init-smoke\` / your init-smoke-repair recipe) and commit" >&2
@@ -103,10 +90,9 @@ let
 
     ${ambientGuard "dagnabit not on PATH; cannot repair"}
     root="$PWD"
-    ${sanitizeConfigForNestedPass}
     cd "${deweyDir}"
 
-    DAGNABIT_CONFORMIST_CONFIG="$initSmokeConfig" \
+    DAGNABIT_CONFORMIST_CONFIG="${cfg.conformistConfig}" \
       DAGNABIT_CEILING_DIRECTORIES="$root" \
       ${dagnabitBin} init-smoke
     echo "dewey-init-smoke: regenerated ${deweyDir}/initsmoke/ per-arch tests"
@@ -143,13 +129,12 @@ in
     conformistConfig = lib.mkOption {
       type = lib.types.path;
       description = ''
-        Store path to the Nix-generated PURE conformist config that dagnabit's
-        init-smoke format pass runs via DAGNABIT_CONFORMIST_CONFIG, so it formats
-        the generated tests with the repo's real config instead of walking up to
-        a stray ancestor conformist.toml (purse-first#159). Set to the consumer's
-        `.#conformist-config` output. Any `working-dir` line is stripped before
-        feeding it to dagnabit's nested pass, since that pass's tree root is
-        already deweyDir.
+        Store path to the formatters-only FACADE config dagnabit's init-smoke
+        format pass runs via DAGNABIT_CONFORMIST_CONFIG — the same config as
+        dewey-facade-export's, built from purse-first's
+        `lib.conformistModules.dagnabit-facade`. dagnabit enforces its contract
+        (see dagnabit(1)); the repo's own config should exclude the generated
+        "<deweyDir>/initsmoke/initsmoke_*_test.go" files.
       '';
     };
   };
