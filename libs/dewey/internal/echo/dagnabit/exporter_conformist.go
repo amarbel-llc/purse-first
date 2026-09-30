@@ -207,17 +207,25 @@ var treeRootBakingFlags = []string{
 // Nix-generated wrapper, which execs the raw binary with a tree-root flag
 // already baked in (purse-first#162). The wrapper is a `writeShellScriptBin`
 // shell script whose body contains a literal --tree-root-file=<projectRootFile>
-// (see conformist's nix/module-options.nix build.wrapper); the raw binary is an
-// ELF/Mach-O whose bytes won't carry the literal flag. Reading the resolved
-// path and scanning for a tree-root flag distinguishes the two without a new
-// env signal to plumb. A read error or absent flag falls back to the raw-binary
-// assumption (append --tree-root), preserving the pre-#162 behavior.
+// (see conformist's nix/module-options.nix build.wrapper).
+//
+// Only a script (first bytes `#!`) is a wrapper candidate. The raw conformist
+// binary is an ELF/Mach-O that DOES carry the literal flag names in its own
+// help and warning strings ("pass --tree-root to override"), so scanning a
+// binary's bytes misclassified it as the wrapper, dropped dagnabit's
+// --tree-root, and let conformist anchor at the module root — where the
+// whole-tree codegen-repair lane then failed in the nix sandbox
+// (purse-first#195). A read error, a non-script, or an absent flag falls back
+// to the raw-binary assumption (append --tree-root).
 func conformistBakesTreeRoot(conformistPath string) bool {
 	contents, err := os.ReadFile(conformistPath)
 	if err != nil {
 		return false
 	}
 	body := string(contents)
+	if !strings.HasPrefix(body, "#!") {
+		return false
+	}
 	for _, flag := range treeRootBakingFlags {
 		if strings.Contains(body, flag) {
 			return true

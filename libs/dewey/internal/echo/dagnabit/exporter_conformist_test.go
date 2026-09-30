@@ -229,8 +229,8 @@ func withFailingFakeConformist(t test_ui.T) {
 // was silently left unformatted.
 //
 // The script body deliberately avoids the literal tree-root flag names:
-// conformistBakesTreeRoot scans the resolved binary for them and would
-// otherwise misclassify this fake as the Nix wrapper (purse-first#162).
+// conformistBakesTreeRoot scans a `#!` script for them and would otherwise
+// misclassify this (script) fake as the Nix wrapper (purse-first#162).
 func withTreeRootAwareFakeConformist(t test_ui.T) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
@@ -470,6 +470,32 @@ func TestFormatOutput_PlainConformistGetsTreeRoot(t *testing.T) {
 	args := readSentinelArgs(tt, sentinel)
 	if !slices.Contains(args, "--tree-root") {
 		t.Errorf("expected plain conformist to receive --tree-root, got args=%v", args)
+	}
+}
+
+// TestConformistBakesTreeRoot_RawBinaryWithFlagLiteral is the purse-first#195
+// regression: the raw conformist binary carries the literal tree-root flag
+// names in its own help/warning strings ("pass --tree-root to override"), so a
+// non-script whose bytes contain them must NOT be classified as the wrapper.
+// A `#!` script with the same bytes still is (purse-first#162).
+func TestConformistBakesTreeRoot_RawBinaryWithFlagLiteral(t *testing.T) {
+	dir := t.TempDir()
+	flagText := "\x00no tree root found; pass --tree-root to override\x00--tree-root-file\x00"
+
+	raw := filepath.Join(dir, "raw-conformist")
+	if err := os.WriteFile(raw, []byte("\x7fELF\x02\x01\x01"+flagText), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if conformistBakesTreeRoot(raw) {
+		t.Errorf("raw (non-script) conformist containing %q was misclassified as the wrapper", "--tree-root")
+	}
+
+	wrapper := filepath.Join(dir, "wrapper-conformist")
+	if err := os.WriteFile(wrapper, []byte("#!/bin/sh\n"+flagText), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if !conformistBakesTreeRoot(wrapper) {
+		t.Error("script conformist baking a tree-root flag was not classified as the wrapper")
 	}
 }
 
