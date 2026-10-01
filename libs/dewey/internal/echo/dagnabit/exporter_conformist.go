@@ -3,11 +3,11 @@ package dagnabit
 import (
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
-	"sort"
 	"strings"
 
 	toml "github.com/BurntSushi/toml"
@@ -181,7 +181,9 @@ func outputDirExists(outputPath string) (bool, error) {
 }
 
 // facadeConformistConfig is the subset of a conformist config that
-// validateFacadeConfig inspects. Key names follow conformist's config package.
+// validateFacadeConfig inspects. Key names mirror conformist's config/config.go
+// (Config, Formatter, Linter); a key renamed there must be renamed here, or the
+// check silently stops seeing it.
 type facadeConformistConfig struct {
 	Excludes []string `toml:"excludes"`
 	Global   struct {
@@ -224,7 +226,7 @@ func validateFacadeConfig(configFile, treeRoot, outputPath string) error {
 
 	var problems []string
 
-	for _, name := range sortedKeys(cfg.Linter) {
+	for _, name := range slices.Sorted(maps.Keys(cfg.Linter)) {
 		problems = append(problems, fmt.Sprintf("declares linter %q", name))
 	}
 
@@ -255,7 +257,7 @@ func validateFacadeConfig(configFile, treeRoot, outputPath string) error {
 	}
 	problems = append(problems, excludeProblems...)
 
-	for _, name := range sortedKeys(cfg.Formatter) {
+	for _, name := range slices.Sorted(maps.Keys(cfg.Formatter)) {
 		formatter := cfg.Formatter[name]
 		if formatter.WorkingDir != "" {
 			problems = append(problems, fmt.Sprintf(
@@ -276,7 +278,7 @@ func validateFacadeConfig(configFile, treeRoot, outputPath string) error {
 		return nil
 	}
 
-	sort.Strings(problems)
+	slices.Sort(problems)
 	return fmt.Errorf(
 		"%s=%s is not a dagnabit facade config (formatters only; see dagnabit(1),"+
 			" or build one from purse-first's lib.conformistModules.dagnabit-facade):\n  - %s",
@@ -315,7 +317,8 @@ func generatedRelPaths(treeRoot, outputPath string) ([]string, error) {
 
 // excludesMatchingGenerated reports each exclude pattern that matches one of
 // the generated paths, compiled with gobwas/glob and no separators, exactly as
-// conformist compiles them (so `*` and `**` cross `/`).
+// conformist compiles them (so `*` and `**` cross `/`; conformist's
+// format/glob.go). If conformist changes glob library, this must follow.
 func excludesMatchingGenerated(scope string, excludes, generated []string) ([]string, error) {
 	var problems []string
 
@@ -333,15 +336,6 @@ func excludesMatchingGenerated(scope string, excludes, generated []string) ([]st
 	}
 
 	return problems, nil
-}
-
-func sortedKeys[V any](m map[string]V) []string {
-	keys := make([]string, 0, len(m))
-	for key := range m {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 // runConformist formats outputPath with the `conformist` binary, run from
