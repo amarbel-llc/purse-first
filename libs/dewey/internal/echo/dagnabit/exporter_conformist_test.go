@@ -685,6 +685,57 @@ func TestFormatOutput_RejectsNonFacadeConfig(t *testing.T) {
 	}
 }
 
+// TestFormatOutput_FacadeConfigRefusesWrapper: the Nix wrapper bakes its own
+// tree root, so the facade config's tree-root-relative validation would not
+// describe what it matches. With DAGNABIT_CONFORMIST_CONFIG set, dagnabit
+// requires the raw binary instead of running the wrapper.
+func TestFormatOutput_FacadeConfigRefusesWrapper(t *testing.T) {
+	tt := test_ui.T{T: t}
+	tmpDir := t.TempDir()
+	writeGeneratedFacade(tt, tmpDir)
+	withFacadeConfig(tt, tmpDir, "")
+
+	sentinel := filepath.Join(tmpDir, "sentinel")
+	withFakeWrapperConformist(tt, sentinel)
+
+	exporter := &Exporter{Dir: tmpDir, OutputDir: "pkgs"}
+	err := exporter.FormatOutput()
+	if err == nil || !strings.Contains(err.Error(), "Nix wrapper") {
+		t.Fatalf("expected the wrapper to be refused with a facade config, got: %v", err)
+	}
+	if _, statErr := os.Stat(sentinel); statErr == nil {
+		t.Error("the wrapper ran despite being refused")
+	}
+}
+
+// TestFormatOutput_DiscoveryAnchorsAtConfigDir: the deprecated discovery path
+// formats with the repo's own config, whose excludes and working-dir are
+// written relative to the config's directory, so that is its tree root — not
+// the module root (chrest-style: config at the repo root, module in go/).
+func TestFormatOutput_DiscoveryAnchorsAtConfigDir(t *testing.T) {
+	tt := test_ui.T{T: t}
+	repo := absForTest(tt, t.TempDir())
+	module := filepath.Join(repo, "go")
+	writeGeneratedFacade(tt, module)
+	if err := os.WriteFile(filepath.Join(repo, "conformist.toml"), []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("DAGNABIT_CONFORMIST_CONFIG", "")
+
+	sentinel := filepath.Join(repo, "sentinel")
+	withFakeConformist(tt, sentinel)
+
+	exporter := &Exporter{Dir: module, OutputDir: "pkgs"}
+	if err := exporter.FormatOutput(); err != nil {
+		t.Fatalf("FormatOutput: %v", err)
+	}
+
+	args := readSentinelArgs(tt, sentinel)
+	if got := argAfter(args, "--tree-root"); got != repo {
+		t.Errorf("expected --tree-root %s (the discovered config's dir), got %q; args=%v", repo, got, args)
+	}
+}
+
 // TestConformistBakesTreeRoot_RawBinaryWithFlagLiteral is the purse-first#195
 // regression: the raw conformist binary carries the literal tree-root flag
 // names in its own help/warning strings ("pass --tree-root to override"), so a

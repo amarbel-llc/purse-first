@@ -115,18 +115,21 @@ func (exporter *Exporter) FormatOutput() error {
 }
 
 // formatGeneratedOutput runs conformist over outputPath, anchoring the tree root
-// at treeRoot: the module root for a real run, or the in-tree temp root that
-// `--check` renders into, so generated files are always seen as
-// `<outputDir>/...` relative paths.
+// at treeRoot when formatting with a facade config: the module root for a real
+// run, or the in-tree temp root that `--check` renders into, so generated files
+// are always seen as `<outputDir>/...` relative paths.
 //
 // Resolution order:
 //  0. If DAGNABIT_CONFORMIST_CONFIG names a config, validate it as a facade
-//     config (validateFacadeConfig) and run conformist with it.
+//     config (validateFacadeConfig) and run conformist with it. This requires
+//     the raw conformist binary: the Nix wrapper bakes its own tree root, so
+//     the validated tree-root-relative paths would not be what it matches.
 //  1. Otherwise search upward from moduleDir (bounded by
 //     DAGNABIT_CEILING_DIRECTORIES) for a conformist.toml/.conformist.toml and
-//     run conformist with it, warning that this discovery path is deprecated:
-//     a repo's own config excludes the generated files, so it is the wrong
-//     config for this pass.
+//     run conformist with it, rooted at the config's own directory (the root a
+//     repo config is written for), warning that this discovery path is
+//     deprecated: a repo's own config excludes the generated files, so it is
+//     the wrong config for this pass.
 //  2. A found config with no `conformist` on PATH is an error rather than a
 //     silent skip, so unformatted output never reads as phantom drift.
 func formatGeneratedOutput(moduleDir, treeRoot, outputPath string) error {
@@ -137,6 +140,18 @@ func formatGeneratedOutput(moduleDir, treeRoot, outputPath string) error {
 	}
 
 	if configFile := os.Getenv(conformistConfigEnvVar); configFile != "" {
+		conformistPath, err := exec.LookPath("conformist")
+		if err != nil {
+			return fmt.Errorf("%s is set, but conformist: %w", conformistConfigEnvVar, err)
+		}
+		if conformistBakesTreeRoot(conformistPath) {
+			return fmt.Errorf(
+				"%s is set, but the `conformist` on PATH (%s) is the Nix wrapper,"+
+					" which bakes its own tree root; put the raw conformist binary on"+
+					" PATH (see dagnabit(1))",
+				conformistConfigEnvVar, conformistPath,
+			)
+		}
 		if err := validateFacadeConfig(configFile, treeRoot, outputPath); err != nil {
 			return err
 		}
@@ -164,7 +179,7 @@ func formatGeneratedOutput(moduleDir, treeRoot, outputPath string) error {
 		filepath.Join(configDir, configName), conformistConfigEnvVar,
 	)
 
-	return runConformist(treeRoot, outputPath, filepath.Join(configDir, configName))
+	return runConformist(configDir, outputPath, filepath.Join(configDir, configName))
 }
 
 // outputDirExists reports whether the export output directory is present.
