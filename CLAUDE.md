@@ -80,6 +80,9 @@ these into their own `conformist.lib.evalModule` and set `deweyDir` / `library`
 / `dagnabitPackage` / `conformistConfig`; purse-first dogfoods them from its own
 `conformistImpureEval`. dagnabit coupling lives here (the repo that owns
 dewey+dagnabit), not upstream in conformist (purse-first#163).
+`lib.conformistModules.dagnabit-facade` is the formatters-only module consumers
+evaluate for that `conformistConfig` (dagnabit's facade config, validated per
+dagnabit(1)); purse-first's own is `packages.conformist-facade-config`.
 
 ## Terminology
 

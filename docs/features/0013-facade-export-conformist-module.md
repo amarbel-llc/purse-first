@@ -58,9 +58,11 @@ the existing `nix/linters/dewey-reposition.nix`:
 Both the check and repair scripts thread the environment that the #159 fix
 introduced and that `lint-dewey_pkgs_drift` already sets:
 
-- `DAGNABIT_CONFORMIST_CONFIG=<conformist-config store path>` — points dagnabit
-  at purse-first's own Nix-generated config so its facade-formatting pass does
-  not walk up to a stray ancestor `conformist.toml`.
+- `DAGNABIT_CONFORMIST_CONFIG=<conformist-facade-config store path>` — dagnabit's
+  formatters-only facade config (built from `lib.conformistModules.dagnabit-facade`),
+  so its facade-formatting pass neither walks up to a stray ancestor
+  `conformist.toml` nor inherits the repo config's excludes, linters or
+  working-dir. dagnabit validates it (see dagnabit(1)).
 - `DAGNABIT_CEILING_DIRECTORIES=<worktree root>` — belt-and-suspenders bound on
   any upward config walk.
 
@@ -115,7 +117,9 @@ imports them into its own `conformist.lib.evalModule` and parameterizes:
   its working-tree build, placed on PATH by `just lint-worktree`); a pinned
   package ⇒ hermetic, PATH-independent invocation
   (`purse-first.packages.<sys>.dagnabit`, the madder case). Default `null`.
-- **`conformistConfig`** — the consumer's PURE formatter config. (facade-export only)
+- **`conformistConfig`** — the consumer's formatters-only facade config, built
+  from `lib.conformistModules.dagnabit-facade`; NOT its own repo config, which
+  should exclude `<deweyDir>/pkgs/**`. dagnabit validates it (see dagnabit(1)).
 
 **Decision: publish from purse-first, do NOT upstream into conformist.** The
 linters shell out to the `dagnabit` binary at runtime; putting them in conformist
