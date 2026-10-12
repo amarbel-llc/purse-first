@@ -119,6 +119,69 @@ func TestToolV1Serialization(t *testing.T) {
 	}
 }
 
+func TestToolV1MetaRoundTrip(t *testing.T) {
+	listJSON := []byte(`{
+		"tools": [
+			{
+				"name": "with-meta",
+				"inputSchema": {"type": "object"},
+				"_meta": {"kind": "list", "x": 1}
+			},
+			{
+				"name": "without-meta",
+				"inputSchema": {"type": "object"}
+			}
+		]
+	}`)
+
+	var decoded ToolsListResultV1
+	if err := json.Unmarshal(listJSON, &decoded); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if len(decoded.Tools) != 2 {
+		t.Fatalf("got %d tools, want 2", len(decoded.Tools))
+	}
+
+	withMeta := decoded.Tools[0]
+	wantMeta := map[string]interface{}{"kind": "list", "x": float64(1)}
+	if len(withMeta.Meta) != len(wantMeta) || withMeta.Meta["kind"] != wantMeta["kind"] || withMeta.Meta["x"] != wantMeta["x"] {
+		t.Errorf("Meta = %v, want %v", withMeta.Meta, wantMeta)
+	}
+
+	reencoded, err := json.Marshal(withMeta)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var m map[string]interface{}
+	if err := json.Unmarshal(reencoded, &m); err != nil {
+		t.Fatalf("unmarshal re-encoded: %v", err)
+	}
+	meta, ok := m["_meta"].(map[string]interface{})
+	if !ok {
+		t.Fatal("_meta field missing or not an object after re-encode")
+	}
+	if meta["kind"] != "list" || meta["x"] != float64(1) {
+		t.Errorf("_meta = %v, want %v", meta, wantMeta)
+	}
+
+	withoutMeta := decoded.Tools[1]
+	if withoutMeta.Meta != nil {
+		t.Errorf("Meta = %v, want nil", withoutMeta.Meta)
+	}
+
+	reencodedNoMeta, err := json.Marshal(withoutMeta)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var mNoMeta map[string]interface{}
+	if err := json.Unmarshal(reencodedNoMeta, &mNoMeta); err != nil {
+		t.Fatalf("unmarshal re-encoded: %v", err)
+	}
+	if _, ok := mNoMeta["_meta"]; ok {
+		t.Error("_meta should be omitted when absent from input")
+	}
+}
+
 func TestToolCallResultV1Serialization(t *testing.T) {
 	result := ToolCallResultV1{
 		Content:           []ContentBlockV1{TextContentV1("output")},

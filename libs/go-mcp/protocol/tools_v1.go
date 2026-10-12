@@ -65,6 +65,9 @@ type ToolV1 struct {
 
 	// Execution describes task execution support for this tool.
 	Execution *ToolExecution `json:"execution,omitempty"`
+
+	// Meta contains protocol-level metadata (e.g., artifact kind).
+	Meta map[string]any `json:"_meta,omitempty"`
 }
 
 // ToolsListResultV1 is the V1 response to tools/list with pagination.
