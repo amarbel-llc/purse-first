@@ -20,6 +20,7 @@ system:
 let
   goPkgs = import nixpkgs {
     inherit system;
+    nixpkgs = nixpkgs-master;
     overlays = [ gomod2nix.overlays.default ];
   };
   pkgs-master = import nixpkgs-master { inherit system; };

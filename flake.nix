@@ -45,10 +45,21 @@
       conformist,
     }:
     let
+      # Explicit rather than utils.lib.defaultSystems: the locked
+      # nix-systems/default (via igloo/systems) omits x86_64-darwin, which
+      # consumers on Intel Macs (posh) need. nixpkgs past nixos-26.05 dropped
+      # x86_64-darwin, so those builds must override nixpkgs-master to 26.05.
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "aarch64-darwin"
+        "x86_64-darwin"
+      ];
+
       # Per-system Nix interface to the Go workspace. See gomod.nix. Builds
       # every Go binary (purse-first CLI, dagnabit, the dewey analyzers), the
       # go-mcp manpage tree, and the RFC 0001 go-pkgs / go-pkgs-test sources.
-      gomodBySystem = igloo.lib.genAttrs utils.lib.defaultSystems (
+      gomodBySystem = igloo.lib.genAttrs systems (
         import ./gomod.nix {
           nixpkgs = igloo;
           inherit
@@ -62,7 +73,10 @@
       buildDevenvs =
         system:
         let
-          pkgs = import igloo { inherit system; };
+          pkgs = import igloo {
+            inherit system;
+            nixpkgs = nixpkgs-master;
+          };
           pkgs-master = import nixpkgs-master { inherit system; };
         in
         {
@@ -93,10 +107,13 @@
         dagnabit-facade = ./nix/conformist-modules/dagnabit-facade.nix;
       };
     in
-    utils.lib.eachDefaultSystem (
+    utils.lib.eachSystem systems (
       system:
       let
-        pkgs = import igloo { inherit system; };
+        pkgs = import igloo {
+          inherit system;
+          nixpkgs = nixpkgs-master;
+        };
         pkgs-master = import nixpkgs-master {
           inherit system;
           config.allowUnfree = true;
