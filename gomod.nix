@@ -203,6 +203,7 @@ in
         (mkManPage "7" "dagnabit")
         (mkManPage "1" "mesa")
         (mkManPage "7" "dewey")
+        (mkManPage "7" "dewey-analyzers")
       ];
       meta = purseFirstBin.meta;
     };
