@@ -15,7 +15,7 @@ The flake supports the systems _x86_64-linux_, _aarch64-linux_, _aarch64-darwin_
 These are the _packages.<system>_ outputs.
 
 *default*, *purse-first*
-	The *purse-first*(1) CLI joined with the manual pages the repository ships: *purse-first*(1), the go-mcp(7) tree, *dagnabit*(1), *dagnabit*(7), *mesa*(1), *dewey*(7), *dewey-analyzers*(7), *golangci-lint-dewey*(1) and *purse-first-nix*(7). Only the compiled pages of dagnabit and mesa are joined in, not their binaries.
+	The *purse-first*(1) CLI joined with the manual pages the repository ships: *purse-first*(1), the go-mcp(7) tree, *dagnabit*(1), *dagnabit*(7), *mesa*(1), *dewey*(7), *dewey-analyzers*(7), *dewey-cli*(7), *golangci-lint-dewey*(1), *go-mcp-docs*(1) and *purse-first-nix*(7). Only the compiled pages of dagnabit and mesa are joined in, not their binaries.
 
 *dagnabit*
 	The *dagnabit*(1) tool with its pages. A Nix build stamps the version and commit into the binary.
