@@ -54,7 +54,7 @@ func main() {
 				return fmt.Errorf("generating plugin.json: %w", err)
 			}
 
-			pluginPath := filepath.Join(output, "share", "purse-first", pkg.Name, "plugin.json")
+			pluginPath := filepath.Join(output, "share", "purse-first", pkg.Name, ".claude-plugin", "plugin.json")
 			fmt.Fprintf(os.Stderr, "generated %s\n", pluginPath)
 			return nil
 		},
