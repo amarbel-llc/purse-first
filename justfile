@@ -118,6 +118,32 @@ debug-consumer-check consumer check:
       "{{ consumer }}#checks.$(nix eval --raw --impure --expr builtins.currentSystem).{{ check }}" \
       --override-input purse-first "git+file://{{ justfile_directory() }}"
 
+# Render every doc/*.scd page with scdoc and pass the roff through
+# `mandoc -T lint` (scdoc and mandoc are pulled via `nix shell`; neither is in
+# the devshell). The Nix build already fails on scdoc parse errors; this adds
+# the roff-level lint that only shows up when someone runs `man`.
+#
+# render doc/*.scd with scdoc and lint the roff with mandoc
+[group('debug')]
+debug-lint-scdoc-manpages:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # scdoc itself emits stray .PP macros that mandoc warns about
+    # ("skipping paragraph macro"); those are filtered as known noise so that
+    # any other diagnostic fails the recipe.
+    nix shell nixpkgs#scdoc nixpkgs#mandoc --command bash -euo pipefail -c '
+      status=0
+      for f in {{ justfile_directory() }}/doc/*.scd; do
+        echo "== $f"
+        findings=$(scdoc <"$f" | mandoc -T lint -W warning 2>&1 | grep -v "skipping paragraph macro" || true)
+        if [[ -n $findings ]]; then
+          echo "$findings"
+          status=1
+        fi
+      done
+      exit "$status"
+    '
+
 # lint the hand-written go-mcp .7 manpage sources for roff errors
 [group('debug')]
 debug-lint-go-mcp-manpages:
