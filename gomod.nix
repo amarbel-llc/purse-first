@@ -204,6 +204,7 @@ in
         (mkManPage "1" "mesa")
         (mkManPage "7" "dewey")
         (mkManPage "7" "dewey-analyzers")
+        (mkManPage "1" "golangci-lint-dewey")
       ];
       meta = purseFirstBin.meta;
     };
