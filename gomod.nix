@@ -186,8 +186,8 @@ in
 
     # The purse-first CLI joined with the man pages this repo ships, so the one
     # package a profile consumes (circus eng/home/repo-packages.nix) carries
-    # share/man for the whole repo: the go-mcp(7) tree, plus the dagnabit and
-    # mesa pages. Only the compiled pages are joined for the latter two —
+    # share/man for the whole repo: purse-first(1), the go-mcp(7) tree, plus
+    # the dagnabit and mesa pages. Only the compiled pages are joined for the latter two —
     # NOT packages.dagnabit / packages.mesa — so the dagnabit binary closure
     # (ast-grep wrapper, Go toolchain refs) is not pulled into the profile.
     purse-first = goPkgs.symlinkJoin {
@@ -195,6 +195,7 @@ in
       paths = [
         purseFirstBin
         manpages
+        (mkManPage "1" "purse-first")
         (mkManPage "1" "dagnabit")
         (mkManPage "7" "dagnabit")
         (mkManPage "1" "mesa")
