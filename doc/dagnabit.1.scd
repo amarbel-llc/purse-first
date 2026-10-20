@@ -369,7 +369,7 @@ When *dagnabit export* is run without arguments, it scans _internal/_ for these 
 
 # SEE ALSO
 
-*go-generate*(1), *go-list*(1), *conformist*(1), *cargo*(1), *cargo-metadata*(1), *cargo-check*(1), *ast-grep*(1)
+*dagnabit*(7), *go-generate*(1), *go-list*(1), *conformist*(1), *cargo*(1), *cargo-metadata*(1), *cargo-check*(1), *ast-grep*(1)
 
 # BUGS
 

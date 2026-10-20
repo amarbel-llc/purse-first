@@ -78,33 +78,33 @@ let
       ldflags = deweyLdflags;
     };
 
-  # Compile a tool's scdoc source (doc/<name>.1.scd) into a derivation
-  # carrying share/man/man1/<name>.1, per eng-manpages(7).
+  # Compile a tool's scdoc source (doc/<name>.<sec>.scd) into a derivation
+  # carrying share/man/man<sec>/<name>.<sec>, per eng-manpages(7).
   mkManPage =
-    name:
+    sec: name:
     goPkgs.stdenvNoCC.mkDerivation {
-      pname = "${name}-doc";
+      pname = "${name}-${sec}-doc";
       version = purseFirstVersion;
       src = ./doc;
       nativeBuildInputs = [ goPkgs.scdoc ];
       dontUnpack = true;
       dontBuild = true;
       installPhase = ''
-        mkdir -p $out/share/man/man1
-        scdoc < $src/${name}.1.scd > $out/share/man/man1/${name}.1
+        mkdir -p $out/share/man/man${sec}
+        scdoc < $src/${name}.${sec}.scd > $out/share/man/man${sec}/${name}.${sec}
       '';
     };
 
-  # Join a binary with its man page so `nix build .#<name>` ships both.
-  withManPage =
-    name: bin:
+  # Join a binary with its man pages so `nix build .#<name>` ships them all.
+  # secs lists the sections to compile (each needs doc/<name>.<sec>.scd).
+  withManPages =
+    secs: name: bin:
     goPkgs.symlinkJoin {
       name = "${name}-${purseFirstVersion}";
-      paths = [
-        bin
-        (mkManPage name)
-      ];
+      paths = [ bin ] ++ map (sec: mkManPage sec name) secs;
     };
+
+  withManPage = withManPages [ "1" ];
 
   # The dewey custom golangci-lint binary: stock golangci-lint with
   # libs/dewey/gclplugin (module plugin) linked in — the pure-nix
@@ -183,7 +183,7 @@ in
       };
     };
 
-    dagnabit = withManPage "dagnabit" (mkGoModule {
+    dagnabit = withManPages [ "1" "7" ] "dagnabit" (mkGoModule {
       pname = "dagnabit";
       version = purseFirstVersion;
       subPackages = [ "cmd/dagnabit" ];
@@ -197,7 +197,7 @@ in
       # wrapped store path is the fallback. cargo is intentionally NOT
       # wrapped — plain runtime-PATH expectation, like go. ast-grep comes
       # from pkgs-master to match devenvs/rust. The man page is compiled
-      # from doc/dagnabit.1.scd by withManPage (eng-manpages(7)).
+      # from doc/dagnabit.{1,7}.scd by withManPages (eng-manpages(7)).
       postInstall = ''
         wrapProgram $out/bin/dagnabit \
           --suffix PATH : ${goPkgs.lib.makeBinPath [ pkgs-master.ast-grep ]}
