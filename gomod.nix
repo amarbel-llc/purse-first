@@ -158,6 +158,9 @@ let
     pname = "go-mcp-docs";
     version = purseFirstVersion;
     subPackages = [ "cmd/go-mcp-docs" ];
+    # Stamps the version.env version into the .TH headers of the embedded
+    # pages (they carry an @VERSION@ placeholder).
+    ldflags = [ "-X main.version=${purseFirstVersion}" ];
   };
 
   manpages = goPkgs.runCommand "go-mcp-manpages" { } ''
