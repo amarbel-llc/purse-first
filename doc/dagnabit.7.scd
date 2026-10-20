@@ -30,7 +30,7 @@ A package lives at _<prefix>/<level>/<leaf>_ (the default, *-depth 3*) or _<leve
 
 Levels are not chosen by hand. *dagnabit* recomputes them from the live import graph and moves packages whose directory does not match, rewriting imports. *dagnabit -n* (dry-run) prints a *would-move* event per misplaced package and prints nothing when the layout is already correct, which makes it usable as a drift check.
 
-Because levels shift as dependencies change, documents refer to packages by leaf only, written _\*/<leaf>_. The dewey library convention (see _libs/dewey/CLAUDE.md_ in the purse-first repository) requires leaf names to be unique across the tree and the layout to be strictly _<branch>/<leaf>_ with no sub-packages; the dagnabit library provides validators for both (_ValidateUniqueLeaves_ and _ValidateTwoLayerLayout_).
+Because levels shift as dependencies change, documents refer to packages by leaf only, written _\*/<leaf>_. The dewey library convention (see _libs/dewey/CLAUDE.md_ in the purse-first repository) requires leaf names to be unique across the tree and the layout to be strictly _<branch>/<leaf>_ with no sub-packages; the dagnabit library exports validators for both (_ValidateUniqueLeaves_ and _ValidateTwoLayerLayout_), but the *dagnabit* command does not run them as a general check. Only *dagnabit rename* enforces both, as a precondition; *reposition*, *move* and *export* do not check leaf uniqueness.
 
 # FACADES
 

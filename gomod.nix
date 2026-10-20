@@ -3,7 +3,8 @@
 # The Nix interface to the Go workspace defined by go.mod / go.work.
 #
 # Per-system function returning:
-#   - manpages — go-mcp-docs manpage tree (consumed as a marketplace plugin)
+#   - manpages — go-mcp-docs manpage tree (exposed as packages.manpages and
+#                joined into packages.purse-first)
 #   - packages — every Go binary built from this workspace, plus the
 #                RFC 0001 go-pkgs / go-pkgs-test source derivations
 #                (mkGoModule wires src/pwd to go-pkgs-test so checkPhase
@@ -155,7 +156,7 @@ let
 
   goMcpDocsBin = mkGoModule {
     pname = "go-mcp-docs";
-    version = "0.0.9";
+    version = purseFirstVersion;
     subPackages = [ "cmd/go-mcp-docs" ];
   };
 
@@ -214,7 +215,7 @@ in
       # --suffix (not --prefix): a user-provided ast-grep on PATH wins; the
       # wrapped store path is the fallback. cargo is intentionally NOT
       # wrapped — plain runtime-PATH expectation, like go. ast-grep comes
-      # from pkgs-master to match devenvs/rust. The man page is compiled
+      # from pkgs-master to match devenvs/rust. The man pages are compiled
       # from doc/dagnabit.{1,7}.scd by withManPages (eng-manpages(7)).
       postInstall = ''
         wrapProgram $out/bin/dagnabit \

@@ -15,7 +15,11 @@ level in docs creates lies the moment `dagnabit rename` runs.
 **Leaf names MUST be unique across the entire dewey tree.** This is what
 makes `*/<leaf>` an unambiguous reference. `dagnabit` enforces this:
 attempting to introduce a second package with a leaf name already in use
-elsewhere in the tree is a build-time error.
+elsewhere in the tree is not currently caught by any build step. The
+validators (`ValidateUniqueLeaves`, `ValidateTwoLayerLayout`) are exported
+from `*/dagnabit` but have no call site in `cmd/`, `nix/` or the justfile;
+only `dagnabit rename` runs unexported equivalents, as a precondition, and
+`reposition`, `move` and `export` do not check leaf uniqueness.
 
 ## Stability tiers
 
