@@ -206,6 +206,7 @@ in
         (mkManPage "7" "dewey-analyzers")
         (mkManPage "1" "golangci-lint-dewey")
         (mkManPage "7" "purse-first-nix")
+        (mkManPage "1" "go-mcp-docs")
       ];
       meta = purseFirstBin.meta;
     };

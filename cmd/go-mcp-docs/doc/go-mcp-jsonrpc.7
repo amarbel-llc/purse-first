@@ -1,0 +1,150 @@
+.TH GO-MCP-JSONRPC 7 "2026-10-20" "go-mcp @VERSION@" "Go MCP Framework"
+.SH NAME
+go-mcp-jsonrpc \- JSON-RPC 2.0 messages, a connection and a framed stream
+.SH SYNOPSIS
+.nf
+import "code.linenisgreat.com/purse-first/libs/go-mcp/jsonrpc"
+.fi
+.SH DESCRIPTION
+The
+.B jsonrpc
+package provides the JSON-RPC 2.0 message types used by the rest of
+go-mcp (the
+.B server
+and
+.B transport
+packages exchange
+.B *jsonrpc.Message
+values), plus a small bidirectional connection type that frames messages
+with
+.B Content-Length
+headers in the style of the Language Server Protocol.
+MCP stdio servers use newline-delimited JSON instead; see
+.BR go-mcp-transport (7).
+.SH TYPES
+.SS Message
+.nf
+type Message struct {
+    JSONRPC string          // always Version ("2.0")
+    ID      *ID
+    Method  string
+    Params  json.RawMessage
+    Result  json.RawMessage
+    Error   *Error
+}
+.fi
+.PP
+A message is classified by its fields:
+.IP \(bu 2
+.B IsRequest
+reports an ID and a method.
+.IP \(bu 2
+.B IsNotification
+reports a method and no ID.
+.IP \(bu 2
+.B IsResponse
+reports an ID and no method.
+.PP
+Constructors marshal their argument with encoding/json and return an error
+if that fails:
+.nf
+func NewRequest(id ID, method string, params any) (*Message, error)
+func NewNotification(method string, params any) (*Message, error)
+func NewResponse(id ID, result any) (*Message, error)
+func NewErrorResponse(id ID, code int, message string,
+    data any) (*Message, error)
+.fi
+.SS ID
+A request identifier that is a number, a string or null.
+.nf
+func NewNumberID(n int64) ID
+func NewStringID(s string) ID
+func (id ID) IsNull() bool
+.fi
+.PP
+Unmarshaling accepts a JSON number, string or null and rejects anything
+else.
+.SS Error
+.nf
+type Error struct {
+    Code    int
+    Message string
+    Data    json.RawMessage
+}
+.fi
+.PP
+.B *Error
+implements the
+.B error
+interface.
+.SS Error codes
+The package defines the JSON-RPC 2.0 codes
+.BR ParseError " (-32700),"
+.BR InvalidRequest " (-32600),"
+.BR MethodNotFound " (-32601),"
+.BR InvalidParams " (-32602) and"
+.BR InternalError " (-32603),"
+and three further codes:
+.BR ServerNotInitialized " (-32002),"
+.BR RequestCancelled " (-32800) and"
+.BR ContentModified " (-32801)."
+.SS Stream
+Reads and writes messages framed by a
+.B Content-Length
+header, a blank line and the JSON body.
+.nf
+func NewStream(r io.Reader, w io.Writer) *Stream
+func (s *Stream) Read() (*Message, error)
+func (s *Stream) Write(msg *Message) error
+.fi
+.PP
+.B Read
+fails if the header is malformed or has no
+.BR Content-Length .
+.B Write
+is safe for concurrent use.
+.SS Conn
+A bidirectional connection over a
+.BR Stream .
+.nf
+type Handler func(ctx context.Context, msg *Message) (*Message, error)
+
+func NewConn(r io.Reader, w io.Writer, handler Handler) *Conn
+func (c *Conn) Run(ctx context.Context) error
+func (c *Conn) Call(ctx context.Context, method string,
+    params any) (json.RawMessage, error)
+func (c *Conn) Notify(method string, params any) error
+func (c *Conn) Reply(id ID, result any) error
+func (c *Conn) ReplyError(id ID, code int, message string,
+    data any) error
+func (c *Conn) NextID() ID
+func (c *Conn) Close() error
+.fi
+.PP
+.B Run
+reads messages until the stream fails.
+A response is delivered to the pending
+.B Call
+with the same ID.
+Every other message is passed to the handler in its own goroutine;
+a non-nil response from the handler is written back.
+If the handler returns an error for a request, the connection replies
+with an
+.B InternalError
+response carrying the error text.
+.PP
+.B Call
+sends a request with an ID from
+.B NextID
+and waits for the response.
+It returns the response's result, the response's
+.B *Error
+if it carries one, or the context's error if the context ends first.
+.PP
+.B Close
+only marks the connection closed.
+It does not close the underlying reader or writer.
+.SH SEE ALSO
+.BR go-mcp (7),
+.BR go-mcp-server (7),
+.BR go-mcp-transport (7)
