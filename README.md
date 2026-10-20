@@ -16,7 +16,7 @@ purse-first has three layers:
 |-------|-------------|
 | **Protocol** | A convention for Nix derivations to declare Claude Code capabilities via well-known paths under `share/purse-first/`. Language-agnostic and self-describing — see [docs/purse-first-protocol.md](docs/purse-first-protocol.md). |
 | **CLI** | The `purse-first` binary — generates per-package `plugin.json` from `package.toml` and validates plugin manifests, mappings, and MCP servers. |
-| **Libraries** | `go-mcp` — building blocks for protocol-conforming MCP servers (command framework, server, transports, self-install). `dewey` — multi-tier Go utilities, three static analyzers (+ golangci-lint plugin), and the `dagnabit` rename/export tool. |
+| **Libraries** | `go-mcp` — building blocks for protocol-conforming MCP servers (command framework, server, transports, self-install). `dewey` — multi-tier Go utilities, six static analyzers (+ golangci-lint plugin), and the `dagnabit` rename/export tool. |
 
 ## What's in this repo
 
@@ -28,7 +28,7 @@ active repo). What remains here:
 
 - **`purse-first`** (CLI) — generates per-package `plugin.json` from `package.toml` and validates plugin manifests, mappings, and MCP servers.
 - **`go-mcp`** (library) — building blocks for protocol-conforming MCP servers: the `command.App` framework, the lower-level `server` API, stdio + Streamable HTTP transports, and `InstallMCP` self-registration.
-- **`dewey`** (library) — multi-tier Go utilities organized by NATO-phonetic dependency level, the `dagnabit` rename/export tool, three static analyzers (`defererr`, `repool`, `seqerror`) exposed both as standalone vettools and as a golangci-lint module plugin, and the `reflexive-interface-generator` codegen tool.
+- **`dewey`** (library) — multi-tier Go utilities organized by NATO-phonetic dependency level, the `dagnabit` rename/export tool, six static analyzers (`actx`, `defererr`, `paramobj`, `repool`, `seqerror`, `testui`) exposed both as standalone vettools and as a golangci-lint module plugin, and the `reflexive-interface-generator` codegen tool.
 - **In-tree skills** — `claude-plugins` and `mcp` (under `skills/`).
 
 > **⚠ `go-mcp` is mid-overhaul.** The library is undergoing a major change and
@@ -107,16 +107,19 @@ N may only depend on lower levels. The `dagnabit` tool repositions and renames
 packages across levels and enforces that every **leaf** name is unique across
 the whole tree.
 
-dewey ships three static analyzers:
+dewey ships six static analyzers (see `dewey-analyzers(7)`):
 
 - **`defererr`** — flags deferred calls whose returned error is dropped.
-- **`repool`** — flags pooled values returned to a `sync.Pool` while still referenced (no-op outside pool-owning packages).
-- **`seqerror`** — flags error-handling mistakes in `iter.Seq` sequences.
+- **`repool`** — flags a `FuncRepool` from `GetWithRepool()` that is discarded or not called on every path (no-op outside pool-owning packages).
+- **`seqerror`** — flags a discarded or unchecked error from ranging over an `iter.Seq2[T, error]`.
+- **`testui`** — flags stdlib `*testing.T` where dewey's `test_ui.T` is intended.
+- **`actx`** (opt-in) — flags stdlib `context.Context` where dewey's `ActiveContext` is intended.
+- **`paramobj`** (opt-in) — suggests a parameter struct when several functions share a parameter list.
 
 Each is available two ways:
 
 - **Standalone vettool** — `nix build .#defererr` (etc.), run via `go vet -vettool`.
-- **golangci-lint module plugin** — `libs/dewey/gclplugin/` registers all three
+- **golangci-lint module plugin** — `libs/dewey/gclplugin/` registers all six
   with `register.Plugin("dewey", New)` so repos already gating on
   `golangci-lint` fold them into that run instead of a separate pass. Wire it
   via `.custom-gcl.yml` + `golangci-lint custom`; `Settings` lets a consumer opt
