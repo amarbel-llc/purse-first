@@ -162,6 +162,20 @@ let
   manpages = goPkgs.runCommand "go-mcp-manpages" { } ''
     ${goMcpDocsBin}/bin/go-mcp-docs "$out"
   '';
+
+  purseFirstBin = mkGoModule {
+    pname = "purse-first";
+    version = purseFirstVersion;
+    subPackages = [ "cmd/purse-first" ];
+    ldflags = [
+      "-s"
+      "-w"
+    ];
+    meta = with goPkgs.lib; {
+      description = "MCP-first tool routing for Claude Code";
+      license = licenses.mit;
+    };
+  };
 in
 {
   inherit manpages;
@@ -169,18 +183,22 @@ in
   packages = {
     inherit go-pkgs go-pkgs-test;
 
-    purse-first = mkGoModule {
-      pname = "purse-first";
-      version = purseFirstVersion;
-      subPackages = [ "cmd/purse-first" ];
-      ldflags = [
-        "-s"
-        "-w"
+    # The purse-first CLI joined with the man pages this repo ships, so the one
+    # package a profile consumes (circus eng/home/repo-packages.nix) carries
+    # share/man for the whole repo: the go-mcp(7) tree, plus the dagnabit and
+    # mesa pages. Only the compiled pages are joined for the latter two —
+    # NOT packages.dagnabit / packages.mesa — so the dagnabit binary closure
+    # (ast-grep wrapper, Go toolchain refs) is not pulled into the profile.
+    purse-first = goPkgs.symlinkJoin {
+      name = "purse-first-${purseFirstVersion}";
+      paths = [
+        purseFirstBin
+        manpages
+        (mkManPage "1" "dagnabit")
+        (mkManPage "7" "dagnabit")
+        (mkManPage "1" "mesa")
       ];
-      meta = with goPkgs.lib; {
-        description = "MCP-first tool routing for Claude Code";
-        license = licenses.mit;
-      };
+      meta = purseFirstBin.meta;
     };
 
     dagnabit = withManPages [ "1" "7" ] "dagnabit" (mkGoModule {
