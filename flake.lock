@@ -46,11 +46,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792147170,
-        "narHash": "sha256-ITM4c3lmZC0X/mfPK/hKXgpHUV3yCwa/59KfZ/AKDDc=",
-        "rev": "53b5e157039fcf359c947462db18047c75687a49",
+        "lastModified": 1792582440,
+        "narHash": "sha256-P9wW7jhj+/ZjWIzVg7RL6dq069+N9ibUU4dtCuSOnvs=",
+        "rev": "5533496b20614fd59be59b8cfd01d29d4ad71f51",
         "type": "tarball",
-        "url": "https://code.linenisgreat.com/conformist/archive/53b5e157039fcf359c947462db18047c75687a49.tar.gz"
+        "url": "https://code.linenisgreat.com/conformist/archive/5533496b20614fd59be59b8cfd01d29d4ad71f51.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -88,11 +88,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785249242,
-        "narHash": "sha256-PYnzeRibCvHs1TLPPZxEds1KW0qYUZ4ycfeCc6bCwrk=",
-        "rev": "38d90d9cdcaca83282c78f8ce1f89414b3e0d854",
+        "lastModified": 1792264318,
+        "narHash": "sha256-obdl5uwqKBNbYOgRssFzG88XQh8JWw/xwDhTaiTBd4A=",
+        "rev": "3171d7cb8b80f30baba5da12b29817c152a2df03",
         "type": "tarball",
-        "url": "https://code.linenisgreat.com/gomod2nix/archive/38d90d9cdcaca83282c78f8ce1f89414b3e0d854.tar.gz"
+        "url": "https://code.linenisgreat.com/gomod2nix/archive/3171d7cb8b80f30baba5da12b29817c152a2df03.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -110,11 +110,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1792147037,
-        "narHash": "sha256-2d2ZuPN9uOMk5O6XUYntNW07dVg5ei6RfQ+TKc0Bs3c=",
-        "rev": "9f763e32eae424af4b0c8b95af977bccc76feaf0",
+        "lastModified": 1792433537,
+        "narHash": "sha256-kqyG9EabEWp9jJqlzUraXha5nxkRbJE0u2TOgEhVIJ4=",
+        "rev": "1bff83b280fe88b2f4f3189f4bc85dca6e4763de",
         "type": "tarball",
-        "url": "https://code.linenisgreat.com/igloo/archive/9f763e32eae424af4b0c8b95af977bccc76feaf0.tar.gz"
+        "url": "https://code.linenisgreat.com/igloo/archive/1bff83b280fe88b2f4f3189f4bc85dca6e4763de.tar.gz"
       },
       "original": {
         "type": "tarball",
