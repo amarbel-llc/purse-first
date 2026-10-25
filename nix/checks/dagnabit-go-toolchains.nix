@@ -52,7 +52,6 @@ let
         nativeBuildInputs = [
           go
           conformistBin
-          pkgs.git
         ];
       }
       ''
