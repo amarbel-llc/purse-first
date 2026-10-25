@@ -9,6 +9,10 @@ import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/go_l
 // Dir is the working directory to run `go list` from.
 // PackagePrefixes are directory prefixes containing packages (e.g., ["lib", "internal"]).
 // Node names in returned edges include the prefix (e.g., "lib/_/ohio_buffer").
+// Every package under a prefix is also declared with a target-less edge
+// (topological_sort.Edge{Source: node}), so a package with no in-prefix
+// edges still gets a height. Only non-test imports (.Imports) count:
+// an import made only from a _test.go file adds no edge.
 //
 // ComponentDepth controls how many path components identify a package node:
 //   - 3 (default): prefix/level/package (e.g., "lib/alfa/errors")

@@ -581,6 +581,56 @@ debug-test-wasm goos="js" pkgs="./internal/charlie/ui/...":
         -exec="env -i PATH=$host_dir:$core_dir $wrapper" {{ pkgs }}
     '
 
+# Reproduce purse-first#220 outside spinclass: build a throwaway module under
+# .tmp/ with a package named `close` (an aliased importer and a _test.go
+# importer), packages with no in-prefix edges (servelog, resources) and a
+# test-only import target (testfs), then follow spinclass's per-level flow:
+# plan with `dagnabit -initial -n internal`, `dagnabit move` each package
+# planned into the level, repeat. Prints each plan, then any import still
+# naming a pre-move path, then `go vet ./...` (which compiles test files).
+# Uses build/dagnabit (run build-dagnabit first).
+#
+# reproduce the dagnabit move/plan misses of purse-first#220 on a fixture
+[group('debug')]
+debug-dagnabit-move-repro:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin={{ justfile_directory() }}/build/dagnabit
+    dir={{ justfile_directory() }}/.tmp/dagnabit-move-repro
+    rm -rf "$dir" && mkdir -p "$dir" && cd "$dir"
+    export GOWORK=off
+    m=example.com/repro
+    w() { mkdir -p "$(dirname "$1")"; cat >"$1"; }
+    printf 'module %s\n\ngo 1.22\n' "$m" >go.mod
+    w internal/close/close.go <<<'package close; func Run() string { return "close" }'
+    w internal/merge/merge.go <<<"package merge; import \"$m/internal/close\"; func Run() string { return close.Run() }"
+    w internal/merge/merge_test.go <<<"package merge; import (\"testing\"; \"$m/internal/testfs\"); func TestRun(t *testing.T) { _ = testfs.Dir() }"
+    w internal/resurrect/resurrect.go <<<"package resurrect; import \"$m/internal/merge\"; func Run() string { return merge.Run() }"
+    w internal/resurrect/resurrect_test.go <<<"package resurrect; import (\"testing\"; \"$m/internal/close\"); func TestRun(t *testing.T) { _ = close.Run() }"
+    w internal/servelog/servelog.go <<<'package servelog; func Log() {}'
+    w internal/testfs/testfs.go <<<'package testfs; func Dir() string { return "" }'
+    w internal/resources/resources.go <<<'package resources; const Name = "r"'
+    w cmd/app/main.go <<<"package main; import (\"$m/internal/resurrect\"; \"$m/internal/servelog\"); func main() { servelog.Log(); _ = resurrect.Run(); closeChild() }"
+    w cmd/app/close_child_cmd.go <<<"package main; import spinclose \"$m/internal/close\"; func closeChild() { _ = spinclose.Run() }"
+    gofmt -w .
+    git init -q . && git add -A && git -c user.name=r -c user.email=r@r commit -qm initial
+    go vet ./... && echo "baseline: go vet ok"
+    for level in 0 alfa bravo charlie; do
+      plan=$("$bin" -initial -n internal)
+      echo "== plan before level $level"; echo "$plan"
+      moves=$(sed -n "s|.*\"dst\":\"\(internal/$level/[^\"]*\)\".*\"src\":\"\([^\"]*\)\".*|\2 \1|p" <<<"$plan")
+      [[ -n $moves ]] || continue
+      while read -r src dst; do "$bin" move -module "$m" "$src" "$dst"; done <<<"$moves"
+    done
+    echo "== tree"; find internal -name '*.go' | sort
+    echo "== imports of flat internal/<pkg> paths that no longer exist"
+    for f in $(git ls-files -co --exclude-standard '*.go'); do
+      { grep -oE "\"$m/internal/[a-z]+\"" "$f" || true; } | tr -d '"' | while read -r p; do
+        [[ -d ${p#"$m/"} ]] || echo "STALE $f: $p"
+      done
+    done
+    echo "== go vet ./..."; go vet ./... && echo "go vet ok"
+
 # Dry-run a single-package rename: print the proposed move as NDJSON,
 # touch nothing on disk. `new_leaf` is optional; defaults to src's leaf.
 #

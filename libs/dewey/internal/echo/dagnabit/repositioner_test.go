@@ -136,6 +136,44 @@ func TestRepositionerDryRunDoesNotMove(t *testing.T) {
 	}
 }
 
+// A package with no in-prefix edges arrives as a node declaration (empty
+// Target) and must be planned at level 0 (purse-first#57, #220).
+func TestRepositionerInitialPlansIsolatedPackages(t *testing.T) {
+	reader := stubReader{
+		edgesByPrefix: map[string][]topological_sort.Edge{
+			"internal": {
+				{Source: "internal/bar", Target: "internal/foo"},
+				{Source: "internal/foo"},
+				{Source: "internal/servelog"},
+			},
+		},
+	}
+
+	mover := &recordingMover{}
+
+	r := Repositioner{
+		Reader:         reader,
+		Mapper:         sliceLevelMapper{levels: []string{"0", "alfa"}},
+		Mover:          mover,
+		ComponentDepth: 2,
+		Mode:           ModeInitial,
+	}
+
+	if err := r.Run(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	want := []string{
+		"internal/foo -> internal/0/foo",
+		"internal/servelog -> internal/0/servelog",
+		"internal/bar -> internal/alfa/bar",
+	}
+
+	if strings.Join(mover.moves, "\n") != strings.Join(want, "\n") {
+		t.Errorf("moves:\n%s\nwant:\n%s", strings.Join(mover.moves, "\n"), strings.Join(want, "\n"))
+	}
+}
+
 func TestRepositionerReaderError(t *testing.T) {
 	reader := errorReader{err: fmt.Errorf("read failed")}
 	mapper := sliceLevelMapper{levels: []string{"level0"}}

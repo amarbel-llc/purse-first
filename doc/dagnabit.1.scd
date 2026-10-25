@@ -132,7 +132,7 @@ _prefix_...
 	Path component depth: 3 for _prefix/level/package_ (default), 2 for _level/package_. Use depth 2 for repos where NATO levels are top-level directories. Implied (and overridden) by *--initial*.
 
 *--initial*
-	Initial tiering of a flat _<prefix>/<pkg>_ layout. Inserts a NATO level segment into every package path based on its dependency height, producing _<prefix>/<level>/<pkg>_. Implies *-depth 2*.
+	Initial tiering of a flat _<prefix>/<pkg>_ layout. Inserts a NATO level segment into every package path based on its dependency height, producing _<prefix>/<level>/<pkg>_. Every package under the prefix is planned, including one with no edges inside it (height 0; see *dagnabit*(7), *THE LEVEL RULE*). Implies *-depth 2*.
 
 *-lang* _go|rust_
 	Operating language. Auto-detected when empty (see *LANGUAGES*).

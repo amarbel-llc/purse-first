@@ -33,10 +33,44 @@ func TestParseEdges(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := topological_sort.Edge{Source: "internal/alfa/store", Target: "internal/0/blob_store_id"}
-	got := edges["internal"]
-	if len(got) != 1 || got[0] != want {
-		t.Errorf("edges = %v, want [%v]", got, want)
+	assertEdges(t, edges["internal"],
+		topological_sort.Edge{Source: "internal/alfa/store", Target: "internal/0/blob_store_id"},
+		topological_sort.Edge{Source: "internal/alfa/store"},
+		topological_sort.Edge{Source: "internal/0/blob_store_id"},
+	)
+}
+
+// Mirrors go_list: a crate with no in-prefix edges is still declared, so
+// the repositioner places it (purse-first#57, #220).
+func TestParseEdgesDeclaresCratesWithoutEdges(t *testing.T) {
+	meta := `{"packages":[
+	  {"name":"lonely_internal","manifest_path":"/ws/internal/lonely/Cargo.toml","dependencies":[]}],
+	  "workspace_root":"/ws"}`
+	edges, err := parseEdges([]byte(meta), []string{"internal"}, 2, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertEdges(t, edges["internal"], topological_sort.Edge{Source: "internal/lonely"})
+}
+
+// assertEdges compares edges against want as sets.
+func assertEdges(t *testing.T, edges []topological_sort.Edge, want ...topological_sort.Edge) {
+	t.Helper()
+
+	got := make(map[topological_sort.Edge]bool, len(edges))
+	for _, e := range edges {
+		got[e] = true
+	}
+
+	for _, w := range want {
+		if !got[w] {
+			t.Errorf("missing edge %+v in %v", w, edges)
+		}
+	}
+
+	if len(edges) != len(want) {
+		t.Errorf("expected %d edges, got %d: %v", len(want), len(edges), edges)
 	}
 }
 
@@ -59,10 +93,11 @@ func TestParseEdgesDepth2FlatLayout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := topological_sort.Edge{Source: "internal/bar", Target: "internal/foo"}
-	if len(edges["internal"]) != 1 || edges["internal"][0] != want {
-		t.Errorf("depth-2 edges = %v, want [%v]", edges["internal"], want)
-	}
+	assertEdges(t, edges["internal"],
+		topological_sort.Edge{Source: "internal/bar", Target: "internal/foo"},
+		topological_sort.Edge{Source: "internal/bar"},
+		topological_sort.Edge{Source: "internal/foo"},
+	)
 }
 
 func TestParseEdgesDropsCrossPrefixEdges(t *testing.T) {
@@ -72,7 +107,7 @@ func TestParseEdgesDropsCrossPrefixEdges(t *testing.T) {
 	//
 	// go_list-exact behavior check: both sources survive the depth trim
 	// (droppedSources == 0), so the zero-edge guard (go_list.go:159) does
-	// NOT fire — empty edge groups are returned, not an error.
+	// NOT fire — each group holds only its node declaration, not an error.
 	meta := `{"packages":[
 	  {"name":"a_internal","manifest_path":"/ws/0/a/Cargo.toml","dependencies":[]},
 	  {"name":"b_internal","manifest_path":"/ws/alfa/b/Cargo.toml",
@@ -82,9 +117,8 @@ func TestParseEdgesDropsCrossPrefixEdges(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(edges["alfa"]) != 0 || len(edges["0"]) != 0 {
-		t.Errorf("cross-prefix edge must be dropped, got %v", edges)
-	}
+	assertEdges(t, edges["0"], topological_sort.Edge{Source: "0/a"})
+	assertEdges(t, edges["alfa"], topological_sort.Edge{Source: "alfa/b"})
 }
 
 func TestParseEdgesErrorsOnFlatLayoutWithDefaultDepth(t *testing.T) {

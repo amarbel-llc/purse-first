@@ -183,6 +183,14 @@ func parsePrefix(
 			continue
 		}
 
+		// Mirrors go_list's node declaration: a crate with no in-prefix
+		// edges must still get a height (purse-first#57, #220).
+		declaration := topological_sort.Edge{Source: source}
+		if _, ok := seen[declaration]; !ok {
+			seen[declaration] = struct{}{}
+			edges = append(edges, declaration)
+		}
+
 		for _, dep := range pkg.Dependencies {
 			if dep.Path == "" {
 				continue

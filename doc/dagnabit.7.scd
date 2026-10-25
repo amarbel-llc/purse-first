@@ -12,6 +12,8 @@ dagnabit - concepts behind the NATO-level package layout and export facades
 
 Every package (go) or crate (rust) is assigned a _height_ computed from the internal dependency graph: a package with no internal dependencies has height 0, and any other package has a height one greater than the greatest height among its dependencies (longest chain, computed with Kahn's algorithm). A dependency cycle is an error; no layout can be computed for it.
 
+Only edges between packages under the same prefix count. An import from outside the prefix (such as _cmd/_) adds no edge, and neither does an import made only from a _\_test.go_ file: in go mode the graph is read from *go list*'s non-test *Imports*. A package with no counted edges at all, whether it is imported only by _cmd/_, only by tests, or not at all, still belongs to the graph and has height 0.
+
 Each height maps to a NATO phonetic _level_ name, in order:
 
 ```

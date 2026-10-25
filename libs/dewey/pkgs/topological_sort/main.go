@@ -4,7 +4,11 @@ package topological_sort
 
 import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/topological_sort"
 
-// Edge is a directed dependency: Source depends on Target.
+// Edge is a directed dependency: Source depends on Target. An Edge with
+// an empty Target is a node declaration: Source is in the graph but this
+// edge adds no dependency. Readers declare every node that way so a node
+// with no edges at all (no dependencies, no dependents) still gets a
+// height.
 type Edge = internal.Edge
 
 // Sort runs Kahn's algorithm on edges and returns a map from node name

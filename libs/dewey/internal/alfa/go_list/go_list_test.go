@@ -135,14 +135,83 @@ func TestGoListReaderFlatLayoutDepth2Succeeds(t *testing.T) {
 		t.Fatalf("unexpected error at depth=2: %v", err)
 	}
 
-	edges := edgesByPrefix["internal"]
-	if len(edges) != 1 {
-		t.Fatalf("expected 1 edge, got %d: %v", len(edges), edges)
+	assertEdges(t, edgesByPrefix["internal"],
+		topological_sort.Edge{Source: "internal/bar", Target: "internal/foo"},
+		topological_sort.Edge{Source: "internal/bar"},
+		topological_sort.Edge{Source: "internal/foo"},
+	)
+}
+
+// Packages with no in-prefix edges (imported only from outside the prefix,
+// only from _test.go files, or not at all) must still be reported, as node
+// declarations, so the repositioner plans them (purse-first#57, #220).
+func TestGoListReaderDeclaresPackagesWithoutInPrefixEdges(t *testing.T) {
+	dir := writeFlatModule(t)
+
+	writeFile(t, dir, "internal/servelog/servelog.go", "package servelog\n\nfunc Log() {}\n")
+	writeFile(t, dir, "internal/testfs/testfs.go", "package testfs\n\nfunc Dir() string { return \"\" }\n")
+	writeFile(t, dir, "internal/resources/resources.go", "package resources\n\nconst Name = \"r\"\n")
+	writeFile(t, dir, "internal/bar/bar_test.go", `package bar
+
+import (
+	"testing"
+
+	"example.com/m/internal/testfs"
+)
+
+func TestY(t *testing.T) { _ = testfs.Dir() }
+`)
+	writeFile(t, dir, "cmd/app/main.go", `package main
+
+import "example.com/m/internal/servelog"
+
+func main() { servelog.Log() }
+`)
+
+	reader := Reader{
+		Dir:             dir,
+		ModulePath:      "example.com/m",
+		PackagePrefixes: []string{"internal"},
+		ComponentDepth:  2,
 	}
 
-	want := topological_sort.Edge{Source: "internal/bar", Target: "internal/foo"}
-	if edges[0] != want {
-		t.Errorf("expected edge %+v, got %+v", want, edges[0])
+	edgesByPrefix, err := reader.ReadDependencies()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	assertEdges(t, edgesByPrefix["internal"],
+		topological_sort.Edge{Source: "internal/bar", Target: "internal/foo"},
+		topological_sort.Edge{Source: "internal/bar"},
+		topological_sort.Edge{Source: "internal/foo"},
+		topological_sort.Edge{Source: "internal/resources"},
+		topological_sort.Edge{Source: "internal/servelog"},
+		topological_sort.Edge{Source: "internal/testfs"},
+	)
+}
+
+// assertEdges compares edges against want as sets (go list order is not
+// part of the contract).
+func assertEdges(t *testing.T, edges []topological_sort.Edge, want ...topological_sort.Edge) {
+	t.Helper()
+
+	got := make(map[topological_sort.Edge]bool, len(edges))
+	for _, e := range edges {
+		got[e] = true
+	}
+
+	if len(got) != len(edges) {
+		t.Errorf("duplicate edges in %v", edges)
+	}
+
+	for _, w := range want {
+		if !got[w] {
+			t.Errorf("missing edge %+v in %v", w, edges)
+		}
+	}
+
+	if len(edges) != len(want) {
+		t.Errorf("expected %d edges, got %d: %v", len(want), len(edges), edges)
 	}
 }
 
@@ -161,15 +230,11 @@ func TestGoListReaderTieredLayoutDepth3Succeeds(t *testing.T) {
 		t.Fatalf("unexpected error at depth=3 with tiered layout: %v", err)
 	}
 
-	edges := edgesByPrefix["internal"]
-	if len(edges) != 1 {
-		t.Fatalf("expected 1 edge, got %d: %v", len(edges), edges)
-	}
-
-	want := topological_sort.Edge{Source: "internal/bravo/bar", Target: "internal/alfa/foo"}
-	if edges[0] != want {
-		t.Errorf("expected edge %+v, got %+v", want, edges[0])
-	}
+	assertEdges(t, edgesByPrefix["internal"],
+		topological_sort.Edge{Source: "internal/bravo/bar", Target: "internal/alfa/foo"},
+		topological_sort.Edge{Source: "internal/bravo/bar"},
+		topological_sort.Edge{Source: "internal/alfa/foo"},
+	)
 }
 
 func TestGoListReaderVerboseLogsSkippedSources(t *testing.T) {

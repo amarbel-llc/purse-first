@@ -22,6 +22,10 @@ import (
 // Dir is the working directory to run `go list` from.
 // PackagePrefixes are directory prefixes containing packages (e.g., ["lib", "internal"]).
 // Node names in returned edges include the prefix (e.g., "lib/_/ohio_buffer").
+// Every package under a prefix is also declared with a target-less edge
+// (topological_sort.Edge{Source: node}), so a package with no in-prefix
+// edges still gets a height. Only non-test imports (.Imports) count:
+// an import made only from a _test.go file adds no edge.
 //
 // ComponentDepth controls how many path components identify a package node:
 //   - 3 (default): prefix/level/package (e.g., "lib/alfa/errors")
@@ -123,6 +127,15 @@ func (reader Reader) readPrefix(prefix string) ([]topological_sort.Edge, error) 
 			}
 
 			continue
+		}
+
+		// Declare the node so a package with no in-prefix edges (imported
+		// only from outside the prefix or from _test.go files, which
+		// .Imports omits) is still placed (purse-first#57, #220).
+		declaration := topological_sort.Edge{Source: source}
+		if _, ok := seen[declaration]; !ok {
+			seen[declaration] = struct{}{}
+			edges = append(edges, declaration)
 		}
 
 		imports := strings.Fields(parts[1])

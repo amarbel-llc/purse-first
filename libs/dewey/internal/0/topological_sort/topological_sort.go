@@ -6,7 +6,11 @@ package topological_sort
 
 import "fmt"
 
-// Edge is a directed dependency: Source depends on Target.
+// Edge is a directed dependency: Source depends on Target. An Edge with
+// an empty Target is a node declaration: Source is in the graph but this
+// edge adds no dependency. Readers declare every node that way so a node
+// with no edges at all (no dependencies, no dependents) still gets a
+// height.
 type Edge struct {
 	Source string
 	Target string
@@ -27,6 +31,15 @@ func Sort(edges []Edge) (map[string]int, error) {
 
 	for _, e := range edges {
 		allNodes[e.Source] = struct{}{}
+
+		if e.Target == "" {
+			if _, ok := inDegree[e.Source]; !ok {
+				inDegree[e.Source] = 0
+			}
+
+			continue
+		}
+
 		allNodes[e.Target] = struct{}{}
 		dependents[e.Target] = append(dependents[e.Target], e.Source)
 		inDegree[e.Source]++

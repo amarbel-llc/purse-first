@@ -95,6 +95,39 @@ func TestSortSingleNode(t *testing.T) {
 	assertHeight(t, heights, "a", 1)
 }
 
+// A node with no dependencies and no dependents is declared with an
+// empty Target (purse-first#57, #220); it must still get height 0.
+func TestSortIsolatedNodeDeclaration(t *testing.T) {
+	edges := []Edge{
+		{Source: "a", Target: "b"},
+		{Source: "isolated"},
+		{Source: "b"},
+	}
+
+	heights, err := Sort(edges)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(heights) != 3 {
+		t.Errorf("expected 3 nodes, got %v", heights)
+	}
+
+	assertHeight(t, heights, "isolated", 0)
+	assertHeight(t, heights, "b", 0)
+	assertHeight(t, heights, "a", 1)
+}
+
+func TestSortOnlyNodeDeclarations(t *testing.T) {
+	heights, err := Sort([]Edge{{Source: "a"}, {Source: "b"}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	assertHeight(t, heights, "a", 0)
+	assertHeight(t, heights, "b", 0)
+}
+
 func assertHeight(t *testing.T, heights map[string]int, node string, expected int) {
 	t.Helper()
 
