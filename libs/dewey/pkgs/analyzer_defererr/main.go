@@ -2,6 +2,6 @@
 
 package analyzer_defererr
 
-import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/analyzer_defererr"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/analyzer_defererr"
 
 var Analyzer = internal.Analyzer

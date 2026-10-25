@@ -3,7 +3,7 @@ package analyzer_defererr_test
 import (
 	"testing"
 
-	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/analyzer_defererr"
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/analyzer_defererr"
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 

@@ -2,6 +2,6 @@
 
 package analyzer_seqerror
 
-import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/analyzer_seqerror"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/analyzer_seqerror"
 
 var Analyzer = internal.Analyzer

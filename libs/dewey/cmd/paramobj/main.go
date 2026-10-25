@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
+	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/analyzer_paramobj"
 	"code.linenisgreat.com/purse-first/libs/dewey/internal/0/buildinfo"
-	"code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/analyzer_paramobj"
 	"golang.org/x/tools/go/analysis/singlechecker"
 )
 

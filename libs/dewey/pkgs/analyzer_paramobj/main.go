@@ -2,6 +2,6 @@
 
 package analyzer_paramobj
 
-import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/alfa/analyzer_paramobj"
+import internal "code.linenisgreat.com/purse-first/libs/dewey/internal/0/analyzer_paramobj"
 
 var Analyzer = internal.Analyzer
