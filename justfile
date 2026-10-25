@@ -652,6 +652,8 @@ debug-dagnabit-go-version-repro go_attr="go_1_27_3":
       >internal/0/jobwake/jobwake.go
     go version
     "$bin" version 2>/dev/null || true
+    echo "== dagnabit -n internal (the mkLayoutCheck / layout-lane call)"
+    "$bin" -n internal && echo "layout plan ok"
     echo "== dagnabit export --library"
     "$bin" export --library && find pkgs -name '*.go' -exec cat {} +
 

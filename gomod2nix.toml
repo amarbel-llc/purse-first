@@ -550,39 +550,39 @@ schema = 3
     ]
 
   [mod.'golang.org/x/mod']
-    version = 'v0.35.0'
-    hash = 'sha256-ICEQxokHywOFInDPqoP+go9l1tZSz3roknF5SXPtNV4='
-    goVersion = '1.25.0'
+    version = 'v0.42.0'
+    hash = 'sha256-jgjKlIzteE99u8/TbuZTk4cLAwDOVZePXaRwqEpYvPk='
+    goVersion = '1.26.0'
     vendorPackages = [
       'golang.org/x/mod/semver'
     ]
 
   [mod.'golang.org/x/net']
-    version = 'v0.53.0'
-    hash = 'sha256-G9gKLmyaf6lIV429NKX+YlL6oUPJwlv+BrG6qGhzvmU='
-    goVersion = '1.25.0'
+    version = 'v0.61.0'
+    hash = 'sha256-yCy7Bik5cvIVfX7G08rVYhkVDuro3sPk3iicVz4j/kA='
+    goVersion = '1.26.0'
 
   [mod.'golang.org/x/sync']
-    version = 'v0.20.0'
-    hash = 'sha256-ybcjhCfK6lroUM0yswUvWooW8MOQZBXyiSqoxG6Uy0Y='
-    goVersion = '1.25.0'
+    version = 'v0.24.0'
+    hash = 'sha256-gViyLpsZFBKTEUtK6Li3m6plz5J/VCAcpTLymQVRpj4='
+    goVersion = '1.26.0'
     vendorPackages = [
       'golang.org/x/sync/errgroup'
     ]
 
   [mod.'golang.org/x/sys']
-    version = 'v0.43.0'
-    hash = 'sha256-aDQXqSTZES2l/132PBxhZN4ywldpPyfm7LByYCHzzwM='
-    goVersion = '1.25.0'
+    version = 'v0.49.0'
+    hash = 'sha256-/1S3yy3in72ygZT1CKymvOzJZqCMYiGSqZDfvSyB3LI='
+    goVersion = '1.26.0'
     vendorPackages = [
       'golang.org/x/sys/cpu',
       'golang.org/x/sys/unix'
     ]
 
   [mod.'golang.org/x/telemetry']
-    version = 'v0.0.0-20260409153401-be6f6cb8b1fa'
-    hash = 'sha256-NH3t7QaWURhZnwukd4+/w2VdFYpaF0dFTyKlKXuuKew='
-    goVersion = '1.25.0'
+    version = 'v0.0.0-20261009151841-97e8ea77aa2a'
+    hash = 'sha256-vLQfbCUW5j+uiK6C7Vndvk7Dz8SIMz4SwOdGbBnBjEw='
+    goVersion = '1.26.0'
 
   [mod.'golang.org/x/term']
     version = 'v0.42.0'
@@ -603,9 +603,9 @@ schema = 3
     ]
 
   [mod.'golang.org/x/tools']
-    version = 'v0.44.0'
-    hash = 'sha256-xuj5FLtSJsAojLLTLXtPdLAIFNTKoVFbDMuqRXmj2W4='
-    goVersion = '1.25.0'
+    version = 'v0.52.0'
+    hash = 'sha256-keFn6eH6Oa54T4r9msvMw1q4wqJ2yRadGTb/TbPvmXI='
+    goVersion = '1.26.0'
     vendorPackages = [
       'golang.org/x/tools/go/analysis',
       'golang.org/x/tools/go/analysis/checker',
@@ -624,7 +624,6 @@ schema = 3
       'golang.org/x/tools/go/packages',
       'golang.org/x/tools/go/types/objectpath',
       'golang.org/x/tools/go/types/typeutil',
-      'golang.org/x/tools/internal/aliases',
       'golang.org/x/tools/internal/analysis/driverutil',
       'golang.org/x/tools/internal/astutil/free',
       'golang.org/x/tools/internal/diff',
@@ -636,6 +635,7 @@ schema = 3
       'golang.org/x/tools/internal/facts',
       'golang.org/x/tools/internal/gcimporter',
       'golang.org/x/tools/internal/gocommand',
+      'golang.org/x/tools/internal/moremaps',
       'golang.org/x/tools/internal/packagesinternal',
       'golang.org/x/tools/internal/pkgbits',
       'golang.org/x/tools/internal/stdlib',

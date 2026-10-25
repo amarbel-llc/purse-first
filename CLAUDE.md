@@ -80,6 +80,12 @@ these into their own `conformist.lib.evalModule` and set `deweyDir` / `library`
 / `dagnabitPackage` / `conformistConfig`; purse-first dogfoods them from its own
 `conformistImpureEval`. dagnabit coupling lives here (the repo that owns
 dewey+dagnabit), not upstream in conformist (purse-first#163).
+`checks.dagnabit-go-toolchain-{newest,build}` run the published dagnabit's
+facade export (and the `dewey-facade-export` linter script) on a fixture that
+imports stdlib, under igloo's newest Go and under dagnabit's own build Go:
+go/packages reads the runtime Go's export data, so an x/tools older than a
+newly bumped Go fails here first (`package "context" without types`) — bump
+`golang.org/x/tools` in `libs/dewey/go.mod` when `newest` goes red.
 `lib.conformistModules.dagnabit-facade` is the formatters-only module consumers
 evaluate for that `conformistConfig` (dagnabit's facade config, validated per
 dagnabit(1)); purse-first's own is `packages.conformist-facade-config`.
