@@ -631,6 +631,30 @@ debug-dagnabit-move-repro:
     done
     echo "== go vet ./..."; go vet ./... && echo "go vet ok"
 
+# Reproduce the Go 1.27 facade-export failure (ringmaster's `packages.go: internal
+# error: package "context" without types`): a throwaway module under .tmp/ with an
+# internal/0/jobwake package importing context, exported by build/dagnabit with
+# igloo's go_<go_attr> (from purse-first's locked igloo input) first on PATH.
+# Uses build/dagnabit (run build-dagnabit first).
+#
+# reproduce dagnabit facade export against a given igloo Go toolchain
+[group('debug')]
+debug-dagnabit-go-version-repro go_attr="go_1_27_3":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin={{ justfile_directory() }}/build/dagnabit
+    go_out=$(nix build --inputs-from {{ justfile_directory() }} --no-link --print-out-paths 'igloo#{{ go_attr }}')
+    export PATH="$go_out/bin:$PATH" GOWORK=off GOTOOLCHAIN=local
+    dir={{ justfile_directory() }}/.tmp/dagnabit-go-version-repro
+    rm -rf "$dir" && mkdir -p "$dir/internal/0/jobwake" && cd "$dir"
+    printf 'module example.com/repro\n\ngo 1.22\n' >go.mod
+    printf 'package jobwake\n\nimport "context"\n\n// Wait blocks until ctx is done.\nfunc Wait(ctx context.Context) error { <-ctx.Done(); return ctx.Err() }\n' \
+      >internal/0/jobwake/jobwake.go
+    go version
+    "$bin" version 2>/dev/null || true
+    echo "== dagnabit export --library"
+    "$bin" export --library && find pkgs -name '*.go' -exec cat {} +
+
 # Dry-run a single-package rename: print the proposed move as NDJSON,
 # touch nothing on disk. `new_leaf` is optional; defaults to src's leaf.
 #

@@ -282,7 +282,24 @@
         # would make no change; linters report no findings) without mutating
         # anything. `just lint-conformist` builds this. build.check takes the
         # tree path (self), mirroring conformist's own checks.formatting.
-        checks.formatting = conformistEval.config.build.check self;
+        checks = {
+          formatting = conformistEval.config.build.check self;
+        }
+        # dagnabit facade export under each Go toolchain (newest igloo Go + the
+        # Go dagnabit is built with). See nix/checks/dagnabit-go-toolchains.nix.
+        // pkgs.lib.mapAttrs' (name: pkgs.lib.nameValuePair "dagnabit-go-toolchain-${name}") (
+          import ./nix/checks/dagnabit-go-toolchains.nix {
+            inherit pkgs conformist conformistBin;
+            inherit (pkgs) lib;
+            dagnabit = gomod.packages.dagnabit;
+            facadeConfig = conformistFacadeEval.config.build.configFile;
+            facadeExportLinter = conformistLinters.dewey-facade-export;
+            goToolchains = {
+              newest = pkgs.goToolchain.go;
+              build = pkgs-master.go_1_26;
+            };
+          }
+        );
       }
     )
     // {
