@@ -993,19 +993,19 @@ schema = 3
     goVersion = '1.24.0'
 
   [mod.'golang.org/x/mod']
-    version = 'v0.35.0'
-    hash = 'sha256-ICEQxokHywOFInDPqoP+go9l1tZSz3roknF5SXPtNV4='
-    goVersion = '1.25.0'
+    version = 'v0.42.0'
+    hash = 'sha256-jgjKlIzteE99u8/TbuZTk4cLAwDOVZePXaRwqEpYvPk='
+    goVersion = '1.26.0'
 
   [mod.'golang.org/x/sync']
-    version = 'v0.20.0'
-    hash = 'sha256-ybcjhCfK6lroUM0yswUvWooW8MOQZBXyiSqoxG6Uy0Y='
-    goVersion = '1.25.0'
+    version = 'v0.24.0'
+    hash = 'sha256-gViyLpsZFBKTEUtK6Li3m6plz5J/VCAcpTLymQVRpj4='
+    goVersion = '1.26.0'
 
   [mod.'golang.org/x/sys']
-    version = 'v0.43.0'
-    hash = 'sha256-aDQXqSTZES2l/132PBxhZN4ywldpPyfm7LByYCHzzwM='
-    goVersion = '1.25.0'
+    version = 'v0.49.0'
+    hash = 'sha256-/1S3yy3in72ygZT1CKymvOzJZqCMYiGSqZDfvSyB3LI='
+    goVersion = '1.26.0'
 
   [mod.'golang.org/x/text']
     version = 'v0.36.0'
@@ -1013,9 +1013,9 @@ schema = 3
     goVersion = '1.25.0'
 
   [mod.'golang.org/x/tools']
-    version = 'v0.44.0'
-    hash = 'sha256-xuj5FLtSJsAojLLTLXtPdLAIFNTKoVFbDMuqRXmj2W4='
-    goVersion = '1.25.0'
+    version = 'v0.52.0'
+    hash = 'sha256-keFn6eH6Oa54T4r9msvMw1q4wqJ2yRadGTb/TbPvmXI='
+    goVersion = '1.26.0'
 
   [mod.'google.golang.org/protobuf']
     version = 'v1.36.10'
