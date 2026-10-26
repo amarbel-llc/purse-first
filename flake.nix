@@ -288,6 +288,7 @@
           # godyn needs passthru.typedVetx on analyzer vetTools (igloo#95).
           analyzer-typed-vetx = import ./nix/checks/analyzer-typed-vetx.nix {
             inherit pkgs;
+            registryGo = pkgs.goToolchain.go;
             analyzers = {
               inherit (gomod.packages)
                 actx

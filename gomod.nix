@@ -70,14 +70,23 @@ let
     goWorkspaceSrc = go-pkgs-test;
   };
 
-  mkDeweyBin =
-    name:
+  mkDeweyBinWith =
+    go: name:
     mkGoModule {
+      inherit go;
       pname = name;
       version = purseFirstVersion;
       subPackages = [ "libs/dewey/cmd/${name}" ];
       ldflags = deweyLdflags;
     };
+
+  mkDeweyBin = mkDeweyBinWith pkgs-master.go_1_26;
+
+  # The Go the analyzers are built with. A typedVetx vetTool reads vetx files
+  # that the consumer's godyn lane writes with the registry Go, and must be
+  # built with a Go at least as new or it fails "package requires newer Go
+  # version" (igloo#96).
+  analyzerGo = goPkgs.goToolchain.go;
 
   # A dewey analyzer (singlechecker over x/tools >= v0.50). Its unitchecker
   # reads each import's types from that import's vetx file, so godyn must speak
@@ -85,9 +94,10 @@ let
   # (igloo#95; see godyn(7)).
   mkDeweyAnalyzer =
     name:
-    (mkDeweyBin name).overrideAttrs (old: {
+    (mkDeweyBinWith analyzerGo name).overrideAttrs (old: {
       passthru = (old.passthru or { }) // {
         typedVetx = true;
+        go = analyzerGo;
       };
     });
 
