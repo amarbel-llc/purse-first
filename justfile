@@ -118,6 +118,17 @@ debug-consumer-check consumer check:
       "{{ consumer }}#checks.$(nix eval --raw --impure --expr builtins.currentSystem).{{ check }}" \
       --override-input purse-first "git+file://{{ justfile_directory() }}"
 
+# Like debug-consumer-check, but for a consumer's packages.<system>.<package>
+# (e.g. madder's godyn vet lane, igloo#96):
+#   just debug-consumer-package ~/eng/repos/madder madder-vet-seqerror
+#
+# build a consumer's packages.<system>.<package> against this worktree's purse-first
+[group('debug')]
+debug-consumer-package consumer package:
+    nix build --no-link -L \
+      "{{ consumer }}#packages.$(nix eval --raw --impure --expr builtins.currentSystem).{{ package }}" \
+      --override-input purse-first "git+file://{{ justfile_directory() }}"
+
 # Render every doc/*.scd page with scdoc and pass the roff through
 # `mandoc -T lint` (scdoc and mandoc are pulled via `nix shell`; neither is in
 # the devshell). The Nix build already fails on scdoc parse errors; this adds
