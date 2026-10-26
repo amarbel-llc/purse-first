@@ -79,6 +79,18 @@ let
       ldflags = deweyLdflags;
     };
 
+  # A dewey analyzer (singlechecker over x/tools >= v0.50). Its unitchecker
+  # reads each import's types from that import's vetx file, so godyn must speak
+  # the type-bearing vetx protocol to it: passthru.typedVetx declares that
+  # (igloo#95; see godyn(7)).
+  mkDeweyAnalyzer =
+    name:
+    (mkDeweyBin name).overrideAttrs (old: {
+      passthru = (old.passthru or { }) // {
+        typedVetx = true;
+      };
+    });
+
   # Compile a tool's scdoc source (doc/<name>.<sec>.scd) into a derivation
   # carrying share/man/man<sec>/<name>.<sec>, per eng-manpages(7).
   mkManPage =
@@ -237,12 +249,12 @@ in
 
     mesa = withManPage "mesa" (mkDeweyBin "mesa");
 
-    actx = mkDeweyBin "actx";
-    defererr = mkDeweyBin "defererr";
-    paramobj = mkDeweyBin "paramobj";
-    repool = mkDeweyBin "repool";
-    seqerror = mkDeweyBin "seqerror";
-    testui = mkDeweyBin "testui";
+    actx = mkDeweyAnalyzer "actx";
+    defererr = mkDeweyAnalyzer "defererr";
+    paramobj = mkDeweyAnalyzer "paramobj";
+    repool = mkDeweyAnalyzer "repool";
+    seqerror = mkDeweyAnalyzer "seqerror";
+    testui = mkDeweyAnalyzer "testui";
     reflexive-interface-generator = mkDeweyBin "reflexive-interface-generator";
   };
 }

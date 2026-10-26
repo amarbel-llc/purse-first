@@ -284,6 +284,21 @@
         # tree path (self), mirroring conformist's own checks.formatting.
         checks = {
           formatting = conformistEval.config.build.check self;
+
+          # godyn needs passthru.typedVetx on analyzer vetTools (igloo#95).
+          analyzer-typed-vetx = import ./nix/checks/analyzer-typed-vetx.nix {
+            inherit pkgs;
+            analyzers = {
+              inherit (gomod.packages)
+                actx
+                defererr
+                paramobj
+                repool
+                seqerror
+                testui
+                ;
+            };
+          };
         }
         # dagnabit facade export under each Go toolchain (newest igloo Go + the
         # Go dagnabit is built with). See nix/checks/dagnabit-go-toolchains.nix.
