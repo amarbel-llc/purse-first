@@ -2,7 +2,7 @@ dewey-analyzers(7)
 
 # NAME
 
-dewey-analyzers - the six dewey static analyzers: what each flags and how to fix or suppress it
+dewey-analyzers - the six dewey static analyzers and what they flag
 
 # DESCRIPTION
 

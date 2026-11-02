@@ -2,7 +2,7 @@ dagnabit(7)
 
 # NAME
 
-dagnabit - concepts behind the NATO-level package layout and export facades
+dagnabit - concepts behind the NATO-level layout and export facades
 
 # DESCRIPTION
 

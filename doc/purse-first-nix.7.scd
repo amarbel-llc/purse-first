@@ -2,7 +2,7 @@ purse-first-nix(7)
 
 # NAME
 
-purse-first-nix - the purse-first flake's outputs and its reusable conformist modules
+purse-first-nix - purse-first flake outputs and conformist modules
 
 # DESCRIPTION
 

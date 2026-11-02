@@ -2,7 +2,7 @@ purse-first(1)
 
 # NAME
 
-purse-first - generate and validate per-package Claude Code plugin manifests
+purse-first - generate and validate Claude Code plugin manifests
 
 # SYNOPSIS
 

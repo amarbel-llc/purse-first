@@ -2,7 +2,7 @@ dewey-cli(7)
 
 # NAME
 
-dewey-cli - dewey's scaffolding for building command-line applications
+dewey-cli - dewey's scaffolding for building command-line apps
 
 # DESCRIPTION
 

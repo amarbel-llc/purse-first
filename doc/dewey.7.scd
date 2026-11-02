@@ -2,7 +2,7 @@ dewey(7)
 
 # NAME
 
-dewey - the multi-tier Go library in purse-first: layout, naming and stability
+dewey - the multi-tier Go library: layout, naming and stability
 
 # DESCRIPTION
 

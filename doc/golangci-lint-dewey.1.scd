@@ -2,7 +2,7 @@ golangci-lint-dewey(1)
 
 # NAME
 
-golangci-lint-dewey - golangci-lint with the dewey static analyzers linked in
+golangci-lint-dewey - golangci-lint bundled with the dewey analyzers
 
 # SYNOPSIS
 

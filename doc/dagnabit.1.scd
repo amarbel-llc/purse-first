@@ -2,7 +2,7 @@ dagnabit(1)
 
 # NAME
 
-dagnabit - reposition Go packages and Rust crates by dependency depth and generate export facades
+dagnabit - reposition packages by depth and generate export facades
 
 # SYNOPSIS
 
