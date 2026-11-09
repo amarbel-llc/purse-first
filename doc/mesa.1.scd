@@ -32,7 +32,9 @@ language can feed *mesa* the same way.
 	Target total width, in columns, for styled output. _0_ (the default)
 	sizes to content on a pipe, or to the terminal width when standard
 	output is a terminal. Flexible columns shrink in priority order and
-	ellipsize to fit.
+	ellipsize to fit. The legend and footer follow the same width: a legend
+	wider than it breaks across lines at entry boundaries, and a footer
+	line wider than it wraps at word boundaries (see FOOTER).
 
 # INPUT
 
@@ -52,6 +54,13 @@ can color its own glyphs.
 
 On a terminal a footer span that declares no severity is drawn dim, while a span
 carrying one keeps that severity's color.
+
+On a terminal whose width is known (from *--width* or the detected terminal),
+a footer line wider than that width wraps at word boundaries, each span keeping
+its color across the break, and a legend wider than it breaks across lines
+between entries; a word or a single legend entry that is itself wider than the
+width is split. Output that fits is unchanged, and with an unknown width
+nothing is wrapped. On a pipe, footer lines are never wrapped.
 
 On a pipe, footer lines are emitted verbatim after the last data row -- one line
 each, unstyled and without the TAB separator that joins row cells. This matches

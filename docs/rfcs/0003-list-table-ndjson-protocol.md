@@ -162,6 +162,10 @@ reported to stderr.
 - `glyph` (string, REQUIRED) — the marker shown in the legend.
 - `label` (string, REQUIRED) — human meaning of the glyph.
 
+In styled output the legend follows the width negotiation of §7.2: it is laid out
+on one line when it fits the resolved width, and otherwise broken across lines at
+entry boundaries.
+
 ### 6.1 Footer line
 
 The `legend` is a glyph key: one severity-colored marker and its label per entry.
@@ -184,9 +188,12 @@ for a single span at severity `neutral`) or an object `{ "spans": [ /* §4.1 */ 
 Reusing the cell shape means a footer line can color its own glyphs with the
 same severity vocabulary the rows use, and a producer needs no second encoding.
 
-A renderer MUST render each footer line as one output line; it MUST NOT wrap,
-truncate, or reflow footer text to the table width, and MUST NOT align it to the
-grid's columns. Footer text is subject to the same sanitization as span text
+A renderer MUST NOT truncate footer text and MUST NOT align it to the grid's
+columns. In plain output each footer line is exactly one output line (§7.3). In
+styled output a footer line is one output line when it fits the resolved width,
+and otherwise MUST be wrapped at word boundaries as §7.2 describes, so that no
+footer line is wider than the width the table was negotiated to. Footer text is
+subject to the same sanitization as span text
 (§Security). A footer line that carries no text — an empty `spans` array, or the
 empty string — renders as a blank line, which is how a producer separates footer
 paragraphs.
@@ -234,6 +241,25 @@ height of its tallest cell (other cells top-align). All width measurement MUST b
 wcwidth-aware (East-Asian width and zero-width combining marks) so that composed
 glyphs and CJK text stay column-aligned.
 
+The legend (§6) and the footer lines (§6.1) are not cells, so no column sizing
+applies to them, but they follow the same width: the width the table was
+negotiated to (an explicit width if the renderer was given one, otherwise the
+detected terminal width). When that width is unknown the legend is rendered on
+one line and each footer line as one line. When it is known:
+
+- a legend that is wider than the width MUST be broken across lines at entry
+  boundaries, filling each line with as many entries as fit, joined by two spaces;
+  an entry is never split unless that single entry (glyph, one space, label) is
+  itself wider than the width, in which case it is wrapped at word boundaries as
+  below;
+- a footer line wider than the width MUST be wrapped at word boundaries (spaces),
+  dropping the space at each break, with every span keeping its severity and
+  emphasis across the break; a single word wider than the width is split at
+  character boundaries; leading spaces on the first line are preserved; a footer
+  line with no text stays one blank line;
+- a legend or footer that already fits MUST render exactly as it would with an
+  unknown width.
+
 #### 7.3 Plain output
 
 On a non-TTY the renderer MUST emit, one line per record, the header row followed
@@ -245,7 +271,8 @@ TAB-separated form MUST be the default plain output.
 
 Footer lines (§6.1) **are** emitted in plain output, after the last data row: one
 line per footer line, carrying that line's concatenated span `text` verbatim,
-with no styling and no TAB separator. This is deliberately unlike the legend and
+with no styling, no TAB separator, and no width-based wrapping (§7.2's footer
+wrapping applies to styled output only). This is deliberately unlike the legend and
 deliberately like the `empty` string (§7.4): the legend is a structured glyph key
 with no meaningful plain form, whereas `empty` and `footer` are both
 producer-authored prose the producer intends a reader to see in either mode. A
@@ -338,7 +365,9 @@ point `MESA_BIN` at its own binary and run the identical suite.
 | §6.1/§7.3, footer on a pipe | footer lines follow the rows verbatim, unstyled and un-TABbed |
 | §6.1, footer below the legend | on a TTY the order is grid, then legend, then footer |
 | §6.1, footer severities | a `neutral` footer span is dimmed; a styled span keeps its color |
-| §6.1, footer ignores width | a footer wider than the table is neither wrapped nor ellipsized |
+| §6.1/§7.2, footer wraps to width | a styled footer wider than the width wraps at word boundaries, never ellipsized |
+| §6/§7.2, legend wraps to width | a styled legend wider than the width breaks at entry boundaries |
+| §7.3, plain footer is not wrapped | a footer on a pipe stays one line whatever `--width` says |
 | §2, unknown header field | an unrecognized header field is ignored rather than rejected |
 | §5/§7.4, palette reaches `empty` | a `palette` override for `muted` recolors the empty-state text |
 | §7.4, empty suppresses the footer | a header-only stream with a `footer` prints only `empty` |

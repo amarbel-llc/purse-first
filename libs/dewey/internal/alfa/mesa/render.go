@@ -170,7 +170,8 @@ func (t *Table) renderStyled(w io.Writer, cfg renderConfig) error {
 	// overflow. lipgloss then content-sizes each column to the width we
 	// leave it, so we do not set an overall table width.
 	natural := t.naturalWidths()
-	target := t.targetWidths(natural, t.resolveWidth(w, cfg))
+	width := t.resolveWidth(w, cfg)
+	target := t.targetWidths(natural, width)
 
 	headers := make([]string, len(t.Columns))
 	for c := range t.Columns {
@@ -217,11 +218,11 @@ func (t *Table) renderStyled(w io.Writer, cfg renderConfig) error {
 		return err
 	}
 	if len(t.Legends) > 0 {
-		if err := t.renderLegend(r, w); err != nil {
+		if err := t.renderLegend(r, w, width); err != nil {
 			return err
 		}
 	}
-	return t.renderFooter(r, w)
+	return t.renderFooter(r, w, width)
 }
 
 func (t *Table) renderCell(r *lipgloss.Renderer, c Cell) string {
@@ -260,32 +261,86 @@ func (t *Table) colorFor(sev Severity) lipgloss.TerminalColor {
 	return sev.defaultColor()
 }
 
-func (t *Table) renderLegend(r *lipgloss.Renderer, w io.Writer) error {
-	parts := make([]string, len(t.Legends))
-	for i, e := range t.Legends {
-		glyph := t.styleSpan(r, Span{Text: e.Glyph, Sev: e.Sev})
-		parts[i] = glyph + " " + sanitize(e.Label)
+// legendSeparator joins legend entries on one line.
+const legendSeparator = "  "
+
+// renderLegend writes the glyph key beneath the grid. When width is positive
+// and the entries do not fit on one line, it breaks the legend across lines at
+// entry boundaries (RFC 0003 §7.2); an entry wider than width on its own is
+// wrapped at word boundaries like footer prose. A width of zero (unknown)
+// keeps everything on one line.
+func (t *Table) renderLegend(r *lipgloss.Renderer, w io.Writer, width int) error {
+	var lines []string
+	var cur []string
+	curW := 0
+	flush := func() {
+		if len(cur) > 0 {
+			lines = append(lines, strings.Join(cur, legendSeparator))
+		}
+		cur, curW = nil, 0
 	}
-	_, err := fmt.Fprintln(w, strings.Join(parts, "  "))
-	return err
+	sepW := displayWidth(legendSeparator)
+
+	for _, e := range t.Legends {
+		glyph := sanitize(e.Glyph)
+		label := sanitize(e.Label)
+		entryW := displayWidth(glyph) + 1 + displayWidth(label)
+
+		if width > 0 && entryW > width {
+			flush()
+			spans := []Span{{Text: glyph, Sev: e.Sev}, {Text: " "}, {Text: label}}
+			for _, line := range wrapSpans(spans, width) {
+				lines = append(lines, t.renderSpans(r, line))
+			}
+			continue
+		}
+		if width > 0 && len(cur) > 0 && curW+sepW+entryW > width {
+			flush()
+		}
+		if len(cur) > 0 {
+			curW += sepW
+		}
+		cur = append(cur, t.styleSpan(r, Span{Text: e.Glyph, Sev: e.Sev})+" "+label)
+		curW += entryW
+	}
+	flush()
+
+	for _, line := range lines {
+		if _, err := fmt.Fprintln(w, line); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t *Table) renderSpans(r *lipgloss.Renderer, spans []Span) string {
+	var sb strings.Builder
+	for _, sp := range spans {
+		sb.WriteString(t.styleSpan(r, sp))
+	}
+	return sb.String()
 }
 
 // renderFooter writes the free-text footer lines beneath the grid and the
 // legend (RFC 0003 §6.1). A span left at Neutral is drawn Muted so plain
 // footer prose reads as secondary text, while a span carrying an explicit
 // severity keeps that severity's color — which is how a key colors its
-// glyphs.
-func (t *Table) renderFooter(r *lipgloss.Renderer, w io.Writer) error {
+// glyphs. When width is positive, a line wider than it is wrapped at word
+// boundaries (RFC 0003 §7.2) with every span's styling kept; a blank footer
+// line stays one blank line.
+func (t *Table) renderFooter(r *lipgloss.Renderer, w io.Writer, width int) error {
 	for _, line := range t.Footers {
-		var sb strings.Builder
-		for _, sp := range line.Spans {
+		spans := make([]Span, len(line.Spans))
+		for i, sp := range line.Spans {
 			if sp.Sev == Neutral {
 				sp.Sev = Muted
 			}
-			sb.WriteString(t.styleSpan(r, sp))
+			spans[i] = sp
 		}
-		if _, err := fmt.Fprintln(w, sb.String()); err != nil {
-			return err
+		for _, wrapped := range wrapSpans(spans, width) {
+			if _, err := fmt.Fprintln(w, t.renderSpans(r, wrapped)); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

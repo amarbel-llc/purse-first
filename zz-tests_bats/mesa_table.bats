@@ -163,18 +163,53 @@ footer_line() {
   assert_output "no sessions"
 }
 
-@test "§6.1: a footer is not wrapped or truncated to the table width" {
-  # The footer far exceeds --width 30; the lone pin column cannot shrink,
-  # so any ellipsis or line break in the output would be the footer's.
-  local long='self= this daemon build · remote= the endpoint build · no self= means stale'
+# strip_ansi removes SGR escapes from stdin so a test can measure the text.
+strip_ansi() { sed 's/\x1b\[[0-9;]*m//g'; }
+
+@test "§6.1/§7.2: a styled footer wider than the width wraps at word boundaries" {
+  # The footer far exceeds --width 30; the lone pin column cannot shrink, so
+  # an ellipsis in the output would be the footer's. It must wrap instead,
+  # keeping every word and never exceeding the width.
+  local long='self= this daemon build, remote= the endpoint build, no self= means stale'
   mk "{\"columns\":[{\"name\":\"ID\",\"role\":\"pin\"}],\"footer\":[\"$long\"]}" \
     '{"cells":["x"]}'
   run "$MESA_BIN" --force-style --width 30 <"$infile"
   assert_success
   refute_output --partial "…"
-  # One neutral span renders as one contiguous run, so the whole text must
-  # sit on a single line.
-  printf '%s\n' "$output" | grep -qF "$long"
+  local text
+  text=$(printf '%s\n' "$output" | strip_ansi)
+  # Not all on one line...
+  ! printf '%s\n' "$text" | grep -qF "$long"
+  # ...but nothing lost: the footer lines rejoin to the original text.
+  local footer
+  footer=$(printf '%s\n' "$text" | sed -n '/^self=/,$p' | tr '\n' ' ')
+  [[ $footer == "$long " ]]
+  # And no footer line is wider than the width.
+  ! printf '%s\n' "$text" | sed -n '/^self=/,$p' | grep -q '.\{31,\}'
+}
+
+@test "§6/§7.2: a styled legend wider than the width breaks at entry boundaries" {
+  mk '{"columns":[{"name":"ID","role":"pin"}],"legend":[{"sev":"ok","glyph":"●","label":"active"},{"sev":"warn","glyph":"●","label":"running-detached"},{"sev":"muted","glyph":"●","label":"inactive"}]}' \
+    '{"cells":["x"]}'
+  # 40 columns wide on one line: it fits at --width 80.
+  run "$MESA_BIN" --force-style --width 80 <"$infile"
+  assert_success
+  [[ $(printf '%s\n' "$output" | strip_ansi | grep -c '^●') == 1 ]]
+  # At --width 20 no two entries share a line.
+  run "$MESA_BIN" --force-style --width 20 <"$infile"
+  assert_success
+  [[ $(printf '%s\n' "$output" | strip_ansi | grep -c '^●') == 3 ]]
+}
+
+@test "§7.3: a footer on a pipe is not wrapped whatever the width" {
+  local long='self= this daemon build, remote= the endpoint build, no self= means stale'
+  mk "{\"columns\":[{\"name\":\"ID\",\"role\":\"pin\"}],\"footer\":[\"$long\"]}" \
+    '{"cells":["x"]}'
+  run "$MESA_BIN" --plain --width 30 <"$infile"
+  assert_success
+  assert_output "ID
+x
+$long"
 }
 
 @test "§2: an unrecognized header field is ignored, not an error" {
